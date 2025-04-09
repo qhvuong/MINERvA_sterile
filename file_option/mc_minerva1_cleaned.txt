@@ -1,0 +1,4 @@
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Production_4_Partial_LE/minerav1/grid/central_value/minerva/ana/v10r8p9/00/01/02/17/SIM_minerva_00010217_Subruns_0001_MasterAnaDev_Ana_Tuple_v10r8p9.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Production_4_Partial_LE/minerav1/grid/central_value/minerva/ana/v10r8p9/00/01/02/24/SIM_minerva_00010224_Subruns_0133_MasterAnaDev_Ana_Tuple_v10r8p9.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Production_4_Partial_LE/minerav1/grid/central_value/minerva/ana/v10r8p9/00/01/02/39/SIM_minerva_00010239_Subruns_0028_MasterAnaDev_Ana_Tuple_v10r8p9.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Production_4_Partial_LE/minerav1/grid/central_value/minerva/ana/v10r8p9/00/01/02/48/SIM_minerva_00010248_Subruns_0157_MasterAnaDev_Ana_Tuple_v10r8p9.root
