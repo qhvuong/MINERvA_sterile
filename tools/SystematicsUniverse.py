@@ -192,8 +192,8 @@ class CVUniverse(ROOT.PythonMinervaUniverse, object):
     def GetCOHPionWeight(self):
         def GetTrueHighEpi():
             nFSpi = self.mc_nFSPart
-            pionE = -1.0;
-            pionKE = -1.0;
+            pionE = -1.0
+            pionKE = -1.0
             for i in range(nFSpi):
                 try:
                     pdg = self.mc_FSPartPDG[i]
@@ -890,19 +890,33 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
     universes = []
     CVUniverse.is_pc = is_pc
     CVUniverse.LeafGetters= {}
+    print(f"Type of playlist: {type(playlist)}, Value: {playlist}")
+    #playlist = "minervame1a"
     if is_data:
         #data has only cv universe
         universes.append(CVUniverse(chain, None))
     else:
         #append cv universe
         universes.append(CVUniverse(chain,0))
-        
+
+        from config.AnalysisConfig import AnalysisConfig
+        if AnalysisConfig.flavor_swap_type in ["nue_swapped", "nuebar_swapped"]:
+            CVUniverse.SetPlaylist("dummy")
+            CVUniverse.SetNuEConstraint(False)
+            univ_dict = OrderedDict()
+            for univ in universes:
+                univ_dict.setdefault(univ.ShortName(), []).append(univ)
+            return univ_dict
+
+            
         #Set Playlist, only MC cares about playlist
         if playlist is None:
             #attempt guess playlist from the chain
             playlist = Utilities.PlaylistLookup(chain.GetValue("mc_run",0))
+            
 
         if not is_pc:
+            print(f"Type of playlist: {type(playlist)}, Value: {playlist}")
             CVUniverse.SetPlaylist(playlist)
             #Set NuE constraint
             CVUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
@@ -995,7 +1009,6 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
             #target mass universe
             universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
-
 
     # Group universes in dict.
     univ_dict = OrderedDict()

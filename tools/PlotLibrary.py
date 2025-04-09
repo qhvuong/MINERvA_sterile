@@ -53,7 +53,6 @@ How to define a new plot:
 """
 
 
-
 DecMap = {
     "low" : lambda func, binning: Utilities.decorator_ReLU(func,binning[0]),
     "high" : lambda func, binning: Utilities.decorator_Cap(func,binning[-2]),
@@ -103,7 +102,7 @@ def passHybridProtonNodeCut(event):
     if n_nodes>5:
         for i in range(n_nodes):
             if i==6:
-                break;
+                break
             if i==0:
                 nodeEnergyVal+=event.MasterAnaDev_proton_nodes_nodesNormE[0]
             elif i==1:
@@ -225,14 +224,61 @@ VARIABLE_DICT = {
 
 }
 
+
+from tools.FlavorRatioWeight import load_weights, get_weight_from_file
+from config.AnalysisConfig import AnalysisConfig
+
+if "mc" in AnalysisConfig.data_types:
+    if AnalysisConfig.flavor_swap_type == "nue_swapped":
+        weight_file = "nu_ratio.txt"
+    elif AnalysisConfig.flavor_swap_type == "nuebar_swapped":
+        weight_file = "nubar_ratio.txt"
+    else:
+        weight_file = None
+
+    if weight_file is not None:
+        bin_edges, ratios = load_weights(weight_file)
+        if len(bin_edges) != len(ratios) + 1:
+            print("[WARNING] bin_edges should have N+1 entries if ratios has N entries.")
+    else:
+        bin_edges, ratios = None, None
+
+else:
+    print("[INFO] Running on data — disabling reweighting.")
+    bin_edges, ratios = None, None
+    
+
+def get_final_weight(event, bin_edges=None, ratios=None, energy_GeV=None, use_reco=False, debug=True):
+    base_weight = event.GetWeight()
+    final_weight = base_weight
+
+    #print(f"[DEBUG] get_final_weight CALLED — base_weight: {base_weight:.4f}")
+
+    if bin_edges is not None and ratios is not None:
+        if energy_GeV is None:
+            print("[WARNING] Could not extract energy from event.")
+            return final_weight
+
+        ratio_weight = get_weight_from_file(energy_GeV, bin_edges, ratios)
+        final_weight *= ratio_weight
+
+        #print(f"[DEBUG] E_true: {energy_GeV:.3f} GeV | ratio: {ratio_weight:.4f} | final: {final_weight:.4f}")
+
+    return final_weight
+
+
+
 PLOT_SETTINGS= {
     "Biased Neutrino Energy":
     {
         "name" : "EN4",
-        "title" : "E_{e}+E_{avail} (GeV)",
+        "title" : "E_{lep}+E_{avail} (GeV)",
         #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
+        "weight_function": (lambda event: get_final_weight(
+            event, bin_edges, ratios, energy_GeV=(event.kin_cal.reco_E_lep+event.kin_cal.reco_visE), debug=True)
+        ),
         "tags":reco_tags
     },
     "Lepton Pt":
@@ -485,7 +531,7 @@ PLOT_SETTINGS= {
     {
         "name" : "recoE_vs_longDist",
         "title": "Energy Estimator vs Longitudinal Distance; E_{avail}+E_{lep} (GeV); Distance (cm); NEvents",
-        "binning" : [[i for i in range(0,500,500)],
+        "binning" : [[i for i in range(0,500)],
                      PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: event.vtx[2]/1e1,
                           lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
@@ -495,7 +541,7 @@ PLOT_SETTINGS= {
     {
         "name" : "recoE_vs_transDist",
         "title": "Energy Estimator vs Transverse Distance; E_{avail}+E_{lep} (GeV); Distance (cm); NEvents",
-        "binning" : [[i for i in range(0,400,400)],
+        "binning" : [[i for i in range(0,400)],
                      PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: math.sqrt((event.vtx[0]/1e1)**2+(event.vtx[1]/1e1)**2),
                           lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
@@ -521,6 +567,9 @@ PLOT_SETTINGS= {
                      PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: (.9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6)/(event.mc_incomingE/1000),
                           lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE], 
+        "weight_function": (lambda event: get_final_weight(
+            event, bin_edges, ratios, energy_GeV=(event.kin_cal.reco_E_lep+event.kin_cal.reco_visE), debug=True)
+        ),
         "tags": truth_tags   
     },
     "True Energy vs L/E":
@@ -754,9 +803,21 @@ PLOT_SETTINGS= {
     "flux":
     {
         "name" : "Flux",
-        "title" : "#nu Flux; True Neutrino Energy; NEvents",
+        "title" : "#nu Energy; True #nu Energy; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: event.mc_incomingE/1000],
+        #"value_getter" : [lambda event: event.kin_cal.true_enu_weighted],
+        "tags":reco_tags
+    },
+    "Flavor_swapped_flux":
+    {
+        "name" : "Flavor_swapped_flux",
+        "title" : "Swapped #nu Energy; Flavor-swapped #nu Energy; NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.mc_incomingE/1000],
+        "weight_function": (lambda event: get_final_weight(
+            event, bin_edges, ratios, energy_GeV=event.mc_incomingE / 1000.0, debug=True)
+        ),
         "tags":reco_tags
     },
 }

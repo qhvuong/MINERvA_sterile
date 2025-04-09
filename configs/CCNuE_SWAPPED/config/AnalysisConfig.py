@@ -21,13 +21,12 @@ import sys
 import pprint
 import re
 
-BLUEARC = "/exp/minerva/data/users/{}/antinu_e".format(os.environ["USER"])
+BLUEARC = "/exp/minerva/data/users/{}/nu_e_swapped".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
-SIDEBANDS=["dEdX"]
-#SIDEBANDS=["Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX","Pi0","dEdX","ETheta2","True_Electron","True_Muon"]
-#SIDEBANDS=["Excess_High_Inline","Excess_Low_Inline","High_Psi_and_dEdX"]
+#SIDEBANDS=["dEdX","Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX"]
+SIDEBANDS = [""]
 
 class _AnalysisConfig(object):
     Defaults = {
@@ -245,6 +244,12 @@ parser.add_argument("--pc",
                     default=False,
 )
 
+parser.add_argument("--plot_tag", "--plot-tag",
+                    dest = "plot_tag",
+                    help="Add ending tag for plots to distinguish them.",
+                    #default=BLUEARC
+                    default=""
+)
 parser.add_argument("--signal",
                     dest="signal",
                     action="store_true",
@@ -268,12 +273,6 @@ parser.add_argument("-o", "--output",
 parser.add_argument("-i", "--input",
                     dest = "input_dir",
                     help="Use alternate location for input files other than ntuple.",
-                    default=BLUEARC
-)
-
-parser.add_argument("--plot_tag", "--plot-tag",
-                    dest = "plot_tag",
-                    help="Add ending tag for plots to distinguish them.",
                     default=BLUEARC
 )
 
@@ -304,12 +303,6 @@ parser.add_argument("--cal_POT","--cal-POT",
                     action="store_true",
                     default=False)
 
-parser.add_argument("--only_cal_POT","--only-cal-POT",
-                    help="do not run selection but only count POT",
-                    dest = "run_reco",
-                    action="store_false",
-                    default=True)
-
 parser.add_argument("--no-reco","--no_reco",
                     help="do not run selection but only count POT",
                     dest = "run_reco",
@@ -321,7 +314,7 @@ parser.add_argument("--exclude_universes","--exclude-universes",
                     nargs="*",
 )
 
-parser.add_argument("--skip_2p2h","--skip_2p2h",
+parser.add_argument("--skip_2p2h","--skip-2p2h",
                     help="do not want 2p2h events,(use this when you are going to run delicate 2p2h sample.)",
                     action="store_true",
                     default=False)
@@ -340,14 +333,10 @@ parser.add_argument("--extra_weighter",
                     help="Name of extra weighter you want to use",
                     default=None)
 
-"""
-parser.add_argument("--sample-size",
-                    #dest="nsamples",
-                    type=int,
-                    default=None,  # Default to a single sample for testing
-                    help="Number of entries to process. If not provided, process the entire dataset.")
-"""
-
+parser.add_argument("--flavor_swap_type",
+                    help="Specify whether the sample is nue_swapped or nuebar_swapped",
+                    choices=["nue_swapped", "nuebar_swapped"],
+                    default=None)
 
 options = parser.parse_args()
 
@@ -367,19 +356,9 @@ if options.grid:
     nth_job = int(os.environ["PROCESS"])
     options.count[0]=nth_job*options.count[1]+options.count[0]
 
-
 if options.testing:
     options.count = [0,1]
-    #options.count = [0, options.sample_size]
-    #print(f"Processing a smaller sample of size: {options.sample_size}")
 
-"""
-if options.nsamples is not None:
-    print(f"Processing {options.nsamples} entries.")
-else:
-    print("Processing the entire dataset.")
-
-"""
 AnalysisConfig = _AnalysisConfig(**vars(options))
 
 print("Using analysis configuration:")

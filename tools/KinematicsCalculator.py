@@ -11,6 +11,9 @@ import ROOT
 import os
 from tools import Utilities
 from numpy import interp
+from tools.FlavorRatioWeight import load_weights, get_weight_from_file
+import config.AnalysisConfig as ac              #use this for path
+from config.AnalysisConfig import AnalysisConfig  # make sure this is correctly imported
 
 # constants needed in calculations.
 M_e = 0.511 # MeV
@@ -52,6 +55,21 @@ class KinematicsCalculator(object):
                 val = args[kw]
                 del args[kw]
             setattr(self, kw, val)
+
+        self.bin_edges, self.ratios = None, None
+
+        """
+        if hasattr(AnalysisConfig, "flavor_swap_type") and AnalysisConfig.flavor_swap_type in ["nue_swapped", "nuebar_swapped"]:
+            # get the directory of the imported config module
+            config_dir = os.path.dirname(os.path.realpath(ac.__file__))
+            weight_path = os.path.join(config_dir, AnalysisConfig.flavor_swap_type, "energy_reweight.txt")
+
+            try:
+                self.bin_edges, self.ratios = load_weights(weight_path)
+                print(f"✅ Loaded energy reweight file from: {weight_path}")
+            except Exception as e:
+                print(f"❌ Failed to load weight file at {weight_path}: {e}")
+        """
 
         self._clear = False
         self.new_truth = False
@@ -95,6 +113,7 @@ class KinematicsCalculator(object):
         self.Exuv = None
         self.reco_Etheta2 = None
         if self.new_truth :
+            self.true_enu_weighted = None #this is the flavor swapped weighted energy
             self.true_theta_lep_rad = None
             self.true_theta_lep = None
             self.true_E_lep = None
@@ -118,6 +137,7 @@ class KinematicsCalculator(object):
 
     def CalculateKinematics(self,event):
         self.event = event
+        #print(dir(self.event))
         self.new_truth = event.ShortName() == "cv"
         sc = True
         for _ in self.Cals:
@@ -137,6 +157,12 @@ class KinematicsCalculator(object):
                 return False
         event = self.event
 
+        #print(dir(self.event))
+        """
+        if self.bin_edges is not None and self.ratios is not None:
+            true_enu = event.mc_incomingE / 1000.0
+            self.true_enu_weighted = get_weight_from_file(true_enu, self.bin_edges, self.ratios)
+        """
         #decide if whether it is muon or electron event, and get lepton kinematics
         self.reco_theta_lep_rad = event.LeptonTheta()
         self.reco_E_lep = event.LeptonEnergy()/1e3
@@ -208,8 +234,15 @@ class KinematicsCalculator(object):
         if not self.new_truth:
             return True
         self._clear = False
-
+        
+        
         self.true_enu_genie = self.event.GetEnuTrue()/1e3
+
+        """
+        if self.bin_edges is not None and self.ratios is not None:
+            self.true_enu_weighted = get_weight_from_file(self.true_enu_genie, self.bin_edges, self.ratios)
+        """
+
         self.true_E_lep = self.event.GetElepTrue()/1e3
         self.true_P_lep = self.event.GetPlepTrue()/1e3
         self.true_q0 = self.event.Getq0True()/1e3
@@ -243,6 +276,7 @@ class KinematicsCalculator(object):
 
         return True
         #       print E_e, self.E_nu_QE, self.Q2_QE
+
 
     @staticmethod
     def Enu_QE(E_lep, p_lep, theta_lep,m_lep_sqr):

@@ -130,6 +130,8 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
         mc_signalNUEEL= mc_signalNUEEL.GetVertErrorBand(error_band).Clone()
 
     bkgscale = (mc_sidebandSIG * (mc_signalNUEEL - data_signal) + mc_signalSIG * (data_sideband - mc_sidebandNUEEL))/(mc_sidebandBKG * mc_signalSIG - mc_sidebandSIG * mc_signalBKG)
+
+
     sigscale = (mc_sidebandBKG * (data_signal - mc_signalNUEEL) + mc_signalBKG * (mc_sidebandNUEEL - data_sideband)) / (mc_sidebandBKG * mc_signalSIG - mc_sidebandSIG * mc_signalBKG)
     predscale = (data_sideband - mc_sidebandSIG - mc_sidebandNUEEL) / mc_sidebandBKG
     scales = {"signal":sigscale,"background":bkgscale,"prediction":predscale}
@@ -163,6 +165,10 @@ def TuneMC(hist_holder, scale_hists, x_axis=False, y_axis=False, prediction=Fals
         except AttributeError:
             return False
     else:
+        hist = hist_holder.GetHist()
+        if hist is None:
+            print("[ERROR] hist_holder.GetHist() returned None. Plot name:", hist_holder.plot_name)
+            print("[ERROR] hist_holder.hists:", hist_holder.hists.keys())
         comparable_scale = MakeComparableMnvHXD(hist_holder.GetHist(),scale_hists,y_axis)
         try:
             #ScaleCategories(hist_holder,comparable_scale)

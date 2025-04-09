@@ -516,12 +516,16 @@ HISTS_TO_MAKE = [
     #  "tags": {"sideband","truth_class"}},
     #"Neutrino Z Vertex",
 
+   "Nu Parent Energy vs Length Travelled",
+   "Nu Parent Energy vs Nu Energy",
+   "Reco Energy vs Longitudinal Distance",
+   "Reco Energy vs Transverse Distance",
 
 
     "Biased Neutrino Energy",
     "Reco Energy vs L/E",
     #"True Energy vs Biased Neutrino Energy",
-    "Estimator vs Front dEdX",
+    #"Estimator vs Front dEdX",
 
     #"Estimator vs Proton Length",
     #"Estimator vs Lepton Pt",
@@ -536,7 +540,7 @@ HISTS_TO_MAKE = [
     #"electron_energy",
 
     #"flux",
-    #"True Flavor-swapped Sample",
+    #"Flavor_swapped_flux",
     #"Reco Energy vs L/E",
     #"Biased Neutrino Energy",
 

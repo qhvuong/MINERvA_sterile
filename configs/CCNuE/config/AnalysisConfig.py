@@ -247,7 +247,8 @@ parser.add_argument("--pc",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
-                    default=BLUEARC
+                    #default=BLUEARC
+                    default=""
 )
 parser.add_argument("--signal",
                     dest="signal",
@@ -332,6 +333,10 @@ parser.add_argument("--extra_weighter",
                     help="Name of extra weighter you want to use",
                     default=None)
 
+parser.add_argument("--flavor_swap_type",
+                    help="Specify whether the sample is nue_swapped or nuebar_swapped",
+                    choices=["nue_swapped", "nuebar_swapped"],
+                    default=None)
 
 options = parser.parse_args()
 

@@ -844,5 +844,51 @@
                 "playlist_location": "file_option/playlist_mcme1Gscattering.txt"
             }
         }
+    },
+    "le1A_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle1Ap6.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datale1Ap6.txt"
+            }
+        }
+    },
+    "le5A_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle5Ap6.txt"
+            }
+        }
+    },
+    "le7A_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle7Ap6.txt"
+            }
+        }
+    },
+    "le9A_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle9Ap6.txt"
+            }
+        }
+    },
+    "le13C_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle13Cp6.txt"
+            }
+        }
     }
 }

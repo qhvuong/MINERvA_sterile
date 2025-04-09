@@ -215,8 +215,28 @@ def PlaylistLookup(run):
 
     elif run>=131000 and run<=131019:
         return "minervame3a"
-    else:
-        return None
+
+
+
+    #Low Energy Era:
+    # neutrino mode (FHC):
+    elif run >= 10200 and run <= 10249:
+        return "minervame1a"
+    elif run >= 10250 and run <= 10254:
+        return "minervame1a"
+        #return "minervame7a"
+    elif run >= 10255 and run <= 10259:
+        return "minervame1a"
+        #return "minervame9a"
+    elif run >= 13200 and run <= 13260:
+        return "minervame1a"
+        #return "minervame13c"
+
+    # anti neutrino mode (FHC):
+    elif run >= 50200 and run <= 50249:
+        return "minervame5a"
+
+
 
 
 def DelNestedIterable(inobject):

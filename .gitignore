@@ -10,4 +10,5 @@ grid_wrappers/
 *.so
 *.root
 *.png
+**/py3env/
 
