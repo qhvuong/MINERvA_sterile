@@ -1,41 +1,40 @@
 
 void GetFileNameToText() {
-/*
-    std::ofstream outFile("file_option/playlist_datale1Ap6.txt");
 
-    const char folder[] = "/pnfs/minerva/persistent/DataPreservation/Low_Energy_Era/p6Prime/data";
-    
-    for(int j=20;j<24;j++){
-    for(int k=0;k<100;k++){
-    for (int i = 1; i <= 10; i++) {
-        TString filename = TString::Format("%s/minerva1/grid/minerva/ana/numibeam/v10r8p9/00/00/%d/%02d/MV_0000%d%02d_Subruns_%04d_MasterAnaDev_AnaData_Tuple_v10r8p9.root", folder, j,k,j,k,i);
-        //std::cout << filename << "\n";
-        if (gSystem->AccessPathName(filename)) {  // Returns true if file DOES NOT exist
-            std::cout << k << "\t" << i << "\n";
-        }
-        else {
-            outFile << Form("root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p6Prime/data/minerva1/grid/minerva/ana/numibeam/v10r8p9/00/00/%d/%02d/MV_0000%d%02d_Subruns_%04d_MasterAnaDev_AnaData_Tuple_v10r8p9.root",j,k,j,k,i) << "\n";
-        }
-    }}}
-*/
-
-    std::ofstream outFile("file_option/playlist_mcle5Ap6.txt");
+    std::ofstream outFile("file_option/playlist_datale9Ap6.txt");
 
     const char xrootd[] = "root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr";
-    const char dataPath[] = "minerva/persistent/DataPreservation/Low_Energy_Era/p6Prime/mc/minerva5/grid/central_value/minerva/ana/v10r8p9/00/05/02";
-
-    for(int j=0;j<50;j++){
-    for (int i = 1; i <= 200; i++) {
-        TString filename = TString::Format("/pnfs/%s/%02d/SIM_minerva_000502%02d_Subruns_%04d_MasterAnaDev_Ana_Tuple_v10r8p9.root", dataPath, j,j,i);
-        //std::cout << filename << "\n";
+    const char dataPath[] = "minerva/persistent/DataPreservation/Low_Energy_Era/p6Prime/data/minerva9/grid/minerva/ana/numibeam/v10r8p9/00/00";
+    
+    for(int j=33;j<34;j++){
+    for(int k=0;k<100;k++){
+    for (int i = 1; i <= 100; i++) {
+        TString filename = TString::Format("/pnfs/%s/%d/%02d/MV_0000%d%02d_Subruns_%04d_MasterAnaDev_AnaData_Tuple_v10r8p9.root", dataPath, j,k,j,k,i);
         if (gSystem->AccessPathName(filename)) {  // Returns true if file DOES NOT exist
-            std::cout << j << "\t" << i << "\n";
+            std::cout << j << "\t" << k << "\t" << i << "\n";
+            continue;
         }
         else {
-            outFile << Form("%s/%s/%02d/SIM_minerva_000502%02d_Subruns_%04d_MasterAnaDev_Ana_Tuple_v10r8p9.root", xrootd, dataPath, j,j,i) << "\n";
+            outFile << Form("%s/%s/%d/%02d/MV_0000%d%02d_Subruns_%04d_MasterAnaDev_AnaData_Tuple_v10r8p9.root", xrootd, dataPath, j,k,j,k,i) << "\n";
         }
-    }}
+    }}}
 
+    // std::ofstream outFile("file_option/playlist_mcle5Ap6.txt");
+
+    // const char xrootd[] = "root://fndca1.fnal.gov:1094///pnfs/fnal.gov/usr";
+    // const char dataPath[] = "minerva/persistent/DataPreservation/Low_Energy_Era/p6Prime/mc/minerva5/grid/central_value/minerva/ana/v10r8p9/00/05/02";
+
+    // for(int j=0;j<50;j++){
+    // for (int i = 1; i <= 200; i++) {
+    //     TString filename = TString::Format("/pnfs/%s/%02d/SIM_minerva_000502%02d_Subruns_%04d_MasterAnaDev_Ana_Tuple_v10r8p9.root", dataPath, j,j,i);
+    //     //std::cout << filename << "\n";
+    //     if (gSystem->AccessPathName(filename)) {  // Returns true if file DOES NOT exist
+    //         std::cout << j << "\t" << i << "\n";
+    //     }
+    //     else {
+    //         outFile << Form("%s/%s/%02d/SIM_minerva_000502%02d_Subruns_%04d_MasterAnaDev_Ana_Tuple_v10r8p9.root", xrootd, dataPath, j,j,i) << "\n";
+    //     }
+    // }}
 }
 
 /*
