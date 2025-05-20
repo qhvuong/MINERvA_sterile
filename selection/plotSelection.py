@@ -40,8 +40,14 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
     typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"
     slicer = config.setdefault("slicer", DefaultSlicer(data_hists)) if typeBool else PlotTools.IdentitySlicer
     draw_seperate_legend = config.setdefault("draw_seperate_legend",data_hists.dimension!=1 and (PlotType != "migration" or PlotType != "category_hist" or PlotType != "hist2d"))
+    if data_hists is None or mc_hists is None:
+        print("❌ One of the input hist holders is None.")
+        return False
     try:
-        custom_tag = config["tag"]+PlotType if "tag" in config else PlotType
+        tag = config.get("tag", "")
+        if tag is None: tag = ""
+        custom_tag = str(tag) + str(PlotType)
+        # custom_tag = config["tag"]+PlotType if "tag" in config else PlotType
         if PlotType == "custom":
             plotfunction,hists=config["getplotters"](data_hists,mc_hists)
         elif PlotType == "category_hist":
@@ -57,6 +63,50 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
                 PlotTools.MakeGridPlot(PlotTools.IdentitySlicer,plotfunction,hists,draw_seperate_legend=False,title=category)
                 PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,sideband,category))
                 print("plot {} made for category {}.".format(data_hists.plot_name,category))
+
+        # else:
+        #     args = config.get("args") or DefaultPlotters.get(PlotType, {}).get("args")
+
+        #     plotter_func = DefaultPlotters.get(PlotType, {}).get("func")
+        #     if not callable(plotter_func):
+        #         print(f"❌ No valid plotter function for PlotType '{PlotType}'")
+        #         return False
+
+        #     try:
+        #         if args is None:
+        #             result = plotter_func(data_hists, mc_hists)
+        #         else:
+        #             result = plotter_func(data_hists, mc_hists, *args)
+        #     except Exception as e:
+        #         print(f"❌ Exception when calling plot function for '{PlotType}': {e}")
+        #         return False
+
+        #     if not result or len(result) != 2:
+        #         print(f"❌ Invalid result from plotter for '{PlotType}':", result)
+        #         return False
+
+        #     plotfunction, hists = result
+        #     if not callable(plotfunction):
+        #         print(f"❌ plotfunction is not callable: {plotfunction}")
+        #         return False
+        #     if hists is None:
+        #         print(f"❌ hists is None for plot type '{PlotType}'")
+        #         return False
+
+        #     print(f"✅ Plotting {data_hists.plot_name} with PlotType '{PlotType}' and custom_tag '{custom_tag}'")
+
+        #     if PlotType == "2Dstacked":
+        #         PlotTools.SumGridPlots(slicer, plotfunction, hists, draw_seperate_legend=False)
+        #     else:
+        #         PlotTools.MakeGridPlot(slicer, plotfunction, hists, draw_seperate_legend=False)
+
+        #     # Guard against undefined sideband
+        #     if "sideband" not in locals():
+        #         sideband = "Signal"
+
+        #     PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name, sideband, custom_tag))
+        #     print("✅ plot {} made.".format(data_hists.plot_name))
+
         else:
             if "args" in config:
                 args = config["args"]
@@ -190,6 +240,7 @@ if __name__ == "__main__":
     sideband_map = {}
 
     for config in PLOTS_TO_MAKE:
+        print("PLOTS_TO_MAKE", config)
         if "Front dEdX" in config['name']:
             sideband = 'dEdX'
             sidebandHist = HistHolder(config["name"] if "name" in config else config,mc_file,"dEdX",True,mc_pot,standPOT)

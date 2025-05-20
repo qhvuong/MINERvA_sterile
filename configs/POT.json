@@ -845,17 +845,31 @@
             }
         }
     },
-    "le1A_p6": {
+    "le1_p6_test": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
-                "playlist_location": "file_option/playlist_mcle1Ap6.txt"
+                "playlist_location": "file_option/playlist_mcle1p6_test.txt"
             }
         },
         "data": {
             "MAD": {
                 "tree": "MasterAnaDev",
-                "playlist_location": "file_option/playlist_datale1Ap6.txt"
+                "playlist_location": "file_option/playlist_datale1p6_test.txt"
+            }
+        }
+    },
+    "le1_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle1p6.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datale1p6.txt"
             }
         }
     },
