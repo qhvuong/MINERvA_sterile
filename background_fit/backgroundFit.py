@@ -527,6 +527,8 @@ if __name__ == "__main__":
     datafile,mcfile,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
 
     for config in PLOTS_TO_MAKE:
+        postfit_config = config.copy()
+        postfit_config["tag"] = postfit_config.get("tag", "") + "postfit_"
         data_sighist,signalHist,pred_hist_sig = GetScaledDataMC(config["name"] if "name" in config else config,datafile,mcfile,"Signal")
         data_sidehist,sidebandHist,pred_hist_sid = GetScaledDataMC(config["name"] if "name" in config else config,datafile,mcfile,"dEdX")
         normsignalHist = HistHolder(config["name"] if "name" in config else config,mcfile,"Signal",True,pot_scale)
@@ -539,7 +541,7 @@ if __name__ == "__main__":
             data_sighist.Add(data_sidehist)
             signalHist.Add(sidebandHist)
             pred_hist_sid.Add(pred_hist_sig)
-            MakePlot(data_sighist,signalHist,config)
+            MakePlot(data_sighist,signalHist,postfit_config)
 
             if False:
                 for cate in list(signalHist.hists.keys()):
@@ -549,15 +551,15 @@ if __name__ == "__main__":
                         normsignalHist.hists[cate].Reset()
                 signalHist.Add(normsignalHist)
                 signalHist.ResumTotal()
-                MakePlot(data_sighist,signalHist,config)
+                MakePlot(data_sighist,signalHist,postfit_config)
 
         elif isinstance(sideband_group,list):
             for sideband in sideband_group:
                 data_hist,mc_hist,pred_hist = GetScaledDataMC(config["name"] if "name" in config else config,datafile,mcfile,sideband)
                 if sideband == "Signal" and AnalysisConfig.pseudodata:
-                    MakePlot(datasignal_histholders[0],pred_hist,config)
+                    MakePlot(datasignal_histholders[0],pred_hist,postfit_config)
                 else:
-                    MakePlot(data_hist,pred_hist,config)
+                    MakePlot(data_hist,pred_hist,postfit_config)
                     #MakePlot(data_hist,normsignalHist,config) 
                     continue
 
@@ -598,7 +600,7 @@ if __name__ == "__main__":
                 data_hist_tmp,mc_hist_tmp = GetScaledDataMC(config["name"] if "name" in config else config,datafile,mcfile,sidebands[_])
                 data_hist.Add(data_hist_tmp)
                 mc_hist.Add(mc_hist_tmp)
-            MakePlot(data_hist,mc_hist,config)
+            MakePlot(data_hist,mc_hist,postfit_config)
 
     #make bkg subtracted data histogram
 

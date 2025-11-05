@@ -195,6 +195,10 @@ def PlotProcessorProliferater(plot, name_func):
 
 # complecated function for interpret tags of a plot. Got to revisit after sometime and find out how to organize multiple tags.
 def MakePlotProcessors(**kwargs):
+    # import inspect
+    # print("Calling TranslateSettings from:", inspect.getfile(TranslateSettings))
+    # print("TranslateSettings object:", TranslateSettings)
+    # print("kwargs['key'] =", repr(kwargs["key"]), type(kwargs["key"]))
     settings = TranslateSettings(kwargs["key"])
     #print settings
     plots = []

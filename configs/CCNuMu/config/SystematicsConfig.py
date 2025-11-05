@@ -18,7 +18,7 @@ NUM_UNIVERSE = 100
 USE_NUE_CONSTRAINT = False
 AnaNuPDG=14
 USE_SWAPPED=False
-NUM_FLUX_UNIVERSE = 1000
+NUM_FLUX_UNIVERSE = 100
 # detector mass uncertainty
 MASS_UNCERTAINTY = 0.014  # = 1.4% (it's fractional).  Laura (Doc7615) says she got this from Ron (Doc6016).
 

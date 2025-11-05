@@ -111,7 +111,7 @@ TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
 TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
 
-TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNuMu(event) and not IsAntiNu
+TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNuMu(event) and not IsAntiNu(event)
 TRUTH_CATEGORIES["CCNuMuQE"] = lambda event: IsCC(event) and IsNuMu(event) and IsQE(event)
 TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) and IsDelta(event)
 TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)

@@ -24,9 +24,9 @@ import re
 BLUEARC = "/exp/minerva/data/users/{}/antinu_mu".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
-#SIDEBANDS=[]
-SIDEBANDS=["dEdX","Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX"]
-#SIDEBANDS=["Excess_High_Inline","Excess_Low_Inline","High_Psi_and_dEdX"]
+SIDEBANDS=[]
+# SIDEBANDS=["dEdX","Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX"]
+# SIDEBANDS=["Excess_High_Inline","Excess_Low_Inline","High_Psi_and_dEdX"]
 
 class _AnalysisConfig(object):
     Defaults = {
@@ -254,7 +254,8 @@ parser.add_argument("--signal",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
-                    default=BLUEARC
+                    #default=BLUEARC
+                    default=""
 )
 parser.add_argument("-t", "--test", "--testing",
                     dest="testing",

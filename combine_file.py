@@ -16,6 +16,35 @@ from tools import Utilities
 ROOT.TH1.AddDirectory(False)
 SelectionFilesRegex = "(kin|truth)_dist_(data|mc)(.+)_"+ AnalysisConfig.selection_tag+"_"+AnalysisConfig.ntuple_tag+"(_[0-9]+)?\.root"
 
+
+def is_valid_root_file(filepath):
+    try:
+        print(f"🔍 Checking file: {filepath}")
+        f = ROOT.TFile.Open(filepath, "READ")
+        if not f:
+            print(f"⚠️ Could not open file: {filepath}")
+            return False
+        if f.IsZombie():
+            print(f"⚠️ Zombie file: {filepath}")
+            f.Close()
+            return False
+        if f.TestBit(ROOT.TFile.kRecovered):
+            print(f"⚠️ Recovered file (incomplete write): {filepath}")
+            f.Close()
+            return False
+        keys = f.GetListOfKeys()
+        if not keys or keys.GetSize() == 0:
+            print(f"⚠️ File has no histograms: {filepath}")
+            f.Close()
+            return False
+        f.Close()
+        return True
+    except Exception as e:
+        print(f"⚠️ Exception while checking {filepath}: {e}")
+        return False
+
+
+
 def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     input_file = ROOT.TFile.Open(input_string)
     output_file = ROOT.TFile.Open(output_string,"UPDATE")
@@ -45,15 +74,25 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     del input_file
     print("done a file")
 
-def MaddWrapper(output_playlist,input_files,is_data):
-    args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist,is_data)]
-    args.extend(input_files)
-    #cmd = "madd {} {}".format(AnalysisConfig.SelectionHistoPath(output_playlist,is_data)," ".join(input_files))
-    #print (cmd)
-    #os.system(cmd)
-    print(args)
-    subprocess.run(args,stdout=subprocess.DEVNULL)
-    print ("done")
+
+def MaddWrapper(output_playlist, input_files, is_data):
+    valid_files = [f for f in input_files if is_valid_root_file(f)]
+    print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
+
+    if not valid_files:
+        print(f"❌ No valid files to combine for {output_playlist} — skipping.")
+        return
+
+    # Optional: sort to make sure the first file is reliable
+    valid_files.sort()
+
+    args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist, is_data)]
+    args.extend(valid_files)
+
+    print(f"📦 Running madd on output: {args[1]}")
+    subprocess.run(args, stdout=subprocess.DEVNULL)
+    print("✅ Finished madd.")
+
 
 def MergeHistograms():
     for sample_type in dict_of_files:

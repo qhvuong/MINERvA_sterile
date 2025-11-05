@@ -396,6 +396,8 @@ class FluxUniverse:
     def __init__(self, chain, universe_number):
         self.universe = ROOT.PlotUtils.FluxUniverse[ROOT.PythonMinervaUniverse](chain, 1, universe_number)
         self.cv_universe = CVUniverse(chain, 1)
+        if universe_number >= 100:
+            raise ValueError(f"Universe index {universe_number} out of range. Max allowed for LE is 99.")
 
     def GetWeight(self,test=None):
         return self.GetStandardWeight()
@@ -408,6 +410,23 @@ class FluxUniverse:
     def __getattr__(self, attr):
         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+
+    # @staticmethod
+    # def GetSystematicsUniverses(chainwrapper):
+    #     max_universes_to_try = SystematicsConfig.NUM_FLUX_UNIVERSE
+    #     universes = []
+
+    #     for i in range(max_universes_to_try):
+    #         try:
+    #             test_universe = FluxUniverse(chainwrapper, i)
+    #             # Try calling GetWeight to trigger any hidden errors
+    #             _ = test_universe.GetWeight()
+    #             universes.append(test_universe)
+    #         except Exception as e:
+    #             print(f"[WARNING] Skipping flux universe {i}: {e}")
+    #             break  # Or continue, if you want to tolerate holes
+    #     return universes
+
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -991,106 +1010,110 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #append cv universe
         universes.append(CVUniverse(chain,0))
         
-        # #Set Playlist, only MC cares about playlist
-        # if playlist is None:
-        #     #attempt guess playlist from the chain
-        #     playlist = Utilities.PlaylistLookup(chain.GetValue("mc_run",0))
+        #Set Playlist, only MC cares about playlist
+        if playlist is None:
+            #attempt guess playlist from the chain
+            playlist = Utilities.PlaylistLookup(chain.GetValue("mc_run",0))
 
-        # if not is_pc:
-        #     CVUniverse.SetPlaylist(playlist)
-        #     #Set NuE constraint
-        #     CVUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
-        # else:
-        #     CVUniverse.SetPlaylist("dummy")
-        #     CVUniverse.SetNuEConstraint(False)
+        if not is_pc:
+            CVUniverse.SetPlaylist(playlist)
+            #Set NuE constraint
+            CVUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
+        else:
+            CVUniverse.SetPlaylist("dummy")
+            CVUniverse.SetNuEConstraint(False)
 
         #Set nu_type
         CVUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
 
+
         # #Set NonResPi weight
-        # CVUniverse.SetNonResPiReweight(True)
-        # CVUniverse.SetDeuteriumGeniePiTune(True)
-        # CVUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
-        # CVUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
-        # CVUniverse.RPAMaterials(True)
-        CVUniverse.SetNonResPiReweight(False)
-        CVUniverse.SetDeuteriumGeniePiTune(False)
-        CVUniverse.SetZExpansionFaReweight(False) 
-        CVUniverse.RPAMaterials(False)
+        # CVUniverse.SetNonResPiReweight(False)
+        # CVUniverse.SetDeuteriumGeniePiTune(False)
+        # CVUniverse.SetZExpansionFaReweight(False) 
+        # CVUniverse.RPAMaterials(False)
 
-        # if chain.GetTree().GetName() == "Truth":
-        #     CVUniverse.SetTruth(True)
+        CVUniverse.SetNonResPiReweight(True)
+        CVUniverse.SetDeuteriumGeniePiTune(True)
+        CVUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
+        CVUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
+        CVUniverse.RPAMaterials(True)
 
-        # if exclude is None or "all" not in exclude:
-        #     # #Electron momentum universe
-        #     if abs(SystematicsConfig.AnaNuPDG)==12:
-        #         universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
-        #     elif abs(SystematicsConfig.AnaNuPDG)==14:
-        #         universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain ))
-        #         universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain ))
-        #     else:
-        #         raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-        #     #Electron angle universe
-        #     universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Electron momentum universe
-        #     #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+        if chain.GetTree().GetName() == "Truth":
+            CVUniverse.SetTruth(True)
 
-        #     #beam angle shift universe
-        #     universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
+        if exclude is None or "all" not in exclude:
+            # #Electron momentum universe
+            if abs(SystematicsConfig.AnaNuPDG)==12:
+                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+            elif abs(SystematicsConfig.AnaNuPDG)==14:
+                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
+                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
+                universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain ))
+            else:
+                raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-        #     #particle response shift universe
-        #     universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
+            #Electron angle universe
+            universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Flux universe
-        #     universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
+            #Electron momentum universe
+            #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Genie universe
-        #     universes.extend(GenieUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain ))
+            #beam angle shift universe
+            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #2p2h universes
-        #     universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
+            #particle response shift universe
+            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
 
-        #     #RPA universe:
-        #     universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
+            # #Flux universe
+            # universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Non resonant pion universe
-        #     # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
+            #Genie universe
+            universes.extend(GenieUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain ))
 
-        #     #LowQ2PionUniverse
-        #     #universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
-        #     #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
+            #2p2h universes
+            universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
 
-        #     # #birk shift universe
-        #     ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
+            #RPA universe:
+            universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
 
-        #     #MKModelUniverse
-        #     universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
+            #Non resonant pion universe
+            # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
-        #     #FSIWeighUniverse
-        #     universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
+            #LowQ2PionUniverse
+            #universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
-        #     #SuSAValenciaUniverse
-        #     universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
+            # #birk shift universe
+            ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #hadron reweight shifting universe
-        #     universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+            #MKModelUniverse
+            universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
 
-        #     #leakage universe
-        #     universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+            #FSIWeighUniverse
+            universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
 
-        #     #target mass universe
-        #     universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
+            #SuSAValenciaUniverse
+            universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
+
+            # #hadron reweight shifting universe
+            # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+
+            #leakage universe
+            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+
+            #target mass universe
+            universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.

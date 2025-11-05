@@ -321,6 +321,12 @@ CUT_CONFIGS = {
         "variable_range": list(range(0,6))
     },
 
+    # "NuEVertexTrackMultiplicity": {
+    #     "value_getter": lambda event: event.VertexTrackMultiplicity,
+    #     "cut_fn": lambda val: val < CutConfig.MIN_VERTEX_TRACK_MULTIPLICITY,
+    #     "variable_range": list(range(0,2))
+    # },
+
     "HasNoNonEMExitingTracks": {
         "cut_fn": REQUIRE_POSITIVE_INT,
         "variable_range": VARIABLE_RANGE_01,

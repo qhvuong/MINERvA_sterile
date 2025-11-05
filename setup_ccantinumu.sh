@@ -10,4 +10,5 @@ config=$1
 fi
 echo $config
 export CCNuEConfig=$config
+export CONFIGPATH=${CCNUEROOT}/configs/${config}
 export PYTHONPATH=${CCNUEROOT}/configs/${config}:$PYTHONPATH

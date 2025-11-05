@@ -171,14 +171,14 @@ def vertexDifference(event,n_prong=0):
     return(electronZ - protonZ)
 
 VARIABLE_DICT = {
-    #"Biased Neutrino Energy":
-    #{
-    #    "name" : "EN4",
-    #    "title" : "E_{e}+E_{avail} (GeV)",
-    #    #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
-    #    "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
-    #    "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
-    #},
+    "Biased Neutrino Energy":
+    {
+        "name" : "EN4",
+        "title" : "E_{e}+E_{avail} (GeV)",
+        #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
+    },
     "Neutrino Length Travelled":
     {
         "name" : "nu_length",
@@ -233,6 +233,22 @@ PLOT_SETTINGS= {
         #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
+        "tags":reco_tags
+    },
+    # "Visible Energy":
+    # {
+    #     "name" : "Eavail",
+    #     "title" : "E_{avail} (GeV); NEvents",
+    #     "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
+    #     "value_getter" : lambda event: event.kin_cal.reco_visE,
+    #     "tags":reco_tags
+    # },
+    "Visible Energy":
+    {
+        "name" : "E_avail",
+        "title" : "Available Energy; E_{avail} (GeV); NEvents",
+        "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
+        "value_getter" : [lambda event: event.kin_cal.reco_visE],
         "tags":reco_tags
     },
     "Lepton Pt":
@@ -326,6 +342,22 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep*(event.kin_cal.reco_theta_lep_rad)**2],
         "tags":reco_tags
     },
+    "Lepton Angle":
+    {
+        "name" : "Lep_Angle",
+        "title" : "Lepton Angle ; Lepton Angle (deg) ; NEvents",
+        "binning" : [PlotConfig.LEPTON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_theta_lep],
+        "tags":reco_tags
+    },
+    # "Ee Vs Theta":
+    # {
+    #     "name" : "Ee_Vs_Theta",
+    #     "title" : "E_{lepton} Vs #theta ; E_{lepton} (GeV); #theta (rad) ; NEvents",
+    #     "binning" : [PlotConfig.NEUTRINO4_EE_BINNING,PlotConfig.NEUTRINO4_THETA_BINNING],
+    #     "value_getter" : [lambda event: event.kin_cal.reco_E_lep, lambda event: event.kin_cal.reco_theta_lep_rad],
+    #     "tags":reco_tags
+    # },
      "Estimator vs Front dEdX":
     {
         "name" : "estimator_vs_frontdedx",

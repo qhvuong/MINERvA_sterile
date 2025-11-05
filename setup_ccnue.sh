@@ -12,3 +12,5 @@ echo $config
 export CCNuEConfig=$config
 export CONFIGPATH=${CCNUEROOT}/configs/${config}
 export PYTHONPATH=${CCNUEROOT}/configs/${config}:$PYTHONPATH
+
+# source /exp/minerva/app/users/$USER/MAT_AL9/opt/bin/setup.sh

@@ -224,8 +224,8 @@ def PlaylistLookup(run):
         return "minerva7"
     elif run >= 10255 and run < 10260:
         return "minerva9"
-    elif run >= 13200 and run < 13300:
-        return "minerva13c"
+    elif run >= 13200 and run < 13261:
+        return "minerva13C"
     # anti-neutrino mode (RHC)
     elif run >= 50200 and run < 50250:
         return "minerva5"

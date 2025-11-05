@@ -102,6 +102,7 @@ NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,
 NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
 NEUTRINO4_LE_BINNING = [i*.015 for i in range(34)]
 NEUTRINO4_EE_THETA_BINNING = [.003 * i for i in range(len(NEUTRINO4_EE_BINNING))]
+# NEUTRINO4_THETA_BINNING = [0.01 * i for i in range(158)]
 NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549, .579, .609, .639, .670, .700, .730, .760, .790, .820, .850, .880, .910, .940, .970, 1.000]
 
 NEUTRINO4_EE_BINNING_INV = [0.0,1/20,1/15,1/12.5,1/10,1/8,1/7.5,1/7,1/6.5,1/6,1/5.5,1/5,1/4.5,1/4,1/3.75,1/3.5,1/3.25,1/3,1/2.75,1/2.5,1/2,1/1.75,1/1.5]
@@ -235,9 +236,18 @@ def Printvar(event):
 
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
-    "Reco Energy vs L/E",
+    # "Reco Energy vs L/E",
     # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
-    "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
+    # "Estimator vs Front dEdX",
+    # "Biased Neutrino Energy",
+	# "Visible Energy",
+	# "Lepton Pt",
+	# "Available Energy vs Lepton Energy",
+	# "Available Energy vs Lepton Pt",
+	"Front dEdX",
+	# "Q2",
+	# "E Theta Squared",
+	# "Ee Vs Theta",
+
 ]

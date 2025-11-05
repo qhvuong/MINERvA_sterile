@@ -274,7 +274,8 @@ parser.add_argument("-i", "--input",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
-                    default=BLUEARC
+                    #default=BLUEARC
+                    default=""
 )
 
 parser.add_argument("--ntuple_tag", "--ntuple-tag",
