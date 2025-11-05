@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/exp/minerva/app/users/rhowell/AL9_test/CC-NuE-XSec/oscillations/py3env"
+VIRTUAL_ENV="/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/py3env"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

@@ -8,7 +8,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV "/exp/minerva/app/users/rhowell/AL9_test/CC-NuE-XSec/oscillations/py3env"
+setenv VIRTUAL_ENV "/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/py3env"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/bin:$PATH"
