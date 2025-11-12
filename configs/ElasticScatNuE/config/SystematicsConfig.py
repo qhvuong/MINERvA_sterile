@@ -16,8 +16,9 @@ import math
 NUM_UNIVERSE = 100
 #number of flux uniberses
 USE_NUE_CONSTRAINT = False
-AnaNuPDG=12
-USE_SWAPPED=False
+AnaNuPDG = 12
+USE_SWAPPED = False
+ELASTIC_MODE = True
 NUM_FLUX_UNIVERSE = 100
 # detector mass uncertainty
 MASS_UNCERTAINTY = 0.014  # = 1.4% (it's fractional).  Laura (Doc7615) says she got this from Ron (Doc6016).
@@ -55,80 +56,29 @@ LEPTON_ANGLE_UNCERTAINTY = 1e-3 # this is muon angular resolution. I am worry ab
 #SIDEBAND_MODEL_EB_NAME = "SidebandModel"  # systematic addressing data-MC disagreement in EE sideband at low energy.  used in BackgroundFitting.py
 
 # Genie knobs
-GENIE_UNIVERSES = [
-    "AGKYxF1pi",
-    "AhtBY",
-    "BhtBY",
-    "CCQEPauliSupViaKF",
-    "CV1uBY",
-    "CV2uBY",
-    "EtaNCEL",
-    "FrAbs_N",
-    "FrAbs_pi",
-    "FrCEx_N",
-    "FrCEx_pi",
-    "FrElas_N",
-    "FrElas_pi",
-    "FrInel_N",
-    #"FrInel_pi",
-    "FrPiProd_N",
-    "FrPiProd_pi",
-    "MFP_N",
-    "MFP_pi",
-    #"MaCCQE",
-    #"MaCCQEshape",
-    #"NormCCQE",  these three are taken care by seperate class
-    "MaNCEL",
-    #"MaRES",
-    #"MvRES",
-    #"NormCCRES", these three are taken care of by seperate class for deuterium and EP updates
-    "NormDISCC",
-    "NormNCRES",
-    "RDecBR1gamma",
-    #"Rvn1pi",
-    #"Rvp1pi",  these two are taken care by seperate class
-    "Rvn2pi",
-    "Rvp2pi",
-    "Theta_Delta2Npi",
-    "VecFFCCQEshape"
-]
+GENIE_UNIVERSES = []
 
 
 # Two non-standard genie knobs? should revisit in the future
   #"efnucr_flat", "EFNUCR",
 
 # minerva tune errorbands
-UNIVERSES_2P2H = [1,2,3] #2p2h universe variations
-RPA_UNIVERSES = {
-    "HighQ2":[1,2],
-    "LowQ2" :[3,4]
-}
+UNIVERSES_2P2H = [] #2p2h universe variations
+RPA_UNIVERSES = {}
 
-NonResPi=True
-LowQ2PiWeightChannel = "MENU1PI"
+NonResPi = False
+LowQ2PiWeightChannel = None
 LowQ2PiWeightSysChannel = [None]
-NumZExpansionUniverses = 100 #Means Don't use Zexpansion. 100 is default Z expansion
+NumZExpansionUniverses = 0 #Means Don't use Zexpansion. 100 is default Z expansion
 
 RESPONSE_BRANCHES = [
-    "p",
-    "meson",
     "em",
     "other",
-    "xtalk",
 ]
 
 NEUTRON_RESPONSE = False
 
-if NEUTRON_RESPONSE:
-    RESPONSE_BRANCHES.extend([
-        "low_neutron",
-        "mid_neutron",
-        "high_neutron"
-    ])
-
-GEANT_PARTICLES = [
-    2212,2112,211
-]
+GEANT_PARTICLES = []
 # not all the variations are relevant for the PC excess samples
 #PC_EXCESS_VARIATIONS = VARIATIONS[:]
 #PC_EXCESS_VARIATIONS.remove("BirksUp")
@@ -237,39 +187,18 @@ DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Angular resolution": ["eltheta",],
     "Beam Angle": ["beam_angle",],
     "EM energy scale": ["elE_ECAL","elE_HCAL"],
-    "Birk's Constant" : ["birks"],
-    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
     "Leakage Estimation" : ["Leakage_Uncertainty"],
     "Target Mass" : ["Target_Mass_CH"]
 }
 
-MINERVA_TUNNING_ERROR_GROUPS = {
-    "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
-    "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
-    "Low Q2 Pion": ["LowQ2Pi"],
-    "FSI bugfix" : ["fsi_weight"],
-    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
-    "MK model" : ["MK_model"],
-}
+# All GENIE/FSI/MINERvA tune groups OFF for signal
+MINERVA_TUNNING_ERROR_GROUPS = {}
+MINERVA_TUNNING_ERROR_GROUPS2 = {}
+GENIE_ERROR_GROUPS = {}
+FSI_ERROR_GROUPS = {}
 
-MINERVA_TUNNING_ERROR_GROUPS2 = {
-    "MK model" : ["MK_model"],
-    "FSI bugfix" : ["fsi_weight"],
-    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
-}
-
-
-GENIE_ERROR_GROUPS = {
-    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["EP_MvRES","MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
-}
-
-FSI_ERROR_GROUPS = {
-    "GENIE-FSI" : ["GENIE_"+ i for i in GENIE_UNIVERSES  if (i.startswith("Fr") or i.startswith("MFP")) ]
-}
-
-GEANT_ERROR_GROUPS = {
-    "GEANT" : ["GEANT_" +i for i in ("Neutron","Pion","Proton")]
-}
+# GEANT hadron response off for signal
+GEANT_ERROR_GROUPS = {}
 
 BKG_TUNNING_ERROR_GROUPS = {
     "BKG_TUNNING" : ["bkg_tune"]
@@ -280,7 +209,8 @@ CONSOLIDATED_ERROR_GROUPS_CONFIG = {
     "Detector model": [DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS],
     "Interaction model": [GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS],
     "MnvTunes" :[MINERVA_TUNNING_ERROR_GROUPS],
-    "Muon Reconstruction" :[{"Muon Energy":["Muon_Energy_MINERvA","Muon_Energy_MINOS","Muon_Energy_Resolution"]}],
+    "Electron Reconstruction": [{"Electron Energy/Angle": ["eltheta", "elE_ECAL", "elE_HCAL"]}],
+    # "Muon Reconstruction" :[{"Muon Energy":["Muon_Energy_MINERvA","Muon_Energy_MINOS","Muon_Energy_Resolution"]}],
     "Alternative Tunning methods" : [BKG_TUNNING_ERROR_GROUPS]
    # "Others":[DETECTOR_RESPONSE_ERROR_GROUPS,GEANT_ERROR_GROUPS,GENIE_ERROR_GROUPS,FSI_ERROR_GROUPS,MINERVA_TUNNING_ERROR_GROUPS],
 }

@@ -1,0 +1,2202 @@
+     1	#include "PlotUtils/FluxReweighter.h"
+     2	
+     3	#include "PlotUtils/MnvH1D.h"
+     4	#include "PlotUtils/MnvH2D.h"
+     5	#include "PlotUtils/MnvFluxConstraint.h"
+     6	#include "PlotUtils/MnvVertErrorBand.h"
+     7	
+     8	#include "TMatrixD.h"
+     9	#include "TMatrixDEigen.h"
+    10	#include "TDecompChol.h"
+    11	#include "TVectorD.h"
+    12	#include "TRandom3.h"
+    13	#include "TSystem.h"
+    14	#include "TFile.h"
+    15	#include "TH1D.h"
+    16	#include "TObjString.h"
+    17	#include "TDirectory.h"
+    18	
+    19	#include <iostream>
+    20	#include <cstdlib> // For exit()
+    21	#include <vector>
+    22	#include <string>
+    23	#include <algorithm> // tolower()
+    24	
+    25	namespace {
+    26	  inline std::vector<TH1D*> GetVector(PlotUtils::MnvH1D* h)  {
+    27	    return std::vector<TH1D*>();
+    28	  }
+    29	
+    30	    inline std::vector<TH2D*> GetVector(PlotUtils::MnvH2D* h)  {
+    31	      return std::vector<TH2D*>();
+    32	    }
+    33	
+    34	  inline TH1D* NewHist(const TH1D& h) {
+    35	    return new TH1D (h);
+    36	  }
+    37	
+    38	  inline TH2D* NewHist(const TH2D& h) {
+    39	    return new TH2D (h);
+    40	  }
+    41	
+    42	  PlotUtils::FluxReweighter* _flux_reweighter(std::string plist,int nu_pdg,
+    43	                                              bool use_nuE_constraint,
+    44	                                              int n_flux_universes) {
+    45	    if (plist == "minerva1") {
+    46	      return new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    47	                                         plist,
+    48	                                         PlotUtils::FluxReweighter::gen2thin,
+    49	                                         PlotUtils::FluxReweighter::g4numiv5,
+    50	                                         n_flux_universes  );
+    51	    }
+    52	    else if (plist == "minerva5") {
+    53	      return new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    54	                                         plist,
+    55	                                         PlotUtils::FluxReweighter::gen2thin,
+    56	                                         PlotUtils::FluxReweighter::g4numiv5,
+    57	                                         n_flux_universes  );
+    58	    }
+    59	    else if (plist == "minerva7") {
+    60	      return new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    61	                                         plist,
+    62	                                         PlotUtils::FluxReweighter::gen2thin,
+    63	                                         PlotUtils::FluxReweighter::g4numiv5,
+    64	                                         n_flux_universes  );
+    65	    }
+    66	    else if (plist == "minerva9") {
+    67	      return new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    68	                                         plist,
+    69	                                         PlotUtils::FluxReweighter::gen2thin,
+    70	                                         PlotUtils::FluxReweighter::g4numiv5,
+    71	                                         n_flux_universes  );
+    72	    }
+    73	    else if (plist == "minerva13" || plist == "minerva13C" || plist == "minerva13c"|| plist == "minerva13E"|| plist == "minerva13e" ) {
+    74	      return new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    75	                                         "minerva13",
+    76	                                         PlotUtils::FluxReweighter::gen2thin,
+    77	                                         PlotUtils::FluxReweighter::g4numiv5,
+    78	                                         n_flux_universes  );
+    79	    }
+    80	    else if (plist == "2p2h") {
+    81	      return new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    82	                                         "minerva2p2h",
+    83	                                         PlotUtils::FluxReweighter::gen2thin,
+    84	                                         PlotUtils::FluxReweighter::g4numiv5,
+    85	                                         n_flux_universes  );
+    86	    }
+    87	    else if(plist == "minervame1a" || plist == "minervame1A"){
+    88	      return
+    89	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    90	                                         plist,
+    91	                                         PlotUtils::FluxReweighter::gen2thin,
+    92	                                         PlotUtils::FluxReweighter::g4numiv6,
+    93	                                         n_flux_universes );
+    94	    }
+    95	    else if(plist == "minervame1b" || plist == "minervame1B"){
+    96	      return
+    97	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+    98	                                         plist,
+    99	                                         PlotUtils::FluxReweighter::gen2thin,
+   100	                                         PlotUtils::FluxReweighter::g4numiv6,
+   101	                                         n_flux_universes );
+   102	
+   103	    }
+   104	    else if(plist == "minervame1c" || plist == "minervame1C"){
+   105	      return
+   106	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   107	                                         plist,
+   108	                                         PlotUtils::FluxReweighter::gen2thin,
+   109	                                         PlotUtils::FluxReweighter::g4numiv6,
+   110	                                         n_flux_universes );
+   111	
+   112	    }
+   113	    else if(plist == "minervame1d" || plist == "minervame1D"){
+   114	      return
+   115	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   116	                                         plist,
+   117	                                         PlotUtils::FluxReweighter::gen2thin,
+   118	                                         PlotUtils::FluxReweighter::g4numiv6,
+   119	                                         n_flux_universes );
+   120	
+   121	    }
+   122	    else if(plist == "minervame1e" || plist == "minervame1E"){
+   123	      return
+   124	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   125	                                         plist,
+   126	                                         PlotUtils::FluxReweighter::gen2thin,
+   127	                                         PlotUtils::FluxReweighter::g4numiv6,
+   128	                                         n_flux_universes );
+   129	
+   130	    }
+   131	    else if(plist == "minervame1f" || plist == "minervame1F"){
+   132	      return
+   133	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   134	                                         plist,
+   135	                                         PlotUtils::FluxReweighter::gen2thin,
+   136	                                         PlotUtils::FluxReweighter::g4numiv6,
+   137	                                         n_flux_universes );
+   138	
+   139	    }
+   140	    else if(plist == "minervame1g" || plist == "minervame1G"){
+   141	      return
+   142	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   143	                                         plist,
+   144	                                         PlotUtils::FluxReweighter::gen2thin,
+   145	                                         PlotUtils::FluxReweighter::g4numiv6,
+   146	                                         n_flux_universes );
+   147	
+   148	    }
+   149	    else if(plist == "minervame1h" || plist == "minervame1H"){
+   150	      return
+   151	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   152	                                         plist,
+   153	                                         PlotUtils::FluxReweighter::gen2thin,
+   154	                                         PlotUtils::FluxReweighter::g4numiv6,
+   155	                                         n_flux_universes );
+   156	
+   157	    }
+   158	    else if(plist == "minervame1l" || plist == "minervame1L"){
+   159	      return
+   160	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   161	                                         plist,
+   162	                                         PlotUtils::FluxReweighter::gen2thin,
+   163	                                         PlotUtils::FluxReweighter::g4numiv6,
+   164	                                         n_flux_universes );
+   165	    }
+   166	    else if(plist == "minervame1m" || plist == "minervame1M"){
+   167	      return
+   168	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   169	                                         plist,
+   170	                                         PlotUtils::FluxReweighter::gen2thin,
+   171	                                         PlotUtils::FluxReweighter::g4numiv6,
+   172	                                         n_flux_universes );
+   173	    }
+   174	    else if(plist == "minervame1n" || plist == "minervame1N"){
+   175	      return
+   176	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   177	                                         plist,
+   178	                                         PlotUtils::FluxReweighter::gen2thin,
+   179	                                         PlotUtils::FluxReweighter::g4numiv6,
+   180	                                         n_flux_universes );
+   181	
+   182	    }
+   183	    else if(plist == "minervame1o" || plist == "minervame1O"){
+   184	      return
+   185	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   186	                                         plist,
+   187	                                         PlotUtils::FluxReweighter::gen2thin,
+   188	                                         PlotUtils::FluxReweighter::g4numiv6,
+   189	                                         n_flux_universes );
+   190	    }
+   191	    else if(plist == "minervame1p" || plist == "minervame1P"){
+   192	      return
+   193	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   194	                                         plist,
+   195	                                         PlotUtils::FluxReweighter::gen2thin,
+   196	                                         PlotUtils::FluxReweighter::g4numiv6,
+   197	                                         n_flux_universes );
+   198	
+   199	    }
+   200	    else if (plist == "minervame1d1m1nweightedave") {
+   201	      return
+   202	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   203	                                         plist,
+   204	                                         PlotUtils::FluxReweighter::gen2thin,
+   205	                                         PlotUtils::FluxReweighter::g4numiv6,
+   206	                                         n_flux_universes );
+   207	
+   208	    }
+   209	    else if(plist == "minervame5a" || plist == "minervame5A"){
+   210	      return
+   211	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   212	                                         plist,
+   213	                                         PlotUtils::FluxReweighter::gen2thin,
+   214	                                         PlotUtils::FluxReweighter::g4numiv6,
+   215	                                         n_flux_universes );
+   216	
+   217	    }
+   218	    else if(plist == "minervame6a" || plist == "minervame6A"){
+   219	      return
+   220	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   221	                                         plist,
+   222	                                         PlotUtils::FluxReweighter::gen2thin,
+   223	                                         PlotUtils::FluxReweighter::g4numiv6,
+   224	                                         n_flux_universes );
+   225	    }
+   226	    else if(plist == "minervame6b" || plist == "minervame6B"){
+   227	      return
+   228	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   229	                                         plist,
+   230	                                         PlotUtils::FluxReweighter::gen2thin,
+   231	                                         PlotUtils::FluxReweighter::g4numiv6,
+   232	                                         n_flux_universes );
+   233	    }
+   234	    else if(plist == "minervame6c" || plist == "minervame6C"){
+   235	      return
+   236	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   237	                                         plist,
+   238	                                         PlotUtils::FluxReweighter::gen2thin,
+   239	                                         PlotUtils::FluxReweighter::g4numiv6,
+   240	                                         n_flux_universes );
+   241	    }
+   242	    else if(plist == "minervame6d" || plist == "minervame6D"){
+   243	      return
+   244	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   245	                                         plist,
+   246	                                         PlotUtils::FluxReweighter::gen2thin,
+   247	                                         PlotUtils::FluxReweighter::g4numiv6,
+   248	                                         n_flux_universes );
+   249	    }
+   250	    else if(plist == "minervame6e" || plist == "minervame6E"){
+   251	      return
+   252	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   253	                                         plist,
+   254	                                         PlotUtils::FluxReweighter::gen2thin,
+   255	                                         PlotUtils::FluxReweighter::g4numiv6,
+   256	                                         n_flux_universes );
+   257	    }
+   258	    else if(plist == "minervame6f" || plist == "minervame6F"){
+   259	      return
+   260	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   261	                                         plist,
+   262	                                         PlotUtils::FluxReweighter::gen2thin,
+   263	                                         PlotUtils::FluxReweighter::g4numiv6,
+   264	                                         n_flux_universes );
+   265	    }
+   266	    else if(plist == "minervame6g" || plist == "minervame6G"){
+   267	      return
+   268	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   269	                                         plist,
+   270	                                         PlotUtils::FluxReweighter::gen2thin,
+   271	                                         PlotUtils::FluxReweighter::g4numiv6,
+   272	                                         n_flux_universes );
+   273	    }
+   274	    else if(plist == "minervame6h" || plist == "minervame6H"){
+   275	      return
+   276	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   277	                                         plist,
+   278	                                         PlotUtils::FluxReweighter::gen2thin,
+   279	                                         PlotUtils::FluxReweighter::g4numiv6,
+   280	                                         n_flux_universes );
+   281	    }
+   282	    else if(plist == "minervame6i" || plist == "minervame6I"){
+   283	      return
+   284	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   285	                                         plist,
+   286	                                         PlotUtils::FluxReweighter::gen2thin,
+   287	                                         PlotUtils::FluxReweighter::g4numiv6,
+   288	                                         n_flux_universes );
+   289	    }
+   290	    else if(plist == "minervame6j" || plist == "minervame6J"){
+   291	      return
+   292	          new PlotUtils::FluxReweighter( nu_pdg, use_nuE_constraint,
+   293	                                         plist,
+   294	                                         PlotUtils::FluxReweighter::gen2thin,
+   295	                                         PlotUtils::FluxReweighter::g4numiv6,
+   296	                                         n_flux_universes );
+   297	    }
+   298	
+   299	
+   300	    else {
+   301	      std::cerr << "ERROR flux_reweighter playlist string unrecognized "
+   302	                << plist << std::endl;
+   303	      std::exit(1);
+   304	    }
+   305	  }
+   306	}
+   307	
+   308	namespace PlotUtils
+   309	{
+   310	  //============================================================================
+   311	  FluxReweighter::FluxReweighter(int nuPDG,
+   312	      bool applyNuEConstraint,
+   313	      enum EPlaylist playlist,
+   314	      enum EFluxVersion fluxVersion,
+   315	      enum EG4NumiVersion g4NumiVersion,
+   316	      int nUniverses/*= 200*/)
+   317	  {
+   318	    // cache the current directory
+   319	    TDirectory* original_dir = gDirectory->CurrentDirectory();
+   320	
+   321	    // for the LE nUniverses can't be greater than 100
+   322	    if (LeOrMe(playlist)==1&&nUniverses>100) {
+   323	      nUniverses = 100;
+   324	    }
+   325	
+   326	    // These member variables need to be set here because they're used downstream within the constructor
+   327	    m_applyNuEConstraint = applyNuEConstraint;
+   328	    m_nFluxUniverses = nUniverses;
+   329	    m_fluxErrorName = "Flux";
+   330	
+   331	    m_fluxReweightNu    = GetFluxMnvH1D(abs(nuPDG),    playlist, fluxVersion, g4NumiVersion);
+   332	    m_fluxReweightNubar = GetFluxMnvH1D(-1*abs(nuPDG), playlist, fluxVersion, g4NumiVersion);
+   333	
+   334	    d_Playlist = playlist;
+   335	    if (applyNuEConstraint) {
+   336	      std::cout << "Applying flux constraint to nu histogram" << std::endl;
+   337	      m_fluxReweightNu = Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( m_fluxReweightNu );
+   338	      std::cout << "Applying flux constraint to nubar histogram" << std::endl;
+   339	      m_fluxReweightNubar = Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( m_fluxReweightNubar );
+   340	    }
+   341	
+   342	    // Downstream methods require access to the original set of universe weights, so we will propagate an un-truncated
+   343	    // copy of the flux histograms for local use, but not to be passed on to the user
+   344	  //  m_fluxReweightNu_Ref = m_fluxReweightNu->Clone();
+   345	  //  m_fluxReweightNubar_Ref = m_fluxReweightNubar->Clone();
+   346	
+   347	    if(nuPDG>0)m_fluxReweightNu_Ref = m_fluxReweightNu->Clone();
+   348	    else{
+   349	
+   350	    m_fluxReweightNu_Ref = m_fluxReweightNubar->Clone();
+   351	
+   352	    }
+   353	    if (nUniverses < 1000) {
+   354	      TruncateNumberOfFluxUniverses( m_fluxReweightNu , nUniverses );
+   355	      TruncateNumberOfFluxUniverses( m_fluxReweightNubar , nUniverses );
+   356	    }
+   357	
+   358	    m_fluxGenNu    = GetFluxMnvH1D(abs(nuPDG),    playlist, fluxVersion, g4NumiVersion, true);
+   359	    m_fluxGenNubar = GetFluxMnvH1D(-1*abs(nuPDG), playlist, fluxVersion, g4NumiVersion, true);
+   360	    m_reweightMELowNuDataMC = GetMELowNuMnvH1D();
+   361	
+   362	    SetFluxSysMnvH1D(nuPDG,fluxVersion);
+   363	
+   364	    m_MELowNuDataMCRatioSpline = GetSpline(m_reweightMELowNuDataMC);
+   365	
+   366	    // return to the original directory
+   367	    original_dir->cd();
+   368	  }
+   369	
+   370	
+   371	  //============================================================================
+   372	  FluxReweighter::FluxReweighter(int nuPDG,
+   373	      bool applyNuEConstraint,
+   374	      std::string playlist_str,
+   375	      enum EFluxVersion fluxVersion,
+   376	      enum EG4NumiVersion g4NumiVersion,
+   377	      int nUniverses/*= 200*/)
+   378	  {
+   379	    // cache the current directory
+   380	    TDirectory* original_dir = gDirectory->CurrentDirectory();
+   381	
+   382	    // These member variables need to be set here because they're used
+   383	    // downstream within the constructor
+   384	    m_applyNuEConstraint = applyNuEConstraint;
+   385	    m_nFluxUniverses = nUniverses;
+   386	    m_fluxErrorName = "Flux";
+   387	
+   388	    FluxReweighter::EPlaylist playlist = GetPlaylistEnum(playlist_str);
+   389	    d_Playlist = playlist;
+   390	
+   391	    // for the LE nUniverses can't be greater than 100
+   392	    if (LeOrMe(playlist)==1&&nUniverses>100) {
+   393	      nUniverses = 100;
+   394	    }
+   395	
+   396	    m_fluxReweightNu    = GetFluxMnvH1D(abs(nuPDG),    playlist, fluxVersion, g4NumiVersion);
+   397	    m_fluxReweightNubar = GetFluxMnvH1D(-1*abs(nuPDG), playlist, fluxVersion, g4NumiVersion);
+   398	
+   399	    if (applyNuEConstraint) {
+   400	      //std::cout << "Applying flux constraint to nu histogram" << std::endl;
+   401	      m_fluxReweightNu =
+   402	          Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( m_fluxReweightNu );
+   403	      //std::cout << "Applying flux constraint to nubar histogram" << std::endl;
+   404	      m_fluxReweightNubar =
+   405	          Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( m_fluxReweightNubar );
+   406	    }
+   407	
+   408	    // Downstream methods require access to the original set of universe
+   409	    // weights, so we will propagate an un-truncated copy of the flux
+   410	    // histograms for local use, but not to be passed on to the user
+   411	    //m_fluxReweightNu_Ref = m_fluxReweightNu->Clone();
+   412	    //m_fluxReweightNubar_Ref = m_fluxReweightNubar->Clone();
+   413	     if(nuPDG>0)m_fluxReweightNu_Ref = m_fluxReweightNu->Clone();
+   414	    else{
+   415	
+   416	    m_fluxReweightNu_Ref = m_fluxReweightNubar->Clone();
+   417	
+   418	    }
+   419	
+   420	    if (nUniverses < 1000) {
+   421	      TruncateNumberOfFluxUniverses( m_fluxReweightNu,    nUniverses );
+   422	      TruncateNumberOfFluxUniverses( m_fluxReweightNubar, nUniverses );
+   423	    }
+   424	
+   425	    m_fluxGenNu    = GetFluxMnvH1D(abs(nuPDG),    playlist, fluxVersion, g4NumiVersion, true);
+   426	    m_fluxGenNubar = GetFluxMnvH1D(-1*abs(nuPDG), playlist, fluxVersion, g4NumiVersion, true);
+   427	    m_reweightMELowNuDataMC = GetMELowNuMnvH1D();
+   428	
+   429	    SetFluxSysMnvH1D(nuPDG,fluxVersion);
+   430	
+   431	    m_MELowNuDataMCRatioSpline = GetSpline(m_reweightMELowNuDataMC);
+   432	
+   433	    // return to the original directory
+   434	    original_dir->cd();
+   435	  }
+   436	
+   437	
+   438	  //============================================================================
+   439	  FluxReweighter::FluxReweighter(MnvH1D* fluxGenNu,
+   440	                                 MnvH1D* fluxGenNubar,
+   441	                                 MnvH1D* fluxReweightNu,
+   442	                                 MnvH1D* fluxReweightNubar,
+   443	                                 TSpline3* MELowNuDataMCRatioSpline,
+   444	                                 bool applyNuEConstraint)
+   445	    : m_fluxGenNu(fluxGenNu),
+   446	      m_fluxGenNubar(fluxGenNubar),
+   447	      m_fluxReweightNu(fluxReweightNu),
+   448	      m_fluxReweightNubar(fluxReweightNubar),
+   449	      m_MELowNuDataMCRatioSpline(MELowNuDataMCRatioSpline)
+   450	  {
+   451	    // cache the current directory
+   452	    TDirectory* original_dir = gDirectory->CurrentDirectory();
+   453	
+   454	    if (applyNuEConstraint) {
+   455	      std::cout << "Applying flux constraint to nu histogram" << std::endl;
+   456	      m_fluxReweightNu =
+   457	          Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( m_fluxReweightNu );
+   458	      std::cout << "Applying flux constraint to nubar histogram" << std::endl;
+   459	      m_fluxReweightNubar =
+   460	          Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( m_fluxReweightNubar );
+   461	    }
+   462	    m_applyNuEConstraint = applyNuEConstraint;
+   463	    m_nFluxUniverses = 1000;
+   464	    m_fluxErrorName = "Flux";
+   465	
+   466	    // return to the original directory
+   467	    original_dir->cd();
+   468	  }
+   469	
+   470	
+   471	  //============================================================================
+   472	  FluxReweighter::~FluxReweighter()
+   473	  {
+   474	    delete m_fluxGenNu;
+   475	    delete m_fluxGenNubar;
+   476	    delete m_fluxReweightNu;
+   477	    delete m_fluxReweightNubar;
+   478	    delete m_fluxReweightNu_Ref;
+   479	    //delete m_fluxReweightNubar_Ref;
+   480	    delete m_MELowNuDataMCRatioSpline;
+   481	    delete m_reweightMELowNuDataMC;
+   482	  }
+   483	
+   484	
+   485	  //============================================================================
+   486	  MnvHistoConstrainer& FluxReweighter::Constrainer()
+   487	  {
+   488	    static MnvHistoConstrainer* _constrainer=0;
+   489	    if (!_constrainer) {
+   490	      _constrainer=new MnvHistoConstrainer;
+   491	
+   492	      const char* mparam=gSystem->Getenv("MPARAMFILES");
+   493	      if (!mparam || !strlen(mparam)) {
+   494	        std::cout << "$MPARAMFILES is not set. Can't find universe weights for "
+   495	                  << "nu+e constraint" << std::endl;
+   496	        std::exit(1);
+   497	      }
+   498	      std::string filename(mparam);
+   499	      int iplaylist = LeOrMe(d_Playlist);
+   500	      // Timebeing 1 = LE; 2 = ME (ALL Playlist)
+   501	      if (iplaylist == 1) {
+   502	        filename+="/FluxConstraints/nu+e_eroica.txt";
+   503	      }
+   504	      //Using the combined fhc+rhc+imd constraint
+   505	      else if (iplaylist == 2 or iplaylist==3) {
+   506		filename+="/FluxConstraints/sorted_NuEConstraint_FHC_RHC_IMD.txt";
+   507	      }
+   508	
+   509	      //This is the nu+e method with fhc measurement
+   510	      /*      
+   511	      else if (iplaylist == 2 || iplaylist==3) {
+   512		filename+="/FluxConstraints/nu+e_ME_spectrum.txt";
+   513	      }
+   514	      */
+   515	      
+   516	      //This is the IMD method
+   517	      /*
+   518	      else if (iplaylist == 2 or iplaylist==3) {
+   519		std::cout << "I am running with the IMD constraint" << std::endl;
+   520	      	filename+="/FluxConstraints/IMDweights_unordered.txt";
+   521	      }
+   522	      */
+   523	      //This is the nu+e method with rhc measurement
+   524	      /*
+   525	      else if (iplaylist ==3){
+   526	        filename +="/FluxConstraints/sorted_nu+e_RHC_Final.txt";
+   527	
+   528	      }
+   529	      */
+   530	      _constrainer->LoadConstraint( "nu+e", filename );
+   531	
+   532	      _constrainer->SetSpectatorCorrectionStrategy("Flux_BeamFocus", MnvHistoConstrainer::PRESERVE_FRACTIONAL_ERR);
+   533	      _constrainer->SetSpectatorCorrectionStrategy("ppfx1_Total", MnvHistoConstrainer::PRESERVE_FRACTIONAL_ERR);
+   534	    }
+   535	    return *_constrainer;
+   536	  }
+   537	
+   538	
+   539	  //======================================================================
+   540	  MnvH1D* FluxReweighter::GetMnvH1D(TString filename, TString histname)
+   541	  {
+   542	    TFile f(filename);
+   543	    if (f.IsZombie()) {
+   544	      std::cout << "Can't open flux file with name " << filename << std::endl;
+   545	      std::exit(1);
+   546	    }
+   547	    MnvH1D* ret=(MnvH1D*)f.Get(histname);
+   548	    if (!ret) {
+   549	      std::cout << "Can't find flux histogram with name " << histname << " in file " << filename << std::endl;
+   550	      std::exit(1);
+   551	    }
+   552	    ret->SetDirectory(0);
+   553	    return ret;
+   554	  }
+   555	
+   556	  /*
+   557	  //============================================================================
+   558	  MnvH1D* FluxReweighter::GetTargetFluxMnvH1D(int nuPDG,
+   559	                                              std::string tar_mat,
+   560	                                              std::string project_dir)
+   561	  {
+   562	
+   563	    if( nuPDG != 14 ) {
+   564	      std::cout << "FRW: Target fluxes have been generated for muon neutrinos only" <<std::endl;
+   565	      std::exit(1);
+   566	    }
+   567	
+   568	    if( !m_applyNuEConstraint ) {
+   569	      std::cout << "FRW: Target fluxes have been generated for nu-e constraints only" <<std::endl;
+   570	      std::exit(1);
+   571	    }
+   572	
+   573	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   574	    if (!plotutils || !strlen(plotutils)) {
+   575	      std::cout << "$PLOTUTILSROOT is not set. Can't find flux histograms" << std::endl;
+   576	      std::exit(1);
+   577	    }
+   578	
+   579	    //NOTE: Target fluxes are made with gen2thin and g4numiv6 - 9/7/2021
+   580	
+   581	    TString tracker_filename = TString::Format("%s/data/flux_daisy/%s/flux_with_errors/flux_tracker.root",
+   582	                                                plotutils,
+   583	                                                project_dir.c_str(),
+   584	                                                tar_mat.c_str());
+   585	
+   586	    TString tarfilename = TString::Format("%s/data/flux_daisy/%s/flux_with_errors/flux_%s.root",
+   587	                                           plotutils,
+   588	                                           project_dir.c_str(),
+   589	                                           tar_mat.c_str());
+   590	
+   591	    TString histName = TString::Format("flux");
+   592	
+   593	    MnvH1D* tracker_flux = GetMnvH1D(tracker_filename, histName);
+   594	    MnvH1D* tar_flux     = GetMnvH1D(tarfilename, histName);
+   595	
+   596	    //Will use ratio of target/tracker to supply a weight to make the correct flux universes
+   597	
+   598	    MnvH1D* h_flux       = (MnvH1D*)m_fluxReweightNu->Clone(Form("flux_%s",tar_mat.c_str()));
+   599	    MnvH1D* ratio_flux   = (MnvH1D*)m_fluxReweightNu->Clone(Form("tmp_flux_ratio_%s",tar_mat.c_str())); 
+   600	    ratio_flux->ClearAllErrorBands();
+   601	    ratio_flux->Reset();
+   602	
+   603	    //Create a ratio of targets/tracker
+   604	    for( int iBin = 0; iBin < ratio_flux->GetNbinsX()+2; ++iBin )
+   605	    {
+   606	      double binCenter = ratio_flux->GetBinCenter(iBin);
+   607	
+   608	      int iBinTracker  = tracker_flux->FindBin(binCenter);
+   609	      int iBinTarget   = tar_flux->FindBin(binCenter);
+   610	
+   611	      double content_tracker = tracker_flux->GetBinContent(iBinTracker);
+   612	      double content_target  = tar_flux->GetBinContent(iBinTarget);
+   613	
+   614	      ratio_flux->SetBinContent( iBin, content_tracker > 0 ? content_target/content_tracker : 1.0 );
+   615	      ratio_flux->SetBinError(   iBin, 0.0 );
+   616	    }
+   617	
+   618	    ratio_flux->AddMissingErrorBandsAndFillWithCV( *h_flux );
+   619	    h_flux->Multiply( h_flux, ratio_flux );
+   620	
+   621	    //std::vector< std::string > vert_error_names = h_flux->GetVertErrorBandNames();
+   622	    //for( auto &name : vert_error_names ) {
+   623	    //  if( strcmp( name.c_str(), "Flux" ) != 0 ) h_flux->PopVertErrorBand(name);
+   624	    //}
+   625	
+   626	    //std::vector< std::string > lat_error_names  = h_flux->GetLatErrorBandNames();
+   627	    //for( auto &name : lat_error_names ) {
+   628	    //  if( strcmp( name.c_str(), "Flux" ) != 0 ) h_flux->PopLatErrorBand(name);
+   629	    //}
+   630	
+   631	    return h_flux;
+   632	
+   633	  }
+   634	
+   635	  //============================================================================
+   636	  MnvH1D* FluxReweighter::GetDaisyParamMnvH1D(int nuPDG,
+   637	                                              std::string tar_mat,
+   638	                                              std::string project_dir)
+   639	  {
+   640	
+   641	    if( nuPDG != 14 ) {
+   642	      std::cout << "FRW: Daisy reweights have been generated for muon neutrinos only" <<std::endl;
+   643	      std::exit(1);
+   644	    }
+   645	
+   646	    if( !m_applyNuEConstraint ) {
+   647	      std::cout << "FRW: Daisy reweights have been generated for nu-e constraints only" <<std::endl;
+   648	      std::exit(1);
+   649	    }
+   650	
+   651	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   652	    if (!plotutils || !strlen(plotutils)) {
+   653	      std::cout << "$PLOTUTILSROOT is not set. Can't find daisy reweights" << std::endl;
+   654	      std::exit(1);
+   655	    }
+   656	
+   657	    MnvH1D* h_param;
+   658	
+   659	    if( strcmp( tar_mat.c_str(), "tracker" ) == 0 ) {
+   660	      h_param = new MnvH1D("tracker_param_hist", "tracker_param_hist;Flux Bin;Weight", 12, 0., 12.);
+   661	      for( int iBin = 1; iBin <= 12; ++iBin ) {
+   662	        h_param->SetBinContent(iBin, 1);
+   663	        h_param->SetBinError(iBin, 0);
+   664	      }
+   665	    }
+   666	    else{
+   667	      TString filename = TString::Format("%s/data/flux_daisy/%s/out_%s_000100.root",
+   668	                                           plotutils,
+   669	                                           project_dir.c_str(),
+   670	                                           tar_mat.c_str());
+   671	
+   672	      TString histName = TString::Format("param_hist");
+   673	
+   674	      //std::cout<<"FRW: Getting daisy reweight parameters"<<std::endl;
+   675	      h_param = GetMnvH1D(filename, histName);
+   676	    }
+   677	    return h_param;    
+   678	
+   679	  }
+   680	  */
+   681	
+   682	//============================================================================
+   683	// assumes files in
+   684	// /data/flux_daisy/neutrinos AND /data/flux_daisy/antineutrinos
+   685	// NOTE that it was decided not to use daisy reweight fot water target
+   686	MnvH1D* FluxReweighter::GetTargetFluxMnvH1D(int nuPDG,
+   687	                                              std::string tar_mat,
+   688	                                              std::string project_dir)
+   689	{
+   690	  
+   691	    if( !m_applyNuEConstraint ) {
+   692	      std::cout << "FRW: Target fluxes have been generated for FHC + RHC nu-e + IMD constraints only" <<std::endl;
+   693	      std::exit(1);
+   694	    }
+   695		
+   696	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   697	    if (!plotutils || !strlen(plotutils)) {
+   698	      std::cout << "$PLOTUTILSROOT is not set. Can't find flux histograms" << std::endl;
+   699	      std::exit(1);
+   700	    }
+   701	
+   702	    //NOTE: Target fluxes are made with gen2thin and g4numiv6 - 17/02/2022
+   703		
+   704	    // define file variables
+   705	    TString tracker_filename;
+   706	    TString tarfilename;
+   707	    TString histName;
+   708	    MnvH1D* tracker_flux;
+   709	    MnvH1D* tar_flux;
+   710	    MnvH1D* h_flux;
+   711	    MnvH1D* ratio_flux;
+   712	
+   713	    if( nuPDG == 14 ) {
+   714	      std::cout << "FRW: Using target fluxes for muon NEUTRINOS" <<std::endl;
+   715		  
+   716	      tracker_filename = TString::Format("%s/data/flux_daisy/neutrinos/%s/flux_with_errors/flux_tracker.root",
+   717	                                                  plotutils,
+   718	                                                  project_dir.c_str(),
+   719	                                                  tar_mat.c_str());
+   720	
+   721	      tarfilename = TString::Format("%s/data/flux_daisy/neutrinos/%s/flux_with_errors/flux_%s.root",
+   722	                                             plotutils,
+   723	                                             project_dir.c_str(),
+   724	                                             tar_mat.c_str());
+   725	      /*
+   726												 
+   727		    // Old fluxes that have been generated for FHC nu-e constraint only										 
+   728	      TString tracker_filename = TString::Format("%s/data/flux_daisy/%s/flux_with_errors/flux_tracker.root",
+   729	                                                          plotutils,
+   730	                                                          project_dir.c_str(),
+   731	                                                          tar_mat.c_str());
+   732	
+   733	      TString tarfilename = TString::Format("%s/data/flux_daisy/%s/flux_with_errors/flux_%s.root",
+   734	                                                     plotutils,
+   735	                                                     project_dir.c_str(),
+   736	                                                     tar_mat.c_str());
+   737												 
+   738												 
+   739		    */
+   740												 
+   741	      histName = TString::Format("flux");
+   742	
+   743	      tracker_flux = GetMnvH1D(tracker_filename, histName);
+   744	      tar_flux     = GetMnvH1D(tarfilename, histName);
+   745	
+   746	      //Will use ratio of target/tracker to supply a weight to make the correct flux universes
+   747	
+   748	      h_flux       = (MnvH1D*)m_fluxReweightNu->Clone(Form("flux_%s",tar_mat.c_str()));
+   749	      ratio_flux   = (MnvH1D*)m_fluxReweightNu->Clone(Form("tmp_flux_ratio_%s",tar_mat.c_str())); 
+   750	      
+   751	    }
+   752		
+   753	    else if( nuPDG == -14 ) {
+   754	      std::cout << "FRW: Using target fluxes for muon ANTINEUTRINOS" <<std::endl;
+   755		  
+   756	      tracker_filename = TString::Format("%s/data/flux_daisy/antineutrinos/%s/flux_with_errors/flux_tracker.root",
+   757	                                                  plotutils,
+   758	                                                  project_dir.c_str(),
+   759	                                                  tar_mat.c_str());
+   760	
+   761	      tarfilename = TString::Format("%s/data/flux_daisy/antineutrinos/%s/flux_with_errors/flux_%s.root",
+   762	                                             plotutils,
+   763	                                             project_dir.c_str(),
+   764	                                             tar_mat.c_str());
+   765												 
+   766	      histName = TString::Format("flux");
+   767	
+   768	      tracker_flux = GetMnvH1D(tracker_filename, histName);
+   769	      tar_flux     = GetMnvH1D(tarfilename, histName);
+   770	
+   771	      //Will use ratio of target/tracker to supply a weight to make the correct flux universes
+   772	
+   773	      h_flux       = (MnvH1D*)m_fluxReweightNubar->Clone(Form("flux_%s",tar_mat.c_str()));
+   774	      ratio_flux   = (MnvH1D*)m_fluxReweightNubar->Clone(Form("tmp_flux_ratio_%s",tar_mat.c_str())); 
+   775	      
+   776	    }
+   777		
+   778	    else {
+   779	      std::cout << "FRW: Cannot use target fluxes for given PDG (not generated). " <<std::endl;
+   780	      
+   781	    }
+   782	
+   783	
+   784	    ratio_flux->ClearAllErrorBands();
+   785	    ratio_flux->Reset();
+   786		
+   787	
+   788	    //Create a ratio of targets/tracker
+   789	    for( int iBin = 0; iBin < ratio_flux->GetNbinsX()+2; ++iBin )
+   790	    {
+   791	      double binCenter = ratio_flux->GetBinCenter(iBin);
+   792	
+   793	      int iBinTracker  = tracker_flux->FindBin(binCenter);
+   794	      int iBinTarget   = tar_flux->FindBin(binCenter);
+   795	
+   796	      double content_tracker = tracker_flux->GetBinContent(iBinTracker);
+   797	      double content_target  = tar_flux->GetBinContent(iBinTarget);
+   798	
+   799	      ratio_flux->SetBinContent( iBin, content_tracker > 0 ? content_target/content_tracker : 1.0 );
+   800	      ratio_flux->SetBinError(   iBin, 0.0 );
+   801	    }
+   802	
+   803	    ratio_flux->AddMissingErrorBandsAndFillWithCV( *h_flux );
+   804	    h_flux->Multiply( h_flux, ratio_flux );
+   805	
+   806	    //std::vector< std::string > vert_error_names = h_flux->GetVertErrorBandNames();
+   807	    //for( auto &name : vert_error_names ) {
+   808	    //  if( strcmp( name.c_str(), "Flux" ) != 0 ) h_flux->PopVertErrorBand(name);
+   809	    //}
+   810	
+   811	    //std::vector< std::string > lat_error_names  = h_flux->GetLatErrorBandNames();
+   812	    //for( auto &name : lat_error_names ) {
+   813	    //  if( strcmp( name.c_str(), "Flux" ) != 0 ) h_flux->PopLatErrorBand(name);
+   814	    //}
+   815	
+   816	    return h_flux;
+   817	
+   818	  }
+   819	
+   820	//============================================================================
+   821	  MnvH1D* FluxReweighter::GetDaisyParamMnvH1D(int nuPDG,
+   822	                                              std::string tar_mat,
+   823	                                              std::string project_dir)
+   824	  {
+   825	    
+   826		  if( !m_applyNuEConstraint ) {
+   827	      std::cout << "FRW: Target fluxes have been generated for FHC + RHC nu-e + IMD constraints only" <<std::endl;
+   828	      std::exit(1);
+   829	    }
+   830	
+   831	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   832	    if (!plotutils || !strlen(plotutils)) {
+   833	      std::cout << "$PLOTUTILSROOT is not set. Can't find daisy reweights" << std::endl;
+   834	      std::exit(1);
+   835	    }
+   836	
+   837	    MnvH1D* h_param;
+   838	
+   839	    if( strcmp( tar_mat.c_str(), "tracker" ) == 0 ) {
+   840	      h_param = new MnvH1D("tracker_param_hist", "tracker_param_hist;Flux Bin;Weight", 12, 0., 12.);
+   841	      for( int iBin = 1; iBin <= 12; ++iBin ) {
+   842	        h_param->SetBinContent(iBin, 1);
+   843	        h_param->SetBinError(iBin, 0);
+   844	      }
+   845	    }
+   846	    else{
+   847		  TString filename;
+   848		  
+   849		  if( nuPDG == 14 ){
+   850		      std::cout << "Using tracker flux weights for muon NEUTRINOS" <<std::endl;
+   851		      filename = TString::Format("%s/data/flux_daisy/neutrinos/%s/out_%s_000100.root",
+   852		                                           plotutils,
+   853		                                           project_dir.c_str(),
+   854		                                           tar_mat.c_str());
+   855	
+   856		  }
+   857		  
+   858		  else if ( nuPDG == -14 ){
+   859			  std::cout << "Using tracker flux weights for muon ANTINEUTRINOS" <<std::endl;
+   860		      filename = TString::Format("%s/data/flux_daisy/antineutrinos/%s/out_%s_000100.root",
+   861		                                           plotutils,
+   862		                                           project_dir.c_str(),
+   863		  										   tar_mat.c_str());
+   864			  
+   865		  }
+   866		  else{
+   867			  std::cout << "Tracker flux weights were not generated for given PDG. " <<std::endl;
+   868			  std::exit(1);
+   869		  	
+   870		  }
+   871			
+   872	
+   873	      TString histName = TString::Format("param_hist");
+   874	
+   875	      //std::cout<<"FRW: Getting daisy reweight parameters"<<std::endl;
+   876	      h_param = GetMnvH1D(filename, histName);
+   877	    }
+   878	    return h_param;    
+   879	
+   880	  }
+   881	  
+   882	  //============================================================================
+   883	  MnvH1D* FluxReweighter::GetFluxMnvH1D(int nuPDG,
+   884	      enum EPlaylist playlist,
+   885	      enum EFluxVersion fluxVersion,
+   886	      enum EG4NumiVersion g4NumiVersion,
+   887	      bool useGen  /*=false*/)
+   888	  {
+   889	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   890	    if (!plotutils || !strlen(plotutils)) {
+   891	      std::cout << "$PLOTUTILSROOT is not set. Can't find flux histograms" << std::endl;
+   892	      std::exit(1);
+   893	    }
+   894	
+   895	    if(m_applyNuEConstraint&&IsCustomFlux(fluxVersion)){
+   896	      std::cout << "Application of the nu-e constraint is incompapitable with using a non-PPFX flux!! I'm exiting." << std::endl;
+   897	      std::exit(1);
+   898	    }
+   899	
+   900	    const char* constraintString;
+   901	    int iplaylist = LeOrMe(playlist);
+   902	    // Timebeing 1 = LE; 2 = ME (ALL Playlist)
+   903	    if (iplaylist==1) {
+   904	      constraintString =  "";
+   905	    }
+   906	    //This is the nu+e
+   907	    if(iplaylist==2 or iplaylist==3)constraintString = m_applyNuEConstraint ? "_rearrangedUniverses" : "";
+   908	    //This is the IMD method
+   909	    //    if(iplaylist==2 or iplaylist==3)constraintString = m_applyNuEConstraint ? "" : "";
+   910	
+   911	    TString filename;
+   912	    const char* histName;
+   913	
+   914	    // If using lowNu or highNu flux, use different prescription to fetch it
+   915	    // For the reweighted flux
+   916	    if(IsCustomFlux(fluxVersion)&&!useGen){
+   917	      histName = fluxForSystematicsHistName(fluxVersion);
+   918	      filename = TString::Format("%s/data/flux/sys/%s.root",
+   919	            plotutils,
+   920	            histName);
+   921	    }
+   922	    // For the generated flux
+   923	    else if(IsCustomFlux(fluxVersion)&&useGen){
+   924	      histName = "genFlux_coarseBinning_MnvH1D";
+   925	      filename = TString::Format("%s/data/flux/sys/genFlux_coarseBinning_MnvH1D.root",
+   926	            plotutils);
+   927	    }
+   928	    // Default prescription for assembling file and hist names
+   929	    else{
+   930	      const char* fluxString;
+   931	      fluxString = useGen ? g4NumiVersionString(g4NumiVersion) : fluxVersionString(fluxVersion);
+   932	
+   933	      filename = TString::Format("%s/data/flux/flux-%s-pdg%d-%s%s.root",
+   934	            plotutils,
+   935	            fluxString,
+   936	            nuPDG,
+   937	            playlistString(playlist),
+   938	            constraintString);
+   939	
+   940	      histName = useGen ? "flux_E_unweighted" : "flux_E_cvweighted";
+   941	    }
+   942	
+   943	    std::cout << "FRW: this is the flux file I'm using: " << filename << std::endl;
+   944	    return GetMnvH1D(filename, histName);
+   945	  }
+   946	  //============================================================================
+   947	
+   948	  MnvH1D* FluxReweighter::GetMELowNuMnvH1D()
+   949	  {
+   950	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   951	    if (!plotutils || !strlen(plotutils)) {
+   952	      std::cout << "$PLOTUTILSROOT is not set. Can't find flux histograms" << std::endl;
+   953	      std::exit(1);
+   954	    }
+   955	
+   956	    TString filename(TString::Format("%s/data/lowNuReweight/lowNuReweight.root",
+   957	          plotutils));
+   958	    return GetMnvH1D(filename, "ratio");
+   959	  }
+   960	
+   961	
+   962	  //============================================================================
+   963	  TSpline3* FluxReweighter::GetSpline(MnvH1D *h)
+   964	  {
+   965	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+   966	    if (!plotutils || !strlen(plotutils)) {
+   967	      std::cout << "$PLOTUTILSROOT is not set. Can't find flux histograms" << std::endl;
+   968	      std::exit(1);
+   969	    }
+   970	
+   971	    TSpline3 *spl = new TSpline3(h);
+   972	    return spl;
+   973	  }
+   974	
+   975	
+   976	  //============================================================================
+   977	  double FluxReweighter::GetFluxCVWeight( double Enu, int nuPDG )
+   978	  {
+   979	    MnvH1D* genFlux = nuPDG > 0 ? m_fluxGenNu      : m_fluxGenNubar;
+   980	    MnvH1D* newFlux = nuPDG > 0 ? m_fluxReweightNu : m_fluxReweightNubar;
+   981	
+   982	    double num = newFlux->Interpolate( Enu );
+   983	    double dem = genFlux->Interpolate( Enu );
+   984	    if(Enu>75.){//Condition to avoid the large slope at large Enu which causes crazy weights. Slope in that region is 10^-22 or so
+   985	      num = newFlux->GetBinContent(newFlux->FindBin(Enu));
+   986	      dem = genFlux->GetBinContent(genFlux->FindBin(Enu));
+   987	    }
+   988	    if (num ==0 ||dem ==0) {
+   989	      return 1;
+   990	    }
+   991	    return  num/dem;
+   992	  }
+   993	
+   994	
+   995	  //============================================================================
+   996	  // Suggested alternate name: FRW::GetFluxSystematicUniverseWeight
+   997	  double FluxReweighter::GetSysUniFluxWeightCorrection( double Enu,
+   998	                                                        int nuPDG,
+   999	                                                        std::string sys_name,
+  1000	                                                        int universe)
+  1001	  // This method returns the multiplicative factor that should modify the flux weight
+  1002	  // in the evaluation of some systematic universes. Currently the use cases are
+  1003	  // the evaluation in FHC of the muon-momentum-shifted universes for most users and
+  1004	  // the high-nu flux analysis
+  1005	  // ----------
+  1006	  // POSSIBLY USEFUL TO FUTURE ANALYSTS: This method assumes the user
+  1007	  // uses the same names for their systematic universes as the available
+  1008	  // fluxes. To accomodate a different naming scheme, the user would have
+  1009	  // to add a method that maps user names onto the "standard" naming
+  1010	  // scheme. The best idea I have for how that would work is that FRW
+  1011	  // would own a map, and the user would interactively add (or overwrite)
+  1012	  // entries in that map to reflect their naming scheme. RDF 2020-01-10
+  1013	  // ----------
+  1014	  {
+  1015	    // FluxCorrection not valid for nue
+  1016	    if (nuPDG == -12 ) return 1;
+  1017	    if (nuPDG == 12 ) return 1;
+  1018	
+  1019	    //We also don't want the wrong sign fluxes to pick this correction... -David L. putting in Amit's changes from CVS commit 1.106-8
+  1020	    int iPlaylist = LeOrMe(d_Playlist);
+  1021	    if (iPlaylist==2 && nuPDG==-14) return 1;
+  1022	    if (iPlaylist==3 && nuPDG==14) return 1;
+  1023	
+  1024	    // FluxCorrection not valid for RHC numu (yet?) It is now!
+  1025	    //if (nuPDG == -14 ) return 1; Commented out now that RHC is valid. -David L. putting in Amit's changes from CVS commit 1.106-8
+  1026	    // Correction for Amit's Emu fluxes not useful above 15 GeV
+  1027	    if (sys_name == "Muon_Energy" && Enu > 15) return 1;
+  1028	    if (sys_name == "Muon_Energy_MINOS" && Enu > 15) return 1;
+  1029	
+  1030	    TH1D* cvFlux = m_fluxSystematicsMnvH1D;
+  1031	
+  1032	    TH1D* sysFlux = (TH1D*)m_fluxSystematicsMnvH1D->GetVertErrorBand(sys_name.c_str())->GetHist(universe);
+  1033	
+  1034	    /* Commented out now that RHC is valid. Replaced by the above lines. -David L. putting in Amit's changes from CVS commit 1.106-8
+  1035	    TH1D* cvFlux = nuPDG > 0 ?
+  1036	      m_fluxSystematicsMnvH1D :
+  1037	      NULL; // We may have a RHC case in the future
+  1038	
+  1039	    TH1D* sysFlux = nuPDG > 0 ?
+  1040	        (TH1D*)m_fluxSystematicsMnvH1D->GetVertErrorBand(sys_name.c_str())->GetHist(universe) :
+  1041	        NULL; // We may have a RHC case in the future
+  1042	    */
+  1043	
+  1044	    double num = sysFlux->Interpolate( Enu );
+  1045	    double dem = cvFlux->Interpolate( Enu );
+  1046	
+  1047	    if (num == 0 || dem == 0) return 1;
+  1048	
+  1049	    return num/dem;
+  1050	  }
+  1051	
+  1052	
+  1053	  //======================================================================
+  1054	  void FluxReweighter::SetFluxSysMnvH1D( int nuPDG, enum EFluxVersion fluxVersion)
+  1055	  {
+  1056	    const char* plotutils=gSystem->Getenv("PLOTUTILSROOT");
+  1057	    bool isNu = nuPDG>0?true:false; //Kept around in Amit CVS commit 1.108 for correlated muon fluxes. -David L.
+  1058	    const char* fluxName = fluxForSystematicsHistName(fluxVersion);
+  1059	
+  1060	    //if(nuPDG>0){ Commented out so that RHC correlations in fact grab the necessary file/histo. -David L.
+  1061	    //std::cout << "Creating alternate sysmap using the " << fluxName << " flux." << std::endl;
+  1062	    TFile myfile(TString::Format("%s/data/flux/sys/%s.root",plotutils,fluxName));
+  1063	    m_fluxSystematicsMnvH1D = (MnvH1D*)myfile.Get(TString::Format("%s",fluxName));
+  1064	    // assert will provide useful debug info only when the code is compiled in debug mode
+  1065	    assert(m_fluxSystematicsMnvH1D != NULL && "Failed to find a histogram of that name in FluxReweighter!  Maybe its name changed?");
+  1066	    m_fluxSystematicsMnvH1D->SetDirectory(0);
+  1067	    //} Commented out so that RHC correlations in fact grab the necessary file/histo. -David L.
+  1068	
+  1069	  }
+  1070	
+  1071	
+  1072	  //============================================================================
+  1073	  double FluxReweighter::GetMELowNuFluxWeight( double Enu )
+  1074	  {
+  1075	    return m_MELowNuDataMCRatioSpline->Eval(Enu);
+  1076	  }
+  1077	
+  1078	
+  1079	  //============================================================================
+  1080	  MnvH1D* FluxReweighter::GetRebinnedFluxGenerated(int nuPDG,
+  1081	                                                   MnvH1D* template_hist)
+  1082	  {
+  1083	    MnvH1D* h_flux = this->GetFluxGenerated(nuPDG);
+  1084	        //h_flux->SaveAs("fluxchecker_wowiggle.root");
+  1085	
+  1086	    MnvH1D* h_flux_rebinned =
+  1087	        (MnvH1D*)template_hist->Clone("generatedflux_rebinned");
+  1088	    h_flux_rebinned->ClearAllErrorBands();
+  1089	    h_flux_rebinned->Reset();
+  1090	
+  1091	    TH1D* tmp_flux_cv     =
+  1092	        new TH1D(h_flux->GetCVHistoWithStatError());
+  1093	    TH1D* tmp_template_cv =
+  1094	        new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1095	
+  1096	    FluxReweighter::RebinFluxHist(tmp_flux_cv,tmp_template_cv);
+  1097	
+  1098	    //CV first
+  1099	    for(int i=0;i<h_flux_rebinned->GetNbinsX()+2;i++)
+  1100	      h_flux_rebinned->SetBinContent(i,tmp_template_cv->GetBinContent(i));
+  1101	
+  1102	    //clean my mess
+  1103	    delete tmp_flux_cv;
+  1104	    delete tmp_template_cv;
+  1105	
+  1106	    //Now Flux Universes // DON'T Assume Flux is the only error
+  1107	    std::vector<std::string> vertNames = h_flux->GetVertErrorBandNames();
+  1108	    for(unsigned int k=0; k<vertNames.size(); ++k ) {
+  1109	      MnvVertErrorBand *errBand = h_flux->GetVertErrorBand( vertNames[k] );
+  1110	      const int universes = errBand->GetNHists();
+  1111	      std::vector<TH1D*> vert_hists;
+  1112	      for(int u=0;u<universes;++u) {
+  1113	        TH1D* tmp_flux = new TH1D(*errBand->GetHist( u ));
+  1114	        TH1D* tmp_template = new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1115	        tmp_template->SetName(Form("Flux_rebinned_universe_%d",u));
+  1116	        RebinFluxHist(tmp_flux,tmp_template);
+  1117	        vert_hists.push_back(tmp_template);
+  1118	      }
+  1119	      h_flux_rebinned->AddVertErrorBand( vertNames[k],vert_hists);
+  1120	      //clean my mess
+  1121	      for(std::vector<TH1D*>::iterator itHist = vert_hists.begin(); itHist != vert_hists.end(); ++itHist)
+  1122	        delete *itHist;
+  1123	    }
+  1124	    //AddMissingError with CV
+  1125	    h_flux_rebinned->AddMissingErrorBandsAndFillWithCV(*template_hist);
+  1126	    //h_flux_rebinned->SaveAs("Enu_Flux_nukecc.root");
+  1127	
+  1128	    return h_flux_rebinned;
+  1129	  }
+  1130	
+  1131	
+  1132	  //============================================================================
+  1133	  MnvH1D* FluxReweighter::GetRebinnedFluxReweighted(int nuPDG,
+  1134	                                                    MnvH1D* template_hist)
+  1135	  {
+  1136	    MnvH1D* h_flux = this->GetFluxReweighted(nuPDG);
+  1137	    h_flux->SaveAs("fluxchecker_wowiggle.root");
+  1138	
+  1139	    MnvH1D* h_flux_rebinned =
+  1140	        (MnvH1D*)template_hist->Clone("reweightedflux_rebinned");
+  1141	    h_flux_rebinned->ClearAllErrorBands();
+  1142	    h_flux_rebinned->Reset();
+  1143	
+  1144	    TH1D* tmp_flux_cv     =
+  1145	        new TH1D(h_flux->GetCVHistoWithStatError());
+  1146	    TH1D* tmp_template_cv =
+  1147	        new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1148	
+  1149	    FluxReweighter::RebinFluxHist(tmp_flux_cv,tmp_template_cv);
+  1150	
+  1151	    //CV first
+  1152	    for(int i=0;i<h_flux_rebinned->GetNbinsX()+2;i++)
+  1153	      h_flux_rebinned->SetBinContent(i,tmp_template_cv->GetBinContent(i));
+  1154	
+  1155	    //clean my mess
+  1156	    delete tmp_flux_cv;
+  1157	    delete tmp_template_cv;
+  1158	
+  1159	    //Now Flux Universes // DON'T Assume Flux is the only error
+  1160	    std::vector<std::string> vertNames = h_flux->GetVertErrorBandNames();
+  1161	    for(unsigned int k=0; k<vertNames.size(); ++k ) {
+  1162	      MnvVertErrorBand *errBand = h_flux->GetVertErrorBand( vertNames[k] );
+  1163	      const int universes = errBand->GetNHists();
+  1164	      std::vector<TH1D*> vert_hists;
+  1165	      for(int u=0;u<universes;++u) {
+  1166	        TH1D* tmp_flux = new TH1D(*errBand->GetHist( u ));
+  1167	        TH1D* tmp_template = new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1168	        tmp_template->SetName(Form("Flux_rebinned_universe_%d",u));
+  1169	        RebinFluxHist(tmp_flux,tmp_template);
+  1170	        vert_hists.push_back(tmp_template);
+  1171	      }
+  1172	      h_flux_rebinned->AddVertErrorBand( vertNames[k],vert_hists);
+  1173	      //clean my mess
+  1174	      for(std::vector<TH1D*>::iterator itHist = vert_hists.begin();
+  1175	          itHist != vert_hists.end(); ++itHist)
+  1176	        delete *itHist;
+  1177	    }
+  1178	    //AddMissingError with CV
+  1179	    h_flux_rebinned->AddMissingErrorBandsAndFillWithCV(*template_hist);
+  1180	    //h_flux_rebinned->SaveAs("Enu_Flux_nukecc.root");
+  1181	
+  1182	    // This method will fill the constraint weights in the Flux error band if appropriate
+  1183	    CheckAndFixFluxErrorBand( h_flux_rebinned );
+  1184	
+  1185	    return h_flux_rebinned;
+  1186	  }
+  1187	
+  1188	
+  1189	  //============================================================================
+  1190	  MnvH1D* FluxReweighter::GetRebinnedFluxReweighted_FromInputFlux(MnvH1D* input_flux,
+  1191	                                                                  MnvH1D* template_hist)
+  1192	  {
+  1193	    MnvH1D* h_flux = (MnvH1D*)input_flux->Clone("input_flux"); //this->GetFluxReweighted(nuPDG);
+  1194	
+  1195	    MnvH1D* h_flux_rebinned =
+  1196	        (MnvH1D*)template_hist->Clone("reweightedflux_rebinned");
+  1197	    h_flux_rebinned->ClearAllErrorBands();
+  1198	    h_flux_rebinned->Reset();
+  1199	
+  1200	    TH1D* tmp_flux_cv     =
+  1201	        new TH1D(h_flux->GetCVHistoWithStatError());
+  1202	    TH1D* tmp_template_cv =
+  1203	        new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1204	
+  1205	    FluxReweighter::RebinFluxHist(tmp_flux_cv,tmp_template_cv);
+  1206	
+  1207	    //CV first
+  1208	    for(int i=0;i<h_flux_rebinned->GetNbinsX()+2;i++)
+  1209	      h_flux_rebinned->SetBinContent(i,tmp_template_cv->GetBinContent(i));
+  1210	
+  1211	    //clean my mess
+  1212	    delete tmp_flux_cv;
+  1213	    delete tmp_template_cv;
+  1214	
+  1215	    //Now Flux Universes // DON'T Assume Flux is the only error
+  1216	    std::vector<std::string> vertNames = h_flux->GetVertErrorBandNames();
+  1217	    for(unsigned int k=0; k<vertNames.size(); ++k ) {
+  1218	      MnvVertErrorBand *errBand = h_flux->GetVertErrorBand( vertNames[k] );
+  1219	      const int universes = errBand->GetNHists();
+  1220	      std::vector<TH1D*> vert_hists;
+  1221	      for(int u=0;u<universes;++u) {
+  1222	        TH1D* tmp_flux = new TH1D(*errBand->GetHist( u ));
+  1223	        TH1D* tmp_template = new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1224	        tmp_template->SetName(Form("Flux_rebinned_universe_%d",u));
+  1225	        RebinFluxHist(tmp_flux,tmp_template);
+  1226	        vert_hists.push_back(tmp_template);
+  1227	      }
+  1228	      h_flux_rebinned->AddVertErrorBand( vertNames[k],vert_hists);
+  1229	      //clean my mess
+  1230	      for(std::vector<TH1D*>::iterator itHist = vert_hists.begin();
+  1231	          itHist != vert_hists.end(); ++itHist)
+  1232	        delete *itHist;
+  1233	    }
+  1234	
+  1235	    h_flux_rebinned->AddMissingErrorBandsAndFillWithCV(*template_hist);
+  1236	
+  1237	    //if (m_applyNuEConstraint) {
+  1238	    //  std::cout << "Applying flux constraint to rebinned histogram" << std::endl;
+  1239	    //  h_flux_rebinned = Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( h_flux_rebinned );
+  1240	    //}
+  1241	
+  1242	    return h_flux_rebinned;
+  1243	  }
+  1244	
+  1245	  //============================================================================
+  1246	  TH1D* FluxReweighter::GetRebinnedFluxReweighted_FromInputFlux(TH1D* input_flux,
+  1247	                                                                TH1D* template_hist)
+  1248	
+  1249	  {
+  1250	    TH1D* h_flux = (TH1D*)input_flux->Clone("input_flux"); //this->GetFluxReweighted(nuPDG);
+  1251	    TH1D* h_flux_rebinned = (TH1D*)template_hist->Clone("reweightedflux_rebinned");
+  1252	    //h_flux_rebinned->ClearAllErrorBands();
+  1253	    h_flux_rebinned->Reset();
+  1254	
+  1255	    TH1D* tmp_flux_cv     =(TH1D*)h_flux->Clone();
+  1256	    //new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1257	    TH1D* tmp_template_cv = (TH1D*)h_flux_rebinned->Clone();
+  1258	    //  new TH1D(h_flux_rebinned->GetCVHistoWithStatError());
+  1259	
+  1260	    FluxReweighter::RebinFluxHist(tmp_flux_cv,tmp_template_cv);
+  1261	    //CV first
+  1262	    for(int i=0;i<h_flux_rebinned->GetNbinsX()+2;i++)
+  1263	      h_flux_rebinned->SetBinContent(i,tmp_template_cv->GetBinContent(i));
+  1264	
+  1265	    //clean my mess
+  1266	    delete tmp_flux_cv;
+  1267	    delete tmp_template_cv;
+  1268	
+  1269	
+  1270	    //if (m_applyNuEConstraint) {
+  1271	    //  std::cout << "Applying flux constraint to rebinned histogram" << std::endl; 
+  1272	    //  h_flux_rebinned = Constrainer().ConstrainHisto<MnvH1D, MnvVertErrorBand>( h_flux_rebinned );
+  1273	    //}
+  1274	
+  1275	    return h_flux_rebinned;
+  1276	  }
+  1277	
+  1278	  //============================================================================
+  1279	  void FluxReweighter::RebinFluxHist(TH1D* h_flux, TH1D*&h_rebinned_flux)
+  1280	  {
+  1281	    //strategy is to recale orig by bin width (undo bin width normalization)
+  1282	    //then combine bins and then rescale by binwidth again
+  1283	    TH1D* scaler = (TH1D*)h_flux->Clone("fluxscaler");
+  1284	    TH1D* flux_cv = (TH1D*)h_flux->Clone("fluxcvtomod");
+  1285	    for(int i=1;i<scaler->GetNbinsX();i++)
+  1286	      scaler->SetBinContent(i,scaler->GetBinWidth(i));
+  1287	    flux_cv->Multiply(scaler);//undid bin width normalization
+  1288	    std::vector<double>rebinned_flux_bin_edges;
+  1289	    for(int i=1;i<h_rebinned_flux->GetNbinsX()+2;i++) { //need low edge of overflow (high edge of last bin)
+  1290	      rebinned_flux_bin_edges.push_back(h_rebinned_flux->GetBinLowEdge(i));
+  1291	    }
+  1292	    for(unsigned int i=0;i<rebinned_flux_bin_edges.size();i++) { //need low edge of overflow (high edge of last bin)
+  1293	      //std::cout<<i<<"  "<<h_rebinned_flux->GetBinLowEdge(i)<<std::endl;
+  1294	      //rebinned_flux_bin_edges.push_back(h_rebinned_flux->GetBinLowEdge(i));
+  1295	      //std::cout<<i<<"  "<<rebinned_flux_bin_edges[i]<<std::endl;
+  1296	    }
+  1297	    h_rebinned_flux = (TH1D*)flux_cv->Rebin(rebinned_flux_bin_edges.size()-1,
+  1298	                                            "Fluxrebinned",
+  1299	                                            &rebinned_flux_bin_edges[0]);
+  1300	    h_rebinned_flux->Scale(1.0,"width");//And redo bin width norm
+  1301	  }
+  1302	
+  1303	  //============================================================================
+  1304	  template<class MnvHistoType>
+  1305	  MnvHistoType* FluxReweighter::GetIntegratedFluxReweighted(int nuPDG,
+  1306	                                                      MnvHistoType* template_hist,
+  1307	                                                      double min_energy,
+  1308	                                                      double max_energy,
+  1309	                                                      bool use_muon_correlations)
+  1310	  {
+  1311	
+  1312	    // This is the hist that will be retured to the user. Start from a clean slate
+  1313	    MnvHistoType* h_flux_integrated = (MnvHistoType*)template_hist->Clone("reweightedflux_integrated");
+  1314	    h_flux_integrated->ClearAllErrorBands();
+  1315	    h_flux_integrated->Reset();
+  1316	
+  1317	    // The default flux prescription is PPFX plus correlated fluxes for
+  1318	    // "Muon_Energy" or "Muon_Energy_MINOS" systematic universes
+  1319	    if(m_useStandardFlux){
+  1320	
+  1321	      MnvH1D* h_flux_ppfx = this->GetFluxReweighted(nuPDG);
+  1322	
+  1323	      //Get bins to integrate over
+  1324	      int ppfx_b_min = h_flux_ppfx->FindBin( min_energy );
+  1325	      int ppfx_b_max = h_flux_ppfx->FindBin( max_energy );
+  1326	      //get integral
+  1327	      double int_flux_cv = h_flux_ppfx->Integral( ppfx_b_min, ppfx_b_max , "width" );
+  1328	      // The correlated muon fluxes only provide predictions below 15 GeV, which makes correcting
+  1329	      // the CV PPFX integrate flux a little more complicated
+  1330	      int ppfx_b_15GeV = h_flux_ppfx->FindBin( 15. );
+  1331	      double int_flux_cv_below15GeV;
+  1332	      double int_flux_cv_above15GeV;
+  1333	      if(min_energy>15.0){int_flux_cv_below15GeV = 0.;}
+  1334	      else{int_flux_cv_below15GeV = h_flux_ppfx->Integral( ppfx_b_min, ppfx_b_15GeV, "width" );}
+  1335	      if(max_energy<=15.0){int_flux_cv_above15GeV = 0.;}
+  1336	      else{int_flux_cv_above15GeV = h_flux_ppfx->Integral( ppfx_b_15GeV+1, ppfx_b_max , "width" );}
+  1337	      //CV first
+  1338	      for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1339	        h_flux_integrated->SetBinContent(i,int_flux_cv);
+  1340	
+  1341	      // Integrate flux in every "Flux" systematic universe
+  1342	      // To use a different PPFX error band, modify FRW initialization
+  1343	      MnvVertErrorBand *errBand = h_flux_ppfx->GetVertErrorBand(m_fluxErrorName);
+  1344	      const int universes = errBand->GetNHists();
+  1345	      auto flux_sys_hists = GetVector(h_flux_integrated);
+  1346	      for(int u=0;u<universes;++u) {
+  1347	        TH1D* tmp_flux = new TH1D(*errBand->GetHist( u ));
+  1348	        auto tmp_template = h_flux_integrated->GetCVHistoWithStatError();
+  1349	        tmp_template.SetName(Form("Flux_integrated_universe_%d",u));
+  1350	        double flux_uni = tmp_flux->Integral(ppfx_b_min,ppfx_b_max,"width");
+  1351	        for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1352	          tmp_template.SetBinContent(i,flux_uni);
+  1353	        flux_sys_hists.push_back(NewHist(tmp_template));
+  1354	      }
+  1355	      // Push the constructed error band into the return hist
+  1356	      h_flux_integrated->AddVertErrorBand(m_fluxErrorName,flux_sys_hists);
+  1357	
+  1358	      // Integrate flux in special correlated flux universes. This is a correction on
+  1359	      // the CV integrated flux calculated using separately produced systematic and CV
+  1360	      // fluxes. This matches the implementation of FRW::GetSysUniFluxWeightCorrection
+  1361	      if(use_muon_correlations){
+  1362	
+  1363	        // The correlated flux is constructed relative to a different CV
+  1364	        TH1D* tmp_flux_special_cv = m_fluxSystematicsMnvH1D;
+  1365	        //Get bins to integrate over
+  1366	        int special_b_min = tmp_flux_special_cv->FindBin( min_energy );
+  1367	        int special_b_max = tmp_flux_special_cv->FindBin( max_energy );
+  1368	        //get integral
+  1369	        double int_flux_special_cv = tmp_flux_special_cv->Integral(special_b_min,special_b_max,"width");
+  1370	
+  1371	        // Don't assume which convention the analyzer is using
+  1372	        std::vector<std::string> errorBandsToLoop;
+  1373	        if(template_hist->HasErrorBand("Muon_Energy")){errorBandsToLoop.push_back("Muon_Energy");}
+  1374	        if(template_hist->HasErrorBand("Muon_Energy_MINOS")){errorBandsToLoop.push_back("Muon_Energy_MINOS");}
+  1375	
+  1376	        for(unsigned int k=0; k<errorBandsToLoop.size(); ++k ) {
+  1377	          auto correlated_flux_hists = GetVector(h_flux_integrated);
+  1378	          MnvVertErrorBand *errBand = m_fluxSystematicsMnvH1D->GetVertErrorBand( errorBandsToLoop[k] );
+  1379	          for(int u=0;u<2;++u) { // There are two systematic variations corresponding to +/- 1 sigma
+  1380	            // Fetch correlated flux from separate container
+  1381	            TH1D* tmp_flux_special_sys = (TH1D*)errBand->GetHist(u);
+  1382	            auto tmp_template = h_flux_integrated->GetCVHistoWithStatError();
+  1383	            std::string tempString = Form("Flux_integrated_%s_universe_%d",errorBandsToLoop[k].c_str(),u);
+  1384	            tmp_template.SetName(tempString.c_str());
+  1385	            double int_flux_special_sys = tmp_flux_special_sys->Integral(special_b_min,special_b_max,"width");
+  1386	            for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1387	              tmp_template.SetBinContent(i,(int_flux_special_sys/int_flux_special_cv)*int_flux_cv_below15GeV+int_flux_cv_above15GeV);
+  1388	            correlated_flux_hists.push_back(NewHist(tmp_template));
+  1389	          }
+  1390	          // Push the constructed error band into the return hist.
+  1391	          // Figure out if the analyzer is using a LatErrorBand or VertErrorBand :/
+  1392	          if(template_hist->HasLatErrorBand(errorBandsToLoop[k])){
+  1393	            h_flux_integrated->AddLatErrorBand(errorBandsToLoop[k],correlated_flux_hists);
+  1394	          }
+  1395	          else{
+  1396	            h_flux_integrated->AddVertErrorBand(errorBandsToLoop[k],correlated_flux_hists);
+  1397	          }
+  1398	          // When MnvLatErrorBand goes away, replace the above (7) lines with the below line
+  1399	          //h_flux_integrated->AddVertErrorBand(errorBandsToLoop[k],correlated_flux_hists);
+  1400	        }
+  1401	
+  1402	      }
+  1403	
+  1404	    }
+  1405	
+  1406	    // If the low-nu or high-nu flux is being used, there is a correlated flux
+  1407	    // for many universes of the analysis
+  1408	    else{
+  1409	
+  1410	      // The correlated flux is constructed relative to a different CV
+  1411	      MnvH1D* h_flux_special = m_fluxSystematicsMnvH1D;
+  1412	      //Get bins to integrate over
+  1413	      int special_b_min = h_flux_special->FindBin( min_energy );
+  1414	      int special_b_max = h_flux_special->FindBin( max_energy );
+  1415	      //get integral
+  1416	      double int_flux_special_cv = h_flux_special->Integral(special_b_min,special_b_max,"width");
+  1417	
+  1418	      //CV first
+  1419	      for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1420	        h_flux_integrated->SetBinContent(i,int_flux_special_cv);
+  1421	
+  1422	      // Loop over user's vertical error bands
+  1423	      std::vector<std::string> vertErrorBandNames = template_hist->GetVertErrorBandNames();
+  1424	      for(unsigned int k=0; k<vertErrorBandNames.size(); ++k ) {
+  1425	        if(!h_flux_special->HasVertErrorBand(vertErrorBandNames[k])){continue;}
+  1426	        auto correlated_flux_hists = GetVector(h_flux_integrated);
+  1427	        //std::vector<THND*> correlated_flux_hists;
+  1428	        MnvVertErrorBand *errBand = h_flux_special->GetVertErrorBand( vertErrorBandNames[k] );
+  1429	        const int universes = errBand->GetNHists();
+  1430	        for(int u=0; u<universes; ++u ) {
+  1431	          // Fetch correlated flux from separate container
+  1432	          TH1D* tmp_flux_special_sys = (TH1D*)errBand->GetHist(u);
+  1433	          auto tmp_template = h_flux_integrated->GetCVHistoWithStatError();
+  1434	          std::string tempString = Form("Flux_integrated_%s_universe_%d",vertErrorBandNames[k].c_str(),u);
+  1435	          tmp_template.SetName(tempString.c_str());
+  1436	          double int_flux_special_sys = tmp_flux_special_sys->Integral(special_b_min,special_b_max,"width");
+  1437	          for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1438	            tmp_template.SetBinContent(i,int_flux_special_sys);
+  1439	          correlated_flux_hists.push_back(NewHist(tmp_template));
+  1440	        }
+  1441	        // Push the constructed error band into the return hist
+  1442	        h_flux_integrated->AddVertErrorBand(vertErrorBandNames[k],correlated_flux_hists);
+  1443	      }
+  1444	
+  1445	      // This block can go away when MnvLatErrorBand becomes deprecated
+  1446	      // Loop over user's lateral error bands
+  1447	      std::vector<std::string> latErrorBandNames = template_hist->GetLatErrorBandNames();
+  1448	      for(unsigned int k=0; k<latErrorBandNames.size(); ++k ) {
+  1449	        if(!h_flux_special->HasVertErrorBand(latErrorBandNames[k])){continue;}
+  1450	        auto correlated_flux_hists = GetVector(h_flux_integrated);
+  1451	        //std::vector<THND*> correlated_flux_hists;
+  1452	        MnvVertErrorBand *errBand = h_flux_special->GetVertErrorBand( latErrorBandNames[k] );
+  1453	        const int universes = errBand->GetNHists();
+  1454	        for(int u=0; u<universes; ++u ) {
+  1455	          // Fetch correlated flux from separate container
+  1456	          TH1D* tmp_flux_special_sys = (TH1D*)errBand->GetHist(u);
+  1457	          auto tmp_template = h_flux_integrated->GetCVHistoWithStatError();
+  1458	          std::string tempString = Form("Flux_integrated_%s_universe_%d",latErrorBandNames[k].c_str(),u);
+  1459	          tmp_template.SetName(tempString.c_str());
+  1460	          double int_flux_special_sys = tmp_flux_special_sys->Integral(special_b_min,special_b_max,"width");
+  1461	          for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1462	            tmp_template.SetBinContent(i,int_flux_special_sys);
+  1463	          correlated_flux_hists.push_back(NewHist(tmp_template));
+  1464	        }
+  1465	        // Push the constructed error band into the return hist
+  1466	        h_flux_integrated->AddLatErrorBand(latErrorBandNames[k],correlated_flux_hists);
+  1467	      }
+  1468	
+  1469	    }
+  1470	    // Fill CV for any systematic universes which don't have a non-CV flux prediction
+  1471	    h_flux_integrated->AddMissingErrorBandsAndFillWithCV(*template_hist);
+  1472	    this->CheckAndFixFluxErrorBand(h_flux_integrated);
+  1473	    return h_flux_integrated;
+  1474	
+  1475	  }
+  1476	  template MnvH1D* FluxReweighter::GetIntegratedFluxReweighted<MnvH1D>( int nuPDG,
+  1477	                                                                 MnvH1D* template_hist,
+  1478	                                                                 double min_energy,
+  1479	                                                                 double max_energy,
+  1480	                                                                 bool use_muon_correlations);
+  1481	  template MnvH2D* FluxReweighter::GetIntegratedFluxReweighted<MnvH2D>( int nuPDG,
+  1482	                                                                 MnvH2D* template_hist,
+  1483	                                                                 double min_energy,
+  1484	                                                                 double max_energy,
+  1485	                                                                 bool use_muon_correlations);
+  1486	
+  1487	
+  1488	
+  1489	  //============================================================================
+  1490	  template<class MnvHistoType>
+  1491	  MnvHistoType* FluxReweighter::GetIntegratedFluxReweighted_FromInputFlux(MnvH1D* input_flux,
+  1492	                                                                          MnvHistoType* template_hist,
+  1493	                                                                          double min_energy,
+  1494	                                                                          double max_energy)
+  1495	  {
+  1496	    MnvH1D* h_flux = (MnvH1D*)input_flux->Clone("input_flux");
+  1497	
+  1498	    MnvHistoType* h_flux_integrated =
+  1499	        (MnvHistoType*)template_hist->Clone("reweightedflux_integrated");
+  1500	
+  1501	    h_flux_integrated->ClearAllErrorBands();
+  1502	    h_flux_integrated->Reset();
+  1503	    //Get bins to integrate over
+  1504	    int b_min = h_flux->FindBin( min_energy );
+  1505	    int b_max = h_flux->FindBin( max_energy );
+  1506	
+  1507	    //get integral
+  1508	    double flux_cv = h_flux->Integral( b_min, b_max , "width" );
+  1509	    //CV first
+  1510	    for(int i=0;i<h_flux_integrated->GetSize();i++)
+  1511	      h_flux_integrated->SetBinContent(i,flux_cv);
+  1512	
+  1513	    h_flux_integrated->AddMissingErrorBandsAndFillWithCV(*template_hist);
+  1514	    //h_flux_integrated->SaveAs("x_Flux_XSecLooper.root");
+  1515	    return h_flux_integrated;
+  1516	  }
+  1517	  template MnvH1D* FluxReweighter::GetIntegratedFluxReweighted_FromInputFlux<MnvH1D>(MnvH1D* input_flux,
+  1518	                                                                                     MnvH1D* template_hist,
+  1519	                                                                                     double min_energy,
+  1520	                                                                                     double max_energy);
+  1521	  template MnvH2D* FluxReweighter::GetIntegratedFluxReweighted_FromInputFlux<MnvH2D>(MnvH1D* input_flux,
+  1522	                                                                                     MnvH2D* template_hist,
+  1523	                                                                                     double min_energy,
+  1524	                                                                                     double max_energy);
+  1525	
+  1526	
+  1527	  //============================================================================
+  1528	  MnvH1D* FluxReweighter::GetIntegratedTargetFlux(int nuPDG, 
+  1529	                                                  std::string tar_mat, 
+  1530	                                                  MnvH1D* template_hist, 
+  1531	                                                  double min_energy, 
+  1532	                                                  double max_energy, 
+  1533	                                                  std::string project_dir)
+  1534	  {
+  1535	    MnvH1D* h_flux = GetTargetFluxMnvH1D(nuPDG, tar_mat, project_dir);
+  1536	    MnvH1D* h_flux_integrated = GetIntegratedFluxReweighted_FromInputFlux( h_flux, template_hist, min_energy, max_energy );
+  1537	    
+  1538	    //Put in the correct flux universes
+  1539	    if( !h_flux_integrated->HasVertErrorBand("Flux") ) return h_flux_integrated;
+  1540	
+  1541	    MnvVertErrorBand* flux_int_band = h_flux_integrated->PopVertErrorBand("Flux");
+  1542	    MnvVertErrorBand* flux_band     = h_flux->GetVertErrorBand("Flux");
+  1543	
+  1544	    const int nUni = flux_int_band->GetNHists();
+  1545	    if( flux_int_band->GetNHists() > flux_band->GetNHists() ) 
+  1546	    {
+  1547	      std::cout<<"FRW: Target flux band only has "<<flux_band->GetNHists()<<" uni while hist has "<<flux_int_band->GetNHists()<<" uni"<<std::endl;
+  1548	      std::exit(1);
+  1549	    }
+  1550	
+  1551	    const int b_min = h_flux->FindBin( min_energy );
+  1552	    const int b_max = h_flux->FindBin( max_energy );
+  1553	    std::vector< TH1D* > flux_int_hists; 
+  1554	    for( int iUni = 0; iUni < nUni; ++iUni )
+  1555	    {
+  1556	      TH1D* tmp_flux_uni = (TH1D*)flux_int_band->GetHist(iUni)->Clone(Form("Custom_flux_integrated_universe_%d",iUni));
+  1557	      tmp_flux_uni->Clear();
+  1558	
+  1559	      double flux_int = flux_band->GetHist(iUni)->Integral( b_min, b_max, "width" );
+  1560	      for( int iBin = 0; iBin < tmp_flux_uni->GetSize(); ++iBin ) tmp_flux_uni->SetBinContent( iBin, flux_int );
+  1561	      flux_int_hists.push_back(tmp_flux_uni);
+  1562	    }
+  1563	
+  1564	    h_flux_integrated->AddVertErrorBand("Flux",flux_int_hists);
+  1565	
+  1566	    return h_flux_integrated;
+  1567	
+  1568	  }
+  1569	
+  1570	  MnvH2D* FluxReweighter::GetIntegratedTargetFlux(int nuPDG, 
+  1571	                                                        std::string tar_mat, 
+  1572	                                                        MnvH2D* template_hist, 
+  1573	                                                        double min_energy, 
+  1574	                                                        double max_energy, 
+  1575	                                                        std::string project_dir)
+  1576	  {
+  1577	    MnvH1D* h_flux = GetTargetFluxMnvH1D(nuPDG, tar_mat, project_dir);
+  1578	    MnvH2D* h_flux_integrated = GetIntegratedFluxReweighted_FromInputFlux( h_flux, template_hist, min_energy, max_energy );
+  1579	    
+  1580	    //Put in the correct flux universes (if the hist has the Flux vert error band)
+  1581	    if( !h_flux_integrated->HasVertErrorBand("Flux") ) return h_flux_integrated;
+  1582	
+  1583	    MnvVertErrorBand2D* flux_int_band = h_flux_integrated->PopVertErrorBand("Flux");
+  1584	    MnvVertErrorBand* flux_band       = h_flux->GetVertErrorBand("Flux");
+  1585	
+  1586	    const int nUni = flux_int_band->GetNHists();
+  1587	    if( flux_int_band->GetNHists() > flux_band->GetNHists() ) 
+  1588	    {
+  1589	      std::cout<<"FRW: Target flux band only has "<<flux_band->GetNHists()<<" uni while hist has "<<flux_int_band->GetNHists()<<" uni"<<std::endl;
+  1590	      std::exit(1);
+  1591	    }
+  1592	
+  1593	    const int b_min = h_flux->FindBin( min_energy );
+  1594	    const int b_max = h_flux->FindBin( max_energy );
+  1595	    std::vector< TH2D* > flux_int_hists; 
+  1596	    for( int iUni = 0; iUni < nUni; ++iUni )
+  1597	    {
+  1598	      TH2D* tmp_flux_uni = (TH2D*)flux_int_band->GetHist(iUni)->Clone(Form("Custom_flux_integrated_universe_%d",iUni));
+  1599	      tmp_flux_uni->Clear();
+  1600	
+  1601	      double flux_int = flux_band->GetHist(iUni)->Integral( b_min, b_max, "width" );
+  1602	      for( int iBin = 0; iBin < tmp_flux_uni->GetSize(); ++iBin ) tmp_flux_uni->SetBinContent( iBin, flux_int );
+  1603	      flux_int_hists.push_back(tmp_flux_uni);
+  1604	    }
+  1605	
+  1606	    h_flux_integrated->AddVertErrorBand("Flux",flux_int_hists);
+  1607	
+  1608	    return h_flux_integrated;
+  1609	  }
+  1610	  //============================================================================
+  1611	  MnvH1D* FluxReweighter::GetReweightedDaisySum(int nuPDG, 
+  1612	                                                std::string tar_mat, 
+  1613	                                                std::map<int, MnvH1D*> daisy_eff_hists, 
+  1614	                                                std::string project_dir)
+  1615	  {
+  1616	    MnvH1D* h_param = GetDaisyParamMnvH1D( nuPDG, tar_mat, project_dir );
+  1617	
+  1618	    const int nBins = h_param->GetNbinsX();
+  1619	    //Make sure there are the correct daisy keys
+  1620	    for( int iDaisy = 0; iDaisy < nBins; ++iDaisy ) { 
+  1621	      if( daisy_eff_hists.find(iDaisy) == daisy_eff_hists.end() ) {
+  1622	        std::cout<<"Daisy eff hists missing daisy "<<iDaisy<<std::endl;
+  1623	        std::exit(1);
+  1624	      }
+  1625	    }
+  1626	    MnvH1D* daisy_sum = (MnvH1D*)daisy_eff_hists[0]->Clone(Form("%s_daisySum",daisy_eff_hists[0]->GetName()));
+  1627	    daisy_sum->SetDirectory(0);
+  1628	    daisy_sum->Reset();
+  1629	    
+  1630	    for( int iDaisy = 0; iDaisy < nBins; ++iDaisy ) {
+  1631	      daisy_sum->Add( daisy_eff_hists[iDaisy], h_param->GetBinContent(iDaisy+1) );
+  1632	    }
+  1633	
+  1634	    //Insert error bands from the param hist
+  1635	    std::vector< std::string > vert_error_names = h_param->GetVertErrorBandNames();
+  1636	    for( auto& name : vert_error_names ) {
+  1637	      MnvVertErrorBand* error_band = h_param->GetVertErrorBand(name);
+  1638	      const int nHists = error_band->GetNHists();
+  1639	      daisy_sum->AddVertErrorBand(name, nHists);
+  1640	
+  1641	      for( uint iHist = 0; iHist < error_band->GetNHists(); ++iHist){
+  1642	        for( int iDaisy = 0; iDaisy < nBins; ++iDaisy ) {
+  1643	          daisy_sum->GetVertErrorBand(name)->GetHist(iHist)->Add( daisy_eff_hists[iDaisy], 
+  1644	                          error_band->GetHist(iHist)->GetBinContent(iDaisy+1) );
+  1645	        }
+  1646	      }
+  1647	    }
+  1648	    return daisy_sum;
+  1649	  }
+  1650	
+  1651	  MnvH2D* FluxReweighter::GetReweightedDaisySum(int nuPDG, 
+  1652	                                                std::string tar_mat, 
+  1653	                                                std::map<int, MnvH2D*> daisy_eff_hists, 
+  1654	                                                std::string project_dir)
+  1655	  {
+  1656	    MnvH1D* h_param = GetDaisyParamMnvH1D( nuPDG, tar_mat, project_dir );
+  1657	
+  1658	    const int nBins = h_param->GetNbinsX();
+  1659	    //Make sure there are the correct daisy keys
+  1660	    for( int iDaisy = 0; iDaisy < nBins; ++iDaisy ) { 
+  1661	      if( daisy_eff_hists.find(iDaisy) == daisy_eff_hists.end() ) {
+  1662	        std::cout<<"Daisy eff hists missing daisy "<<iDaisy<<std::endl;
+  1663	        std::exit(1);
+  1664	      }
+  1665	    }
+  1666	    MnvH2D* daisy_sum = (MnvH2D*)daisy_eff_hists[0]->Clone(Form("%s_daisySum",daisy_eff_hists[0]->GetName()));
+  1667	    daisy_sum->SetDirectory(0);
+  1668	    daisy_sum->Reset();
+  1669	    
+  1670	    for( int iDaisy = 0; iDaisy < nBins; ++iDaisy ) {
+  1671	      daisy_sum->Add( daisy_eff_hists[iDaisy], h_param->GetBinContent(iDaisy+1) );
+  1672	    }
+  1673	
+  1674	    //Insert error bands from the param hist
+  1675	    std::vector< std::string > vert_error_names = h_param->GetVertErrorBandNames();
+  1676	    for( auto& name : vert_error_names ) {
+  1677	      MnvVertErrorBand* error_band = h_param->GetVertErrorBand(name);
+  1678	      const int nHists = error_band->GetNHists();
+  1679	      daisy_sum->AddVertErrorBand(name, nHists);
+  1680	
+  1681	      for( uint iHist = 0; iHist < error_band->GetNHists(); ++iHist){
+  1682	        for( int iDaisy = 0; iDaisy < nBins; ++iDaisy ) {
+  1683	          daisy_sum->GetVertErrorBand(name)->GetHist(iHist)->Add( daisy_eff_hists[iDaisy], 
+  1684	                          error_band->GetHist(iHist)->GetBinContent(iDaisy+1) );
+  1685	        }
+  1686	      }
+  1687	    }
+  1688	    return daisy_sum;
+  1689	  }
+  1690	  //============================================================================
+  1691	  double FluxReweighter::GetFluxErrorWeight( double Enu, int nuPDG,
+  1692	                                             unsigned int universe )
+  1693	  {
+  1694	    if ( universe >= m_nFluxUniverses )
+  1695	    {
+  1696	      std::cout << Form( "Flux universe %d requested.  FluxReweighter has universes 0-%d",
+  1697	                          universe, m_nFluxUniverses - 1 )
+  1698	                << std::endl;
+  1699	      std::exit(1);
+  1700	    }
+  1701	    MnvH1D* newFlux = nuPDG > 0 ? m_fluxReweightNu : m_fluxReweightNubar;
+  1702	    double univFluxVal =
+  1703	        newFlux->GetVertErrorBand( m_fluxErrorName )->GetHist( universe )->Interpolate( Enu );
+  1704	
+  1705	
+  1706	    double num = univFluxVal;
+  1707	    double dem = newFlux->Interpolate( Enu );
+  1708	
+  1709	    if(Enu>75.){//Condition to avoid the large slope at large Enu which causes crazy weights. Slope in that region is 10^-22 or so
+  1710	      num = newFlux->GetVertErrorBand( m_fluxErrorName )->GetHist( universe )->GetBinContent(newFlux->FindBin(Enu));
+  1711	      dem = newFlux->GetBinContent(newFlux->FindBin(Enu));
+  1712	    }
+  1713	    if (num ==0 ||dem ==0) {
+  1714	      //      std::cout << " I have the following num and denominator " << num << "\t" << dem << std::endl;
+  1715	      return 1;
+  1716	    }
+  1717	    return  num/dem;
+  1718	  }
+  1719	
+  1720	
+  1721	  //============================================================================
+  1722	  std::vector<double> FluxReweighter::GetFluxErrorWeights(double Enu, int nuPDG)
+  1723	  {
+  1724	    std::vector<double> weights;
+  1725	    for ( unsigned int iuniv = 0; iuniv < m_nFluxUniverses; ++iuniv )
+  1726	    {
+  1727	      weights.push_back( GetFluxErrorWeight(Enu, nuPDG, iuniv) );
+  1728	    }
+  1729	    return weights;
+  1730	  }
+  1731	
+  1732	
+  1733	  //============================================================================
+  1734	  template<class MnvHistoType>
+  1735	    void FluxReweighter::AddFluxErrorBand( MnvHistoType* h )
+  1736	    {
+  1737	      if ( !h->AddVertErrorBand( m_fluxErrorName, m_nFluxUniverses ) )
+  1738	      {
+  1739	        std::cout << Form( "Could not add flux error band to histogram \"%s\"",
+  1740	                           h->GetName() ) << std::endl;
+  1741	        std::exit(1);
+  1742	      }
+  1743	      PropagateNuEConstraintWeights( h );
+  1744	    }
+  1745	  template void FluxReweighter::AddFluxErrorBand<MnvH1D>( MnvH1D* h );
+  1746	  template void FluxReweighter::AddFluxErrorBand<MnvH2D>( MnvH2D* h );
+  1747	
+  1748	
+  1749	  //============================================================================
+  1750	  template<class MnvHistoType>
+  1751	    bool FluxReweighter::CheckFluxErrorBand( MnvHistoType* h )
+  1752	    {
+  1753	      if (h->GetVertErrorBand(m_fluxErrorName)->GetUnivWgts()) return true; //There are weights
+  1754	      else return false;
+  1755	    }
+  1756	  template bool FluxReweighter::CheckFluxErrorBand<MnvH1D>( MnvH1D* h );
+  1757	  template bool FluxReweighter::CheckFluxErrorBand<MnvH2D>( MnvH2D* h );
+  1758	
+  1759	  //============================================================================
+  1760	  template<class MnvHistoType>
+  1761	  void FluxReweighter::CheckAndFixFluxErrorBand( MnvHistoType* h )
+  1762	    {
+  1763	      if (!h->GetVertErrorBand(m_fluxErrorName)->GetUnivWgts())
+  1764	        PropagateNuEConstraintWeights( h );
+  1765	    }
+  1766	  template void FluxReweighter::CheckAndFixFluxErrorBand<MnvH1D>( MnvH1D* h );
+  1767	  template void FluxReweighter::CheckAndFixFluxErrorBand<MnvH2D>( MnvH2D* h );
+  1768	
+  1769	
+  1770	  //============================================================================
+  1771	  void FluxReweighter::TruncateNumberOfFluxUniverses( MnvH1D* h, int nUniverses)
+  1772	  {
+  1773	    MnvVertErrorBand *poppedFluxErrorBand = h->PopVertErrorBand("Flux");
+  1774	    std::vector<TH1D*> fluxUniverses = poppedFluxErrorBand->GetHists();
+  1775	    fluxUniverses.resize(nUniverses);
+  1776	    h->AddVertErrorBand("Flux",fluxUniverses);
+  1777	    CheckAndFixFluxErrorBand(h);
+  1778	  }
+  1779	
+  1780	
+  1781	  //============================================================================
+  1782	  void FluxReweighter::FillFluxErrorBand( MnvH1D* h, double val,
+  1783	                                          double cvweight, double Enu,
+  1784	                                          int nuPDG )
+  1785	  {
+  1786	    if ( !IsFluxErrorBandOK( h ) ) std::exit(1);
+  1787	    std::vector<double> fluxErrorWeights = GetFluxErrorWeights(Enu, nuPDG);
+  1788	    double cvWeightFromMe = 1.0;
+  1789	    if ( !h->FillVertErrorBand( m_fluxErrorName, val, fluxErrorWeights,
+  1790	                                cvweight, cvWeightFromMe ) )
+  1791	    {
+  1792	      std::cout << Form( "Could not fill flux error band for MnvH1D \"%s\"",
+  1793	                         h->GetName() )
+  1794	                << std::endl;
+  1795	      std::exit(1);
+  1796	    }
+  1797	    PropagateNuEConstraintWeights( h );
+  1798	  }
+  1799	
+  1800	
+  1801	  //===========================================================================
+  1802	  void FluxReweighter::FillFluxErrorBand( MnvH2D* h, double xval, double yval,
+  1803	                                          double cvweight, double Enu,
+  1804	                                          int nuPDG )
+  1805	  {
+  1806	    if ( !IsFluxErrorBandOK( h ) ) std::exit(1);
+  1807	    std::vector<double> fluxErrorWeights = GetFluxErrorWeights(Enu, nuPDG);
+  1808	    double cvWeightFromMe = 1.0;
+  1809	    if ( !h->FillVertErrorBand( m_fluxErrorName, xval, yval, fluxErrorWeights,
+  1810	                                cvweight, cvWeightFromMe ) )
+  1811	    {
+  1812	      std::cout << Form( "Could not fill flux error band for MnvH2D \"%s\"",
+  1813	                         h->GetName() )
+  1814	                << std::endl;
+  1815	      std::exit(1);
+  1816	    }
+  1817	    PropagateNuEConstraintWeights( h );
+  1818	  }
+  1819	
+  1820	
+  1821	  //============================================================================
+  1822	  template<class MnvHistoType>
+  1823	    bool FluxReweighter::IsFluxErrorBandOK( MnvHistoType* h )
+  1824	    {
+  1825	      if ( !h->HasVertErrorBand( m_fluxErrorName ) )
+  1826	      {
+  1827	        std::cout << Form( "Flux error band not found for histogram \"%s\"",
+  1828	                           h->GetName() )
+  1829	                  << std::endl;
+  1830	        return false;
+  1831	      }
+  1832	      else if ( h->GetVertErrorBand( m_fluxErrorName )->GetNHists() !=
+  1833	                m_nFluxUniverses )
+  1834	      {
+  1835	        std::cout << Form( "Histogram \"%s\" has %d flux universes. Exactly %d required",
+  1836	                           h->GetName(),
+  1837	                           h->GetVertErrorBand( m_fluxErrorName )->GetNHists(),
+  1838	                           m_nFluxUniverses )
+  1839	                  << std::endl;
+  1840	        return false;
+  1841	      }
+  1842	      else return true;
+  1843	    }
+  1844	  template bool FluxReweighter::IsFluxErrorBandOK<MnvH1D>( MnvH1D* h );
+  1845	  template bool FluxReweighter::IsFluxErrorBandOK<MnvH2D>( MnvH2D* h );
+  1846	
+  1847	
+  1848	  //============================================================================
+  1849	  template<class MnvHistoType>
+  1850	    void FluxReweighter::PropagateNuEConstraintWeights( MnvHistoType* h )
+  1851	    {
+  1852	      if ( m_applyNuEConstraint &&
+  1853	           fabs( h->GetVertErrorBand( m_fluxErrorName )->GetUnivWgt(0) -
+  1854	             m_fluxReweightNu_Ref->GetVertErrorBand( m_fluxErrorName )->GetUnivWgt(0) ) > 1.0e-6 )
+  1855	      {
+  1856	        //std::cout << Form( "Propagating v+e constraint weights to flux error band of histogram \"%s\"",
+  1857	        //                     h->GetName() )
+  1858	        //            << std::endl;
+  1859	        for ( unsigned int iuniv = 0; iuniv < m_nFluxUniverses; ++iuniv )
+  1860	        {
+  1861	          h->GetVertErrorBand( m_fluxErrorName )->SetUnivWgt( iuniv,
+  1862	              m_fluxReweightNu_Ref->GetVertErrorBand( m_fluxErrorName )->GetUnivWgt( iuniv ) );
+  1863	        }
+  1864	      }
+  1865	      else {
+  1866	        //std::cout << "I'm inside PropagateNuEConstraintWeights, "
+  1867	        //          << "but I didn't satisfy the condition to apply the "
+  1868	        //          << "weights..."
+  1869	        //          << std::endl;
+  1870	      }
+  1871	    }
+  1872	  template void FluxReweighter::PropagateNuEConstraintWeights<MnvH1D>( MnvH1D* h );
+  1873	  template void FluxReweighter::PropagateNuEConstraintWeights<MnvH2D>( MnvH2D* h );
+  1874	
+  1875	
+  1876	  //============================================================================
+  1877	  const char* FluxReweighter::g4NumiVersionString(EG4NumiVersion v)
+  1878	  {
+  1879	    switch(v) {
+  1880	      case g4numiv5: // This also handles "eroica"
+  1881	        return "g4numiv5";
+  1882	      case g4numiv6:
+  1883	        return "g4numiv6";
+  1884	      default:
+  1885	        std::cerr << "No g4numi version " << v << std::endl;
+  1886	        std::exit(1);
+  1887	    }
+  1888	  }
+  1889	
+  1890	
+  1891	  //======================================================================
+  1892	  const char* FluxReweighter::fluxForSystematicsHistName(EFluxVersion fluxVersion)
+  1893	  {
+  1894	    int iPlaylist = LeOrMe(d_Playlist); // Adding in Amit's CVS commit 1.106-8 changes -David L.
+  1895	    switch(fluxVersion){
+  1896	      case lowNu:
+  1897	        m_useStandardFlux = false;
+  1898	        return "lowNuFlux_MnvH1D";
+  1899	      case highNu:
+  1900	        m_useStandardFlux = false;
+  1901	        return "highNuFlux_MnvH1D";
+  1902	      case ppfxDebug:
+  1903	        m_useStandardFlux = false;
+  1904	        return "ppfxDebugFlux_MnvH1D";
+  1905	      case comboPPFXHighNu:
+  1906		m_useStandardFlux = false;
+  1907		return "comboPPFXHighNuFlux_MnvH1D";
+  1908	
+  1909	      default:
+  1910	        m_useStandardFlux = true;
+  1911		if (iPlaylist==3) return "MuonBar_Energy_MnvH1D"; // Adding in Amit's CVS commit 1.106-8 changes -David L.
+  1912		else return "Muon_Energy_MnvH1D";
+  1913	    }
+  1914	  }
+  1915	
+  1916	
+  1917	  //======================================================================
+  1918	  bool FluxReweighter::IsCustomFlux(EFluxVersion fluxVersion)
+  1919	  {
+  1920	    switch(fluxVersion){
+  1921	      case lowNu:
+  1922	        return true;
+  1923	      case highNu:
+  1924	        return true;
+  1925	      case ppfxDebug:
+  1926	        return true;
+  1927	      case comboPPFXHighNu:
+  1928		return true;
+  1929	      default:
+  1930	        return false;
+  1931	    }
+  1932	  }
+  1933	
+  1934	
+  1935	  //======================================================================
+  1936	  const char* FluxReweighter::playlistString(EPlaylist p)
+  1937	  {
+  1938	    switch(p) {
+  1939	      case minerva1:
+  1940	        return "minerva1";
+  1941	      case minerva5:
+  1942	        return "minerva5";
+  1943	      case minerva7:
+  1944	        return "minerva1";
+  1945	      case minerva9:
+  1946	        return "minerva1";
+  1947	      case minerva13:
+  1948	        return "minerva13";
+  1949	      case minerva2p2h:
+  1950	        return "minerva13";
+  1951	      case minervaLE_FHC:
+  1952	        return "minervaLE-FHC";
+  1953	      case minervame1A:
+  1954	        return "minervame1D";
+  1955	      case minervame1B:
+  1956	        return "minervame1D";
+  1957	      case minervame1C:
+  1958	        return "minervame1D";
+  1959	      case minervame1D:
+  1960	        return "minervame1D";
+  1961	      case minervame1E:
+  1962	        return "minervame1D";
+  1963	      case minervame1F:
+  1964	        return "minervame1D";
+  1965	      case minervame1N:
+  1966	        return "minervame1N";
+  1967	      case minervame1O:
+  1968	        return "minervame1N";
+  1969	      case minervame1P:
+  1970	        return "minervame1N";
+  1971	      case minervame1G:
+  1972	        return "minervame1M";
+  1973	      case minervame1L:
+  1974	        return "minervame1M";
+  1975	      case minervame1M:
+  1976	        return "minervame1M";
+  1977	      case minervame1D1M1NWeightedAve:
+  1978	        return "minervame1D1M1NWeightedAve";
+  1979	      case minervame5A:
+  1980	        return "minervame5A";
+  1981	      case minervame6A:
+  1982	        return "minervame6A";
+  1983	      case minervame6B:
+  1984	        return "minervame6B";
+  1985	      case minervame6C:
+  1986	        return "minervame6C";
+  1987	      case minervame6D:
+  1988	        return "minervame6D";
+  1989	      case minervame6E:
+  1990	        return "minervame6E";
+  1991	      case minervame6F:
+  1992	        return "minervame6F";
+  1993	      case minervame6G:
+  1994	      	return "minervame6G";
+  1995	      case minervame6H:
+  1996	      	return "minervame6H";
+  1997	      case minervame6I:
+  1998	      	return "minervame6I";
+  1999	      case minervame6J:
+  2000	      	return "minervame6J";
+  2001	      default:
+  2002	        std::cerr << "No playlist enum " << p << std::endl;
+  2003	        std::exit(1);
+  2004	    }
+  2005	  }
+  2006	
+  2007	
+  2008	  //============================================================================
+  2009	  int FluxReweighter::LeOrMe(EPlaylist p) {
+  2010	    /*
+  2011	     *
+  2012	     * Given a playlist enum it returns an integer value
+  2013	     * corresponding to Playlist of LE or ME.
+  2014	     * All LE should return 1
+  2015	     * ME will return 2
+  2016	     * This is to keep a future provision if the
+  2017	     * weight factors to be implimented playlist by playlist
+  2018	     * or in a group set different integers other than 1, 2
+  2019	     */
+  2020	    switch(p) {
+  2021	      case minerva1:
+  2022	        return 1;
+  2023	      case minerva5:
+  2024	        return 1;
+  2025	      case minerva13:
+  2026	        return 1;
+  2027	      case minervaLE_FHC:
+  2028	        return 1;
+  2029	      case minervame1A:
+  2030	        return 2;
+  2031	      case minervame1B:
+  2032	        return 2;
+  2033	      case minervame1C:
+  2034	        return 2;
+  2035	      case minervame1D:
+  2036	        return 2;
+  2037	      case minervame1E:
+  2038	        return 2;
+  2039	      case minervame1F:
+  2040	        return 2;
+  2041	      case minervame1G:
+  2042	        return 2;
+  2043	      case minervame1L:
+  2044	        return 2;
+  2045	      case minervame1M:
+  2046	        return 2;
+  2047	      case minervame1N:
+  2048	        return 2;
+  2049	      case minervame1O:
+  2050	        return 2;
+  2051	      case minervame1P:
+  2052	        return 2;
+  2053	      case minervame1D1M1NWeightedAve:
+  2054	        return 2;
+  2055	      case minervame5A:
+  2056	        return 3;
+  2057	      case minervame6A:
+  2058	        return 3;
+  2059	      case minervame6B:
+  2060	      	return 3;
+  2061	      case minervame6C:
+  2062	      	return 3;
+  2063	      case minervame6D:
+  2064	      	return 3;
+  2065	      case minervame6E:
+  2066	        return 3;
+  2067	      case minervame6F:
+  2068	      	return 3;
+  2069	      case minervame6G:
+  2070	      	return 3;
+  2071	      case minervame6H:
+  2072	      	return 3;
+  2073	      case minervame6I:
+  2074	      	return 3;
+  2075	      case minervame6J:
+  2076	      	return 3;
+  2077	      default:
+  2078	        std::cerr << "No playlist enum " << p << std::endl;
+  2079	        std::exit(1);
+  2080	    }
+  2081	  }
+  2082	
+  2083	
+  2084	
+  2085	  //============================================================================
+  2086	  FluxReweighter::EPlaylist FluxReweighter::GetPlaylistEnum(std::string& playlist)
+  2087	  {
+  2088	    // case-independent
+  2089	    std::transform(playlist.begin(), playlist.end(), playlist.begin(), ::tolower);
+  2090	
+  2091	    //std::cout << "Looking for a flux reweighter with the playlist "
+  2092	    //          << playlist << std::endl;
+  2093	
+  2094	    if ( playlist.compare("minerva1")== 0 )
+  2095	      return minerva1;
+  2096	    if( playlist.compare("minerva5")== 0 )
+  2097	      return minerva5;
+  2098	    if ( playlist.compare("minerva7")== 0 )
+  2099	      return minerva1;
+  2100	    if ( playlist.compare("minerva9")== 0 )
+  2101	      return minerva1;
+  2102	    if ( playlist.compare("minerva13")== 0 )
+  2103	      return minerva13;
+  2104	    if ( playlist.compare("minerva13c")== 0 )
+  2105	      return minerva13;
+  2106	    if ( playlist.compare("minerva13e")== 0 )
+  2107	      return minerva13;
+  2108	    if ( playlist.compare("minerva2p2h")== 0 )
+  2109	      return minerva13;
+  2110	    if( playlist.compare("minervame1a")== 0)
+  2111	      return minervame1D;
+  2112	    if( playlist.compare("minervame1b")== 0)
+  2113	      return minervame1D;
+  2114	    if( playlist.compare("minervame1c")== 0)
+  2115	      return minervame1D;
+  2116	    if( playlist.compare("minervame1d")== 0)
+  2117	      return minervame1D;
+  2118	    if( playlist.compare("minervame1e")== 0)
+  2119	      return minervame1D;
+  2120	    if( playlist.compare("minervame1f")== 0)
+  2121	      return minervame1D;
+  2122	    if( playlist.compare("minervame1g")== 0)
+  2123	      return minervame1M;
+  2124	    if( playlist.compare("minervame1l")== 0)
+  2125	      return minervame1M;
+  2126	    if( playlist.compare("minervame1m")== 0)
+  2127	      return minervame1M;
+  2128	    if( playlist.compare("minervame1n")== 0)
+  2129	      return minervame1N;
+  2130	    if( playlist.compare("minervame1o")== 0)
+  2131	      return minervame1N;
+  2132	    if( playlist.compare("minervame1p")== 0)
+  2133	      return minervame1N;
+  2134	    if ( playlist.compare("minervame1d1m1nweightedave")== 0)
+  2135	      return minervame1D1M1NWeightedAve;
+  2136	    if( playlist.compare("minervame5a")== 0)
+  2137	      return minervame5A;
+  2138	    if( playlist.compare("minervame6a")== 0)
+  2139	      return minervame6A;
+  2140	    if( playlist.compare("minervame6b")== 0)
+  2141	      return minervame6A;
+  2142	    if( playlist.compare("minervame6c")== 0)
+  2143	      return minervame6A;
+  2144	    if( playlist.compare("minervame6d")== 0)
+  2145	      return minervame6A;
+  2146	    if( playlist.compare("minervame6e")== 0)
+  2147	      return minervame6A;
+  2148	    if( playlist.compare("minervame6f")== 0)
+  2149	      return minervame6A;
+  2150	    if( playlist.compare("minervame6g")== 0)
+  2151	      return minervame6A;
+  2152	    if( playlist.compare("minervame6h")== 0)
+  2153	      return minervame6A;
+  2154	    if( playlist.compare("minervame6i")== 0)
+  2155	      return minervame6A;
+  2156	    if( playlist.compare("minervame6j")== 0)
+  2157	      return minervame6A;
+  2158	    std::cerr << "No playlist enum " << playlist << std::endl;
+  2159	    std::exit(1);
+  2160	  }
+  2161	
+  2162	
+  2163	  //============================================================================
+  2164	  const char* FluxReweighter::fluxVersionString(EFluxVersion f)
+  2165	  {
+  2166	    switch(f) {
+  2167	      case gen1:
+  2168	        return "gen1";
+  2169	      case gen2thick:
+  2170	        return "gen2thick";
+  2171	      case gen2thin:
+  2172	        return "gen2thin";
+  2173	      case lowNu:
+  2174	        return "lowNu";
+  2175	      case highNu:
+  2176	        return "highNu";
+  2177	      case ppfxDebug:
+  2178	        return "ppfxDebug";
+  2179	      case comboPPFXHighNu:
+  2180	        return "comboPPFXHighNu";
+  2181	      default:
+  2182	        std::cerr << "No flux version " << f << std::endl;
+  2183	        std::exit(1);
+  2184	    }
+  2185	  }
+  2186	
+  2187	  FluxReweighter& flux_reweighter(std::string plist, int nu_pdg,
+  2188	                                  bool use_nuE_constraint, int n_flux_universes /*= 200*/) {
+  2189	    static std::map<std::string, std::map<int, PlotUtils::FluxReweighter*> > FRW_map;
+  2190	    std::transform(plist.begin(), plist.end(), plist.begin(), ::tolower);
+  2191	    if (!FRW_map[plist][abs(nu_pdg)]) {
+  2192	      FRW_map[plist][abs(nu_pdg)] = _flux_reweighter(plist, nu_pdg,
+  2193	                                                     use_nuE_constraint,n_flux_universes);
+  2194	    }
+  2195	    return *(FRW_map[plist][abs(nu_pdg)]);
+  2196	  }
+  2197	
+  2198	} // end namespace PlotUtils
+  2199	
+  2200	// Local Variables:
+  2201	// c-basic-offset: 2
+  2202	// End:

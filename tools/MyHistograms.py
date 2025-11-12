@@ -164,6 +164,9 @@ class PlotProcessor():
             return None
 
         wgt = self.weight_function(universe) if self.weight_function else universe.GetWeight()
+        # base = universe.GetWeight()
+        # extra = self.weight_function(universe) if self.weight_function else 1.0
+        # wgt = base * extra
         if isinstance(value[0],list):
             if not isinstance(wgt,list):
                 wgt = len(value[0])*[wgt]

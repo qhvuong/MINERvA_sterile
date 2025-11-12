@@ -235,16 +235,16 @@ def Printvar(event):
 
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
-    "Reco Energy vs L/E",
-    "True Energy vs L/E",
-    "True Energy vs Biased Neutrino Energy",
+    # "Reco Energy vs L/E",
+    # "True Energy vs L/E",
+    # "True Energy vs Biased Neutrino Energy",
     # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
 
-	"Visible Energy",
-	"Lepton Pt",
-	"Available Energy vs Lepton Energy",
-	"Available Energy vs Lepton Pt",
-	"Front dEdX",
-	"Q2",
+	# "Visible Energy",
+	# "Lepton Pt",
+	# "Available Energy vs Lepton Energy",
+	# "Available Energy vs Lepton Pt",
+	# "Front dEdX",
+	# "Q2",
 ]

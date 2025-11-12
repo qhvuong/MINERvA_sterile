@@ -16,7 +16,7 @@ import math
 NUM_UNIVERSE = 100
 #number of flux uniberses
 USE_NUE_CONSTRAINT = False
-AnaNuPDG=14
+AnaNuPDG = 14
 USE_SWAPPED=False
 NUM_FLUX_UNIVERSE = 100
 # detector mass uncertainty

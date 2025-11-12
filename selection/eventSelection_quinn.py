@@ -16,6 +16,7 @@ from itertools import chain
 
 #start loading my modules
 from tools import Utilities
+print("Loaded Utilities from:", Utilities.__file__)
 from config.PlotConfig import HISTS_TO_MAKE
 from config.AnalysisConfig import AnalysisConfig
 from tools.SystematicsUniverse import GetAllSystematicsUniverses
@@ -40,9 +41,17 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
     Plots = preparePlots(universes,mc)
     nEvents = chainwrapper.GetEntries()
+    print(f"Total number of events RECO: ", {nEvents})
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
-    print("plotRecoKin, mc ",mc)
+    # nEvents = 10
+
+    # def is_flux(u):
+    #     try:
+    #         return u.ShortName() == "Flux"
+    #     except Exception:
+    #         return False
+
     setAlarm = AnalysisConfig.grid
     for counter in range(nEvents):
         #1/4 hour for 10k event, should be more than needed unless stuck in I/O
@@ -51,10 +60,11 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if setAlarm:
                 signal.alarm(900)
 
-
         for universe in chain.from_iterable(iter(universes.values())):
             universe.SetEntry(counter)
-            universe.ResetWeight()
+            # print("counter: ", counter)
+            # print("universe name: ", type(universe).__name__)
+            # universe.ResetWeight()
             if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
                 continue
 
@@ -65,6 +75,9 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
             if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
                 for entry in Plots:
+                    # if counter == 0 and type(universe).__name__ == "Flux":
+                    # if type(universe).__name__ == "FluxUniverse":
+                    #     print(" calling Process for FluxUniverse: ", entry, counter)
                     entry.Process(universe)
 
     signal.alarm(0)
@@ -80,8 +93,8 @@ def plotTruthKin(chainwrapper,outfile):
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
     nEvents = chainwrapper.GetEntries()
+    print(f"Total number of events TRUTH: ", {nEvents})
     Plots = prepareTruthPlots(universes)
-    print("plotTruthKin")
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
     for counter in range(nEvents):
@@ -91,7 +104,7 @@ def plotTruthKin(chainwrapper,outfile):
 
         for universe in chain.from_iterable(iter(universes.values())):
             universe.SetEntry(counter)
-            universe.ResetWeight()
+            # universe.ResetWeight()
 
             #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
@@ -114,6 +127,7 @@ def preparePlots(universes,mc):
     plots=set([])
 
     for entry in HISTS_TO_MAKE:
+        print("HISTS_TO_MAKE", entry)
         if (isinstance(entry,str) and entry.startswith("True Signal")):
             continue
         settings = {"key":entry,"region":AnalysisConfig.sidebands,"mc":mc}
@@ -170,5 +184,6 @@ if __name__ == "__main__":
         if Reco :
             print("selecting reco")
             plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
+            print("done selection reco")
         output_file.Close()
         print("selection is done for ", st, AnalysisConfig.playlist)

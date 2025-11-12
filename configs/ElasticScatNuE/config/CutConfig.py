@@ -46,7 +46,7 @@ TRUE_Q3_RANGE = [0,4]
 PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 visE_RANGE = [0.0,0.1]
-Ethetasquared_CUT = .002
+Ethetasquared_CUT = .003
 FRONT_DEDX_PI0_UPPERBOUND = 5
 
 EAVAIL_LOW = [0.0,0.05]

@@ -11,24 +11,24 @@
         "start": 7,
         "end": 31
     },
-    "rhc_elastic": {
+    "fhc_nue_selection": {
         "start": 32,
-        "end": 37
+        "end": 57
     },
-    "rhc_imd": {
-        "start": 38,
-        "end": 38
-    },
-    "rhc_numu_selection": {
-        "start": 39,
+    "rhc_elastic": {
+        "start": 58,
         "end": 63
     },
-    "fhc_ratio": {
+    "rhc_imd": {
         "start": 64,
-        "end": 88
+        "end": 64
     },
-    "rhc_ratio": {
-        "start": 89,
-        "end": 113
+    "rhc_numu_selection": {
+        "start": 65,
+        "end": 89
+    },
+    "rhc_nue_selection": {
+        "start": 90,
+        "end": 115
     }
 }

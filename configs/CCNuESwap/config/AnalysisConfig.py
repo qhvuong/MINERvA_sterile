@@ -21,7 +21,7 @@ import sys
 import pprint
 import re
 
-BLUEARC = "/exp/minerva/data/users/{}/nu_e_swap".format(os.environ["USER"])
+BLUEARC = "/exp/minerva/data/users/{}/nu_e_swapped".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 

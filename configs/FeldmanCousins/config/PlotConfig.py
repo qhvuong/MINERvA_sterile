@@ -129,6 +129,7 @@ A_LABELS = {
 }
 
 #ELECTRON_ANGLE_BINNING =  range(10) + [10, 12, 15, 20, 27, 35]
+LEPTON_ANGLE_BINNING =  [1 * i for i in range(41)]
 ELECTRON_ANGLE_BINNING =  [1 * i for i in range(41)]
 ELECTRON_ANGLE_RESIDUAL_BINNING =  [-1.+0.1* i for i in range(0,21)]
 PROTON_ANGLE_RESIDUAL_BINNING = [-20 +i for i in range(41)]
