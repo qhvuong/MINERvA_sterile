@@ -1,0 +1,34 @@
+{
+    "fhc_elastic": {
+        "start": 0,
+        "end": 5
+    },
+    "fhc_imd": {
+        "start": 6,
+        "end": 6
+    },
+    "fhc_numu_selection": {
+        "start": 7,
+        "end": 31
+    },
+    "rhc_elastic": {
+        "start": 32,
+        "end": 37
+    },
+    "rhc_imd": {
+        "start": 38,
+        "end": 38
+    },
+    "rhc_numu_selection": {
+        "start": 39,
+        "end": 63
+    },
+    "fhc_ratio": {
+        "start": 64,
+        "end": 88
+    },
+    "rhc_ratio": {
+        "start": 89,
+        "end": 113
+    }
+}

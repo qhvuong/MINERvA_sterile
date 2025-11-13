@@ -40,6 +40,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
     Plots = preparePlots(universes,mc)
     nEvents = chainwrapper.GetEntries()
+    print("number of events RECO: ", nEvents)
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
     print("plotRecoKin, mc ",mc)
@@ -80,6 +81,7 @@ def plotTruthKin(chainwrapper,outfile):
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
     nEvents = chainwrapper.GetEntries()
+    print("number of events TRUE: ", nEvents)
     Plots = prepareTruthPlots(universes)
     print("plotTruthKin")
     if AnalysisConfig.testing and nEvents > 1000:

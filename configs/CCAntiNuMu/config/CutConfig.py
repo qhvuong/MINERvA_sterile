@@ -19,7 +19,7 @@ PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.4  # in MeV/cm
 PID_SCORE_CUT = 0.7
 MIN_VERTEX_TRACK_MULTIPLICITY = 1
-MAX_VERTEX_TRACK_MULTIPLICITY = 6
+MAX_VERTEX_TRACK_MULTIPLICITY = 5
 
 NONMIP_CLUS_FRAC_CUT = 0.4
 TRANSVERSE_GAP_SCORE_CUT = 15
@@ -69,13 +69,13 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
-        "Eavail",
-        "Pt",
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
+    "Eavail",
+    "Pt",
 ]
 
 #######################################

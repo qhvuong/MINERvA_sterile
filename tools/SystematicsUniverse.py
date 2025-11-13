@@ -156,7 +156,7 @@ class CVPythonUniverse():
         weight *= self.GetLowRecoil2p2hWeight()
         weight *= self.GetRPAWeight()
         weight *= self.GetMyLowQ2PiWeight() # using MENU1PI for Aaron's result
-        weight *= self.GetGeantHadronWeight()
+        # weight *= self.GetGeantHadronWeight()
         weight *= self.GetMyMinosEfficiencyWeight()
 
         ### MnvTune v4.3.1 block below ###
@@ -186,8 +186,8 @@ class CVPythonUniverse():
     def GetCOHPionWeight(self):
         def GetTrueHighEpi():
             nFSpi = self.mc_nFSPart
-            pionE = -1.0;
-            pionKE = -1.0;
+            pionE = -1.0
+            pionKE = -1.0
             for i in range(nFSpi):
                 try:
                     pdg = self.mc_FSPartPDG[i]
@@ -937,8 +937,8 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #SuSAValenciaUniverse
             universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
 
-            #hadron reweight shifting universe
-            universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+            # #hadron reweight shifting universe
+            # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
             #leakage universe
             universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))

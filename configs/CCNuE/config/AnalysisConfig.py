@@ -26,7 +26,7 @@ GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
 #SIDEBANDS=["dEdX","Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX"]
-SIDEBANDS = [""]
+SIDEBANDS = ["dEdX"]
 
 class _AnalysisConfig(object):
     Defaults = {
@@ -247,6 +247,7 @@ parser.add_argument("--pc",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
+                    # default=BLUEARC
                     default=""
 )
 parser.add_argument("--signal",
@@ -272,12 +273,6 @@ parser.add_argument("-o", "--output",
 parser.add_argument("-i", "--input",
                     dest = "input_dir",
                     help="Use alternate location for input files other than ntuple.",
-                    default=BLUEARC
-)
-
-parser.add_argument("-f", "--file",
-                    dest = "selection_file",
-                    help="Path to a merged selection histogram.",
                     default=BLUEARC
 )
 

@@ -19,7 +19,7 @@ PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.4  # in MeV/cm
 PID_SCORE_CUT = 0.7
 MIN_VERTEX_TRACK_MULTIPLICITY = 1
-MAX_VERTEX_TRACK_MULTIPLICITY = 6
+MAX_VERTEX_TRACK_MULTIPLICITY = 5
 
 NONMIP_CLUS_FRAC_CUT = 0.4
 TRANSVERSE_GAP_SCORE_CUT = 15
@@ -74,8 +74,6 @@ SAMPLE_CUTS = {
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "Etheta",
-        "Eavail",
-        "Pt",
         "MeanFrontdEdX",
     ],
     "dEdX" : [
@@ -95,13 +93,13 @@ SAMPLE_CUTS = {
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "Etheta",
-        "Eavail",
-        "Pt",
         "InverseMeanFrontdEdX",
     ]
 }
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
+    "Eavail",
+    "Pt",
 ]
 #######################################

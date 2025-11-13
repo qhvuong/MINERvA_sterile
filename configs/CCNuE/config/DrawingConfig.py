@@ -673,8 +673,8 @@ PLOTS_TO_MAKE = [
         "plot_type":"ratio",
      "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
     {"name":"Biased Neutrino Energy"},
-    {"name":"Biased Neutrino Energy",
-         "plot_type" : "err"},
+    #{"name":"Biased Neutrino Energy",
+    #     "plot_type" : "err"},
 
 
     #{"name":"Q2"},

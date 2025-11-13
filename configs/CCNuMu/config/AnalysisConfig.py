@@ -232,7 +232,8 @@ parser.add_argument("--data_only", "--data-only",
 parser.add_argument("--plot_tag", "--plot-tag",
                     dest = "plot_tag",
                     help="Add ending tag for plots to distinguish them.",
-                    default=BLUEARC
+                    # default=BLUEARC
+                    default=""
 )
 parser.add_argument("--mc_only", "--mc-only",
                     dest="mc_only",
