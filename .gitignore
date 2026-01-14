@@ -10,4 +10,8 @@ grid_wrappers/
 *.so
 *.root
 *.png
-
+*.o
+*.pcm
+*_rdict.pcm
+*.dylib
+*.a
