@@ -87,7 +87,7 @@ IsNueBar = lambda event: event.mc_incoming == -12
 IsNumu = lambda event: event.mc_incoming == 14
 IsNumuBar = lambda event: event.mc_incoming == -14
 
-IsPi0InFinalState = lambda event: 111 in event.mc_FSPartPDG
+IsPi0InFinalState = lambda event: 111 in abs(event.mc_FSPartPDG)
 IsChargedPionInFinalState = lambda event: 211 in event.mc_FSPartPDG or -211 in event.mc_FSPartPDG
 IsProtonInFinalState = lambda event: 2212 in event.mc_FSPartPDG
 IsMultiMeson = lambda event: countPDG(event.mc_FSPartPDG, [211,-211, 321,-321,323,-323,111,130,310,311])>1
@@ -133,10 +133,10 @@ TRUTH_CATEGORIES["CCNuEQE"]        = lambda event: IsCC(event) and IsNuE(event) 
 TRUTH_CATEGORIES["CCNuEDelta"]     = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
 TRUTH_CATEGORIES["CCNuEDIS"]       = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuE2p2h"]      = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
-TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNuE(event)
-TRUTH_CATEGORIES["CCNuMu"]         = lambda event: IsCC(event) and IsNuMu(event)
 TRUTH_CATEGORIES["CCPi0"]          = lambda event: IsCC(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["CCPi"]           = lambda event: IsCC(event) and IsChargedPionInFinalState(event)
+TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNuE(event)
+TRUTH_CATEGORIES["CCNuMu"]         = lambda event: IsCC(event) and IsNuMu(event)
 TRUTH_CATEGORIES["CCOther"]        = lambda event: IsCC(event)
 
 # Photon-like BEFORE NC catch-all so it takes effect

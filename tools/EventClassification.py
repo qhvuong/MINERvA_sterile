@@ -33,6 +33,7 @@ class EventClassifier(object):
         self.use_kin_cuts = use_kin_cuts
         if not self.use_kin_cuts:
             del TRUTH_CATEGORIES["NonPhaseSpace"]
+            # TRUTH_CATEGORIES.pop("NonPhaseSpace", None)
 
         self.samples = {"Signal"}
 

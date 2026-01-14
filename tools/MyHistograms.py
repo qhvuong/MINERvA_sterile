@@ -200,6 +200,8 @@ def MakePlotProcessors(**kwargs):
     plots = []
     tags = settings["tags"]
     settings.pop("tags")
+    # tags = settings.get("tags", [])
+    # settings.pop("tags", None)
 
     
     if "suffix" in kwargs["key"]:

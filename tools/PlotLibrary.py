@@ -170,14 +170,6 @@ def vertexDifference(event,n_prong=0):
     electronZ = event.prong_axis_vertex[n_prong][2]
     return(electronZ - protonZ)
 
-def CalcApothem(x,y):
-    x=abs(x)
-    y=abs(y)
-    if ( x == 0 or y/x > 1/math.sqrt(3)):
-        return (y+x/math.sqrt(3))/2*math.sqrt(3)
-    else:
-        return x
-
 VARIABLE_DICT = {
     #"Biased Neutrino Energy":
     #{
@@ -202,13 +194,13 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.LOW_RECOIL_BIN_Q0,
         "value_getter" : lambda event: event.kin_cal.reco_visE,
     },
-    # "Lepton Energy":
-    # {
-    #     "name" : "Eel",
-    #     "title" : "Reconstructed E_lep (GeV)",
-    #     "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
-    #     "value_getter" : lambda event: event.kin_cal.reco_E_lep,
-    # },
+    "Lepton Energy":
+    {
+        "name" : "Eel",
+        "title" : "Reconstructed E_lep (GeV)",
+        "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_E_lep,
+    },
      "Q3" :
     {
         "name" : "Q3",
@@ -243,118 +235,6 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
         "tags":reco_tags
     },
-    "Visible Energy":
-    {
-        "name" : "E_avail",
-        "title" : "Available Energy; E_{avail} (GeV); NEvents",
-        "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
-        "value_getter" : [lambda event: event.kin_cal.reco_visE],
-        "tags":reco_tags
-    },
-    "Lepton Energy":
-    {
-        "name" : "Eel",
-        "title" : "Reconstructed E_lep (GeV)",
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.reco_E_lep],
-        "tags":reco_tags
-    },
-    "True vs Reconstructed Lepton Energy":
-    {
-        "name" : "TrueVsRecoLeptonEnergy",
-
-        "title": "True vs Reco Lepton Energy; True E_{lep} (GeV); Reco E_{lep} (GeV); NEvents",
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_E_lep,
-                          lambda event: event.kin_cal.reco_E_lep],
-        "tags": reco_tags   
-    },
-    "True vs Reconstructed Lepton Angle":
-    {
-        "name" : "TrueVsRecoLeptonAngle",
-
-        "title": "True vs Reco Lepton Angle; True theta_{lep} (rad); Reco theta_{lep} (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_theta_lep_rad,
-                          lambda event: event.kin_cal.reco_theta_lep_rad],
-        "tags": reco_tags   
-    },
-    "True vs Reconstructed Lepton Angle X":
-    {
-        "name" : "TrueVsRecoLeptonAngleX",
-
-        "title": "True vs Reco Lepton Angle X; True thetaX (rad); Reco thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_thetaX_lep_rad,
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad],
-        "tags": reco_tags   
-    },
-    "True vs Reconstructed Lepton Angle Y":
-    {
-        "name" : "TrueVsRecoLeptonAngleY",
-
-        "title": "True vs Reco Lepton Angle Y; True thetaY (rad); Reco thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_thetaY_lep_rad,
-                          lambda event: event.kin_cal.reco_thetaY_lep_rad],
-        "tags": reco_tags   
-    },
-    "Reco ThetaX vs Vertex X":
-    {
-        "name" : "RecoThetaXVsVertexX",
-
-        "title": "Reco ThetaX vs Vertex X; Vertex X (mm); Reco thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEXX_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[0],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad],
-        "tags": reco_tags   
-    },
-    "Reco ThetaY vs Vertex Y":
-    {
-        "name" : "RecoThetaYVsVertexY",
-
-        "title": "Reco ThetaY vs Vertex Y; Vertex Y (mm); Reco thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEXY_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[1],
-                          lambda event: event.kin_cal.reco_thetaY_lep_rad],
-        "tags": reco_tags   
-    },
-    "True ThetaX vs Vertex X":
-    {
-        "name" : "TrueThetaXVsVertexX",
-
-        "title": "True ThetaX vs Vertex X; Vertex X (mm); True thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEXX_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.mc_vtx[0],
-                          lambda event: event.kin_cal.true_thetaX_lep_rad],
-        "tags": truth_tags   
-    },
-    "True ThetaY vs Vertex Y":
-    {
-        "name" : "TrueThetaYVsVertexY",
-
-        "title": "True ThetaY vs Vertex Y; Vertex Y (mm); True thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEXY_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.mc_vtx[1],
-                          lambda event: event.kin_cal.true_thetaY_lep_rad],
-        "tags": truth_tags   
-    },
-    "True Lepton Energy":
-    {
-        "name" : "true_Eel",
-        "title" : "True E_lep (GeV)",
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_E_lep],
-        "tags":truth_tags
-    },
     "Lepton Pt":
     {
         "name" : "Lepton_Pt",
@@ -381,10 +261,17 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
         "tags" : signal_tags
     },
+    "Lepton Energy":
+    {
+        "name" : "Eel",
+        "title" : "Reconstructed E_lep (GeV)",
+        "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_E_lep,
+    },
      "Front dEdX":
     {
         "name": "frontdedx",
-        "title": "Mean front dE/dx; NEvents",
+        "title": "Mean front dE/dx; dEdX (MeV/cm); NEvents",
         "binning": [PlotConfig.DEDX_BINNING],
         "value_getter" : [lambda event: event.prong_dEdXMeanFrontTracker[0]],
         "tags":reco_tags
@@ -419,17 +306,9 @@ PLOT_SETTINGS= {
     {
         "name" : "Q2",
         "title": "q2 ; Q2 (GeV^{2}); dNEvents/dq2",
-        "binning" : [[i/100 for i in range(20)]],
+        "binning" : [[i/10 for i in range(40)]],
         "value_getter" : [lambda event: event.mc_Q2/1e6],
         "tags": truth_tags
-    },
-    "Reco Q2" :
-    {
-        "name" : "Q2_reco",
-        "title": "Reco q2 ; Q2 (GeV^{2}); dNEvents/dq2",
-        "binning" : [[i/100 for i in range(20)]],
-        "value_getter" : [lambda event: event.kin_cal.reco_q2_cal],
-        "tags": reco_tags
     },
     "Q3" :
     {
@@ -446,14 +325,6 @@ PLOT_SETTINGS= {
         "binning" : [PlotConfig.NEUTRINO4_EE_THETA_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep*(event.kin_cal.reco_theta_lep_rad)**2],
         "tags":reco_tags
-    },
-    "True E Theta Squared":
-    {
-        "name" : "true_E_Theta_Squared",
-        "title" : "E_{lepton} #theta^{2} ; E_{lepton} #theta^{2} (GeV) ; NEvents",
-        "binning" : [PlotConfig.NEUTRINO4_EE_THETA_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_E_lep*(event.kin_cal.true_theta_lep_rad)**2],
-        "tags":truth_tags
     },
      "Estimator vs Front dEdX":
     {
@@ -696,7 +567,7 @@ PLOT_SETTINGS= {
     },
     "Background Subbed Data":
     {
-        "name" : "EN4_ERROR_data_bkgSubbed",
+        "name" : "EN4_data_bkgSubbed",
         "title" : "E_{e}+E_{avail} (GeV)",
         #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
@@ -813,19 +684,11 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.ElectronProtonAngle()],
         "tags":reco_tags
     },
-    "Neutrino Vertex Apothem":
-    {
-        "name" : "neutrino_apothem",
-        "title" : "Reco Neutrino Vertex Apothem; Vertex Apothem; NEvents",
-        "binning" : [[30*i for i in range(40)]],
-        "value_getter" : [lambda event: CalcApothem(event.vtx[0],event.vtx[1])],
-        "tags":reco_tags
-    },
-    "Neutrino Vertex Z":
+    "Neutrino Z Vertex":
     {
         "name" : "neutrino_vertex_z",
         "title" : "Reco Neutrino Z Vertex; Z [ 10 mm ]; NEvents",
-        "binning" : [[i for i in range(5500,9000,70)]],
+        "binning" : [[i for i in range(4000,8500,10)]],
         "value_getter" : [lambda event: event.vtx[2]],
         "tags":reco_tags
     },
@@ -896,112 +759,6 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.mc_incomingE/1000],
         "tags":reco_tags
     },
-    "EMLikeTrackScore":
-    {
-        "name" : "EMLikeScore",
-        "title" : "EM-Like Score; EM-Like Score; NEvents",
-        "binning" : [PlotConfig.EMLIKETRACKSCORE_BINNING],
-        "value_getter" : [lambda event: event.prong_part_score],
-        "tags":reco_tags
-    },
-    "TransverseGapScore":
-    {
-        "name" : "TransGapScore",
-        "title" : "Transverse Gap Score; Transverse Gap Score; NEvents",
-        "binning" : [PlotConfig.TRANSVERSEGAPSCORE_BINNING],
-        "value_getter" : [lambda event: event.prong_TransverseGapScore],
-        "tags":reco_tags
-    },
-    "NonMIPClusFrac":
-    {
-        "name" : "NonMIPClusFracion",
-        "title" : "Non-MIP Cluster Energy Fraction; NonMIPClusFrac; NEvents",
-        "binning" : [PlotConfig.NONMIPCLUSFRAC_BINNING],
-        "value_getter" : [lambda event: event.prong_NonMIPClusFrac],
-        "tags":reco_tags
-    },
-    "ODCalVisE": 
-    {
-        "name" : "ODCalVisE",
-        "title" : "ODCalVisE; ODCalVisE; NEvents",
-        "binning" : [PlotConfig.ODCALVISE_BINNING],
-        "value_getter": [
-            lambda event: [
-                (od / side if side > 0.1 else (1e10 if od > 0 else 0))
-                for od, side in zip(event.prong_ODVisE, event.prong_SideECALVisE)
-            ]
-        ],
-        "tags":reco_tags
-    },
-    "DSCalVisE": 
-    {
-        "name" : "DSCalVisE",
-        "title" : "DSCalVisE; DSCalVisE; NEvents",
-        "binning" : [PlotConfig.DSCALVISE_BINNING],
-        "value_getter": [
-            lambda event: [
-                (h / ecal if ecal > 0.1 else (1e10 if h > 0 else 0))
-                for h, ecal in zip(event.prong_HCALVisE, event.prong_ECALVisE)
-            ]
-        ],
-        "tags":reco_tags
-    },
-    "Afterpulsing": 
-    {
-        "name" : "Afterpulsing",
-        "title" : "Afterpulsing; Afterpulsing; NEvents",
-        "binning" : [PlotConfig.AFTERPULSING_BINNING],
-        "value_getter": [lambda event: event.prong_FirstFireFraction],
-        "tags":reco_tags
-    },
-    "DeadTime": 
-    {
-        "name" : "DeadTime",
-        "title" : "DeadTime; DeadTime; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
-        "value_getter": [lambda event: event.phys_n_dead_discr_pair_upstream_prim_track_proj],
-        "tags":reco_tags
-    },
-    "VertexTrackMultiplicity": 
-    {
-        "name" : "VertexTrackMultiplicity",
-        "title" : "VertexTrackMultiplicity; VertexTrackMultiplicity; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
-        "value_getter": [lambda event: event.VertexTrackMultiplicity],
-        "tags":reco_tags
-    },
-    "StartPointVertexMultiplicity": 
-    {
-        "name" : "StartPointVertexMultiplicity",
-        "title" : "StartPointVertexMultiplicity; StartPointVertexMultiplicity; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
-        "value_getter": [lambda event: event.StartPointVertexMultiplicity],
-        "tags":reco_tags
-    },
-    "HasNoVertexMismatch": 
-    {
-        "name" : "HasNoVertexMismatch",
-        "title" : "HasNoVertexMismatch; HasNoVertexMismatch; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
-        "value_getter": [lambda event: event.HasNoVertexMismatch],
-        "tags":reco_tags
-    },
-    "HasTracks": 
-    {
-        "name" : "HasTracks",
-        "title" : "HasTracks; HasTracks; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
-        "value_getter": [lambda event: event.HasTracks],
-        "tags":reco_tags
-    },
-    "HasNoBackExitingTracks": 
-    {
-        "name" : "HasNoBackExitingTracks",
-        "title" : "HasNoBackExitingTracks; HasNoBackExitingTracks; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
-        "value_getter": [lambda event: event.HasNoBackExitingTracks],
-        "tags":reco_tags
-    },
 }
 
 for i in PlotConfig.LOW_RECOIL_BIN_Q0:
@@ -1070,242 +827,123 @@ for i in PlotConfig.LOW_RECOIL_BIN_Q0:
 
     PLOT_SETTINGS[key] = entry
 #like histfolio, connect related histograms together
-
 class HistHolder:
-    def __init__(self, name, f, sideband, is_mc, pot=1.0, data_pot=None):
+    def __init__(self, name, f, sideband, is_mc, pot=1.0,data_pot=None): 
         self.plot_name = TranslateSettings(name)["name"]
         self.dimension = len(TranslateSettings(name)["value_getter"])
         self.is_mc = is_mc
-        self.hists = {}
-        self.sideband = sideband
+        self.hists= {}
+        self.sideband=sideband
         self.pot_scale = data_pot/pot if (data_pot is not None and pot is not None) else pot
         self.valid = False
-        self.raw_counts = {}      # per-category raw counts (POT-scaled)
-        self.raw_total = None     # total raw count
-
-        # flags
-        self.bin_width_scaled = False      # ROOT "width" scaling
-        self.POT_scaled = False
-        self.ref_width_scaled = False      # our custom scaling to a reference width
-        self.ref_width_value = None        # store what it was, for sanity/debug
-
-        if f is not None:
+        self.bin_width_scaled = False
+        self.POT_scaled =False 
+        
+        if f is not None: 
             self.valid = self.ReadHistograms(f)
 
-    def ReadHistograms(self, f):
+    def ReadHistograms(self,f):
         variant_arg = [self.plot_name]
         if self.sideband != "Signal":
             variant_arg.append(self.sideband)
-
         namestring = VariantPlotsNamingScheme(*variant_arg)
         self.hists["Total"] = Utilities.GetHistogram(f, namestring)
-
         if self.is_mc:
-            for cate in list(SignalDef.TRUTH_CATEGORIES.keys()) + ["Other"]:
-                cate_namestring = VariantPlotsNamingScheme(*(variant_arg + [cate]))
-                self.hists[cate] = Utilities.GetHistogram(f, cate_namestring)
-
+            for cate in list(SignalDef.TRUTH_CATEGORIES.keys())+["Other"]:
+                cate_namestring = VariantPlotsNamingScheme(*(variant_arg+[cate]))
+                self.hists[cate]=Utilities.GetHistogram(f, cate_namestring) 
         return self.hists["Total"] is not None
 
-    # --------------------------
-    # Existing scaling interface
-    # --------------------------
+
     def Scale(self, scale, bin_width_normalize):
-        """
-        Legacy behavior:
-        - if bin_width_normalize: uses ROOT's "width" option (events per bin-width)
-        - else: plain scalar scaling
-        """
         if not self.valid:
             return None
         if self.bin_width_scaled:
-            raise ValueError("HistHolder already scaled by ROOT bin width")
+            raise ValueError("hist holder alreay scaled by bin_width")
 
         for k, v in self.hists.items():
             if v is not None:
-                v.Scale(scale, "width" if bin_width_normalize else "")
+                v.Scale(scale,"width" if bin_width_normalize else "")
         self.bin_width_scaled = bin_width_normalize
 
-    def AreaScale(self, bin_width_normalize=False):
+    def AreaScale(self,bin_width_normalize = False):
         if not self.valid:
             return None
-        integ = self.hists["Total"].Integral()
-        if integ == 0:
-            return None
-        scale = 1.0 / integ
-        self.Scale(scale, bin_width_normalize)
+        scale = 1.0/self.hists["Total"].Integral()
+        self.Scale(scale,bin_width_normalize)
 
-    def POTScale(self, bin_width_normalize=False):
+
+    def POTScale(self,bin_width_normalize = False):
         if not self.valid:
             return None
         if self.POT_scaled and self.pot_scale != 1.0:
-            raise ValueError("hist holder already scaled by POT")
+            raise ValueError("hist holder alreay scaled by POT")
 
         for k, v in self.hists.items():
-            if v is not None:
-                v.Scale(self.pot_scale if self.is_mc else 1.0,
-                        "width" if bin_width_normalize else "")
-
-        # 🔒 Cache raw POT-scaled counts (only once)
-        if not self.raw_counts:
-            for k, v in self.hists.items():
-                if v is not None:
-                    self.raw_counts[k] = v.Integral(0, v.GetNbinsX() + 1)
-            self.raw_total = self.raw_counts.get("Total", None)
+            if v is not None:                
+                v.Scale(self.pot_scale if self.is_mc else 1.0,"width" if bin_width_normalize else "")
 
         self.POT_scaled = True
 
-    # -----------------------------------------
-    # NEW: normalize to a reference bin width Δ
-    # -----------------------------------------
-    def RefWidthNormalize(self, ref_width, axis=0, apply_to_2d="x"):
-        """
-        Normalize histogram content so the y-axis becomes:
-            events per ref_width (instead of events per bin).
-
-        Works with variable binning.
-
-        Parameters
-        ----------
-        ref_width : float
-            The reference width (same units as the histogram axis),
-            e.g. 0.0008 for "events per 0.0008 GeV".
-        axis : int
-            For 1D histograms: ignored (kept for interface symmetry).
-            For 2D histograms:
-              apply_to_2d="x" -> normalize by x bin width
-              apply_to_2d="y" -> normalize by y bin width
-              apply_to_2d="xy" -> normalize by (x_width * y_width) (careful: units become events/(Δx0*Δy0))
-        apply_to_2d : str
-            One of: "x", "y", "xy"
-        """
+    def GetCateList(self,grouping = None):
         if not self.valid:
             return None
-        if ref_width <= 0:
-            raise ValueError("ref_width must be > 0")
-        if self.ref_width_scaled:
-            raise ValueError(f"HistHolder already ref-width normalized (ref={self.ref_width_value})")
-
-        # Helper: apply scaling to a TH1/TH2-like object
-        def _apply_refwidth(h):
-            # TH2? (MnvH2D inherits TH2)
-            if h.InheritsFrom("TH2"):
-                xax = h.GetXaxis()
-                yax = h.GetYaxis()
-                nx = xax.GetNbins()
-                ny = yax.GetNbins()
-
-                for ix in range(1, nx + 1):
-                    wx = xax.GetBinWidth(ix)
-                    for iy in range(1, ny + 1):
-                        wy = yax.GetBinWidth(iy)
-
-                        if apply_to_2d == "x":
-                            scale = wx / ref_width
-                        elif apply_to_2d == "y":
-                            scale = wy / ref_width
-                        elif apply_to_2d == "xy":
-                            # NOTE: this changes units to events/(ref_width^2) if ref_width is used for both.
-                            # If you want different ref widths in x and y, extend the interface.
-                            scale = (wx * wy) / (ref_width * ref_width)
-                        else:
-                            raise ValueError("apply_to_2d must be one of: 'x', 'y', 'xy'")
-
-                        # TH2 bin index
-                        ibin = h.GetBin(ix, iy)
-                        val = h.GetBinContent(ibin)
-                        err = h.GetBinError(ibin)
-                        h.SetBinContent(ibin, val / scale)
-                        h.SetBinError(ibin, err / scale)
-
-            else:
-                # TH1
-                xax = h.GetXaxis()
-                nb = xax.GetNbins()
-                for i in range(1, nb + 1):
-                    w = xax.GetBinWidth(i)
-                    scale = w / ref_width
-                    val = h.GetBinContent(i)
-                    err = h.GetBinError(i)
-                    h.SetBinContent(i, val / scale)
-                    h.SetBinError(i, err / scale)
-
-        for k, v in self.hists.items():
-            if v is not None:
-                _apply_refwidth(v)
-
-        self.ref_width_scaled = True
-        self.ref_width_value = ref_width
-
-    # --------------------------
-    # Your other methods unchanged
-    # --------------------------
-    def GetCateList(self, grouping=None, with_raw=False):
-        if not self.valid:
-            return None
-
-        _mc_ints, _colors, _titles, _raws = [], [], [], []
+        _mc_ints = []
+        _colors= []
+        _titles= []
         local_grouping = grouping
-
-        for cate in list(local_grouping.keys())[::-1]:
+        for cate in list(local_grouping.keys())[::-1]: 
             config = local_grouping[cate]
             hist = None
-            raw = 0.0
-
             if "cate" in config:
                 for fine_cate in config["cate"]:
-                    if fine_cate not in self.hists or self.hists[fine_cate] is None:
+                    if fine_cate not in self.hists.keys(): 
                         continue
-                    if hist is None:
+                    if hist is None and self.hists[fine_cate]:
                         hist = self.hists[fine_cate].Clone()
-                    else:
+                    elif self.hists[fine_cate]:
                         hist.Add(self.hists[fine_cate])
-
-                    # raw count comes from cached POT-scaled counts (unaffected by later scaling)
-                    if hasattr(self, "raw_counts") and self.raw_counts:
-                        raw += float(self.raw_counts.get(fine_cate, 0.0))
+                    else:
+                        continue
             else:
-                if cate not in self.hists or self.hists[cate] is None:
+                if not self.hists[cate]:
                     continue
-                hist = self.hists[cate]
-                if hasattr(self, "raw_counts") and self.raw_counts:
-                    raw = float(self.raw_counts.get(cate, 0.0))
-
+                else:
+                    hist = self.hists[cate] if self.hists[cate] else None
+                
             if hist:
                 hist.SetTitle(config["title"])
                 _mc_ints.append(hist)
                 _titles.append(config["title"])
                 _colors.append(config["color"])
-                _raws.append(raw)
+            else:
+                continue
+            del hist
+        return _mc_ints,_colors,_titles
 
-        if with_raw:
-            return _mc_ints, _colors, _titles, _raws
-        return _mc_ints, _colors, _titles
-
-
-    def GetHist(self):
-        if not self.valid:
-            return None
+    def GetHist(self): 
+        if not self.valid:  
+            return None 
         return self.hists["Total"]
 
-    def GetTrueSignalHist(self):
-        if not self.valid:
-            return None
+    def GetTrueSignalHist(self): 
+        if not self.valid:  
+            return None 
         return self.hists["CCNuE"]
 
     def ResumTotal(self):
         self.hists["Total"].Reset("ICESM")
         for i in self.hists:
-            if i == "Total":
+            if i=="Total":
                 continue
             else:
                 self.hists["Total"].Add(self.hists[i])
 
-    def GetSumCate(self, cate_list):
+    def GetSumCate(self,cate_list):
         if len(cate_list) == 0:
             return None
         hnew = self.hists[cate_list[0]].Clone()
-        for i in range(1, len(cate_list)):
+        for i in range(1,len(cate_list)):
             htmp = self.hists[cate_list[i]]
             if htmp:
                 hnew.Add(htmp)
@@ -1313,166 +951,11 @@ class HistHolder:
                 continue
         return hnew
 
-    def Add(self, hist_holder):
-        if not isinstance(hist_holder, HistHolder):
-            raise ValueError("Can only add HistHolder to HistHolder")
+    def Add(self,hist_holder):
+        if not isinstance(hist_holder,HistHolder):
+            raise ValueError("Can only add histholder to histholder")
         for i in self.hists:
             if self.hists[i] and hist_holder.hists[i]:
                 self.hists[i].Add(hist_holder.hists[i])
             else:
-                print(i, self.hists[i], hist_holder.hists[i])
-
-
-# class HistHolder:
-#     def __init__(self, name, f, sideband, is_mc, pot=1.0,data_pot=None): 
-#         self.plot_name = TranslateSettings(name)["name"]
-#         self.dimension = len(TranslateSettings(name)["value_getter"])
-#         self.is_mc = is_mc
-#         self.hists= {}
-#         self.sideband=sideband
-#         self.pot_scale = data_pot/pot if (data_pot is not None and pot is not None) else pot
-#         self.valid = False
-#         self.bin_width_scaled = False
-#         self.POT_scaled =False 
-        
-#         if f is not None: 
-#             self.valid = self.ReadHistograms(f)
-
-#     def ReadHistograms(self,f):
-#         # variant_arg = [self.plot_name]
-#         # if self.sideband != "Signal":
-#         #     variant_arg.append(self.sideband)
-#         # namestring = VariantPlotsNamingScheme(*variant_arg)
-#         # self.hists["Total"] = Utilities.GetHistogram(f, namestring)
-#         # if self.is_mc:
-#         #     for cate in list(SignalDef.TRUTH_CATEGORIES.keys())+["Other"]:
-#         #         cate_namestring = VariantPlotsNamingScheme(*(variant_arg+[cate]))
-#         #         self.hists[cate]=Utilities.GetHistogram(f, cate_namestring) 
-#         # return self.hists["Total"] is not None
-#         variant_arg = [self.plot_name]
-#         if self.sideband != "Signal":
-#             variant_arg.append(self.sideband)
-
-#         namestring = VariantPlotsNamingScheme(*variant_arg)
-#         self.hists["Total"] = Utilities.GetHistogram(f, namestring)
-
-#         if self.is_mc:
-#             for cate in list(SignalDef.TRUTH_CATEGORIES.keys()) + ["Other"]:
-#                 cate_namestring = VariantPlotsNamingScheme(*(variant_arg + [cate]))
-#                 self.hists[cate] = Utilities.GetHistogram(f, cate_namestring)
-
-#         # # 🔍 DEBUG PRINT — WHAT HISTOGRAMS WERE FOUND?
-#         # print(f"\n[HistHolder DEBUG] Loaded histograms for: {self.plot_name}")
-#         # for k, v in self.hists.items():
-#         #     print(f"   {k} : {'FOUND' if v else 'MISSING'}")
-
-#         return self.hists["Total"] is not None
-
-
-
-#     def Scale(self, scale, bin_width_normalize):
-#         if not self.valid:
-#             return None
-#         if self.bin_width_scaled:
-#             raise ValueError("hist holder alreay scaled by bin_width")
-
-#         for k, v in self.hists.items():
-#             if v is not None:
-#                 v.Scale(scale,"width" if bin_width_normalize else "")
-#         self.bin_width_scaled = bin_width_normalize
-
-#     def AreaScale(self,bin_width_normalize = False):
-#         if not self.valid:
-#             return None
-#         scale = 1.0/self.hists["Total"].Integral()
-#         self.Scale(scale,bin_width_normalize)
-
-
-#     def POTScale(self,bin_width_normalize = False):
-#         if not self.valid:
-#             return None
-#         if self.POT_scaled and self.pot_scale != 1.0:
-#             raise ValueError("hist holder alreay scaled by POT")
-
-#         for k, v in self.hists.items():
-#             if v is not None:                
-#                 v.Scale(self.pot_scale if self.is_mc else 1.0,"width" if bin_width_normalize else "")
-#                 # v.Scale(self.pot_scale if self.is_mc else 1.0,"False")
-
-#         self.POT_scaled = True
-
-#     def GetCateList(self,grouping = None):
-#         if not self.valid:
-#             return None
-#         _mc_ints = []
-#         _colors= []
-#         _titles= []
-#         local_grouping = grouping
-#         for cate in list(local_grouping.keys())[::-1]: 
-#             config = local_grouping[cate]
-#             hist = None
-#             if "cate" in config:
-#                 for fine_cate in config["cate"]:
-#                     if fine_cate not in self.hists.keys(): 
-#                         continue
-#                     if hist is None and self.hists[fine_cate]:
-#                         hist = self.hists[fine_cate].Clone()
-#                     elif self.hists[fine_cate]:
-#                         hist.Add(self.hists[fine_cate])
-#                     else:
-#                         continue
-#             else:
-#                 if not self.hists[cate]:
-#                     continue
-#                 else:
-#                     hist = self.hists[cate] if self.hists[cate] else None
-                
-#             if hist:
-#                 hist.SetTitle(config["title"])
-#                 _mc_ints.append(hist)
-#                 _titles.append(config["title"])
-#                 _colors.append(config["color"])
-#             else:
-#                 continue
-#             del hist
-#         return _mc_ints,_colors,_titles
-
-#     def GetHist(self): 
-#         if not self.valid:  
-#             return None 
-#         return self.hists["Total"]
-
-#     def GetTrueSignalHist(self): 
-#         if not self.valid:  
-#             return None 
-#         return self.hists["CCNuE"]
-
-#     def ResumTotal(self):
-#         self.hists["Total"].Reset("ICESM")
-#         for i in self.hists:
-#             if i=="Total":
-#                 continue
-#             else:
-#                 self.hists["Total"].Add(self.hists[i])
-
-#     def GetSumCate(self,cate_list):
-#         if len(cate_list) == 0:
-#             return None
-#         hnew = self.hists[cate_list[0]].Clone()
-#         for i in range(1,len(cate_list)):
-#             htmp = self.hists[cate_list[i]]
-#             if htmp:
-#                 hnew.Add(htmp)
-#             else:
-#                 continue
-#         return hnew
-
-#     def Add(self,hist_holder):
-#         if not isinstance(hist_holder,HistHolder):
-#             raise ValueError("Can only add histholder to histholder")
-#         for i in self.hists:
-#             if self.hists[i] and hist_holder.hists[i]:
-#                 self.hists[i].Add(hist_holder.hists[i])
-#             else:
-#                 print(i,self.hists[i],hist_holder.hists[i])
-
+                print(i,self.hists[i],hist_holder.hists[i])

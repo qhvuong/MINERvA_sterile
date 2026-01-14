@@ -15,7 +15,6 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS
 MNVPLOTTER = PlotUtils.MnvPlotter()
 #config MNVPLOTTER:
 MNVPLOTTER.draw_normalized_to_bin_width=False
-# MNVPLOTTER.draw_normalized_to_bin_width=True
 MNVPLOTTER.legend_text_size = 0.02
 MNVPLOTTER.extra_top_margin = -0.035# go slightly closer to top of pad
 MNVPLOTTER.mc_bkgd_color = 46 
@@ -248,84 +247,27 @@ def Prepare2DStack(data_hists,mc_hists,Grouping = None):
 def PrepareStack(data_hists,mc_hists,Grouping = None):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
-
-    # mc_list,color,title = mc_hists.GetCateList(Grouping)
-    mc_list, color, title, raw_counts = mc_hists.GetCateList(Grouping, with_raw=True)
-
-
-    # print("\n[PrepareStack DEBUG]")
-    # print(f"  plot_name          : {data_hists.plot_name}")
-    # print(f"  sideband           : {data_hists.sideband}")
-    # print(f"  Grouping is None?  : {Grouping is None}")
-    # if Grouping is not None:
-    #     print("  Grouping keys      :", list(Grouping.keys()))
-    # else:
-    #     print("  Grouping keys      : None")
-    # print("  mc_hists keys      :", list(mc_hists.hists.keys()))
-
-    # # NEW:
-    # print(f"  N MC stack components: {len(mc_list)}")
-    # for h, t in zip(mc_list, title):
-    #     if h:
-    #         print(f"    component '{t}': integral = {h.Integral()}")
-    #     else:
-    #         print(f"    component '{t}': MISSING hist")
-
+    mc_list,color,title = mc_hists.GetCateList(Grouping)
     if data_hists.valid:
-        plotfunction = lambda mnvplotter, data_hist, *mc_ints: partial(
-            MakeDataMCStackedPlot,
-            color=color,
-            title=title,
-            raw_counts=raw_counts,   # <<< ADD THIS
-            legend="TR"
-        )(data_hist, mc_ints)
-
+        plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend="TR")(data_hist,mc_ints)
         if "frontdedx" in data_hists.GetHist().GetName():
             hist = data_hists.GetHist()
+            #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
         hists = [data_hists.GetHist()]
-
     else:
-        plotfunction = lambda mnvplotter, mc_hist, *mc_ints: partial(
-            MakeDataMCStackedPlot,
-            color=color,
-            title=title,
-            raw_counts=raw_counts,   # <<< ADD THIS
-            legend="TR"
-        )(mc_hist, mc_ints)
-
+        plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend = "TR")(mc_hist,mc_ints)
         tmp = mc_hists.GetHist().Clone()
         tmp.Reset()
-        hists = [tmp]
-
+        hists =[tmp]
     for hist in mc_list:
-        if hist and "frontdedx" in hist.GetName():
+        if "frontdedx" in hist.GetName():
+            #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
-
+        if hist == None:
+            del hist
     hists.extend(mc_list)
-    return plotfunction, hists
-
-
-    # if data_hists.valid:
-    #     plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend="TR")(data_hist,mc_ints)
-    #     if "frontdedx" in data_hists.GetHist().GetName():
-    #         hist = data_hists.GetHist()
-    #         #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
-    #         hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
-    #     hists = [data_hists.GetHist()]
-    # else:
-    #     plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend = "TR")(mc_hist,mc_ints)
-    #     tmp = mc_hists.GetHist().Clone()
-    #     tmp.Reset()
-    #     hists =[tmp]
-    # for hist in mc_list:
-    #     if "frontdedx" in hist.GetName():
-    #         #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
-    #         hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
-    #     if hist == None:
-    #         del hist
-    # hists.extend(mc_list)
-    # return plotfunction,hists
+    return plotfunction,hists
 
 def PrepareStackNew(data_hists,mc_hists,Grouping = None):
     if not mc_hists.valid:
@@ -534,23 +476,23 @@ def MakeModelVariantPlot(data_hist, mc_hists, color=None, title=None,legend ="TR
     #mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,legend,True,True,False,False,False)
     mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,legend,True,True,False,False)
 
-# def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
-#     if not mc_hists:
-#         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
-#     TArray = ROOT.TObjArray()
-#     for i in range(len(mc_hists)):
-#         if color:
-#             mc_hists[i].SetFillColor(color[i])
-#         if title:
-#             mc_hists[i].SetTitle(title[i])
+def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+    if not mc_hists:
+        raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+    TArray = ROOT.TObjArray()
+    for i in range(len(mc_hists)):
+        if color:
+            mc_hists[i].SetFillColor(color[i])
+        if title:
+            mc_hists[i].SetTitle(title[i])
 
-#         if mc_hists[i]:
-#             TArray.Add(mc_hists[i])
-#     if data_hist is not None:
-#         mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
-#     #else:
-#     elif TArray is not None:
-#         mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+        if mc_hists[i]:
+            TArray.Add(mc_hists[i])
+    if data_hist is not None:
+        mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
+    #else:
+    elif TArray is not None:
+        mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
 
 def MakeSignalDecomposePlot(data_hist, mc_hist, mc_hists, title, color, pot_scale = 1.0, mnvplotter=MNVPLOTTER,canvas=CANVAS):
     #if data_hist is not None:
@@ -775,121 +717,23 @@ def GetTLegend(pad):
             return i
     return None
 
-
-
-
-def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None,
-                          legend="TR", pot_scale=1,
-                          raw_counts=None,   # <-- NEW
-                          mnvplotter=MNVPLOTTER, canvas=CANVAS):
+def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
     TArray = ROOT.TObjArray()
-
-    for i, h in enumerate(mc_hists):
-        if not h:
+    for i in range(len(mc_hists)):
+        if not mc_hists[i] or mc_hists[i].Integral() <= 0:
             continue
-
-        # don't use h.Integral() here anymore (it depends on later scaling)
         if color is not None:
-            h.SetFillColor(color[i])
-
+            mc_hists[i].SetFillColor(color[i])
         if title is not None:
-            if raw_counts is not None and i < len(raw_counts) and raw_counts[i] is not None:
-                h.SetTitle(f"{title[i]} ({raw_counts[i]:.0f})")
-            else:
-                h.SetTitle(f"{title[i]}")
-
-        TArray.Add(h)
-
-    if data_hist and data_hist.Integral() > 0:
+            mc_hists[i].SetTitle(title[i])
+        TArray.Add(mc_hists[i])
+    if data_hist.Integral() > 0:
         try:
-            mnvplotter.DrawDataStackedMC(data_hist, TArray, pot_scale, legend, "Data", 0, 0, 1001)
+            mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
         except:
             pass
     else:
-        mnvplotter.DrawStackedMC(TArray, pot_scale, legend, 0, 0, 1001)
-
-
-def GetCateList(self, grouping=None, with_raw=False):
-    if not self.valid:
-        return None
-
-    _mc_ints, _colors, _titles, _raws = [], [], [], []
-    local_grouping = grouping
-
-    for cate in list(local_grouping.keys())[::-1]:
-        config = local_grouping[cate]
-        hist = None
-        raw = 0.0
-
-        if "cate" in config:
-            for fine_cate in config["cate"]:
-                if fine_cate not in self.hists or self.hists[fine_cate] is None:
-                    continue
-                if hist is None:
-                    hist = self.hists[fine_cate].Clone()
-                else:
-                    hist.Add(self.hists[fine_cate])
-
-                # raw count comes from cached POT-scaled counts (unaffected by later scaling)
-                if hasattr(self, "raw_counts") and self.raw_counts:
-                    raw += float(self.raw_counts.get(fine_cate, 0.0))
-        else:
-            if cate not in self.hists or self.hists[cate] is None:
-                continue
-            hist = self.hists[cate]
-            if hasattr(self, "raw_counts") and self.raw_counts:
-                raw = float(self.raw_counts.get(cate, 0.0))
-
-        if hist:
-            hist.SetTitle(config["title"])
-            _mc_ints.append(hist)
-            _titles.append(config["title"])
-            _colors.append(config["color"])
-            _raws.append(raw)
-
-    if with_raw:
-        return _mc_ints, _colors, _titles, _raws
-    return _mc_ints, _colors, _titles
-
-
-
-# def CountsFromWidthScaled(h):
-#     ax = h.GetXaxis()
-#     s = 0.0
-#     for b in range(1, h.GetNbinsX()+1):
-#         s += h.GetBinContent(b) * ax.GetBinWidth(b)
-#     # If you care about under/overflow, handle them separately (they have no width)
-#     return s
-
-# def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
-#     TArray = ROOT.TObjArray()
-#     for i in range(len(mc_hists)):
-#         h = mc_hists[i]
-#         if not h or h.Integral() <= 0:
-#             continue        
-#         # if not mc_hists[i] or mc_hists[i].Integral() <= 0:
-#         #     continue
-
-#         if color is not None:
-#             # mc_hists[i].SetFillColor(color[i])
-#             h.SetFillColor(color[i])
-        
-#         if title is not None:
-#             # mc_hists[i].SetTitle(title[i])
-#             n = h.Integral()  # POT-scaled already if you scaled before plotting
-#             h.SetTitle(f"{title[i]} ({n:.0f})")
-#             # n = CountsFromWidthScaled(h) 
-#             # h.SetTitle(f"{title[i]} ({n:.0f})")
-
-#         TArray.Add(mc_hists[i])
-    
-#     if data_hist.Integral() > 0:
-#         try:
-#             mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
-#         except:
-#             pass
-#     else:
-#         mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+        mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
 
 
 def MakeMigrationPlots(hist, output, no_text = False, fix_width = True, mnvplotter= MNVPLOTTER, canvas = CANVAS):
@@ -924,4 +768,3 @@ def CalChi2(data_hist,mc_hist,pot_scale=1.0):
     print("data/mc integral: {}/{}".format(data_hist.Integral(),mc_hist.Integral()))
     print("chi2/ndf of histogram {} is {}/{}.".format(data_hist.GetName(),chi2,ndf))
     return chi2,ndf
-
