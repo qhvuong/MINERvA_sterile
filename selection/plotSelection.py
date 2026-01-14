@@ -17,6 +17,7 @@ from tools.PlotLibrary import HistHolder
 ROOT.TH1.AddDirectory(False)
 SELECTED_SIDEBANDS = AnalysisConfig.sidebands
 mnvplotter = PlotUtils.MnvPlotter()
+# mnvplotter.draw_normalized_to_bin_width = False
 mnvplotter.axis_maximum = 1
 
 def MakePlot(data_hists,mc_hists,config,true_mc=False):
@@ -37,6 +38,15 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
                 data_signal.SetBinContent(q,mc_hists.hists["Total"].GetBinContent(q))
 
     PlotType = config.setdefault("plot_type",Default_Plot_Type)
+    # print(f"\n[MakePlot] Plot '{config['name']}' using plot_type = {PlotType}")
+
+    # if PlotType == "stacked":
+    #     # or whatever grouping you use, e.g. CONSOLIDATED_ERROR_GROUPS
+    #     mc_ints, colors, titles = mc_hists.GetCateList(CONSOLIDATED_ERROR_GROUPS)
+
+    #     print(f"[MakePlot]   N MC categories for stack: {len(mc_ints)}")
+    #     print(f"[MakePlot]   Titles: {titles}")
+    
     typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"
     slicer = config.setdefault("slicer", DefaultSlicer(data_hists)) if typeBool else PlotTools.IdentitySlicer
     draw_seperate_legend = config.setdefault("draw_seperate_legend",data_hists.dimension!=1 and (PlotType != "migration" or PlotType != "category_hist" or PlotType != "hist2d"))
@@ -190,17 +200,17 @@ if __name__ == "__main__":
     sideband_map = {}
 
     for config in PLOTS_TO_MAKE:
-        if "Front dEdX" in config['name']:
-            sideband = 'dEdX'
-            sidebandHist = HistHolder(config["name"] if "name" in config else config,mc_file,"dEdX",True,mc_pot,standPOT)
-            signalHist = HistHolder(config["name"] if "name" in config else config,mc_file,"Signal",True,mc_pot,standPOT)
-            signalHist.Add(sidebandHist)
-            dataSignal = HistHolder(config["name"] if "name" in config else config,data_file,"Signal",False,data_pot,standPOT)
-            dataSideband = HistHolder(config["name"] if "name" in config else config,data_file,"dEdX",False,data_pot,standPOT)
-            dataSignal.Add(dataSideband)
-            MakePlot(dataSignal,signalHist,config)
-            #MakeRatio(signalHist,sidebandHist,config)
-            continue
+        # if "Front dEdX" in config['name']:
+        #     sideband = 'dEdX'
+        #     sidebandHist = HistHolder(config["name"] if "name" in config else config,mc_file,"dEdX",True,mc_pot,standPOT)
+        #     signalHist = HistHolder(config["name"] if "name" in config else config,mc_file,"Signal",True,mc_pot,standPOT)
+        #     signalHist.Add(sidebandHist)
+        #     dataSignal = HistHolder(config["name"] if "name" in config else config,data_file,"Signal",False,data_pot,standPOT)
+        #     dataSideband = HistHolder(config["name"] if "name" in config else config,data_file,"dEdX",False,data_pot,standPOT)
+        #     dataSignal.Add(dataSideband)
+        #     MakePlot(dataSignal,signalHist,config)
+        #     #MakeRatio(signalHist,sidebandHist,config)
+        #     continue
 
         sideband_group =  config.setdefault("sideband_group",["Signal"]+SELECTED_SIDEBANDS)
         if isinstance(sideband_group,list):

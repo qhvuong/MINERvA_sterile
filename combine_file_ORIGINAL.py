@@ -16,35 +16,6 @@ from tools import Utilities
 ROOT.TH1.AddDirectory(False)
 SelectionFilesRegex = "(kin|truth)_dist_(data|mc)(.+)_"+ AnalysisConfig.selection_tag+"_"+AnalysisConfig.ntuple_tag+"(_[0-9]+)?\.root"
 
-
-def is_valid_root_file(filepath):
-    try:
-        print(f"🔍 Checking file: {filepath}")
-        f = ROOT.TFile.Open(filepath, "READ")
-        if not f:
-            print(f"⚠️ Could not open file: {filepath}")
-            return False
-        if f.IsZombie():
-            print(f"⚠️ Zombie file: {filepath}")
-            f.Close()
-            return False
-        if f.TestBit(ROOT.TFile.kRecovered):
-            print(f"⚠️ Recovered file (incomplete write): {filepath}")
-            f.Close()
-            return False
-        keys = f.GetListOfKeys()
-        if not keys or keys.GetSize() == 0:
-            print(f"⚠️ File has no histograms: {filepath}")
-            f.Close()
-            return False
-        f.Close()
-        return True
-    except Exception as e:
-        print(f"⚠️ Exception while checking {filepath}: {e}")
-        return False
-
-
-
 def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     input_file = ROOT.TFile.Open(input_string)
     output_file = ROOT.TFile.Open(output_string,"UPDATE")
@@ -74,25 +45,15 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     del input_file
     print("done a file")
 
-
-def MaddWrapper(output_playlist, input_files, is_data):
-    valid_files = [f for f in input_files if is_valid_root_file(f)]
-    print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
-
-    if not valid_files:
-        print(f"❌ No valid files to combine for {output_playlist} — skipping.")
-        return
-
-    # Optional: sort to make sure the first file is reliable
-    valid_files.sort()
-
-    args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist, is_data)]
-    args.extend(valid_files)
-
-    print(f"📦 Running madd on output: {args[1]}")
-    subprocess.run(args, stdout=subprocess.DEVNULL)
-    print("✅ Finished madd.")
-
+def MaddWrapper(output_playlist,input_files,is_data):
+    args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist,is_data)]
+    args.extend(input_files)
+    #cmd = "madd {} {}".format(AnalysisConfig.SelectionHistoPath(output_playlist,is_data)," ".join(input_files))
+    #print (cmd)
+    #os.system(cmd)
+    print(args)
+    subprocess.run(args,stdout=subprocess.DEVNULL)
+    print ("done")
 
 def MergeHistograms():
     for sample_type in dict_of_files:
@@ -142,47 +103,13 @@ def AddRegexMatchedFiles(dir_path,f = None):
     print(("added {} files".format(count)))
     return filesmap
 
-
-import argparse
-
-parser = argparse.ArgumentParser(description="Combine ROOT files for a playlist")
-parser.add_argument("--i", dest="input_dirs", action="append", required=True,help="Input directory (repeat for multiple)")
-parser.add_argument("--playlist", type=str, required=True)
-parser.add_argument("--ntuple_tag", type=str, required=True)
-parser.add_argument("--selection_tag", type=str, required=True)
-parser.add_argument("--mc_only", action="store_true")
-parser.add_argument("--data_only", action="store_true")
-parser.add_argument("--cal_POT", action="store_true")
-args = parser.parse_args()
-
-
 if __name__ == '__main__':
 
-    
-    AnalysisConfig.input_dirs = args.input_dirs
-    AnalysisConfig.playlist = args.playlist
-    AnalysisConfig.ntuple_tag = args.ntuple_tag
-    AnalysisConfig.selection_tag = args.selection_tag
-
-    # define regex here after ntuple_tag and selection_tag are known
-    SelectionFilesRegex = (
-        r"(kin|truth)_dist_(data|mc)(.+)_" + args.selection_tag + "_" + args.ntuple_tag + r"(_[0-9]+)?\.root"
-    )
-
-    # dict_of_files = AddRegexMatchedFiles(AnalysisConfig.input_dir)
-    dict_of_files = {}
-    for dir_path in AnalysisConfig.input_dirs:
-        new_files = AddRegexMatchedFiles(dir_path)
-        for sample_type in new_files:
-            for reco_type in new_files[sample_type]:
-                for sample in new_files[sample_type][reco_type]:
-                    dict_of_files.setdefault(sample_type, {}).setdefault(reco_type, {}).setdefault(sample, []).extend(
-                        new_files[sample_type][reco_type][sample]
-                    )
+    dict_of_files = AddRegexMatchedFiles(AnalysisConfig.input_dir)
     for sample_type in dict_of_files:
         if sample_type == "data":
-            print("found data")
 
+            print("found data")
     dict_of_special_mc_samples={}
     i=0
     while (True):

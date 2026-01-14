@@ -28,6 +28,27 @@ for k,v in CONSOLIDATED_ERROR_GROUPS.items():
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
 
+def get_elastic_hist(histholder):
+    """
+    Return a combined ν+e elastic histogram by summing any of:
+    NuEElastic, NuEElasticE, NuEElasticMu
+    that exist in the HistHolder.
+    """
+    h = None
+    for name in ("NuEElastic", "NuEElasticE", "NuEElasticMu"):
+        if name in histholder.hists and histholder.hists[name] is not None:
+            if h is None:
+                h = histholder.hists[name].Clone()
+                h.SetDirectory(0)
+            else:
+                h.Add(histholder.hists[name])
+    if h is None:
+        raise KeyError(
+            "No ν+e elastic category found in hists. "
+            f"Available keys: {list(histholder.hists.keys())}"
+        )
+    return h
+
 def Get1DScaleFactor(variable_hists,scale_hists):
     scale_dict = {}
     comparable_scale = MakeComparableMnvHXD(variable_hists.GetHist(), scale_hists, False)
@@ -104,8 +125,11 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
             mc_sidebandSIG.Add(mcsideband_histholders[index].hists[cate])
             mc_signalSIG.Add(mcsignal_histholders[index].hists[cate])
 
-    mc_signalNUEEL = mcsignal_histholders[index].hists["NuEElastic"].Clone()
-    mc_sidebandNUEEL = mcsideband_histholders[index].hists["NuEElastic"].Clone()
+    # mc_signalNUEEL = mcsignal_histholders[index].hists["NuEElastic"].Clone()
+    # mc_sidebandNUEEL = mcsideband_histholders[index].hists["NuEElastic"].Clone()
+
+    mc_signalNUEEL  = get_elastic_hist(mcsignal_histholders[index])
+    mc_sidebandNUEEL = get_elastic_hist(mcsideband_histholders[index])
 
     ### want a MC-like pseudodata signal region to avoid preliminary unblinding
     if AnalysisConfig.pseudodata:
@@ -172,7 +196,7 @@ def TuneMC(hist_holder, scale_hists, x_axis=False, y_axis=False, prediction=Fals
     hist_holder.ResumTotal()
     return True
 
-def ScaleCategories(hist_holder,scale_hists,prediction=False):
+def ScaleCategories(hist_holder, scale_hists, prediction=False):
     for cate in hist_holder.hists:
         if cate == "Total":
             continue
@@ -193,7 +217,7 @@ def ScaleCategories(hist_holder,scale_hists,prediction=False):
             print("KeyError with {} in {}".format(cate,hist_holder.sideband))
             continue
 
-def ScaleCategories1D(hist_holder,scale_dict):
+def ScaleCategories1D(hist_holder, scale_dict, prediction=False):
     for cate in hist_holder.hists:
         try:
             scale = scale_dict[BackgroundFitConfig.CATEGORY_FACTORS[cate]]

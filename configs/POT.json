@@ -873,6 +873,14 @@
             }
         }
     },
+    "le5_p6_test": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle5p6_test.txt"
+            }
+        }
+    },
     "le5_p6": {
         "mc": {
             "MAD": {
@@ -942,6 +950,14 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datale13Cp6.txt"
+            }
+        }
+    },
+    "le13C_p6_test": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle13Cp6_test.txt"
             }
         }
     },

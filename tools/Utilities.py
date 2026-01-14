@@ -326,7 +326,8 @@ def getFilesAndPOTScale(playlist, type_path_map, ntuple_tag,raw_pot = False):
             continue
         pots[i]= getPOTFromFile(path) or getPOT(playlist,t,ntuple_tag)
         files[i]=ROOT.TFile(path) or None
-    print(pots[0], pots[1], 'Data MC ') 
+    print("Data POT = ", pots[0]) 
+    print("MC POT = ", pots[1]) 
     pot_scale = pots[0]/pots[1] if pots.count(None) == 0 else 1.0
     
     if raw_pot:

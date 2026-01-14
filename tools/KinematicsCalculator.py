@@ -11,6 +11,7 @@ import ROOT
 import os
 from tools import Utilities
 from numpy import interp
+from config import SystematicsConfig
 
 # constants needed in calculations.
 M_e = 0.511 # MeV
@@ -137,8 +138,14 @@ class KinematicsCalculator(object):
                 return False
         event = self.event
         #decide if whether it is muon or electron event, and get lepton kinematics
+        # event.DebugElectronTheta(prong=0, entry_tag=f"entry={i}")
         self.reco_theta_lep_rad = event.LeptonTheta()
+        self.reco_thetaX_lep_rad = event.LeptonThetaX()
+        self.reco_thetaY_lep_rad = event.LeptonThetaY()
         self.reco_E_lep = event.LeptonEnergy()/1e3
+        # print("EVENT TYPE:", type(self.event))
+        # print("LeptonEnergy attribute:", self.event.LeptonEnergy)
+        # print("LeptonTheta attribute:", self.event.LeptonTheta)
         self.M_lep_sqr = event.M_lep_sqr/1e6
         self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
         self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
@@ -218,6 +225,25 @@ class KinematicsCalculator(object):
         self.true_theta_lep = math.degrees(self.true_theta_lep_rad)
         self.true_visE = self.CalculateVisibleE()
         self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
+
+        # --- NEW: true thetaX, thetaY in beam coordinates ---
+        # mc_primFSLepton = [px, py, pz, E] in MeV in detector coords.
+        # TruthFunctions.h rotates by MinervaUnits::numi_beam_angle_rad before taking angles.
+        px = self.event.GetVecElem("mc_primFSLepton", 0)
+        py = self.event.GetVecElem("mc_primFSLepton", 1)
+        pz = self.event.GetVecElem("mc_primFSLepton", 2)
+
+        p3 = ROOT.TVector3(px, py, pz)
+        # Use the SAME convention as TruthFunctions.h:
+        # p3lep.RotateX(MinervaUnits::numi_beam_angle_rad);
+        # p3.RotateX(ROOT.PlotUtils.MinervaUnits.numi_beam_angle_rad)
+        p3.RotateX(SystematicsConfig.BEAM_ANGLE)
+
+        self.true_thetaX_lep_rad = math.atan2(p3.X(), p3.Z())
+        self.true_thetaY_lep_rad = math.atan2(p3.Y(), p3.Z())
+        self.true_thetaX_lep = math.degrees(self.true_thetaX_lep_rad)
+        self.true_thetaY_lep = math.degrees(self.true_thetaY_lep_rad)
+        # -----------------------------------------------
 
         if self.include_hadron_momenta:
             for part_idx in range(len(self.event.mc_FSPartPDG)):

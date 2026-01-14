@@ -26,7 +26,7 @@ GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
 #SIDEBANDS=["dEdX","Excess_High_Inline","Excess_Low_Inline","High_PsiEe_and_dEdX"]
-SIDEBANDS = ["dEdX", "Etheta", "Eavail", "LowLeptonEnergy", "HighLeptonEnergy"]
+SIDEBANDS = ["dEdX", "Etheta", "Eavail"]
 
 class _AnalysisConfig(object):
     Defaults = {

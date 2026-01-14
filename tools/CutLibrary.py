@@ -198,72 +198,72 @@ CUT_CONFIGS = {
         "cut_fn": lambda val: True,
         "variable_range": VARIABLE_RANGE_01,
     },
-    "True NuMu": {
-        "value_getter": lambda event, nprong: abs(event.mc_incoming),
-        "cut_fn": lambda val: val==14,
-    },
-    "True NuE": {
-        "value_getter": lambda event, nprong: abs(event.mc_incoming),
-        "cut_fn": lambda val: val==12,
-    },
-    "True Scattering": {
-        "value_getter": lambda event, nprong: abs(event.mc_intType),
-        "cut_fn": lambda val: val==7,
-    },
-    "HasFiducialVertex": {
-        "cut_fn": REQUIRE_POSITIVE_INT,
-        "variable_range": VARIABLE_RANGE_01,
-    },
-    "Low UIE": {
-        "value_getter": lambda event,nprong: event.UpstreamInlineEnergy,
-        "cut_fn":lambda val : val<10,
-    },
-    "High UIE": {
-        "value_getter": lambda event,nprong: event.UpstreamInlineEnergy,
-        "cut_fn":lambda val : val>10,
-    },
-    "PsiEe": {
-        "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi*event.kin_cal.reco_E_lep) ,
-        "cut_fn": lambda vals: vals[1] < CutConfig.PSIEE_FLAT_CUT,
-    },
-     "LowPsiEe": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep*event.Psi,
-        "cut_fn": lambda vals: vals < CutConfig.PsiEe_CUT,
-        "variable_range": [0.2* i for i in range(0,21)]
-    },
-    "InversePsiEe": {
-        "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi*event.kin_cal.reco_E_lep),
-        "cut_fn": lambda vals: vals[1] > CutConfig.PSIEE_FLAT_CUT,
-    },
+    # "True NuMu": {
+    #     "value_getter": lambda event, nprong: abs(event.mc_incoming),
+    #     "cut_fn": lambda val: val==14,
+    # },
+    # "True NuE": {
+    #     "value_getter": lambda event, nprong: abs(event.mc_incoming),
+    #     "cut_fn": lambda val: val==12,
+    # },
+    # "True Scattering": {
+    #     "value_getter": lambda event, nprong: abs(event.mc_intType),
+    #     "cut_fn": lambda val: val==7,
+    # },
+    # "HasFiducialVertex": {
+    #     "cut_fn": REQUIRE_POSITIVE_INT,
+    #     "variable_range": VARIABLE_RANGE_01,
+    # },
+    # "Low UIE": {
+    #     "value_getter": lambda event,nprong: event.UpstreamInlineEnergy,
+    #     "cut_fn":lambda val : val<10,
+    # },
+    # "High UIE": {
+    #     "value_getter": lambda event,nprong: event.UpstreamInlineEnergy,
+    #     "cut_fn":lambda val : val>10,
+    # },
+    # "PsiEe": {
+    #     "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi*event.kin_cal.reco_E_lep) ,
+    #     "cut_fn": lambda vals: vals[1] < CutConfig.PSIEE_FLAT_CUT,
+    # },
+    #  "LowPsiEe": {
+    #     "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep*event.Psi,
+    #     "cut_fn": lambda vals: vals < CutConfig.PsiEe_CUT,
+    #     "variable_range": [0.2* i for i in range(0,21)]
+    # },
+    # "InversePsiEe": {
+    #     "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi*event.kin_cal.reco_E_lep),
+    #     "cut_fn": lambda vals: vals[1] > CutConfig.PSIEE_FLAT_CUT,
+    # },
     "Vertex_Z": {
         "value_getter": lambda event, nprong: event.vtx[2],
         "cut_fn": lambda val: CutConfig.FIDUCIAL_Z_RANGE[0] <= val <= CutConfig.FIDUCIAL_Z_RANGE[1],
         "variable_range": [100 * i for i in range(100)]
     },
-    "Vertex_Z_Centralized" : {
-        "value_getter": lambda event,nprong: event.classifier.ZRange.passesCut(event,ROOT.PlotUtils.detail.empty()),
-        "cut_fn" : lambda val:val
-    },
-    "Vertex_Apothem_Centralized" : {
-        "value_getter": lambda event,nprong: event.classifier.Apothem.passesCut(event,ROOT.PlotUtils.detail.empty()),
-        "cut_fn" : lambda val:val
-    },
+    # "Vertex_Z_Centralized" : {
+    #     "value_getter": lambda event,nprong: event.classifier.ZRange.passesCut(event,ROOT.PlotUtils.detail.empty()),
+    #     "cut_fn" : lambda val:val
+    # },
+    # "Vertex_Apothem_Centralized" : {
+    #     "value_getter": lambda event,nprong: event.classifier.Apothem.passesCut(event,ROOT.PlotUtils.detail.empty()),
+    #     "cut_fn" : lambda val:val
+    # },
     "Vertex_Apothem": {
         "value_getter":lambda event,nprong: CalcApothem(event.vtx[0],event.vtx[1]),
         "cut_fn": lambda val: val <= CutConfig.FIDUCIAL_APOTHEM,
         "variable_range": [10*i for i in range(120)]
     },
 
-    "Truth_Vertex_Z": {
-        "value_getter": lambda event, nprong: event.mc_vtx[2],
-        "cut_fn": lambda val: CutConfig.FIDUCIAL_Z_RANGE[0] <= val <= CutConfig.FIDUCIAL_Z_RANGE[1],
-        "variable_range": [100 * i for i in range(100)]
-    },
-    "Truth_Vertex_Apothem": {
-        "value_getter":lambda event,nprong: CalcApothem(event.mc_vtx[0],event.mc_vtx[1]),
-        "cut_fn": lambda val: val <= CutConfig.FIDUCIAL_APOTHEM,
-        "variable_range": [10*i for i in range(120)]
-    },
+    # "Truth_Vertex_Z": {
+    #     "value_getter": lambda event, nprong: event.mc_vtx[2],
+    #     "cut_fn": lambda val: CutConfig.FIDUCIAL_Z_RANGE[0] <= val <= CutConfig.FIDUCIAL_Z_RANGE[1],
+    #     "variable_range": [100 * i for i in range(100)]
+    # },
+    # "Truth_Vertex_Apothem": {
+    #     "value_getter":lambda event,nprong: CalcApothem(event.mc_vtx[0],event.mc_vtx[1]),
+    #     "cut_fn": lambda val: val <= CutConfig.FIDUCIAL_APOTHEM,
+    #     "variable_range": [10*i for i in range(120)]
+    # },
 
     "HasTracks": {
         "value_getter": lambda event, nprong: event.n_prongs>0,
@@ -282,11 +282,11 @@ CUT_CONFIGS = {
         "variable_range": [0.1*i for i in range(5,11)]
     },
 
-    "UniqueEMLikeTrackScore": {
-        "value_getter": lambda event,n_prongs: event.prong_part_score,
-        "cut_fn": lambda val: [_>=CutConfig.PID_SCORE_CUT for _ in val].count(True)==1,
-        "variable_range": [0.1*i for i in range(5,11)]
-    },
+    # "UniqueEMLikeTrackScore": {
+    #     "value_getter": lambda event,n_prongs: event.prong_part_score,
+    #     "cut_fn": lambda val: [_>=CutConfig.PID_SCORE_CUT for _ in val].count(True)==1,
+    #     "variable_range": [0.1*i for i in range(5,11)]
+    # },
     
     "DSCalVisE" : {
         "value_getter": lambda event, nprong:
@@ -321,52 +321,83 @@ CUT_CONFIGS = {
         "variable_range": list(range(0,6))
     },
 
-    "HasNoNonEMExitingTracks": {
-        "cut_fn": REQUIRE_POSITIVE_INT,
-        "variable_range": VARIABLE_RANGE_01,
-    },
+    # "HasNoNonEMExitingTracks": {
+    #     "cut_fn": REQUIRE_POSITIVE_INT,
+    #     "variable_range": VARIABLE_RANGE_01,
+    # },
 
-    "Psi": {
-        "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi) ,
-        "cut_fn": lambda vals: vals[1] < CutConfig.PSI_FLAT_CUT,
-        "variable_range": [0.1* i for i in range(0,11)]
-    },
+    # "Psi": {
+    #     "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi) ,
+    #     "cut_fn": lambda vals: vals[1] < CutConfig.PSI_FLAT_CUT,
+    #     "variable_range": [0.1* i for i in range(0,11)]
+    # },
 
-    "Wexp": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_W,
-        "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
-        "variable_range": [0.5* i for i in range(0,11)]
-    },
+    # "Wexp": {
+    #     "value_getter": lambda event, nprong: event.kin_cal.reco_W,
+    #     "cut_fn": lambda vals: vals>0 and vals <= CutConfig.WEXP_CUT,
+    #     "variable_range": [0.5* i for i in range(0,11)]
+    # },
     "Eavail": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
-        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
-        "variable_range": [0.4* i for i in range(0,11)]
+        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1]
+        # "variable_range": [0.4* i for i in range(0,11)]
     },
-    
-    "FHC_proton": {
-        "value_getter": lambda event, nprong: event,
-        "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
-        #"cut_fn": lambda val: passSingleProtonCut(val,0),
-        "variable_range": [0.1* i for i in range(0,11)]
+    "LeptonEnergy": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
+        "cut_fn": lambda val: val > CutConfig.ELECTRON_ENERGY_CUT
+        # "variable_range": [0.5*i for i in range(0,21)]
     },
-    "Pt": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_Pt_lep,
-        "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
+    "LowLeptonEnergy": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
+        "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_CUT < val < CutConfig.ELECTRON_ENERGY_CUT_SIDEBAND
+        # "variable_range": [0.5*i for i in range(0,21)]
+    },
+    "HighLeptonEnergy": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
+        "cut_fn": lambda val: val >= CutConfig.ELECTRON_ENERGY_CUT_SIDEBAND
+        # "variable_range": [0.5*i for i in range(0,21)]
+    },
+    "Q2": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_q2_cal,
+        "cut_fn": lambda val: val < CutConfig.Q2_CUT,
         "variable_range": [0.1*i for i in range(0,21)]
     },
+    # "FHC_proton": {
+    #     "value_getter": lambda event, nprong: event,
+    #     "cut_fn": lambda val: passHybridProtonNodeCut(val,10),
+    #     #"cut_fn": lambda val: passSingleProtonCut(val,0),
+    #     "variable_range": [0.1* i for i in range(0,11)]
+    # },
+    # "Pt": {
+    #     "value_getter": lambda event, nprong: event.kin_cal.reco_Pt_lep,
+    #     "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
+    #     "variable_range": [0.1*i for i in range(0,21)]
+    # },
     "Etheta": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
         "cut_fn": lambda vals: vals >= CutConfig.Ethetasquared_CUT,
     },
-    "OpeningAngle": {
-        "value_getter": lambda event, nprong: event.ElectronProtonAngle(),
-        "cut_fn": lambda val: CutConfig.RECO_ANGLE[0] <= val <= CutConfig.RECO_ANGLE[1],
+    "EthetaNuE": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        "cut_fn": lambda vals: vals < CutConfig.Ethetasquared_CUT,
     },
-    "InversePsi": {
-         "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi) ,
-         "cut_fn": lambda vals: vals[1] > CutConfig.PSI_FLAT_CUT,
-         "variable_range": [0.1* i for i in range(0,11)]
-     },
+    "EthetaNuE_true": {
+        "value_getter": lambda event, nprong: event.kin_cal.true_E_lep * (event.kin_cal.true_theta_lep_rad)**2,
+        "cut_fn": lambda vals: vals < CutConfig.Ethetasquared_CUT,
+    },
+    "EthetaNuESideband": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        "cut_fn": lambda vals: CutConfig.Ethetasquared_SIDEBAND_LOW <= vals <= CutConfig.Ethetasquared_SIDEBAND_HIGH,
+    },
+    # "OpeningAngle": {
+    #     "value_getter": lambda event, nprong: event.ElectronProtonAngle(),
+    #     "cut_fn": lambda val: CutConfig.RECO_ANGLE[0] <= val <= CutConfig.RECO_ANGLE[1],
+    # },
+    # "InversePsi": {
+    #      "value_getter": lambda event, nprong: (event.prong_TotalVisE[nprong]/1e3, event.Psi) ,
+    #      "cut_fn": lambda vals: vals[1] > CutConfig.PSI_FLAT_CUT,
+    #      "variable_range": [0.1* i for i in range(0,11)]
+    #  },
 
     "MeanFrontdEdX": {
         "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
@@ -374,17 +405,17 @@ CUT_CONFIGS = {
         "variable_range": [0.1* i for i in range(0,51)]
     },
 
-    "MidMeanFrontdEdX" : {
-        "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
-        "cut_fn": lambda val: val > CutConfig.FRONT_DEDX_CUT and val<CutConfig.FRONT_DEDX_PI0_UPPERBOUND,
-        "variable_range": [0.1* i for i in range(0,51)]
-    },
+    # "MidMeanFrontdEdX" : {
+    #     "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
+    #     "cut_fn": lambda val: val > CutConfig.FRONT_DEDX_CUT and val<CutConfig.FRONT_DEDX_PI0_UPPERBOUND,
+    #     "variable_range": [0.1* i for i in range(0,51)]
+    # },
 
-    "HighMeanFrontdEdX" : {
-        "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
-        "cut_fn": lambda val: val > CutConfig.FRONT_DEDX_PI0_UPPERBOUND,
-        "variable_range": [0.1* i for i in range(0,51)]
-    },
+    # "HighMeanFrontdEdX" : {
+    #     "value_getter": lambda event, nprong: event.prong_dEdXMeanFrontTracker[nprong],
+    #     "cut_fn": lambda val: val > CutConfig.FRONT_DEDX_PI0_UPPERBOUND,
+    #     "variable_range": [0.1* i for i in range(0,51)]
+    # },
 
     "NonMIPClusFrac": {
         "value_getter": lambda event, nprong: event.prong_NonMIPClusFrac[nprong],
@@ -398,25 +429,25 @@ CUT_CONFIGS = {
         "variable_range": [1.5* i for i in range(0,21)]
     },
     
-    "ProtonScore": {
-        "value_getter": lambda event, nprong: event.MasterAnaDev_proton_score1,
-        "cut_fn": lambda val: 0 <= val <= 1,
-    },
+    # "ProtonScore": {
+    #     "value_getter": lambda event, nprong: event.MasterAnaDev_proton_score1,
+    #     "cut_fn": lambda val: 0 <= val <= 1,
+    # },
 
-    "ZDifference": {
-        "value_getter": lambda event, nprong: (event.MasterAnaDev_proton_startPointZ,event.prong_axis_vertex[nprong][2]),
-        "cut_fn": lambda vals: CutConfig.RECO_ZDIFF_RANGE[0]<= vals[0]-vals[1] <= CutConfig.RECO_ZDIFF_RANGE[1],
-    },
+    # "ZDifference": {
+    #     "value_getter": lambda event, nprong: (event.MasterAnaDev_proton_startPointZ,event.prong_axis_vertex[nprong][2]),
+    #     "cut_fn": lambda vals: CutConfig.RECO_ZDIFF_RANGE[0]<= vals[0]-vals[1] <= CutConfig.RECO_ZDIFF_RANGE[1],
+    # },
 
-    "ZDifference_vtx": {
-        "value_getter": lambda event, nprong: (event.prong_axis_vertex[nprong][2],event.vtx[2]),
-        "cut_fn": lambda vals: CutConfig.RECO_VTX_ZDIFF_RANGE[0]<= vals[0]-vals[1] <= CutConfig.RECO_VTX_ZDIFF_RANGE[1],
-    },
+    # "ZDifference_vtx": {
+    #     "value_getter": lambda event, nprong: (event.prong_axis_vertex[nprong][2],event.vtx[2]),
+    #     "cut_fn": lambda vals: CutConfig.RECO_VTX_ZDIFF_RANGE[0]<= vals[0]-vals[1] <= CutConfig.RECO_VTX_ZDIFF_RANGE[1],
+    # },
     
-    "ProtonEnd": {
-        "value_getter": lambda event, nprong: event.MasterAnaDev_proton_endPointZ,
-        "cut_fn": lambda val: val <= CutConfig.RECO_PROTON_END,
-    },
+    # "ProtonEnd": {
+    #     "value_getter": lambda event, nprong: event.MasterAnaDev_proton_endPointZ,
+    #     "cut_fn": lambda val: val <= CutConfig.RECO_PROTON_END,
+    # },
 
     #"HasNoMichelElectrons": {
     #"value_getter": lambda event, nprong: (event.michel_digits, event.michel_energy, event.michel_slice_energy),
@@ -435,98 +466,98 @@ CUT_CONFIGS = {
         "variable_range": [0.1* i for i in range(0,11)]
     },
 
-    "Exuv" : {
-        "value_getter": lambda event, nprong: event.kin_cal.Exuv,
-        "cut_fn": lambda val:abs(val) <= CutConfig.EXUV_CUT,
-        "variable_range": [0.1* i -0.5 for i in range(0,11)]
-    },
+    # "Exuv" : {
+    #     "value_getter": lambda event, nprong: event.kin_cal.Exuv,
+    #     "cut_fn": lambda val:abs(val) <= CutConfig.EXUV_CUT,
+    #     "variable_range": [0.1* i -0.5 for i in range(0,11)]
+    # },
 
-    "Euv" : {
-        "value_getter": lambda event, nprong: event.kin_cal.Euv,
-        "cut_fn": lambda val: abs(val) <= CutConfig.EUV_CUT,
-        "variable_range": [0.1* i -0.5 for i in range(0,11)]
-    },
+    # "Euv" : {
+    #     "value_getter": lambda event, nprong: event.kin_cal.Euv,
+    #     "cut_fn": lambda val: abs(val) <= CutConfig.EUV_CUT,
+    #     "variable_range": [0.1* i -0.5 for i in range(0,11)]
+    # },
 
-    "LLR" : {
-        "value_getter": lambda event, nprong: max(-20,min(19.9, event.kin_cal.LLR)) if event.kin_cal.LLR is not None else None,
-        "cut_fn": lambda val: val is not None and val <= 0,
-        "variable_range": [i for i in range(-20,20)]
-    },
+    # "LLR" : {
+    #     "value_getter": lambda event, nprong: max(-20,min(19.9, event.kin_cal.LLR)) if event.kin_cal.LLR is not None else None,
+    #     "cut_fn": lambda val: val is not None and val <= 0,
+    #     "variable_range": [i for i in range(-20,20)]
+    # },
 
-    "Neutrino Helicity" : {
-        "value_getter": lambda event, nprong: -1 if event.MasterAnaDev_nuHelicity ==1 else 1,
-        "cut_fn": lambda val: CutConfig.HELICITY is None or val * CutConfig.HELICITY>0,
-        "variable_range": [-1.1,0,1.1]
-    },
-    "HasMINOSMatch" : {
-        "value_getter": lambda event,nprong: event.IsMinosMatchMuon(),
-        "cut_fn": lambda val: val,
-        "variable_range": [-1.1,0,1.1]
-    }
+    # "Neutrino Helicity" : {
+    #     "value_getter": lambda event, nprong: -1 if event.MasterAnaDev_nuHelicity ==1 else 1,
+    #     "cut_fn": lambda val: CutConfig.HELICITY is None or val * CutConfig.HELICITY>0,
+    #     "variable_range": [-1.1,0,1.1]
+    # },
+    # "HasMINOSMatch" : {
+    #     "value_getter": lambda event,nprong: event.IsMinosMatchMuon(),
+    #     "cut_fn": lambda val: val,
+    #     "variable_range": [-1.1,0,1.1]
+    # }
 
 }  # CUT_CONFIGS
 
 
 KINEMATICS_CUT_CONFIGS = {
-    "RecoEavail": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
-        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
-        "variable_range": [0.4* i for i in range(0,11)]
-    },
-    "RecoLeptonEnergy": {
-        "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
-        "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
-        "variable_range": [0.5*i for i in range(0,21)]
-    },
+    # "RecoEavail": {
+    #     "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
+    #     "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
+    #     "variable_range": [0.4* i for i in range(0,11)]
+    # },
+    # "RecoLeptonEnergy": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
+    #     "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
+    #     "variable_range": [0.5*i for i in range(0,21)]
+    # },
     
-    "RecoLeptonAngle": {
-        "value_getter": lambda event,nprong: event.kin_cal.reco_theta_lep,
-        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
-    },
+    # "RecoLeptonAngle": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.reco_theta_lep,
+    #     "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
+    # },
 
-    "RecoNeutrinoEnergy": {
-        "value_getter": lambda event,nprong: event.kin_cal.reco_E_nu_cal,
-        "cut_fn": lambda val: CutConfig.NEUTRINO_ENERGY_RANGE[0] <= val < CutConfig.NEUTRINO_ENERGY_RANGE[1],
-    },
-    "RecoQ3": {
-        "value_getter": lambda event,nprong: event.kin_cal.reco_q3,
-        "cut_fn": lambda val: CutConfig.RECO_Q3_RANGE[0] <= val < CutConfig.RECO_Q3_RANGE[1],
-        "variable_range": [0.1*i for i in range(0,21)]
-    },
-    "RecoPt": {
-        "value_getter": lambda event,nprong: event.kin_cal.reco_Pt_lep,
-        "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
-        "variable_range": [0.1*i for i in range(0,21)]
-    },
-    "TrueEavail": {
-        "value_getter": lambda event, nprong: event.kin_cal.true_visE,
-        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
-        "variable_range": [0.4* i for i in range(0,11)]
-    },
-    "TrueLeptonEnergy": {
-        "value_getter": lambda event,nprong: event.kin_cal.true_E_lep,
-        "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
-    },
+    # "RecoNeutrinoEnergy": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.reco_E_nu_cal,
+    #     "cut_fn": lambda val: CutConfig.NEUTRINO_ENERGY_RANGE[0] <= val < CutConfig.NEUTRINO_ENERGY_RANGE[1],
+    # },
+    # "RecoQ3": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.reco_q3,
+    #     "cut_fn": lambda val: CutConfig.RECO_Q3_RANGE[0] <= val < CutConfig.RECO_Q3_RANGE[1],
+    #     "variable_range": [0.1*i for i in range(0,21)]
+    # },
+    # "RecoPt": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.reco_Pt_lep,
+    #     "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
+    #     "variable_range": [0.1*i for i in range(0,21)]
+    # },
+    # "TrueEavail": {
+    #     "value_getter": lambda event, nprong: event.kin_cal.true_visE,
+    #     "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1],
+    #     "variable_range": [0.4* i for i in range(0,11)]
+    # },
+    # "TrueLeptonEnergy": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.true_E_lep,
+    #     "cut_fn": lambda val: CutConfig.ELECTRON_ENERGY_RANGE[0] <= val < CutConfig.ELECTRON_ENERGY_RANGE[1],
+    # },
     
-    "TrueLeptonAngle": {
-        "value_getter": lambda event,nprong: event.kin_cal.true_theta_lep,
-        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
-    },
+    # "TrueLeptonAngle": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.true_theta_lep,
+    #     "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
+    # },
 
-    "TrueNeutrinoEnergy": {
-        "value_getter": lambda event,nprong: event.kin_cal.true_enu_genie,
-        "cut_fn": lambda val: CutConfig.NEUTRINO_ENERGY_RANGE[0] <= val < CutConfig.NEUTRINO_ENERGY_RANGE[1],
-    },
-    "TrueQ3": {
-        "value_getter": lambda event,nprong: event.kin_cal.true_q3,
-        "cut_fn": lambda val: CutConfig.TRUE_Q3_RANGE[0] <= val < CutConfig.TRUE_Q3_RANGE[1],
-        "variable_range": [0.1*i for i in range(0,21)]
-    },
-    "TruePt": {
-        "value_getter": lambda event,nprong: event.kin_cal.true_Pt_lep,
-        "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
-        "variable_range": [0.1*i for i in range(0,21)]
-    },
+    # "TrueNeutrinoEnergy": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.true_enu_genie,
+    #     "cut_fn": lambda val: CutConfig.NEUTRINO_ENERGY_RANGE[0] <= val < CutConfig.NEUTRINO_ENERGY_RANGE[1],
+    # },
+    # "TrueQ3": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.true_q3,
+    #     "cut_fn": lambda val: CutConfig.TRUE_Q3_RANGE[0] <= val < CutConfig.TRUE_Q3_RANGE[1],
+    #     "variable_range": [0.1*i for i in range(0,21)]
+    # },
+    # "TruePt": {
+    #     "value_getter": lambda event,nprong: event.kin_cal.true_Pt_lep,
+    #     "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
+    #     "variable_range": [0.1*i for i in range(0,21)]
+    # },
 }
 
 if CutConfig.HACK_R2:

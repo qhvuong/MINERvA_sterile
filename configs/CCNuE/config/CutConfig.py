@@ -49,8 +49,8 @@ visE_RANGE = [0.0,0.3]
 Ethetasquared_CUT = .003
 FRONT_DEDX_PI0_UPPERBOUND = 5
 
-EAVAIL_LOW = [0.0,0.05]
-EAVAIL_HIGH = [0.0,0.2]
+# EAVAIL_LOW = [0.0,0.05]
+# EAVAIL_HIGH = [0.0,0.2]
 ELECTRON_ENERGY_CUTOFF = 2.5
 
 ############################################################################
@@ -99,7 +99,7 @@ SAMPLE_CUTS = {
 
 KINEMATICS_CUTS = [
     "LeptonAngle",
-    "Eavail",
+    # "Eavail",
     "Pt",
 ]
 #######################################

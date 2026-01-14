@@ -35,9 +35,6 @@ M_mu_sqr = M_mu**2
 #MethodName: UpperCaseCamel
 #universeShortName: lower_case_underscore
 
-def _clamp(x, lo=-1.0, hi=1.0):
-    return lo if x < lo else hi if x > hi else x
-
 # The base universe, define functions to be used for all universes.
 class CVPythonUniverse():
     is_pc = False
@@ -104,10 +101,7 @@ class CVPythonUniverse():
 
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
-            # self.LeptonTheta = self.ElectronTheta
-            self.LeptonTheta  = self.ElectronTheta_vtxcorr   # <-- vertex corrected
-            self.LeptonThetaX = self.ElectronThetaX
-            self.LeptonThetaY = self.ElectronThetaY
+            self.LeptonTheta = self.ElectronTheta
             self.LeptonEnergy = self.ElectronEnergy
             self.LeptonP3D = self.ElectronP3D
             self.M_lep_sqr =  M_e_sqr
@@ -295,68 +289,8 @@ class CVPythonUniverse():
         else:
             return -5
 
-
-    # --- NEW: vertex-based incident neutrino direction unit vector ---
-    def NuDirUnitFromVertex(self, Lmm=900000.0):
-        """
-        Estimate neutrino direction at this event from the reconstructed vertex.
-        Returns a unit vector in the SAME coordinate system as ElectronP3D()
-        (i.e. after RotationX(BEAM_ANGLE) is applied).
-
-        Lmm is the effective upstream distance to the source point (mm).
-        """
-        # reco vertex (mm). Use vtx[0..2] only. vtx[3] is something else (often time/something analysis-specific).
-        vx = self.GetVecElem("vtx", 0)
-        vy = self.GetVecElem("vtx", 1)
-        vz = self.GetVecElem("vtx", 2)
-
-        v_det = ROOT.Math.XYZVector(vx, vy, vz)
-
-        # rotate vertex into the "beam" coordinate convention, just like ElectronP3D() does to p
-        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        v_beam = r(v_det)
-
-        # Define an effective source point upstream along -z in BEAM coordinates.
-        # Then ν direction is from source -> vertex:
-        #   source = (0,0,-Lmm)
-        #   vertex = (x,y,z)
-        #   dir = vertex - source = (x, y, z + Lmm)
-        nu = ROOT.Math.XYZVector(v_beam.X(), v_beam.Y(), v_beam.Z() + Lmm)
-
-        mag = nu.R()
-        if mag <= 0:
-            return ROOT.Math.XYZVector(0, 0, 1)  # safe fallback
-        return nu * (1.0 / mag)
-
-    # --- NEW: theta using dot product with vertex-based ν direction ---
-    def ElectronTheta_vtxcorr(self, prong=0, Lmm=900000.0):
-        """
-        Vertex-corrected electron theta: angle between reconstructed lepton direction
-        and estimated incident ν direction at this vertex.
-        """
-        # reco lepton direction (already rotated into beam coords inside ElectronP3D)
-        p = self.ElectronP3D()  # XYZVector
-        pmag = p.R()
-        if pmag <= 0:
-            return 0.0
-
-        ulep = p * (1.0 / pmag)
-        unu  = self.NuDirUnitFromVertex(Lmm=Lmm)
-
-        cosang = _clamp(ulep.Dot(unu))
-        return math.acos(cosang)
-
-    # This is fixed beam electron theta
     def ElectronTheta(self):
         return self.ElectronP3D().Theta()
-
-    def ElectronThetaX(self):
-        p = self.ElectronP3D()  # already in beam coordinates in your code
-        return math.atan2(p.X(), p.Z())
-
-    def ElectronThetaY(self):
-        p = self.ElectronP3D()
-        return math.atan2(p.Y(), p.Z())
 
     def PrimaryProtonTheta(self):
         theta = self.MasterAnaDev_proton_theta
@@ -450,47 +384,6 @@ class CVPythonUniverse():
                 outer+=dedx[i]
             total+=dedx[i]
         return outer/total 
-    
-    def DebugElectronTheta(self, prong=0, entry_tag=""):
-        # Grab the raw 4-vector list-of-lists
-        e = self.GetVecOfVecDouble("prong_part_E")
-        if not e or len(e) <= prong:
-            print(f"[DebugElectronTheta] {entry_tag} prong_part_E missing or prong {prong} out of range")
-            return
-
-        vec = e[prong]
-        if len(vec) < 4:
-            print(f"[DebugElectronTheta] {entry_tag} prong_part_E[{prong}] has len={len(vec)} (expected >=4)")
-            return
-
-        px, py, pz, E = vec[0], vec[1], vec[2], vec[3]
-
-        # What your ElectronP3D does:
-        shift = self.GetEMEnergyShift()
-        scale = shift / E if E > 0 else 0.0
-
-        p_raw = ROOT.Math.XYZVector(px, py, pz)
-        p_scaled = p_raw * (1.0 + scale)
-
-        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        p_rot = r(p_scaled)
-
-        # Compute thetas
-        theta_raw = p_raw.Theta() if p_raw.R() > 0 else -999
-        theta_scaled = p_scaled.Theta() if p_scaled.R() > 0 else -999
-        theta_rot = p_rot.Theta() if p_rot.R() > 0 else -999
-        Etheta2 = (E+shift)*theta_rot**2 #MeV
-
-        print(f"\n[DebugElectronTheta] {entry_tag} prong={prong}")
-        print(f"  prong_part_E[{prong}] = (px,py,pz,E) = ({px:.3g}, {py:.3g}, {pz:.3g}, {E:.3g})")
-        print(f"  EM shift = {shift:.3g}  => scale = {scale:.3g}  => (1+scale) = {1.0+scale:.3g}")
-        print(f"  BEAM_ANGLE = {SystematicsConfig.BEAM_ANGLE:.6g} rad")
-        print(f"  theta_raw   = {theta_raw:.6g} rad")
-        print(f"  theta_scaled= {theta_scaled:.6g} rad")
-        print(f"  theta_rot   = {theta_rot:.6g} rad")
-        print(f"  reco Etheta2   = {Etheta2:.6g} MeV")
-
-
 
 class CVSystematicUniverse(ROOT.PythonMinervaUniverse, CVPythonUniverse):
     def __init__(self,chain,nsigma):
@@ -1044,8 +937,8 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #     #SuSAValenciaUniverse
         #     universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
 
-        #     #hadron reweight shifting universe
-        #     universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+        #     # #hadron reweight shifting universe
+        #     # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
         #     #leakage universe
         #     universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
