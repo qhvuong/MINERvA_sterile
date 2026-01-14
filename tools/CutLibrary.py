@@ -358,6 +358,10 @@ CUT_CONFIGS = {
         "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
         "cut_fn": lambda vals: vals >= CutConfig.Ethetasquared_CUT,
     },
+    "Eavail": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
+        "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1]
+    },
     "OpeningAngle": {
         "value_getter": lambda event, nprong: event.ElectronProtonAngle(),
         "cut_fn": lambda val: CutConfig.RECO_ANGLE[0] <= val <= CutConfig.RECO_ANGLE[1],

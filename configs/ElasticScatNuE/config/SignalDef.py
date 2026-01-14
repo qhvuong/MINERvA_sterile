@@ -87,7 +87,7 @@ IsNueBar = lambda event: event.mc_incoming == -12
 IsNumu = lambda event: event.mc_incoming == 14
 IsNumuBar = lambda event: event.mc_incoming == -14
 
-IsPi0InFinalState = lambda event: 111 in event.mc_FSPartPDG
+IsPi0InFinalState = lambda event: 111 in event.mc_FSPartPDG or -111 in event.mc_FSPartPDG
 IsChargedPionInFinalState = lambda event: 211 in event.mc_FSPartPDG or -211 in event.mc_FSPartPDG
 IsProtonInFinalState = lambda event: 2212 in event.mc_FSPartPDG
 IsMultiMeson = lambda event: countPDG(event.mc_FSPartPDG, [211,-211, 321,-321,323,-323,111,130,310,311])>1
@@ -111,27 +111,70 @@ TRUTH_CATEGORIES = OrderedDict()
 
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 
-# Exclude elastic events out of phase space BEFORE signal
-TRUTH_CATEGORIES["ElasticOutOfKinematic"] = lambda event: IsElastic(event) and not IsInKinematicPhaseSpace(event)
+# # Exclude elastic events out of phase space BEFORE signal
+# TRUTH_CATEGORIES["ElasticOutOfKinematic"] = lambda event: IsElastic(event) and not IsInKinematicPhaseSpace(event)
+
+# # ν + e elastic scattering (in phase space only)
+# TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNuE(event)  and IsInKinematicPhaseSpace(event)
+# TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNuMu(event) and IsInKinematicPhaseSpace(event)
+# # Optional catch-all for other flavors (e.g., ντ), put AFTER the in-PS buckets:
+# # TRUTH_CATEGORIES["NuEElasticOther"] = lambda event: IsElastic(event) and not (IsNuE(event) or IsNuMu(event)) and IsInKinematicPhaseSpace(event)
+
+# # CC νe backgrounds with correct ordering (wrong-sign first)
+# TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsAntiNu(event) and IsNuE(event)
+# TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNuE(event)
+# TRUTH_CATEGORIES["CCOther"]        = lambda event: IsCC(event) and not IsNuE(event)
+
+# # Photon-like BEFORE NC catch-all so it takes effect
+# TRUTH_CATEGORIES["PhotonMisID"] = lambda event: IsPhotonLike(event)
+
+# # NC categories and catch-all
+# TRUTH_CATEGORIES["NCPi0"]     = lambda event: IsNC(event) and IsPi0InFinalState(event)
+# TRUTH_CATEGORIES["NCCohPi0"]  = lambda event: IsNC(event) and IsCoherent(event) and IsPi0InFinalState(event)
+# TRUTH_CATEGORIES["NC"]        = lambda event: IsNC(event)
+
+
+
+# # My signal is one or more of the listed categories.
+# SIGNAL_DEFINATION = [
+#     "NuEElasticE",
+#     "NuEElasticMu",
+#     # "NuEElastic"
+# ]
+
+# EXTRA_OTHER = [
+# ]
+
+
 
 # ν + e elastic scattering (in phase space only)
-TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNuE(event)  and IsInKinematicPhaseSpace(event)
-TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNuMu(event) and IsInKinematicPhaseSpace(event)
+TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNuE(event) 
+TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNuMu(event)
 # Optional catch-all for other flavors (e.g., ντ), put AFTER the in-PS buckets:
-# TRUTH_CATEGORIES["NuEElasticOther"] = lambda event: IsElastic(event) and not (IsNuE(event) or IsNuMu(event)) and IsInKinematicPhaseSpace(event)
+TRUTH_CATEGORIES["NuEElasticOther"] = lambda event: IsElastic(event) 
 
 # CC νe backgrounds with correct ordering (wrong-sign first)
-TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsAntiNu(event) and IsNuE(event)
+TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event) and IsAntiNu(event)
+TRUTH_CATEGORIES["CCNuEQE"]        = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
+TRUTH_CATEGORIES["CCNuEDelta"]     = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
+TRUTH_CATEGORIES["CCNuEDIS"]       = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
+TRUTH_CATEGORIES["CCNuE2p2h"]      = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
+TRUTH_CATEGORIES["CCPi0"]          = lambda event: IsCC(event) and IsPi0InFinalState(event)
+TRUTH_CATEGORIES["CCPi"]           = lambda event: IsCC(event) and IsChargedPionInFinalState(event)
 TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNuE(event)
-TRUTH_CATEGORIES["CCOther"]        = lambda event: IsCC(event) and not IsNuE(event)
+TRUTH_CATEGORIES["CCNuMu"]         = lambda event: IsCC(event) and IsNuMu(event)
+TRUTH_CATEGORIES["CCOther"]        = lambda event: IsCC(event)
 
 # Photon-like BEFORE NC catch-all so it takes effect
-TRUTH_CATEGORIES["PhotonMisID"] = lambda event: IsPhotonLike(event)
+# TRUTH_CATEGORIES["PhotonMisID"] = lambda event: IsPhotonLike(event)
+
 
 # NC categories and catch-all
-TRUTH_CATEGORIES["NCPi0"]     = lambda event: IsNC(event) and IsPi0InFinalState(event)
-TRUTH_CATEGORIES["NCCohPi0"]  = lambda event: IsNC(event) and IsCoherent(event) and IsPi0InFinalState(event)
-TRUTH_CATEGORIES["NC"]        = lambda event: IsNC(event)
+TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsNC(event) and IsCoherent(event) and IsPi0InFinalState(event)
+TRUTH_CATEGORIES["NCPi0"]    = lambda event: IsNC(event) and IsPi0InFinalState(event)
+TRUTH_CATEGORIES["NCPi"]     = lambda event: IsNC(event) and IsChargedPionInFinalState(event)
+TRUTH_CATEGORIES["NCOther"]  = lambda event: IsNC(event)
+
 
 
 
@@ -139,7 +182,7 @@ TRUTH_CATEGORIES["NC"]        = lambda event: IsNC(event)
 SIGNAL_DEFINATION = [
     "NuEElasticE",
     "NuEElasticMu",
-    # "NuEElastic"
+    "NuEElasticOther",
 ]
 
 EXTRA_OTHER = [

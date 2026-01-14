@@ -8,7 +8,7 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GR
 
 
 Default_Plot_Type="stacked"
-Default_Scale = lambda histHolder:histHolder.POTScale(True)
+Default_Scale = lambda histHolder:histHolder.POTScale(False)
 DefaultSlicer = PlotTools.PrepareSlicer
 
 
