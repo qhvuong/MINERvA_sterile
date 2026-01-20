@@ -7,7 +7,7 @@ import ROOT
 import PlotUtils
 from itertools import chain
 from config.AnalysisConfig import AnalysisConfig
-from config.SignalDef import SIGNAL_DEFINATION
+from config.SignalDef import SIGNAL_DEFINITION
 from tools import Utilities
 
 # Get This from Rob. Thanks Rob.

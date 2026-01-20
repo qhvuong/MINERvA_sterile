@@ -358,9 +358,25 @@ CUT_CONFIGS = {
         "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
         "cut_fn": lambda vals: vals >= CutConfig.Ethetasquared_CUT,
     },
+    "EthetaSideband": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        "cut_fn": lambda vals: CutConfig.Ethetasquared_SIDEBAND_LOW <= vals <= CutConfig.Ethetasquared_SIDEBAND_HIGH,
+    },
     "Eavail": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
         "cut_fn": lambda val: CutConfig.visE_RANGE[0] <= val < CutConfig.visE_RANGE[1]
+    },
+    "EavailSideband": {
+        "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
+        "cut_fn": lambda val: val >= CutConfig.visE_RANGE[1]
+    },
+    "LeptonEnergy": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
+        "cut_fn": lambda val: val > CutConfig.ELECTRON_ENERGY_CUT
+    },
+    "Q2": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_q2_cal,
+        "cut_fn": lambda val: val < CutConfig.Q2_CUT
     },
     "OpeningAngle": {
         "value_getter": lambda event, nprong: event.ElectronProtonAngle(),

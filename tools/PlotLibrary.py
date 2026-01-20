@@ -170,6 +170,14 @@ def vertexDifference(event,n_prong=0):
     electronZ = event.prong_axis_vertex[n_prong][2]
     return(electronZ - protonZ)
 
+def CalcApothem(x,y):
+    x=abs(x)
+    y=abs(y)
+    if ( x == 0 or y/x > 1/math.sqrt(3)):
+        return (y+x/math.sqrt(3))/2*math.sqrt(3)
+    else:
+        return x
+
 VARIABLE_DICT = {
     "Biased Neutrino Energy":
     {
@@ -235,21 +243,13 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
         "tags":reco_tags
     },
-    # "Visible Energy":
-    # {
-    #     "name" : "Eavail",
-    #     "title" : "E_{avail} (GeV); NEvents",
-    #     "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
-    #     "value_getter" : lambda event: event.kin_cal.reco_visE,
-    #     "tags":reco_tags
-    # },
-    "Visible Energy":
+    "True Lepton Energy":
     {
-        "name" : "E_avail",
-        "title" : "Available Energy; E_{avail} (GeV); NEvents",
-        "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
-        "value_getter" : [lambda event: event.kin_cal.reco_visE],
-        "tags":reco_tags
+        "name" : "true_Eel",
+        "title" : "True E_lep (GeV)",
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_E_lep],
+        "tags":truth_tags
     },
     "Lepton Pt":
     {
@@ -350,14 +350,6 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_theta_lep],
         "tags":reco_tags
     },
-    # "Ee Vs Theta":
-    # {
-    #     "name" : "Ee_Vs_Theta",
-    #     "title" : "E_{lepton} Vs #theta ; E_{lepton} (GeV); #theta (rad) ; NEvents",
-    #     "binning" : [PlotConfig.NEUTRINO4_EE_BINNING,PlotConfig.NEUTRINO4_THETA_BINNING],
-    #     "value_getter" : [lambda event: event.kin_cal.reco_E_lep, lambda event: event.kin_cal.reco_theta_lep_rad],
-    #     "tags":reco_tags
-    # },
      "Estimator vs Front dEdX":
     {
         "name" : "estimator_vs_frontdedx",
@@ -791,6 +783,270 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.mc_incomingE/1000],
         "tags":reco_tags
     },
+    "Visible Energy":
+    {
+        "name" : "E_avail",
+        "title" : "Available Energy; E_{avail} (GeV); NEvents",
+        "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
+        "value_getter" : [lambda event: event.kin_cal.reco_visE],
+        "tags":reco_tags
+    },
+    "Lepton Energy":
+    {
+        "name" : "Eel",
+        "title" : "Reconstructed E_lep (GeV)",
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_lep],
+        "tags":reco_tags
+    },
+    "True vs Reconstructed Lepton Energy":
+    {
+        "name" : "TrueVsRecoLeptonEnergy",
+
+        "title": "True vs Reco Lepton Energy; True E_{lep} (GeV); Reco E_{lep} (GeV); NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING,
+                     PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_E_lep,
+                          lambda event: event.kin_cal.reco_E_lep],
+        "tags": reco_tags   
+    },
+    "True vs Reconstructed Lepton Theta":
+    {
+        "name" : "TrueVsRecoLeptonTheta",
+
+        "title": "True vs Reco Lepton Theta; True theta_{lep} (rad); Reco theta_{lep} (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_theta_lep_rad,
+                          lambda event: event.kin_cal.reco_theta_lep_rad],
+        "tags": reco_tags   
+    },
+    "True vs Reconstructed Lepton Theta X":
+    {
+        "name" : "TrueVsRecoLeptonThetaX",
+
+        "title": "True vs Reco Lepton Theta X; True thetaX (rad); Reco thetaX (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_thetaX_lep_rad,
+                          lambda event: event.kin_cal.reco_thetaX_lep_rad],
+        "tags": reco_tags   
+    },
+    "True vs Reconstructed Lepton Theta Y":
+    {
+        "name" : "TrueVsRecoLeptonThetaY",
+
+        "title": "True vs Reco Lepton Theta Y; True thetaY (rad); Reco thetaY (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_thetaY_lep_rad,
+                          lambda event: event.kin_cal.reco_thetaY_lep_rad],
+        "tags": reco_tags   
+    },
+    "True vs Reconstructed Lepton Theta 2D":
+    {
+        "name" : "TrueVsRecoLeptonTheta2D",
+
+        "title": "True vs Reco Lepton Theta 2D; True theta2D (rad); Reco theta2D (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_ANGLE_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_theta2D_lep_rad,
+                          lambda event: event.kin_cal.reco_theta2D_lep_rad],
+        "tags": reco_tags   
+    },
+    "True vs Reconstructed Lepton Phi":
+    {
+        "name" : "TrueVsRecoLeptonPhi",
+
+        "title": "True vs Reco Lepton Phi; True phi (rad); Reco phi (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_PHI_BINNING,
+                     PlotConfig.ELECTRON_PHI_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_phi_lep_rad,
+                          lambda event: event.kin_cal.reco_phi_lep_rad],
+        "tags": reco_tags   
+    },
+    "Reco ThetaX vs Vertex X":
+    {
+        "name" : "RecoThetaXVsVertexX",
+
+        "title": "Reco ThetaX vs Vertex X; Vertex X (mm); Reco thetaX (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEXX_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.vtx[0],
+                          lambda event: event.kin_cal.reco_thetaX_lep_rad],
+        "tags": reco_tags   
+    },
+    "Reco ThetaY vs Vertex Y":
+    {
+        "name" : "RecoThetaYVsVertexY",
+
+        "title": "Reco ThetaY vs Vertex Y; Vertex Y (mm); Reco thetaY (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEXY_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.vtx[1],
+                          lambda event: event.kin_cal.reco_thetaY_lep_rad],
+        "tags": reco_tags   
+    },
+    "True ThetaX vs Vertex X":
+    {
+        "name" : "TrueThetaXVsVertexX",
+
+        "title": "True ThetaX vs Vertex X; Vertex X (mm); True thetaX (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEXX_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.mc_vtx[0],
+                          lambda event: event.kin_cal.true_thetaX_lep_rad],
+        "tags": truth_tags   
+    },
+    "True ThetaY vs Vertex Y":
+    {
+        "name" : "TrueThetaYVsVertexY",
+
+        "title": "True ThetaY vs Vertex Y; Vertex Y (mm); True thetaY (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEXY_BINNING,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.mc_vtx[1],
+                          lambda event: event.kin_cal.true_thetaY_lep_rad],
+        "tags": truth_tags   
+    },
+    "Reco Q2" :
+    {
+        "name" : "Q2_reco",
+        "title": "Reco q2 ; Q2 (GeV^{2}); dNEvents/dq2",
+        "binning" : [[i/100 for i in range(20)]],
+        "value_getter" : [lambda event: event.kin_cal.reco_q2_cal],
+        "tags": reco_tags
+    },
+    "True E Theta Squared":
+    {
+        "name" : "true_E_Theta_Squared",
+        "title" : "E_{lepton} #theta^{2} ; E_{lepton} #theta^{2} (GeV) ; NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_EE_THETA_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_E_lep*(event.kin_cal.true_theta_lep_rad)**2],
+        "tags":truth_tags
+    },
+    "Neutrino Vertex Apothem":
+    {
+        "name" : "neutrino_apothem",
+        "title" : "Reco Neutrino Vertex Apothem; Vertex Apothem; NEvents",
+        "binning" : [[30*i for i in range(40)]],
+        "value_getter" : [lambda event: CalcApothem(event.vtx[0],event.vtx[1])],
+        "tags":reco_tags
+    },
+    "Neutrino Vertex Z":
+    {
+        "name" : "neutrino_vertex_z",
+        "title" : "Reco Neutrino Z Vertex; Z [ 10 mm ]; NEvents",
+        "binning" : [[i for i in range(5500,9000,70)]],
+        "value_getter" : [lambda event: event.vtx[2]],
+        "tags":reco_tags
+    },
+    "EMLikeTrackScore":
+    {
+        "name" : "EMLikeScore",
+        "title" : "EM-Like Score; EM-Like Score; NEvents",
+        "binning" : [PlotConfig.EMLIKETRACKSCORE_BINNING],
+        "value_getter" : [lambda event: event.prong_part_score],
+        "tags":reco_tags
+    },
+    "TransverseGapScore":
+    {
+        "name" : "TransGapScore",
+        "title" : "Transverse Gap Score; Transverse Gap Score; NEvents",
+        "binning" : [PlotConfig.TRANSVERSEGAPSCORE_BINNING],
+        "value_getter" : [lambda event: event.prong_TransverseGapScore],
+        "tags":reco_tags
+    },
+    "NonMIPClusFrac":
+    {
+        "name" : "NonMIPClusFracion",
+        "title" : "Non-MIP Cluster Energy Fraction; NonMIPClusFrac; NEvents",
+        "binning" : [PlotConfig.NONMIPCLUSFRAC_BINNING],
+        "value_getter" : [lambda event: event.prong_NonMIPClusFrac],
+        "tags":reco_tags
+    },
+    "ODCalVisE": 
+    {
+        "name" : "ODCalVisE",
+        "title" : "ODCalVisE; ODCalVisE; NEvents",
+        "binning" : [PlotConfig.ODCALVISE_BINNING],
+        "value_getter": [
+            lambda event: [
+                (od / side if side > 0.1 else (1e10 if od > 0 else 0))
+                for od, side in zip(event.prong_ODVisE, event.prong_SideECALVisE)
+            ]
+        ],
+        "tags":reco_tags
+    },
+    "DSCalVisE": 
+    {
+        "name" : "DSCalVisE",
+        "title" : "DSCalVisE; DSCalVisE; NEvents",
+        "binning" : [PlotConfig.DSCALVISE_BINNING],
+        "value_getter": [
+            lambda event: [
+                (h / ecal if ecal > 0.1 else (1e10 if h > 0 else 0))
+                for h, ecal in zip(event.prong_HCALVisE, event.prong_ECALVisE)
+            ]
+        ],
+        "tags":reco_tags
+    },
+    "Afterpulsing": 
+    {
+        "name" : "Afterpulsing",
+        "title" : "Afterpulsing; Afterpulsing; NEvents",
+        "binning" : [PlotConfig.AFTERPULSING_BINNING],
+        "value_getter": [lambda event: event.prong_FirstFireFraction],
+        "tags":reco_tags
+    },
+    "DeadTime": 
+    {
+        "name" : "DeadTime",
+        "title" : "DeadTime; DeadTime; NEvents",
+        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
+        "value_getter": [lambda event: event.phys_n_dead_discr_pair_upstream_prim_track_proj],
+        "tags":reco_tags
+    },
+    "VertexTrackMultiplicity": 
+    {
+        "name" : "VertexTrackMultiplicity",
+        "title" : "VertexTrackMultiplicity; VertexTrackMultiplicity; NEvents",
+        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
+        "value_getter": [lambda event: event.VertexTrackMultiplicity],
+        "tags":reco_tags
+    },
+    "StartPointVertexMultiplicity": 
+    {
+        "name" : "StartPointVertexMultiplicity",
+        "title" : "StartPointVertexMultiplicity; StartPointVertexMultiplicity; NEvents",
+        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
+        "value_getter": [lambda event: event.StartPointVertexMultiplicity],
+        "tags":reco_tags
+    },
+    "HasNoVertexMismatch": 
+    {
+        "name" : "HasNoVertexMismatch",
+        "title" : "HasNoVertexMismatch; HasNoVertexMismatch; NEvents",
+        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: event.HasNoVertexMismatch],
+        "tags":reco_tags
+    },
+    "HasTracks": 
+    {
+        "name" : "HasTracks",
+        "title" : "HasTracks; HasTracks; NEvents",
+        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: event.HasTracks],
+        "tags":reco_tags
+    },
+    "HasNoBackExitingTracks": 
+    {
+        "name" : "HasNoBackExitingTracks",
+        "title" : "HasNoBackExitingTracks; HasNoBackExitingTracks; NEvents",
+        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: event.HasNoBackExitingTracks],
+        "tags":reco_tags
+    },
 }
 
 for i in PlotConfig.LOW_RECOIL_BIN_Q0:
@@ -917,41 +1173,106 @@ class HistHolder:
 
         self.POT_scaled = True
 
-    def GetCateList(self,grouping = None):
+    def GetCateList(self, grouping=None, with_raw=False):
         if not self.valid:
             return None
-        _mc_ints = []
-        _colors= []
-        _titles= []
-        local_grouping = grouping
-        for cate in list(local_grouping.keys())[::-1]: 
+
+        def _raw_integral(h):
+            if not h:
+                return 0.0
+            # MnvH1D/MnvH2D -> use CV hist for a stable integral
+            cv = h.GetCVHistoWithStatError() if hasattr(h, "GetCVHistoWithStatError") else h
+
+            # 2D vs 1D
+            if cv.InheritsFrom("TH2"):
+                return float(cv.Integral(0, cv.GetNbinsX() + 1, 0, cv.GetNbinsY() + 1))
+            return float(cv.Integral(0, cv.GetNbinsX() + 1))
+
+        _mc_ints, _colors, _titles, _raws = [], [], [], []
+        local_grouping = grouping or {}
+
+        for cate in list(local_grouping.keys())[::-1]:
             config = local_grouping[cate]
             hist = None
+            raw = 0.0
+
             if "cate" in config:
                 for fine_cate in config["cate"]:
-                    if fine_cate not in self.hists.keys(): 
+                    h = self.hists.get(fine_cate, None)
+                    if not h:
                         continue
-                    if hist is None and self.hists[fine_cate]:
-                        hist = self.hists[fine_cate].Clone()
-                    elif self.hists[fine_cate]:
-                        hist.Add(self.hists[fine_cate])
+
+                    # build summed hist
+                    if hist is None:
+                        hist = h.Clone()
                     else:
-                        continue
+                        hist.Add(h)
+
+                    # raw: prefer cached raw_counts if available, otherwise integrate
+                    if getattr(self, "raw_counts", None):
+                        raw += float(self.raw_counts.get(fine_cate, 0.0))
+                    else:
+                        raw += _raw_integral(h)
+
             else:
-                if not self.hists[cate]:
+                h = self.hists.get(cate, None)
+                if not h:
                     continue
+
+                # IMPORTANT: clone here to avoid mutating originals downstream
+                hist = h.Clone()
+
+                if getattr(self, "raw_counts", None):
+                    raw = float(self.raw_counts.get(cate, 0.0))
                 else:
-                    hist = self.hists[cate] if self.hists[cate] else None
-                
+                    raw = _raw_integral(h)
+
             if hist:
                 hist.SetTitle(config["title"])
                 _mc_ints.append(hist)
                 _titles.append(config["title"])
                 _colors.append(config["color"])
-            else:
-                continue
-            del hist
-        return _mc_ints,_colors,_titles
+                _raws.append(raw)
+
+        if with_raw:
+            return _mc_ints, _colors, _titles, _raws
+        return _mc_ints, _colors, _titles
+
+    # def GetCateList(self,grouping = None):
+    #     if not self.valid:
+    #         return None
+    #     _mc_ints = []
+    #     _colors= []
+    #     _titles= []
+    #     local_grouping = grouping
+    #     for cate in list(local_grouping.keys())[::-1]: 
+    #         config = local_grouping[cate]
+    #         hist = None
+    #         if "cate" in config:
+    #             for fine_cate in config["cate"]:
+    #                 if fine_cate not in self.hists.keys(): 
+    #                     continue
+    #                 if hist is None and self.hists[fine_cate]:
+    #                     hist = self.hists[fine_cate].Clone()
+    #                 elif self.hists[fine_cate]:
+    #                     hist.Add(self.hists[fine_cate])
+    #                 else:
+    #                     continue
+    #         else:
+    #             if not self.hists[cate]:
+    #                 continue
+    #             else:
+    #                 hist = self.hists[cate] if self.hists[cate] else None
+                
+    #         if hist:
+    #             hist.SetTitle(config["title"])
+    #             _mc_ints.append(hist)
+    #             _titles.append(config["title"])
+    #             _colors.append(config["color"])
+    #         else:
+    #             continue
+    #         del hist
+    #     return _mc_ints,_colors,_titles
 
     def GetHist(self): 
         if not self.valid:  

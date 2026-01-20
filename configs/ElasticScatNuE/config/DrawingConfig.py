@@ -394,7 +394,7 @@ ChargedBackground = {
 
 NuEElasticCategory = {
     "Nu+e" :{
-        "title": "nu+e",
+        "title": "#nu + e",
         "cate" :{"NuEElasticE", "NuEElasticMu"},
         "color":COLORS[1]
     },
@@ -402,14 +402,10 @@ NuEElasticCategory = {
     {
         "title" : "CC #nu_{e}",
         "cate": {
-            "CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE2p2h","CCNuE","CCNuEWrongSign","CCOther"
+            "CCNuEQE","CCNuEDelta","CCNuEDIS","CCNuE2p2h","CCNuE","CCNuEWrongSign"
         },
         "color": COLORS[0]
     },
-    # "NCCOH":{
-    #     "title" : "NCCohPi0",
-    #     "color": COLORS[3]
-    # },
     "NC":{
         "title" : "NC",
         "cate": {"NC", "NCPi0", "NCCohPi0"},
@@ -425,6 +421,173 @@ NuEElasticCategory = {
         #"cate": {"ExcessModel","NonFiducial","CCDIS","CCOther","NCRES","NCDIS","NCOther","Other","CCNuEAntiNu"},
         "cate": {"CCDIS","CCOther","NCRES","NCDIS","NCOther","Other","CCNuEAntiNu","PhotonMisID"},
         "color": COLORS[4]
+    }
+}
+
+
+NuEElasticBackgroundDecomposition = {
+    "NuE+e" :{
+        "title": "#nu_{e} + e",
+        "cate" : {"NuEElasticE"},
+        "color": COLORS[0]
+    },
+    "NuMu+e" :{
+        "title": "#nu_{#mu} + e",
+        "cate" : {"NuEElasticMu"},
+        "color": COLORS[1]
+    },
+    "CCNuEWrongSign": {
+        "title" : "CC #nu_{e} wrong sign", 
+        "color" : COLORS[2]
+    },
+    "CCNuEQE" :
+    {
+        "title" : "CC #nu_{e}-QE",
+        "color": COLORS[3]
+    },
+    "CCNuEOthers" : {
+        "title" : "CC #nu_{e} Others",
+        "cate"  : {"CCNuE2p2h", "CCNuEDelta", "CCNuEDIS", "CCNuE"},
+        "color" : COLORS[4]
+    },
+    "CCNuMu": {
+        "title" : "CC #nu_{#mu}", 
+        "color": COLORS[5]
+    },
+    "CCPi0" : {
+        "title" : "CC #pi^{0}",
+        "color": COLORS[6]
+    },
+    "CCPi" : {
+        "title" : "CC #pi",
+        "color": COLORS[7]
+    },
+    "CCOther" : {
+        "title" : "CCOther",
+        "color": COLORS[8]
+    },
+    "NCDiff" :
+    {
+        "title" : "NC Diffractive",
+        "color": COLORS[9]
+    },
+    "NCCohPi0": {
+        "title" : "NC Coh #pi^{0}", 
+        "color": COLORS[12]
+    },
+    "NCPi0" : {
+        "title" : "NC #pi^{0}",
+        "color": COLORS[13]
+    },
+    "NCPi" : {
+        "title" : "NC #pi",
+        "color": COLORS[14]
+    },
+    "NCOther" : {
+        "title" : "NCOther",
+        "color": COLORS[15]
+    }
+}
+
+
+NuEElasticDebug = {
+    "NuE+e" :{
+        "title": "#nu_{e} + e",
+        "cate" : {"NuEElasticE"},
+        "color": COLORS[0]
+    },
+    "NuMu+e" :{
+        "title": "#nu_{#mu} + e",
+        "cate" : {"NuEElasticMu"},
+        "color": COLORS[1]
+    },
+    # "CCNuEWrongSign": {
+    #     "title" : "CC #nu_{e} wrong sign", 
+    #     "color" : COLORS[2]
+    # },
+    "CCNuEWrongSignQE" :
+    {
+        "title" : "CC #nu_{e}-QE wrong sign",
+        "color": COLORS[2]
+    },
+    "CCNuEWrongSignOthers" : {
+        "title" : "CC #nu_{e} Others wrong sign",
+        "cate"  : {"CCNuEWrongSignDelta", "CCNuEWrongSignDIS", "CCNuEWrongSign2p2h", "CCNuEWrongSign"},
+        "color" : COLORS[10]
+    },
+    "CCNuEQE" :
+    {
+        "title" : "CC #nu_{e}-QE",
+        "color": COLORS[3]
+    },
+    "CCNuEOthers" : {
+        "title" : "CC #nu_{e} Others",
+        "cate"  : {"CCNuE2p2h", "CCNuEDelta", "CCNuEDIS", "CCNuE"},
+        "color" : COLORS[4]
+    },
+    "CCNuMu": {
+        "title" : "CC #nu_{#mu}", 
+        "cate"  : {"CCNuMu", "CCNuMuWrongSign"},
+        "color": COLORS[5]
+    },
+    "CCPi0" : {
+        "title" : "CC #pi^{0}",
+        "color": COLORS[6]
+    },
+    "CCPi" : {
+        "title" : "CC #pi",
+        "color": COLORS[7]
+    },
+    "CCOther" : {
+        "title" : "CCOther",
+        "color": COLORS[8]
+    },
+    "NCDiff" :
+    {
+        "title" : "NC Diffractive",
+        "color": COLORS[9]
+    },
+    "NCCohPi0": {
+        "title" : "NC Coh #pi^{0}", 
+        "color": COLORS[12]
+    },
+    "NCPi0" : {
+        "title" : "NC #pi^{0}",
+        "color": COLORS[13]
+    },
+    "NCPi" : {
+        "title" : "NC #pi",
+        "color": COLORS[14]
+    },
+    "NCOther" : {
+        "title" : "NCOther",
+        "color": COLORS[15]
+    }
+}
+
+
+NuEElasticSimpleCates = {
+    "Nu+e" :{
+        "title": "#nu + e",
+        "cate" :{"NuEElasticE", "NuEElasticMu"},
+        "color":COLORS[1]
+    },
+    "CCNuE": {
+        "title" : "CC #nu_{e}", 
+        "color": COLORS[4]
+    },
+    "NCDiff" :
+    {
+        "title" : "NC Diffractive",
+        "color": COLORS[7]
+    },
+    "NC" : {
+        "title" : "NC",
+        "color": COLORS[13]
+    },
+    "CCOther" : {
+        "title" : "CCOther",
+        "color": COLORS[14]
     }
 }
 
@@ -464,20 +627,20 @@ DefaultPlotters={
     # "stacked":{"func":PlotTools.PrepareStack,
     #            "args": (ThesisCategories,)},
     "stacked":{"func":PlotTools.PrepareStack,
-               "args": (NuEElasticCategory,)},
+               "args": (NuEElasticDebug,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
     #            "args": (SignalDecomposition,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
     #         "args": (ThesisCategories,)},
     "2Dstacked":{"func":PlotTools.Prepare2DStack,
-            "args": (NuEElasticCategory,)},
+            "args": (NuEElasticDebug,)},
     "rebin_stacked":{"func":PlotTools.RebinPrepareStack,
                "args": (Categories,)},
     "diff":{"func":PlotTools.PrepareDiff},
     # "migration":{"func":PlotTools.PrepareMigration,
     #                 "args": (SignalOnly,)},
     "migration":{"func":PlotTools.PrepareMigration,
-                    "args": (NuEElasticCategory,)},
+                    "args": (NuEElasticBackgroundDecomposition,)},
     "category_hist":{"func":PlotTools.CategoryHist,
                      "args": (SignalChargedBackground,)},
     "sigdep":{"func":PlotTools.PrepareSignalDecompose,
@@ -758,27 +921,88 @@ PLOTS_TO_MAKE = [
     # {"name":"True Energy vs Biased Neutrino Energy",
     #    "plot_type" : "migration"},
 
-    {"name":"Estimator vs Front dEdX",
-        "plot_type":"2Dstacked"},
+
     # {"name":"Estimator vs Front dEdX",
     #  "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
     # {"name":"Estimator vs Front dEdX",
     #     "plot_type":"ratio",
     #  "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Biased Neutrino Energy"},
-    {"name":"Visible Energy",
-        "plot_type" : "stacked"},
-    {"name":"Lepton Pt",
-        "plot_type" : "stacked"},
-    # {"name":"Front dEdX",
+    # {"name":"Biased Neutrino Energy"},
+    # {"name":"Visible Energy",
     #     "plot_type" : "stacked"},
+    # {"name":"Lepton Pt",
+    #     "plot_type" : "stacked"},
+
     # {"name":"True Energy vs Biased Neutrino Energy",
     #    "plot_type" : "migration"},
+
+    {"name":"Estimator vs Front dEdX",
+        "plot_type":"2Dstacked"},
+    {"name":"Front dEdX",
+        "plot_type" : "stacked"},
+    {"name":"Lepton Energy",
+        "plot_type" : "stacked"},
+    {"name":"True Lepton Energy",
+        "plot_type" : "stacked"}, 
+    {"name":"True vs Reconstructed Lepton Energy",
+       "plot_type" : "migration"},        
+    {"name":"True vs Reconstructed Lepton Theta",
+       "plot_type" : "migration"},    
+    {"name":"True vs Reconstructed Lepton Theta X",
+       "plot_type" : "migration"},   
+    {"name":"True vs Reconstructed Lepton Theta Y",
+       "plot_type" : "migration"},  
+    {"name":"True vs Reconstructed Lepton Theta 2D",
+       "plot_type" : "migration"}, 
+    {"name":"True vs Reconstructed Lepton Phi",
+       "plot_type" : "migration"}, 
+    {"name":"Reco ThetaX vs Vertex X",
+       "plot_type" : "migration"}, 
+    {"name":"Reco ThetaY vs Vertex Y",
+       "plot_type" : "migration"},    
+    {"name":"True ThetaX vs Vertex X",
+       "plot_type" : "migration"}, 
+    {"name":"True ThetaY vs Vertex Y",
+       "plot_type" : "migration"},  
+    {"name":"Visible Energy",
+        "plot_type" : "stacked"},
     {"name":"E Theta Squared",
         "plot_type" : "stacked"},
+    {"name":"True E Theta Squared",
+        "plot_type" : "stacked"},
+    {"name":"Reco Energy vs L/E",
+       "plot_type" : "migration"},
+    {"name":"Reco Q2",
+        "plot_type" : "stacked"},
+    {"name":"Neutrino Vertex Z",
+        "plot_type" : "stacked"},
+    {"name":"Neutrino Vertex Apothem",
+        "plot_type" : "stacked"},
+    {"name":"EMLikeTrackScore",
+        "plot_type" : "stacked"},
+    {"name":"TransverseGapScore",
+        "plot_type" : "stacked"},
+    {"name":"NonMIPClusFrac",
+        "plot_type" : "stacked"},
+    {"name":"ODCalVisE",
+        "plot_type" : "stacked"},
+    {"name":"DSCalVisE",
+        "plot_type" : "stacked"},
+    {"name":"Afterpulsing",
+        "plot_type" : "stacked"},
+    {"name":"DeadTime",
+        "plot_type" : "stacked"},
+    {"name":"VertexTrackMultiplicity",
+        "plot_type" : "stacked"},
+    {"name":"StartPointVertexMultiplicity",
+        "plot_type" : "stacked"},
+    {"name":"HasNoVertexMismatch",
+        "plot_type" : "stacked"},
+    {"name":"HasTracks",
+        "plot_type" : "stacked"},
+    {"name":"HasNoBackExitingTracks",
+        "plot_type" : "stacked"},
 
-    # {"name":"Q2",
-    #     "plot_type" : "stacked"},
     # {"name":"Available Energy vs True W"},
     # {"name":"Available Energy vs Lepton Pt"},
     # {"name":"Front dEdX"},
@@ -788,8 +1012,7 @@ PLOTS_TO_MAKE = [
 
     # {"name":"True Energy vs Biased Neutrino Energy",
     #        "plot_type" : 'migration'},
-    # {"name":"Reco Energy vs L/E",
-    #    "plot_type" : "migration"},
+
     #{"name":"Estimator vs Proton Length"},
     #{"name":"Estimator vs Proton Length",
     #        "plot_type" : "2Dstacked"},

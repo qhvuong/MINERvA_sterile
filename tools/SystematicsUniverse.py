@@ -102,6 +102,10 @@ class CVPythonUniverse():
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
             self.LeptonTheta = self.ElectronTheta
+            self.LeptonThetaX = self.ElectronThetaX
+            self.LeptonThetaY = self.ElectronThetaY
+            self.LeptonTheta2D = self.ElectronTheta2D
+            self.LeptonPhi = self.ElectronPhi
             self.LeptonEnergy = self.ElectronEnergy
             self.LeptonP3D = self.ElectronP3D
             self.M_lep_sqr =  M_e_sqr
@@ -151,7 +155,7 @@ class CVPythonUniverse():
             else:
                 print("Not neutrino PDG? {}".format(pdg))
         pdg = newpdg
-        weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
+        # weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
 
         weight *= self.GetLowRecoil2p2hWeight()
         weight *= self.GetRPAWeight()
@@ -291,6 +295,24 @@ class CVPythonUniverse():
 
     def ElectronTheta(self):
         return self.ElectronP3D().Theta()
+
+    def ElectronThetaX(self):
+        p = self.ElectronP3D()  # already in beam coordinates in your code
+        return math.atan2(p.X(), p.Z())
+
+    def ElectronThetaY(self):
+        p = self.ElectronP3D()
+        return math.atan2(p.Y(), p.Z())
+
+    def ElectronTheta2D(self):
+        p = self.ElectronP3D()
+        theta_x = math.atan2(p.X(), p.Z())
+        theta_y = math.atan2(p.Y(), p.Z())
+        return math.sqrt(theta_x*theta_x + theta_y*theta_y)
+
+    def ElectronPhi(self):
+        p = self.ElectronP3D()
+        return math.atan2(p.Y(), p.X())   # radians
 
     def PrimaryProtonTheta(self):
         theta = self.MasterAnaDev_proton_theta

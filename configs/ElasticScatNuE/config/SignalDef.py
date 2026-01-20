@@ -154,15 +154,27 @@ TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNuMu(eve
 TRUTH_CATEGORIES["NuEElasticOther"] = lambda event: IsElastic(event) 
 
 # CC νe backgrounds with correct ordering (wrong-sign first)
-TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event) and IsAntiNu(event)
-TRUTH_CATEGORIES["CCNuEQE"]        = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
-TRUTH_CATEGORIES["CCNuEDelta"]     = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
-TRUTH_CATEGORIES["CCNuEDIS"]       = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
-TRUTH_CATEGORIES["CCNuE2p2h"]      = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
+TRUTH_CATEGORIES["CCNuEWrongSignQE"]    = lambda event: IsCC(event) and IsNueBar(event) and IsQE(event)
+# TRUTH_CATEGORIES["CCNuEWrongSignDelta"] = lambda event: IsCC(event) and IsNueBar(event) and IsDelta(event)
+# TRUTH_CATEGORIES["CCNuEWrongSignDIS"]   = lambda event: IsCC(event) and IsNueBar(event) and IsDIS(event)
+# TRUTH_CATEGORIES["CCNuEWrongSign2p2h"]  = lambda event: IsCC(event) and IsNueBar(event) and Is2p2h(event)
+# TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event) and IsAntiNu(event)
+TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNueBar(event) 
+# TRUTH_CATEGORIES["CCNuEQE"]        = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
+# TRUTH_CATEGORIES["CCNuEDelta"]     = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
+# TRUTH_CATEGORIES["CCNuEDIS"]       = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
+# TRUTH_CATEGORIES["CCNuE2p2h"]      = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
+TRUTH_CATEGORIES["CCNuEQE"]        = lambda event: IsCC(event) and IsNue(event) and IsQE(event)
+TRUTH_CATEGORIES["CCNuEDelta"]     = lambda event: IsCC(event) and IsNue(event) and IsDelta(event)
+TRUTH_CATEGORIES["CCNuEDIS"]       = lambda event: IsCC(event) and IsNue(event) and IsDIS(event)
+TRUTH_CATEGORIES["CCNuE2p2h"]      = lambda event: IsCC(event) and IsNue(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCPi0"]          = lambda event: IsCC(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["CCPi"]           = lambda event: IsCC(event) and IsChargedPionInFinalState(event)
-TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNuE(event)
-TRUTH_CATEGORIES["CCNuMu"]         = lambda event: IsCC(event) and IsNuMu(event)
+# TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNuE(event)
+TRUTH_CATEGORIES["CCNuE"]          = lambda event: IsCC(event) and IsNue(event)
+# TRUTH_CATEGORIES["CCNuMu"]         = lambda event: IsCC(event) and IsNuMu(event)
+TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNumuBar(event)
+TRUTH_CATEGORIES["CCNuMu"]         = lambda event: IsCC(event) and IsNumu(event)
 TRUTH_CATEGORIES["CCOther"]        = lambda event: IsCC(event)
 
 # Photon-like BEFORE NC catch-all so it takes effect
@@ -170,7 +182,9 @@ TRUTH_CATEGORIES["CCOther"]        = lambda event: IsCC(event)
 
 
 # NC categories and catch-all
-TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsNC(event) and IsCoherent(event) and IsPi0InFinalState(event)
+TRUTH_CATEGORIES["NCNuECohPi0"] = lambda event: IsNC(event) and IsNuE(event) and IsCoherent(event) and IsPi0InFinalState(event)
+TRUTH_CATEGORIES["NCNuMuCohPi0"] = lambda event: IsNC(event) and IsNuMu(event) and IsCoherent(event) and IsPi0InFinalState(event)
+# TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsNC(event) and IsCoherent(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["NCPi0"]    = lambda event: IsNC(event) and IsPi0InFinalState(event)
 TRUTH_CATEGORIES["NCPi"]     = lambda event: IsNC(event) and IsChargedPionInFinalState(event)
 TRUTH_CATEGORIES["NCOther"]  = lambda event: IsNC(event)
@@ -179,7 +193,7 @@ TRUTH_CATEGORIES["NCOther"]  = lambda event: IsNC(event)
 
 
 # My signal is one or more of the listed categories.
-SIGNAL_DEFINATION = [
+SIGNAL_DEFINITION = [
     "NuEElasticE",
     "NuEElasticMu",
     "NuEElasticOther",

@@ -9,7 +9,7 @@ from functools import partial
 
 
 from config.AnalysisConfig import AnalysisConfig
-from config.SignalDef import SIGNAL_DEFINATION
+from config.SignalDef import SIGNAL_DEFINITION
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
@@ -168,9 +168,9 @@ def PrepareBkgRatio(data_hists,mc_hists):
     for group in mc_hists.hists:
         if group == "Total":
                 continue
-        elif group not in SIGNAL_DEFINATION and mc_hists.hists[group]:
+        elif group not in SIGNAL_DEFINITION and mc_hists.hists[group]:
             out_bkg.Add(mc_hists.hists[group])
-        elif group in SIGNAL_DEFINATION and mc_hists.hists[group]:
+        elif group in SIGNAL_DEFINITION and mc_hists.hists[group]:
             out_sig.Add(mc_hists.hists[group])
             #print("SIGNAL ",group, out_sig.Integral())
 
@@ -247,16 +247,16 @@ def Prepare2DStack(data_hists,mc_hists,Grouping = None):
 def PrepareStack(data_hists,mc_hists,Grouping = None):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
-    mc_list,color,title = mc_hists.GetCateList(Grouping)
+    mc_list,color,title,raw_counts = mc_hists.GetCateList(Grouping, with_raw=True)
     if data_hists.valid:
-        plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend="TR")(data_hist,mc_ints)
+        plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, raw_counts=raw_counts, legend="TR")(data_hist,mc_ints)
         if "frontdedx" in data_hists.GetHist().GetName():
             hist = data_hists.GetHist()
             #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
         hists = [data_hists.GetHist()]
     else:
-        plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, legend = "TR")(mc_hist,mc_ints)
+        plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, raw_counts=raw_counts, legend = "TR")(mc_hist,mc_ints)
         tmp = mc_hists.GetHist().Clone()
         tmp.Reset()
         hists =[tmp]
@@ -476,23 +476,29 @@ def MakeModelVariantPlot(data_hist, mc_hists, color=None, title=None,legend ="TR
     #mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,legend,True,True,False,False,False)
     mnvplotter.DrawDataMCVariations(data_hist,TArray,pot_scale,legend,True,True,False,False)
 
-def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
-    if not mc_hists:
-        raise KeyError("Doesn't make sense to plot stacked histogram without MC")
-    TArray = ROOT.TObjArray()
-    for i in range(len(mc_hists)):
-        if color:
-            mc_hists[i].SetFillColor(color[i])
-        if title:
-            mc_hists[i].SetTitle(title[i])
 
-        if mc_hists[i]:
-            TArray.Add(mc_hists[i])
-    if data_hist is not None:
-        mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
-    #else:
-    elif TArray is not None:
-        mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+#============================================================================
+## THIS IS DUPLICATE FUNCTION
+# def MakeDataMCStackedPlot(data_hist, mc_hists, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+#     if not mc_hists:
+#         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+#     TArray = ROOT.TObjArray()
+#     for i in range(len(mc_hists)):
+#         if color:
+#             mc_hists[i].SetFillColor(color[i])
+#         if title:
+#             mc_hists[i].SetTitle(title[i])
+
+#         if mc_hists[i]:
+#             TArray.Add(mc_hists[i])
+#     if data_hist is not None:
+#         mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
+#     #else:
+#     elif TArray is not None:
+#         mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+#============================================================================
+
+
 
 def MakeSignalDecomposePlot(data_hist, mc_hist, mc_hists, title, color, pot_scale = 1.0, mnvplotter=MNVPLOTTER,canvas=CANVAS):
     #if data_hist is not None:
@@ -717,23 +723,61 @@ def GetTLegend(pad):
             return i
     return None
 
-def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+# def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = "TR", pot_scale=1, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+#     TArray = ROOT.TObjArray()
+#     for i in range(len(mc_hists)):
+#         if not mc_hists[i] or mc_hists[i].Integral() <= 0:
+#             continue
+#         if color is not None:
+#             mc_hists[i].SetFillColor(color[i])
+#         if title is not None:
+#             mc_hists[i].SetTitle(title[i])
+#         TArray.Add(mc_hists[i])
+#     if data_hist.Integral() > 0:
+#         try:
+#             mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
+#         except:
+#             pass
+#     else:
+#         mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+
+
+def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = "TR", pot_scale=1, raw_counts=None, mnvplotter=MNVPLOTTER,canvas=CANVAS):
+    if not mc_hists:
+        raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+
     TArray = ROOT.TObjArray()
-    for i in range(len(mc_hists)):
-        if not mc_hists[i] or mc_hists[i].Integral() <= 0:
+
+    for i, h in enumerate(mc_hists):
+        if not h:
             continue
-        if color is not None:
-            mc_hists[i].SetFillColor(color[i])
-        if title is not None:
-            mc_hists[i].SetTitle(title[i])
-        TArray.Add(mc_hists[i])
-    if data_hist.Integral() > 0:
+
+        # ---- NEW: skip tiny raw-count components ----
+        if raw_counts is not None:
+            if i >= len(raw_counts) or raw_counts[i] is None or raw_counts[i] < 0.1:
+                continue
+        # --------------------------------------------
+
+        if color is not None and i < len(color):
+            h.SetFillColor(color[i])
+
+        if title is not None and i < len(title):
+            if raw_counts is not None and i < len(raw_counts):
+                h.SetTitle(f"{title[i]} ({raw_counts[i]:.1f})")
+            else:
+                h.SetTitle(f"{title[i]}")
+
+        TArray.Add(h)
+
+    if data_hist is not None and data_hist.Integral() > 0:
         try:
-            mnvplotter.DrawDataStackedMC(data_hist,TArray,pot_scale,legend,"Data",0,0,1001)
-        except:
-            pass
+            mnvplotter.DrawDataStackedMC(
+                data_hist, TArray, pot_scale, legend, "Data", 0, 0, 1001
+            )
+        except Exception as e:
+            print("DrawDataStackedMC failed:", e)
     else:
-        mnvplotter.DrawStackedMC(TArray,pot_scale,legend,0,0,1001)
+        mnvplotter.DrawStackedMC(TArray, pot_scale, legend, 0, 0, 1001)
 
 
 def MakeMigrationPlots(hist, output, no_text = False, fix_width = True, mnvplotter= MNVPLOTTER, canvas = CANVAS):

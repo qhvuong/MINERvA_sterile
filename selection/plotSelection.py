@@ -7,7 +7,7 @@ import PlotUtils
 from config import PlotConfig
 from config.AnalysisConfig import AnalysisConfig
 from config.DrawingConfig import PLOTS_TO_MAKE,Default_Plot_Type,Default_Scale,DefaultPlotters,DefaultSlicer
-from config.SignalDef import SIGNAL_DEFINATION
+from config.SignalDef import SIGNAL_DEFINITION
 from tools import Utilities,PlotTools
 from tools.PlotLibrary import HistHolder
 
@@ -147,7 +147,7 @@ def MakeRatio(signalHist,sidebandHist,config):
     for group in signalHist.hists:
         if group == "Total":
                 continue
-        elif group not in SIGNAL_DEFINATION:
+        elif group not in SIGNAL_DEFINITION:
             sig_bkg.Add(signalHist.hists[group])
             sid_bkg.Add(sidebandHist.hists[group])
 

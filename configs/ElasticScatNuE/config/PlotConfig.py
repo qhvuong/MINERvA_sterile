@@ -9,6 +9,7 @@
 
 import math
 import ROOT
+import numpy as np
 #from collections import OrderedDict
 
 #from AnalysisConfig import AnalysisConfig
@@ -98,14 +99,30 @@ LOW_RECOIL_BIN_LOW_Q0 = [0.0, 0.02, 0.04, 0.06, 0.08, 0.1,
                      0.12, 0.14, 0.16, 0.2]
 PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 
-NEUTRINO4_ENU_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
-NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
-NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
+# NEUTRINO4_ENU_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
+# NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
+# NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
+NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
 NEUTRINO4_LE_BINNING = [i*.015 for i in range(34)]
-NEUTRINO4_EE_THETA_BINNING = [.001 * i for i in range(len(NEUTRINO4_EE_BINNING))]
+# NEUTRINO4_EE_THETA_BINNING = [.001 * i for i in range(len(NEUTRINO4_EE_BINNING))]
+NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
 # NEUTRINO4_THETA_BINNING = [0.01 * i for i in range(158)]
 NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549, .579, .609, .639, .670, .700, .730, .760, .790, .820, .850, .880, .910, .940, .970, 1.000]
+
+EMLIKETRACKSCORE_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
+TRANSVERSEGAPSCORE_BINNING = [3* i for i in range(51)]
+NONMIPCLUSFRAC_BINNING = [0.1*i for i in range(11)]
+ODCALVISE_BINNING = [0.005* i for i in range(11)]
+DSCALVISE_BINNING = [0.05* i for i in range(11)]
+AFTERPULSING_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
+ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
+ELECTRON_PHI_BINNING = list(np.linspace(-1., 1., 51))
+# Vertex X and Y in mm
+ELECTRON_VERTEXX_BINNING = [20*i for i in range(-60, 61)]   # -1200 → +1200 mm
+ELECTRON_VERTEXY_BINNING = [20*i for i in range(-60, 61)]   # -1200 → +1200 mm
 
 NEUTRINO4_EE_BINNING_INV = [0.0,1/20,1/15,1/12.5,1/10,1/8,1/7.5,1/7,1/6.5,1/6,1/5.5,1/5,1/4.5,1/4,1/3.75,1/3.5,1/3.25,1/3,1/2.75,1/2.5,1/2,1/1.75,1/1.5]
 NEUTRINO4_L_OVER_E_BINNING = [0.0, 2., 5., 10., 17., 23., 29., 37., 46., 56., 69., 85., 104., 120., 139., 160., 185., 215., 250., 293., 347., 417., 510.,600]
@@ -241,15 +258,54 @@ HISTS_TO_MAKE = [
     # "Reco Energy vs L/E",
     # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
-    "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
-	"Visible Energy",
-	"Lepton Pt",
+    # "Estimator vs Front dEdX",
+    # "Biased Neutrino Energy",
+	# "Visible Energy",
+	# "Lepton Pt",
 	# "Available Energy vs Lepton Energy",
 	# "Available Energy vs Lepton Pt",
 	# "Front dEdX",
 	# "Q2",
-	"E Theta Squared",
+	# "E Theta Squared",
 	# "Ee Vs Theta",
+
+
+### MY PLOTS ###
+	"Lepton Energy",
+	"E Theta Squared",
+    "Reco Energy vs L/E",
+    # "True Energy vs L/E",
+    # "True Energy vs Biased Neutrino Energy",
+    "Estimator vs Front dEdX",
+    # "Biased Neutrino Energy",
+	"Visible Energy",
+	"True Lepton Energy",
+	"True vs Reconstructed Lepton Energy",
+	"True vs Reconstructed Lepton Theta",
+	"True vs Reconstructed Lepton Theta X",
+	"True vs Reconstructed Lepton Theta Y",
+	"True vs Reconstructed Lepton Theta 2D",
+	"True vs Reconstructed Lepton Phi",
+	"Reco ThetaX vs Vertex X",
+	"Reco ThetaY vs Vertex Y",
+	"True ThetaX vs Vertex X",
+	"True ThetaY vs Vertex Y",
+	"Front dEdX",
+	"Reco Q2",
+	"True E Theta Squared",
+	"Neutrino Vertex Z",
+	"Neutrino Vertex Apothem",
+	"EMLikeTrackScore",
+	"TransverseGapScore",
+	"NonMIPClusFrac",
+	"ODCalVisE",
+	"DSCalVisE",
+	"Afterpulsing",
+	"DeadTime",
+	"VertexTrackMultiplicity",
+	"StartPointVertexMultiplicity",
+	"HasNoVertexMismatch",
+	"HasTracks",
+	"HasNoBackExitingTracks",
 
 ]

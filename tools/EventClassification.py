@@ -10,8 +10,12 @@
 
 import ROOT
 from config.CutConfig import SAMPLE_CUTS,KINEMATICS_CUTS
+# import tools.CutLibrary as CL
+# print(">>> CutLibrary loaded from:", CL.__file__)
+# print(">>> Has CalcApothem?", hasattr(CL, "CalcApothem"))
+# print(">>> Has CalcApothem1?", hasattr(CL, "CalcApothem1"))
 from tools.CutLibrary import CUTS
-from config.SignalDef import SIGNAL_DEFINATION,TRUTH_CATEGORIES,EXTRA_OTHER
+from config.SignalDef import SIGNAL_DEFINITION,TRUTH_CATEGORIES,EXTRA_OTHER
 
 
 
@@ -147,7 +151,7 @@ class EventClassifier(object):
         if self.truth_class in EXTRA_OTHER:
             self.truth_class = "Other"
 
-        self.is_true_signal = self.truth_class in SIGNAL_DEFINATION
+        self.is_true_signal = self.truth_class in SIGNAL_DEFINITION
         return True
 
 
