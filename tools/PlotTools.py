@@ -305,6 +305,7 @@ def RebinPrepareStack(data_hists,mc_hists,Grouping = None):
 def CategoryHist(data_hists,mc_hists,category):
     if not(mc_hists.valid):
         raise KeyError("No MC histogram to plot migration")
+    print(category)
     if mc_hists.valid and category:
         hist = mc_hists.GetHist().Clone()
         hist.Reset()
@@ -376,22 +377,65 @@ def PrepareMigration(data_hists,mc_hists,Grouping):
     plotfunction = lambda mnvplotter,mc_hist: mnvplotter.DrawNormalizedMigrationHistogram(mc_hist,False,False,True,True)
     return plotfunction,hists
 
-def PrepareHist2D(data_hists,mc_hists,Grouping):
+
+
+def Make2DPlot(hist, mnvplotter=MNVPLOTTER, canvas=CANVAS):
+    if canvas:
+        canvas.Clear()
+        canvas.Divide(1, 1)   # important: undo any previous canvas.Divide(...)
+        canvas.cd(1)
+
+    def plotfunction(mnvplotter, mc_hist):
+        # Force a plain TH2 draw (avoids PlotUtils slice-like drawing quirks)
+        if hasattr(mc_hist, "GetCVHistoWithStatError"):
+            mc_hist.GetCVHistoWithStatError().DrawCopy("colz")
+        else:
+            mc_hist.DrawCopy("colz")
+
+    return plotfunction, [hist]
+
+
+def PrepareHist2D(data_hists, mc_hists, Grouping):
     def ReSumHists(h_list):
         if len(h_list) == 0:
             return None
         hnew = h_list[0].Clone()
-        for i in range(1,len(h_list)):
+        for i in range(1, len(h_list)):
             hnew.Add(h_list[i])
         return hnew
-    if not(mc_hists.valid):
-        raise KeyError("No MC histogram to plot migration")
-    mc_list,color,title = mc_hists.GetCateList(Grouping)
+
+    if not mc_hists.valid:
+        raise KeyError("No MC histogram to plot 2D")
+
+    mc_list, color, title = mc_hists.GetCateList(Grouping)
     totalHist = ReSumHists(mc_list)
     totalHist.SetTitle("Combined Signal")
+
     hists = [totalHist]
-    plotfunction = lambda mnvplotter,mc_hist: mc_hist.DrawCopy("colz")
-    return plotfunction,hists
+
+    def plotfunction(mnvplotter, mc_hist):
+        # Force plain TH2 draw for a normal heatmap
+        h2 = mc_hist.GetCVHistoWithStatError() if hasattr(mc_hist, "GetCVHistoWithStatError") else mc_hist
+        h2.DrawCopy("colz")
+
+    return plotfunction, hists
+
+# def PrepareHist2D(data_hists,mc_hists,Grouping):
+#     def ReSumHists(h_list):
+#         if len(h_list) == 0:
+#             return None
+#         hnew = h_list[0].Clone()
+#         for i in range(1,len(h_list)):
+#             hnew.Add(h_list[i])
+#         return hnew
+#     if not(mc_hists.valid):
+#         raise KeyError("No MC histogram to plot migration")
+#     mc_list,color,title = mc_hists.GetCateList(Grouping)
+#     totalHist = ReSumHists(mc_list)
+#     totalHist.SetTitle("Combined Signal")
+#     hists = [totalHist]
+#     plotfunction = lambda mnvplotter,mc_hist: mc_hist.DrawCopy("colz")
+#     return plotfunction,hists
 
 def updatePlotterErrorGroup(group,mnvplotter=MNVPLOTTER):
     mnvplotter.error_summary_group_map.clear();
@@ -792,12 +836,12 @@ def MakeMigrationPlots(hist, output, no_text = False, fix_width = True, mnvplott
     mnvplotter.DrawNormalizedMigrationHistogram(hist,False,False,True,no_text)
     mnvplotter.MultiPrint(canvas,output)
 
-def Make2DPlot(hist,output,mnvplotter= MNVPLOTTER, canvas = CANVAS):
-    if canvas is CANVAS:
-        canvas.Clear()
+# def Make2DPlot(hist,output,mnvplotter= MNVPLOTTER, canvas = CANVAS):
+#     if canvas is CANVAS:
+#         canvas.Clear()
 
-    plotfunction = lambda mnvplotter,mc_hist: mc_hist.DrawCopy("colz")
-    return plotfunction,hists
+#     plotfunction = lambda mnvplotter,mc_hist: mc_hist.DrawCopy("colz")
+#     return plotfunction,hists
 
 def CalChi2(data_hist,mc_hist,pot_scale=1.0):
     chi2 = 0

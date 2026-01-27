@@ -66,6 +66,9 @@ def CalcApothem(x,y):
     else:
         return x
 
+def CalTheta2Hybrid(x,y):
+    return x*x+y*y
+
 def FHC_Cut(available_energy,lepton_energy):
     if lepton_energy < 1.00:
         return(0 < available_energy < 2.00)
@@ -355,7 +358,8 @@ CUT_CONFIGS = {
         "variable_range": [0.1*i for i in range(0,21)]
     },
     "Etheta": {
-        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        # "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * CalTheta2Hybrid(event.kin_cal.reco_thetaX_lep_rad, event.kin_cal.true_thetaY_lep_rad),
         "cut_fn": lambda vals: vals >= CutConfig.Ethetasquared_CUT,
     },
     "EthetaSideband": {

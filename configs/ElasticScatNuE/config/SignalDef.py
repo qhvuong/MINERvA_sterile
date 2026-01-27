@@ -109,7 +109,7 @@ def IsInKinematicPhaseSpace(event):
 # # In case a event satisfy multiple definations, the first takes priority.
 TRUTH_CATEGORIES = OrderedDict()
 
-TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
+# TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 
 # # Exclude elastic events out of phase space BEFORE signal
 # TRUTH_CATEGORIES["ElasticOutOfKinematic"] = lambda event: IsElastic(event) and not IsInKinematicPhaseSpace(event)
@@ -145,7 +145,7 @@ TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 # EXTRA_OTHER = [
 # ]
 
-
+TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 
 # ν + e elastic scattering (in phase space only)
 TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNuE(event) 

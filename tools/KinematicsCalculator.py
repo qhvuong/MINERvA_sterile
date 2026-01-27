@@ -152,6 +152,7 @@ class KinematicsCalculator(object):
         self.reco_thetaY_lep_rad = event.LeptonThetaY()
         self.reco_theta2D_lep_rad = event.LeptonTheta2D()
         self.reco_phi_lep_rad = event.LeptonPhi()
+        self.reco_vertex3D_beam = event.Vertex3D()
         self.reco_E_lep = event.LeptonEnergy()/1e3
         self.M_lep_sqr = event.M_lep_sqr/1e6
         self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
@@ -239,12 +240,14 @@ class KinematicsCalculator(object):
         px = self.event.GetVecElem("mc_primFSLepton", 0)
         py = self.event.GetVecElem("mc_primFSLepton", 1)
         pz = self.event.GetVecElem("mc_primFSLepton", 2)
-
         p3 = ROOT.TVector3(px, py, pz)
+        p3.RotateX(SystematicsConfig.BEAM_ANGLE)
+
+
+
         # Use the SAME convention as TruthFunctions.h:
         # p3lep.RotateX(MinervaUnits::numi_beam_angle_rad);
         # p3.RotateX(ROOT.PlotUtils.MinervaUnits.numi_beam_angle_rad)
-        p3.RotateX(SystematicsConfig.BEAM_ANGLE)
 
         self.true_thetaX_lep_rad = math.atan2(p3.X(), p3.Z())
         self.true_thetaY_lep_rad = math.atan2(p3.Y(), p3.Z())
@@ -252,6 +255,14 @@ class KinematicsCalculator(object):
         self.true_thetaY_lep = math.degrees(self.true_thetaY_lep_rad)
         self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
         self.true_phi_lep_rad = math.atan2(p3.Y(), p3.X())
+    
+    
+        vtxX = self.event.GetVecElem("mc_vtx", 0)
+        vtxY = self.event.GetVecElem("mc_vtx", 1)
+        vtxZ = self.event.GetVecElem("mc_vtx", 2)
+        vtx3D = ROOT.TVector3(vtxX, vtxY, vtxZ)
+        vtx3D.RotateX(SystematicsConfig.BEAM_ANGLE)
+        self.true_vertex3D_beam = vtx3D
         # -----------------------------------------------
 
         if self.include_hadron_momenta:

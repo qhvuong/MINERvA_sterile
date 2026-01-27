@@ -35,6 +35,9 @@ M_mu_sqr = M_mu**2
 #MethodName: UpperCaseCamel
 #universeShortName: lower_case_underscore
 
+def _clamp(x, lo=-1.0, hi=1.0):
+    return lo if x < lo else hi if x > hi else x
+
 # The base universe, define functions to be used for all universes.
 class CVPythonUniverse():
     is_pc = False
@@ -101,20 +104,27 @@ class CVPythonUniverse():
 
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
-            self.LeptonTheta = self.ElectronTheta
-            self.LeptonThetaX = self.ElectronThetaX
-            self.LeptonThetaY = self.ElectronThetaY
-            self.LeptonTheta2D = self.ElectronTheta2D
-            self.LeptonPhi = self.ElectronPhi
-            self.LeptonEnergy = self.ElectronEnergy
-            self.LeptonP3D = self.ElectronP3D
-            self.M_lep_sqr =  M_e_sqr
+            self.LeptonTheta   = self.ElectronTheta ## <===== fixed beam 3D angle
+            self.LeptonThetaX  = self.ElectronThetaX
+            self.LeptonThetaY  = self.ElectronThetaY
+            self.LeptonTheta2D = self.ElectronTheta2D ## <===== fixed beam 2D angle
+            self.LeptonPhi     = self.ElectronPhi
+            # self.LeptonTheta   = self.ElectronTheta_vtxcorr ## <===== vertex corrected 3D angle
+            # self.LeptonThetaX  = self.ElectronThetaX_vtxcorr
+            # self.LeptonThetaY  = self.ElectronThetaY_vtxcorr
+            # self.LeptonTheta2D = self.ElectronTheta2D_vtxcorr ## <===== vertex corrected 2D angle
+            # self.LeptonPhi     = self.ElectronPhi_vtxcorr
+            self.LeptonEnergy  = self.ElectronEnergy
+            self.LeptonP3D     = self.ElectronP3D
+            self.Vertex3D      = self.Vertex_beam
+            self.M_lep_sqr     =  M_e_sqr
             self.GetCorrection = self.GetLeakageCorrection
             return True
         else:
-            self.LeptonTheta = self.GetThetamu
+            self.LeptonTheta   = self.GetThetamu
             self.LeptonEnergy  = self.GetEmu
-            self.LeptonP3D = self.GetPmu
+            self.LeptonP3D     = self.GetPmu
+            self.Vertex3D      = self.Vertex_beam
             self.M_lep_sqr =  M_mu_sqr
             self.GetCorrection = self.GetNuEFuzz
             return False
@@ -275,6 +285,26 @@ class CVPythonUniverse():
             print (p,r,tuple(list(electronp[0])[:3]))
         return s
 
+    def Vertex_beam(self):
+        """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
+        vx = self.GetVecElem("vtx", 0)
+        vy = self.GetVecElem("vtx", 1)
+        vz = self.GetVecElem("vtx", 2)
+        v_det = ROOT.Math.XYZVector(vx, vy, vz)
+
+        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        return r(v_det)
+
+    # def ElectronP3D_det(self):
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+    #     return ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+
+    # def ElectronP3D_beam(self):
+    #     p = self.ElectronP3D_det()
+    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     return r(p)
+
     def ElectronProtonAngle(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
         scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
@@ -292,6 +322,152 @@ class CVPythonUniverse():
             return math.degrees(math.acos(dotprod))
         else:
             return -5
+
+
+    # --- NEW: vertex-based incident neutrino direction unit vector ---
+    def NuDirUnitFromVertex(self, Lmm=900000.0):
+        """
+        Estimate incident neutrino direction at this event using the reconstructed vertex.
+
+        Returns a unit vector in the SAME coordinate system as ElectronP3D()
+        (i.e. after RotationX(BEAM_ANGLE) is applied).
+
+        Lmm is the effective upstream distance to the source point (mm),
+        interpreted along the NOMINAL BEAM axis (beam-coordinate -z).
+        """
+        # Reco vertex in detector coordinates (mm)
+        vx = self.GetVecElem("vtx", 0)
+        vy = self.GetVecElem("vtx", 1)
+        vz = self.GetVecElem("vtx", 2)
+
+        v_det = ROOT.Math.XYZVector(vx, vy, vz)
+
+        # Rotate vertex into the "beam" coordinate convention, matching ElectronP3D()
+        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        v_beam = r(v_det)
+
+        # Effective source point upstream along -z in BEAM coordinates
+        # source_beam = (0, 0, -Lmm)
+        # dir_beam    = v_beam - source_beam = (x, y, z + Lmm)
+        nu = ROOT.Math.XYZVector(v_beam.X(), v_beam.Y(), v_beam.Z() + Lmm)
+
+        mag = nu.R()
+        if mag <= 0:
+            return ROOT.Math.XYZVector(0, 0, 1)  # safe fallback (beam +z)
+        return nu * (1.0 / mag)
+
+
+    # --- NEW: build ν-aligned transverse basis (beam coords) ---
+    def _NuAlignedBasis(self, Lmm=900000.0):
+        """
+        Construct an orthonormal basis (ex, ey, ez) in BEAM coordinates such that:
+        ez = inferred neutrino direction at this vertex
+        ex, ey span the plane transverse to ez
+
+        This is used to define vertex-corrected thetaX/thetaY consistently.
+        """
+        ez = self.NuDirUnitFromVertex(Lmm=Lmm)  # unit vector in beam coords
+
+        # Pick a reference axis not (nearly) parallel to ez
+        yref = ROOT.Math.XYZVector(0, 1, 0)
+        if abs(ez.Dot(yref)) > 0.95:
+            yref = ROOT.Math.XYZVector(1, 0, 0)
+
+        ex = yref.Cross(ez)
+        ex_mag = ex.R()
+        if ex_mag <= 0:
+            # extreme fallback
+            ex = ROOT.Math.XYZVector(1, 0, 0)
+            ex_mag = ex.R()
+        ex = ex * (1.0 / ex_mag)
+
+        ey = ez.Cross(ex)
+        ey_mag = ey.R()
+        if ey_mag > 0:
+            ey = ey * (1.0 / ey_mag)
+
+        return ex, ey, ez
+
+
+    # --- NEW: theta using dot product with vertex-based ν direction ---
+    def ElectronTheta_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected electron theta: opening angle between reconstructed lepton direction
+        and estimated incident ν direction at this vertex.
+        """
+        # Reco lepton momentum (already rotated into beam coords inside ElectronP3D)
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+
+        ulep = p * (1.0 / pmag)
+        unu  = self.NuDirUnitFromVertex(Lmm=Lmm)
+
+        cosang = _clamp(ulep.Dot(unu))
+        return math.acos(cosang)
+
+
+    def ElectronThetaX_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected thetaX: lepton angular component in ν-aligned frame.
+        Defined as atan2(u·ex, u·ez).
+        """
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+        ulep = p * (1.0 / pmag)
+
+        ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
+        ux = ulep.Dot(ex)
+        uz = ulep.Dot(ez)
+
+        return math.atan2(ux, uz)
+
+
+    def ElectronThetaY_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected thetaY: lepton angular component in ν-aligned frame.
+        Defined as atan2(u·ey, u·ez).
+        """
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+        ulep = p * (1.0 / pmag)
+
+        ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
+        uy = ulep.Dot(ey)
+        uz = ulep.Dot(ez)
+
+        return math.atan2(uy, uz)
+
+
+    def ElectronTheta2D_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected 2D electron angle, consistent with the ν-aligned thetaX/thetaY:
+            theta2D = sqrt(thetaX^2 + thetaY^2)
+        """
+        tx = self.ElectronThetaX_vtxcorr(prong=prong, Lmm=Lmm)
+        ty = self.ElectronThetaY_vtxcorr(prong=prong, Lmm=Lmm)
+        return math.sqrt(tx*tx + ty*ty)
+
+
+    def ElectronPhi_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        (Optional) Vertex-corrected azimuth phi of the lepton around the inferred ν axis.
+        This is the angle in the ν-transverse plane: atan2(u·ey, u·ex).
+        """
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+        ulep = p * (1.0 / pmag)
+
+        ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
+        return math.atan2(ulep.Dot(ey), ulep.Dot(ex))
+
 
     def ElectronTheta(self):
         return self.ElectronP3D().Theta()

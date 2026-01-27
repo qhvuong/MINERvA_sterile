@@ -178,6 +178,9 @@ def CalcApothem(x,y):
     else:
         return x
 
+def CalTheta2Hybrid(x,y):
+    return x*x+y*y
+
 VARIABLE_DICT = {
     "Biased Neutrino Energy":
     {
@@ -339,7 +342,8 @@ PLOT_SETTINGS= {
         "name" : "E_Theta_Squared",
         "title" : "E_{lepton} #theta^{2} ; E_{lepton} #theta^{2} (GeV) ; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_EE_THETA_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.reco_E_lep*(event.kin_cal.reco_theta_lep_rad)**2],
+        # "value_getter" : [lambda event: event.kin_cal.reco_E_lep*(event.kin_cal.reco_theta_lep_rad)**2],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_lep * CalTheta2Hybrid(event.kin_cal.reco_thetaX_lep_rad, event.kin_cal.true_thetaY_lep_rad)],
         "tags":reco_tags
     },
     "Lepton Angle":
@@ -872,6 +876,7 @@ PLOT_SETTINGS= {
         "title": "Reco ThetaX vs Vertex X; Vertex X (mm); Reco thetaX (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEXX_BINNING,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
+        # "value_getter" : [lambda event: event.kin_cal.reco_vertex3D_beam.X(),
         "value_getter" : [lambda event: event.vtx[0],
                           lambda event: event.kin_cal.reco_thetaX_lep_rad],
         "tags": reco_tags   
@@ -883,6 +888,7 @@ PLOT_SETTINGS= {
         "title": "Reco ThetaY vs Vertex Y; Vertex Y (mm); Reco thetaY (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEXY_BINNING,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
+        # "value_getter" : [lambda event: event.kin_cal.reco_vertex3D_beam.Y(),
         "value_getter" : [lambda event: event.vtx[1],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad],
         "tags": reco_tags   
@@ -894,6 +900,7 @@ PLOT_SETTINGS= {
         "title": "True ThetaX vs Vertex X; Vertex X (mm); True thetaX (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEXX_BINNING,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
+        # "value_getter" : [lambda event: event.kin_cal.true_vertex3D_beam.X(),
         "value_getter" : [lambda event: event.mc_vtx[0],
                           lambda event: event.kin_cal.true_thetaX_lep_rad],
         "tags": truth_tags   
@@ -905,6 +912,7 @@ PLOT_SETTINGS= {
         "title": "True ThetaY vs Vertex Y; Vertex Y (mm); True thetaY (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEXY_BINNING,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
+        # "value_getter" : [lambda event: event.kin_cal.true_vertex3D_beam.Y(),
         "value_getter" : [lambda event: event.mc_vtx[1],
                           lambda event: event.kin_cal.true_thetaY_lep_rad],
         "tags": truth_tags   
