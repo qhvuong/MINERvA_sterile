@@ -316,41 +316,10 @@ class CVPythonUniverse():
     def ElectronTheta(self):
         return self.ElectronP3D().Theta()
 
-    # def ElectronThetaX(self):
-    #     p = self.ElectronP3D()  # already in beam coordinates in your code
-    #     return math.atan2(p.X(), p.Z())
-
-    # def ElectronThetaY(self):
-    #     p = self.ElectronP3D()
-    #     return math.atan2(p.Y(), p.Z())
-
-    # def ElectronTheta2D(self):
-    #     p = self.ElectronP3D()
-    #     theta_x = math.atan2(p.X(), p.Z())
-    #     theta_y = math.atan2(p.Y(), p.Z())
-    #     return math.sqrt(theta_x*theta_x + theta_y*theta_y)
-
-    # def ElectronPhi(self):
-    #     p = self.ElectronP3D()
-    #     return math.atan2(p.Y(), p.X())   # radians
-
     def ElectronP3D_det(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
         scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
         return ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-
-    # def ElectronP3D_beam(self):
-    #     p = self.ElectronP3D_det()
-    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-    #     return r(p)
-
-    # def ElectronThetaY_det(self):
-    #     p = self.ElectronP3D_det()
-    #     return math.atan2(p.Y(), p.Z())
-
-    # def ElectronThetaY_beam(self):
-    #     p = self.ElectronP3D_beam()
-    #     return math.atan2(p.Y(), p.Z())
 
     def ElectronProtonAngle(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
