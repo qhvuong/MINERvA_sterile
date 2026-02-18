@@ -123,7 +123,7 @@ ELECTRON_ANGLE_BINNING_DET = list(np.linspace(-0.1, 0., 51))
 # ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
 ELECTRON_PHI_BINNING = list(np.linspace(-1., 1., 51))
 # Vertex X and Y in mm
-ELECTRON_VERTEX_BINNING_DET = [30*i for i in range(-40, 41)]   # -1200 → +1200 mm
+ELECTRON_VERTEX_BINNING_DET = [40*i for i in range(-30, 31)]   # -1200 → +1200 mm
 ELECTRON_VERTEX_BINNING = [20*i for i in range(-40, 81)]   # -800 → +1600 mm
 HEX_EDGE_DIST_BINNING = [i for i in range(-50, 401, 10)]  # -50..400 mm, 10 mm steps
 ELECTRON_PX_BINNING = [i for i in range(-300, 301, 10)]
@@ -295,7 +295,7 @@ HISTS_TO_MAKE = [
 
 
 ### MY PLOTS ###
-	"Lepton Energy",
+	# "Lepton Energy",
 	# "E Theta Squared",
     # "Reco Energy vs L/E",
     # "True Energy vs L/E",
@@ -313,15 +313,18 @@ HISTS_TO_MAKE = [
 	# "True vs Reconstructed Lepton Theta Y In Beam Coordinate",
 	# "True vs Reconstructed Lepton Theta 2D",
 	# "True vs Reconstructed Lepton Phi",
-	# "Reco ThetaX vs Vertex X",
-	# "True ThetaX vs Vertex X",
-	# # "Reco ThetaX vs Vertex X In Beam Coordinate",
-	# "Reco ThetaY vs Vertex Y",
-	# "True ThetaY vs Vertex Y",
-	# # "Reco ThetaY vs Vertex Y In Beam Coordinate",
-	# "dThetaY vs Vertex X",
-	# "dThetaY vs Vertex Y",
-	# "dThetaY vs Vertex Z",
+	"Reco ThetaX vs Vertex X",
+	"True ThetaX vs Vertex X",
+	# "Reco ThetaX vs Vertex X In Beam Coordinate",
+	"Reco ThetaY vs Vertex Y",
+	"True ThetaY vs Vertex Y",
+	# "Reco ThetaY vs Vertex Y In Beam Coordinate",
+	"dThetaY vs Vertex X",
+	"dThetaY vs Vertex Y",
+	"dThetaY vs Vertex Z",
+
+	"dThetaY vs Lepton Vertex Y",
+
 	# "dThetaY vs Lepton PX",
 	# "dThetaY vs Lepton PY",
 	# "dThetaY vs Lepton PZ",
@@ -340,30 +343,32 @@ HISTS_TO_MAKE = [
 	# "dPX vs Vertex X",
 	# "dPY vs Vertex X",
 	# "dPZ vs Vertex X",
-	# "dPX vs Vertex X In Det Coordinate",
-	# "dPY vs Vertex X In Det Coordinate",
-	# "dPZ vs Vertex X In Det Coordinate",
-	# "dPZ_frac vs Vertex X In Det Coordinate",
-	# "dPhatX vs Vertex X In Det Coordinate",
-	# "dPhatY vs Vertex X In Det Coordinate",
-	# "dPhatZ vs Vertex X In Det Coordinate",
-	# "dPmag vs Vertex X In Det Coordinate",
-	# "dPmag_frac vs Vertex X In Det Coordinate",
+	"dPX vs Vertex X In Det Coordinate",
+	"dPY vs Vertex X In Det Coordinate",
+	"dPZ vs Vertex X In Det Coordinate",
+	"dPZ_frac vs Vertex X In Det Coordinate",
+	"dPhatX vs Vertex X In Det Coordinate",
+	"dPhatY vs Vertex X In Det Coordinate",
+	"dPhatZ vs Vertex X In Det Coordinate",
+	"dPmag vs Vertex X In Det Coordinate",
+	"dPmag_frac vs Vertex X In Det Coordinate",
+	"PhatX_reco vs Vertex X In Det Coordinate",
+	"PhatX_true vs Vertex X In Det Coordinate",
 
 	# "dPX vs Vertex Y",
 	# "dPY vs Vertex Y",
 	# "dPZ vs Vertex Y",
-	# "dPX vs Vertex Y In Det Coordinate",
-	# "dPY vs Vertex Y In Det Coordinate",
-	# "dPZ vs Vertex Y In Det Coordinate",
-	# "dPZ_frac vs Vertex Y In Det Coordinate",
-	# "dPhatX vs Vertex Y In Det Coordinate",
-	# "dPhatY vs Vertex Y In Det Coordinate",
-	# "dPhatZ vs Vertex Y In Det Coordinate",
-	# "dPmag vs Vertex Y In Det Coordinate",
-	# "dPmag_frac vs Vertex Y In Det Coordinate",
-	# "PhatY_reco vs Vertex Y In Det Coordinate",
-	# "PhatY_true vs Vertex Y In Det Coordinate",
+	"dPX vs Vertex Y In Det Coordinate",
+	"dPY vs Vertex Y In Det Coordinate",
+	"dPZ vs Vertex Y In Det Coordinate",
+	"dPZ_frac vs Vertex Y In Det Coordinate",
+	"dPhatX vs Vertex Y In Det Coordinate",
+	"dPhatY vs Vertex Y In Det Coordinate",
+	"dPhatZ vs Vertex Y In Det Coordinate",
+	"dPmag vs Vertex Y In Det Coordinate",
+	"dPmag_frac vs Vertex Y In Det Coordinate",
+	"PhatY_reco vs Vertex Y In Det Coordinate",
+	"PhatY_true vs Vertex Y In Det Coordinate",
 
 	
 

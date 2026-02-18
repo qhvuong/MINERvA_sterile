@@ -139,7 +139,7 @@ class CVPythonUniverse():
         else:
             self.LeptonTheta       = self.GetThetamu
             self.LeptonEnergy      = self.GetEmu
-            self.LeptonP3D_det     = self.MuonP3D
+            self.LeptonP3D_det     = self.MuonP3D_det
             self.LeptonP3D         = self.MuonP3D_beam
             # self.LeptonP3D         = self.GetPmu
             # self.Vertex3D_beam     = self.Vertex_beam
@@ -302,6 +302,16 @@ class CVPythonUniverse():
         if s is None:
             print (p,r,tuple(list(electronp[0])[:3]))
         return s
+
+    # def Lepton_Vtx(self):
+    #     """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
+    #     vx = self.GetVecElem("vtx", 0)
+    #     vy = self.GetVecElem("vtx", 1)
+    #     vz = self.GetVecElem("vtx", 2)
+    #     v_det = ROOT.Math.XYZVector(vx, vy, vz)
+
+    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     return r(v_det)
 
     def Vertex_beam(self):
         """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""

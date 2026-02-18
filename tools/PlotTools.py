@@ -422,9 +422,193 @@ def CategoryProfileX(data_hists, mc_hists, category, option="s", *args, **kwargs
     plotfunction = lambda mnvplotter, h: MakeProfile1D(h)
     return plotfunction, hists
 
+def _masked_profile_by_error(p, err_max=None):
+    h = p.Clone(p.GetName() + "_fitmask")
+    h.SetDirectory(0)
+    nb = h.GetNbinsX()
+    for i in range(1, nb + 1):
+        y = h.GetBinContent(i)
+        e = h.GetBinError(i)
 
-def MakeProfile1D(prof):
-    prof.DrawCopy("E1")
+        # remove bins with no info
+        if not math.isfinite(y) or not math.isfinite(e) or e <= 0:
+            h.SetBinContent(i, 0.0)
+            h.SetBinError(i, 0.0)
+            continue
+
+        # optional: remove super-noisy bins
+        if err_max is not None and e > err_max:
+            h.SetBinContent(i, 0.0)
+            h.SetBinError(i, 0.0)
+
+    return h
+
+def _median_err(p):
+    errs = []
+    for i in range(1, p.GetNbinsX()+1):
+        e = p.GetBinError(i)
+        if e > 0 and math.isfinite(e):
+            errs.append(e)
+    errs.sort()
+    return errs[len(errs)//2] if errs else None
+
+def _auto_fit_range_from_profile(p, err_scale=3.0, trim_frac=0.05):
+    """
+    Choose [xmin, xmax] automatically from bins that have valid (and not crazy) errors.
+    - err_scale: keep bins with error <= err_scale * median_error
+    - trim_frac: after finding good bins, trim this fraction of the span off each end
+    """
+    med = _median_err(p)
+    err_max = (err_scale * med) if med is not None else None
+
+    good_x = []
+    for i in range(1, p.GetNbinsX() + 1):
+        y = p.GetBinContent(i)
+        e = p.GetBinError(i)
+        if not math.isfinite(y) or not math.isfinite(e) or e <= 0:
+            continue
+        if err_max is not None and e > err_max:
+            continue
+        good_x.append(p.GetXaxis().GetBinCenter(i))
+
+    if len(good_x) < 2:
+        # fallback to full axis range
+        return p.GetXaxis().GetXmin(), p.GetXaxis().GetXmax(), err_max
+
+    xmin = min(good_x)
+    xmax = max(good_x)
+
+    # trim ends a bit
+    span = xmax - xmin
+    if span > 0 and trim_frac is not None and trim_frac > 0:
+        xmin += trim_frac * span
+        xmax -= trim_frac * span
+
+    return xmin, xmax, err_max
+
+
+def FitProfileLine(prof, xmin=None, xmax=None, fit_opts="QS"):
+    """
+    Fit a TProfile with a straight line (pol1).
+    fit_opts: ROOT fit options, e.g.
+      Q = quiet, S = return TFitResultPtr, R = use function range, 0 = don't draw
+    """
+    # Define fit function
+    f = ROOT.TF1(f"{prof.GetName()}_pol1", "pol1",
+                 xmin if xmin is not None else prof.GetXaxis().GetXmin(),
+                 xmax if xmax is not None else prof.GetXaxis().GetXmax())
+
+    # If user gave a range, include "R"
+    opts = fit_opts
+    if (xmin is not None) or (xmax is not None):
+        if "R" not in opts:
+            opts += "R"
+
+    res = prof.Fit(f, opts)  # returns TFitResultPtr if "S" in opts
+    return f, res
+
+# def MakeProfile1D(prof): 
+#     prof.DrawCopy("E1")
+
+# def MakeProfile1D(prof, xmin=None, xmax=None):
+#     if prof is None:
+#         return
+
+#     # Draw a copy (this is what works in your setup)
+#     h = prof.DrawCopy("E1")   # <-- returns the drawn copy
+#     if h is None:
+#         return
+
+#     # Fit range
+#     xlo = xmin if xmin is not None else h.GetXaxis().GetXmin()
+#     xhi = xmax if xmax is not None else h.GetXaxis().GetXmax()
+
+#     f = ROOT.TF1(f"{h.GetName()}_pol1", "pol1", xlo, xhi)
+
+#     # Fit the *copy* and do NOT let ROOT redraw automatically
+#     res = h.Fit(f, "QSR0")
+
+#     f.SetLineColor(ROOT.kRed)
+#     f.SetLineWidth(2)
+#     f.Draw("same")
+
+#     if ROOT.gPad:
+#         ROOT.gPad.Modified()
+#         ROOT.gPad.Update()
+
+#     # Print parameters
+#     p0, e0 = f.GetParameter(0), f.GetParError(0)
+#     p1, e1 = f.GetParameter(1), f.GetParError(1)
+#     print(f"[FIT] {h.GetName()} : y = p0 + p1*x")
+#     print(f"      p0 = {p0:.6g} ± {e0:.3g}")
+#     print(f"      p1 = {p1:.6g} ± {e1:.3g}")
+#     if res is not None and hasattr(res, "Chi2"):
+#         print(f"      chi2/ndf = {res.Chi2():.3g}/{res.Ndf()}")
+
+
+
+# Keep python-owned ROOT objects alive (critical in PyROOT)
+_ROOT_KEEP = []
+
+def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05):
+    drawn = prof.DrawCopy("E1")
+    if drawn is None:
+        return
+
+    # --- choose fit range automatically (if you already have your auto-range, use that here)
+    # fallback: full range
+    xlo = xmin if xmin is not None else drawn.GetXaxis().GetXmin()
+    xhi = xmax if xmax is not None else drawn.GetXaxis().GetXmax()
+
+    # --- error-based masking (using your helpers)
+    med = _median_err(drawn)
+    err_max = (err_scale * med) if med is not None else None
+    fitprof = _masked_profile_by_error(drawn, err_max=err_max)
+
+    f = ROOT.TF1(f"{drawn.GetName()}_pol1", "pol1", xlo, xhi)
+
+    # Fit without auto-drawing; we'll draw everything ourselves
+    res = fitprof.Fit(f, "QSR0")
+
+    # Draw the line
+    f.SetLineColor(ROOT.kRed)
+    f.SetLineWidth(2)
+    f.Draw("same")
+
+    # Force pad to exist/update before placing NDC text
+    if ROOT.gPad:
+        ROOT.gPad.Modified()
+        ROOT.gPad.Update()
+
+    # --- parameters
+    p0, e0 = f.GetParameter(0), f.GetParError(0)
+    p1, e1 = f.GetParameter(1), f.GetParError(1)
+    chi2 = f.GetChisquare()
+    ndf  = f.GetNDF()
+    chi2ndf = (chi2 / ndf) if ndf > 0 else float("nan")
+
+    # --- text box (NDC coords)
+    box = ROOT.TPaveText(0.55, 0.72, 0.88, 0.88, "NDC")
+    box.SetFillStyle(0)      # transparent
+    box.SetBorderSize(1)
+    box.SetTextAlign(12)
+    box.SetTextSize(0.03)
+
+    # box.AddText("Fit: y = p0 + p1 x")
+    box.AddText(f"p0 = {p0:.4g} #pm {e0:.2g}")
+    box.AddText(f"p1 = {p1:.4g} #pm {e1:.2g}")
+    box.AddText(f"#chi^{{2}}/ndf = {chi2ndf:.3g}")
+
+    box.Draw("same")
+
+    # Keep it alive (otherwise it may vanish)
+    _ROOT_KEEP.append(box)
+    _ROOT_KEEP.append(f)
+
+    if ROOT.gPad:
+        ROOT.gPad.Modified()
+        ROOT.gPad.Update()
+
 
 
 
