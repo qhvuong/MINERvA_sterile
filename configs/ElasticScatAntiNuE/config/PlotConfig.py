@@ -118,31 +118,11 @@ NONMIPCLUSFRAC_BINNING = [0.1*i for i in range(11)]
 ODCALVISE_BINNING = [0.005* i for i in range(11)]
 DSCALVISE_BINNING = [0.05* i for i in range(11)]
 AFTERPULSING_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
-ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
-ELECTRON_ANGLE_BINNING_DET = list(np.linspace(-0.1, 0., 51))
-# ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
+ELECTRON_ANGLE_BINNING = list(np.linspace(-0.1, 0.1, 51))
 ELECTRON_PHI_BINNING = list(np.linspace(-1., 1., 51))
 # Vertex X and Y in mm
-ELECTRON_VERTEX_BINNING_DET = [30*i for i in range(-40, 41)]   # -1200 → +1200 mm
-ELECTRON_VERTEX_BINNING = [20*i for i in range(-40, 81)]   # -800 → +1600 mm
-HEX_EDGE_DIST_BINNING = [i for i in range(-50, 401, 10)]  # -50..400 mm, 10 mm steps
-ELECTRON_PX_BINNING = [i for i in range(-300, 301, 10)]
-ELECTRON_PY_BINNING = [i for i in range(-300, 301, 10)]
-ELECTRON_PZ_BINNING = [i for i in range(0, 9001, 250)]
-ELECTRON_PT_BINNING = [i for i in range(0, 401, 10)]
-
-TANTHETA_BINNING = [i * 0.001 for i in range(-50, 51)]
-PX_RESID_BINNING = [i for i in range(-200, 201, 5)]
-PY_RESID_BINNING = [i for i in range(-200, 201, 5)]
-PY_RESID_BINNING_DET = [i for i in range(-350, 51, 5)]
-PZ_RESID_BINNING = [i for i in range(-3000, 3001, 50)]
-PZ_FRAC_RESID_BINNING = [i * 0.002 for i in range(-100, 101)]  # -0.2 → +0.2
-PHAT_RESID_BINNING = [i * 0.001 for i in range(-100, 101)]  # -0.1 → +0.1
-PMAG_RESID_BINNING = [i for i in range(-3000, 3001, 50)]
-PMAG_FRAC_RESID_BINNING = [i * 0.002 for i in range(-100, 101)]  # -0.2 → +0.2
-PHAT_BINNING = [i * 0.002 for i in range(-100, 101)]  # -0.2 → +0.2
-
-
+ELECTRON_VERTEXX_BINNING = [20*i for i in range(-60, 61)]   # -1200 → +1200 mm
+ELECTRON_VERTEXY_BINNING = [20*i for i in range(-60, 61)]   # -1200 → +1200 mm
 
 CONE_OUTSIDE_ENERGY_BINNING = [10*i for i in range(0,51)] 	# 0 to 500 MeV
 NEIGHBORHOOD_ENERGY_BINNING = [5*i for i in range(0,21)] 	# 0 to 150 MeV
@@ -296,104 +276,43 @@ HISTS_TO_MAKE = [
 
 ### MY PLOTS ###
 	"Lepton Energy",
-	# "E Theta Squared",
-    # "Reco Energy vs L/E",
+	"E Theta Squared",
+    "Reco Energy vs L/E",
     # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
-    # "Estimator vs Front dEdX",
+    "Estimator vs Front dEdX",
     # "Biased Neutrino Energy",
-	# "Visible Energy",
-	# "True Lepton Energy",
-	# "True vs Reconstructed Lepton Energy",
-	# "True vs Reconstructed Lepton Theta In Det Coordinate",
-	# "True vs Reconstructed Lepton Theta In Beam Coordinate",
-	# "True vs Reconstructed Lepton Theta X In Det Coordinate",
-	# "True vs Reconstructed Lepton Theta X In Beam Coordinate",
-	# "True vs Reconstructed Lepton Theta Y In Det Coordinate",
-	# "True vs Reconstructed Lepton Theta Y In Beam Coordinate",
-	# "True vs Reconstructed Lepton Theta 2D",
-	# "True vs Reconstructed Lepton Phi",
-	# "Reco ThetaX vs Vertex X",
-	# "True ThetaX vs Vertex X",
-	# # "Reco ThetaX vs Vertex X In Beam Coordinate",
-	# "Reco ThetaY vs Vertex Y",
-	# "True ThetaY vs Vertex Y",
-	# # "Reco ThetaY vs Vertex Y In Beam Coordinate",
-	# "dThetaY vs Vertex X",
-	# "dThetaY vs Vertex Y",
-	# "dThetaY vs Vertex Z",
-	# "dThetaY vs Lepton PX",
-	# "dThetaY vs Lepton PY",
-	# "dThetaY vs Lepton PZ",
-	# "dThetaY vs Lepton Pt",
-	# "dThetaY vs Front dEdX",
-	# "dThetaY vs ConeOutsideE",
-	# "dThetaY vs NeighborhoodE",
-	# "dThetaY vs Lepton Energy",
-	# "dThetaY vs True Lepton Energy",
-	# "dThetaY vs Available Energy",
-	# "True vs Reconstructed Vertex Y",
-	# "dThetaX vs Hex Edge Distance",
-	# "dThetaY vs Hex Edge Distance",
-	# "dTanThetaY vs Vertex Y",
-
-	# "dPX vs Vertex X",
-	# "dPY vs Vertex X",
-	# "dPZ vs Vertex X",
-	# "dPX vs Vertex X In Det Coordinate",
-	# "dPY vs Vertex X In Det Coordinate",
-	# "dPZ vs Vertex X In Det Coordinate",
-	# "dPZ_frac vs Vertex X In Det Coordinate",
-	# "dPhatX vs Vertex X In Det Coordinate",
-	# "dPhatY vs Vertex X In Det Coordinate",
-	# "dPhatZ vs Vertex X In Det Coordinate",
-	# "dPmag vs Vertex X In Det Coordinate",
-	# "dPmag_frac vs Vertex X In Det Coordinate",
-
-	# "dPX vs Vertex Y",
-	# "dPY vs Vertex Y",
-	# "dPZ vs Vertex Y",
-	# "dPX vs Vertex Y In Det Coordinate",
-	# "dPY vs Vertex Y In Det Coordinate",
-	# "dPZ vs Vertex Y In Det Coordinate",
-	# "dPZ_frac vs Vertex Y In Det Coordinate",
-	# "dPhatX vs Vertex Y In Det Coordinate",
-	# "dPhatY vs Vertex Y In Det Coordinate",
-	# "dPhatZ vs Vertex Y In Det Coordinate",
-	# "dPmag vs Vertex Y In Det Coordinate",
-	# "dPmag_frac vs Vertex Y In Det Coordinate",
-	# "PhatY_reco vs Vertex Y In Det Coordinate",
-	# "PhatY_true vs Vertex Y In Det Coordinate",
-
-	
-
-	# "dThetaX vs Vertex X",
-	# "dThetaX vs Vertex Y",
-	# "dThetaX vs Vertex Z",
-	# "True ThetaX vs Vertex X In Det Coordinate",
-	# "True ThetaX vs Vertex X In Beam Coordinate",
-	# "True ThetaY vs Vertex Y In Det Coordinate",
-	# "True ThetaY vs Vertex Y In Beam Coordinate",
-	# "Front dEdX",
-	# "Reco Q2",
-	# "True E Theta Squared",
-	# "Cone Outside Energy",
-	# "Cone Outside Energy vs True Lepton Energy",
-	# "Neighborhood Energy",
-	# "Neighborhood Energy vs True Lepton Energy",
-	# "Neutrino Vertex Z",
-	# "Neutrino Vertex Apothem",
-	# "EMLikeTrackScore",
-	# "TransverseGapScore",
-	# "NonMIPClusFrac",
-	# "ODCalVisE",
-	# "DSCalVisE",
-	# "Afterpulsing",
-	# "DeadTime",
-	# "VertexTrackMultiplicity",
-	# "StartPointVertexMultiplicity",
-	# "HasNoVertexMismatch",
-	# "HasTracks",
-	# "HasNoBackExitingTracks",
+	"Visible Energy",
+	"True Lepton Energy",
+	"True vs Reconstructed Lepton Energy",
+	"True vs Reconstructed Lepton Theta",
+	"True vs Reconstructed Lepton Theta X",
+	"True vs Reconstructed Lepton Theta Y",
+	"True vs Reconstructed Lepton Theta 2D",
+	"True vs Reconstructed Lepton Phi",
+	"Reco ThetaX vs Vertex X",
+	"Reco ThetaY vs Vertex Y",
+	"Reco ThetaY vs Vertex Y In Det Coordinate",
+	"Reco ThetaY vs Vertex Y In Beam Coordinate",
+	"True ThetaX vs Vertex X",
+	"True ThetaY vs Vertex Y",
+	"Front dEdX",
+	"Reco Q2",
+	"True E Theta Squared",
+	"Neutrino Vertex Z",
+	"Neutrino Vertex Apothem",
+	"EMLikeTrackScore",
+	"TransverseGapScore",
+	"NonMIPClusFrac",
+	"ConeOutsideE",
+	"ODCalVisE",
+	"DSCalVisE",
+	"Afterpulsing",
+	"DeadTime",
+	"VertexTrackMultiplicity",
+	"StartPointVertexMultiplicity",
+	"HasNoVertexMismatch",
+	"HasTracks",
+	"HasNoBackExitingTracks",
 
 ]

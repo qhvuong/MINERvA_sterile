@@ -37,7 +37,8 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
                 data_signal.SetBinContent(q,mc_hists.hists["Total"].GetBinContent(q))
 
     PlotType = config.setdefault("plot_type",Default_Plot_Type)
-    typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"
+    # typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"
+    typeBool = PlotType not in ["migration", "category_hist", "hist2d", "profileX"]
     slicer = config.setdefault("slicer", DefaultSlicer(data_hists)) if typeBool else PlotTools.IdentitySlicer
     draw_seperate_legend = config.setdefault("draw_seperate_legend",data_hists.dimension!=1 and (PlotType != "migration" or PlotType != "category_hist" or PlotType != "hist2d"))
     if data_hists is None or mc_hists is None:

@@ -244,30 +244,79 @@ def Prepare2DStack(data_hists,mc_hists,Grouping = None):
     hists.extend(mc_list)
     return plotfunction,hists
 
-def PrepareStack(data_hists,mc_hists,Grouping = None):
+
+def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=0.0008):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
-    mc_list,color,title,raw_counts = mc_hists.GetCateList(Grouping, with_raw=True)
+
+    # MC: return clones, optionally width-scaled
+    mc_list, color, title, yields = mc_hists.GetCateList(
+        Grouping, with_yield=True, width_scale_to=width_scale_to
+    )
+
     if data_hists.valid:
-        plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, raw_counts=raw_counts, legend="TR")(data_hist,mc_ints)
-        if "frontdedx" in data_hists.GetHist().GetName():
-            hist = data_hists.GetHist()
-            #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
-            hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
-        hists = [data_hists.GetHist()]
+        data_hist = data_hists.GetHist()
+
+        # DATA: match MC width scaling (plot-time only)
+        if width_scale_to is not None:
+            data_hist_plot = mc_hists.WidthScaleHist(data_hist, target_width=width_scale_to)
+        else:
+            data_hist_plot = data_hist
+
+        plotfunction = lambda mnvplotter, data_hist_in, *mc_ints: partial(
+            MakeDataMCStackedPlot,
+            color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
+        )(data_hist_in, mc_ints)
+
+        # Use the plot-scaled data hist in the returned list
+        hists = [data_hist_plot]
+
+        if "frontdedx" in data_hist_plot.GetName():
+            data_hist_plot.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
+
     else:
-        plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, raw_counts=raw_counts, legend = "TR")(mc_hist,mc_ints)
+        plotfunction = lambda mnvplotter, mc_hist, *mc_ints: partial(
+            MakeDataMCStackedPlot,
+            color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
+        )(mc_hist, mc_ints)
+
         tmp = mc_hists.GetHist().Clone()
         tmp.Reset()
-        hists =[tmp]
+        hists = [tmp]
+
+    # Axis titles for MC hists
     for hist in mc_list:
-        if "frontdedx" in hist.GetName():
-            #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
+        if hist and "frontdedx" in hist.GetName():
             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
-        if hist == None:
-            del hist
+
     hists.extend(mc_list)
-    return plotfunction,hists
+    return plotfunction, hists
+
+# def PrepareStack(data_hists,mc_hists,Grouping = None):
+#     if not mc_hists.valid:
+#         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+#     # mc_list,color,title,raw_counts = mc_hists.GetCateList(Grouping, with_raw=True)
+#     mc_list, color, title, yields = mc_hists.GetCateList(Grouping, with_yield=True, width_scale_to=None)
+#     if data_hists.valid:
+#         plotfunction =  lambda mnvplotter, data_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, pot_scale=1.0, raw_counts=yields, legend="TR")(data_hist,mc_ints)
+#         if "frontdedx" in data_hists.GetHist().GetName():
+#             hist = data_hists.GetHist()
+#             #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
+#             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
+#         hists = [data_hists.GetHist()]
+#     else:
+#         plotfunction =  lambda mnvplotter, mc_hist, *mc_ints: partial(MakeDataMCStackedPlot, color=color,title=title, pot_scale=1.0, raw_counts=yields, legend = "TR")(mc_hist,mc_ints)
+#         tmp = mc_hists.GetHist().Clone()
+#         tmp.Reset()
+#         hists =[tmp]
+#     for hist in mc_list:
+#         if "frontdedx" in hist.GetName():
+#             #hist.GetXaxis().SetTitle("dE/dx (MeV/cm)")
+#             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
+#         if hist == None:
+#             del hist
+#     hists.extend(mc_list)
+#     return plotfunction,hists
 
 def PrepareStackNew(data_hists,mc_hists,Grouping = None):
     if not mc_hists.valid:
@@ -330,6 +379,59 @@ def MakeCategoryHist(mc_hist):
     #tcanvas = ROOT.TCanvas()
     #SetMargin(tcanvas)
     mc_hist.DrawCopy("colz")
+
+
+
+def _iter_cate_names(category):
+    # single-category form
+    if isinstance(category, dict) and "cate" in category:
+        return category["cate"]
+    # grouped form: {"Signal": {"cate": {...}}, "Background": {"cate": {...}}}
+    if isinstance(category, dict):
+        out = set()
+        for sub in category.values():
+            if isinstance(sub, dict) and "cate" in sub:
+                out |= set(sub["cate"])
+        return out
+    return []
+
+def CategoryProfileX(data_hists, mc_hists, category, option="s", *args, **kwargs):
+    if not mc_hists.valid:
+        raise KeyError("No MC histogram to profile")
+
+    print(category)
+
+    # Build category-summed TH2
+    cate_names = _iter_cate_names(category)
+
+    if cate_names:
+        hist2d = mc_hists.GetHist().Clone()
+        hist2d.Reset()
+        for cate in cate_names:
+            if cate in mc_hists.hists:
+                hist2d.Add(mc_hists.hists[cate])
+    else:
+        hist2d = mc_hists.GetHist()
+
+    # Mean(Y) vs X
+    prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
+    prof.SetTitle(hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
+                  + "; <" + hist2d.GetYaxis().GetTitle() + ">")
+
+    hists = [prof]
+    plotfunction = lambda mnvplotter, h: MakeProfile1D(h)
+    return plotfunction, hists
+
+
+def MakeProfile1D(prof):
+    prof.DrawCopy("E1")
+
+
+
+
+
+
+
 
 def PrepareDiff(data_hists,mc_hists):
     if not (data_hists.valid and mc_hists.valid):
@@ -485,7 +587,12 @@ def Make2DSlice(hist2D_o, X_slice=True, bin_start = 1 , bin_end = 0,interval = 1
     Nbins = axis.GetNbins()
     start = max(0,bin_start)
     end = Nbins - bin_end + 1 if bin_end <=0 else bin_end
+
     for i in range(start,end,interval):
+        # # If this isn't a 2D histogram (e.g., TProfile), don't try to slice it.
+        # if not hasattr(hist2D, "ProjectionX") or not hasattr(hist2D, "ProjectionY"):
+        #     slicing_hists.append(hist2D.Clone(hist2D.GetName() + "_noslice"))
+        #     continue
         slicing_hists.append(hist2D.ProjectionX(hist2D.GetName()+str(i),i,i+interval-1,"o") if not X_slice else hist2D.ProjectionY(hist2D.GetName()+str(i),i,i+interval-1,"o"))
         slicing_hists[-1].SetTitle("%.2f<%s<%.2f"%(axis.GetBinLowEdge(i),axis.GetTitle(),axis.GetBinUpEdge(i+interval-1)))
         slicing_hists[-1].GetYaxis().SetTitle(hist2D.GetZaxis().GetTitle())

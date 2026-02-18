@@ -58,7 +58,7 @@ namespace ROOT {
       ::FluxCalculatorLoop *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::FluxCalculatorLoop));
       static ::ROOT::TGenericClassInfo 
-         instance("FluxCalculatorLoop", "FluxCalculatorLoop.h", 11,
+         instance("FluxCalculatorLoop", "FluxCalculatorLoop.h", 10,
                   typeid(::FluxCalculatorLoop), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &FluxCalculatorLoop_Dictionary, isa_proxy, 4,
                   sizeof(::FluxCalculatorLoop) );

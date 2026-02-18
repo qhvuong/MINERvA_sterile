@@ -13,6 +13,7 @@ import cProfile
 import signal
 import sys
 from itertools import chain
+import math
 
 #start loading my modules
 from tools import Utilities
@@ -63,6 +64,27 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
+
+            # # if mc and universe.GetSigma() == 0 and debug_prints < max_debug_prints:
+            # if mc and universe.GetSigma() == 0 and eventClassifier.is_reco_signal == True:
+            #     p = universe.LeptonP3D()
+            #     px, py, pz = p.X(), p.Y(), p.Z()
+            #     pt = math.sqrt(px*px + py*py)
+
+            #     print(f"PX={px:.1f}  PY={py:.1f}  PZ={pz:.1f}  PT={pt:.1f}")
+                # # debug_prints += 1
+                # cone_outside_e = universe.ConeOutsideE()
+                # neighborhood_e = universe.NeighborhoodE(_debug=True)
+                # print(
+                #     "entry={} sideband={} reco_signal={} true_signal={} ConeOutsideE value={:.6g} NeighborhoodE value={:.6g}".format(
+                #         counter,
+                #         eventClassifier.side_band,
+                #         eventClassifier.is_reco_signal,
+                #         eventClassifier.is_true_signal,
+                #         cone_outside_e,
+                #         neighborhood_e,
+                #     )
+                # )
 
             # # --- put this near the top of plotRecoKin (before the event loop) ---
             # debug_prints = 0

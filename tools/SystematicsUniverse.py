@@ -10,7 +10,8 @@ import itertools
 import operator
 import random
 import re
-
+import numpy as np
+import math
 import ROOT
 import PlotUtils
 import ctypes
@@ -37,6 +38,18 @@ M_mu_sqr = M_mu**2
 
 def _clamp(x, lo=-1.0, hi=1.0):
     return lo if x < lo else hi if x > hi else x
+
+def _hex_edge_distance_mm(x, y, apothem_mm=881.25):
+    """
+    Distance (mm) from point (x,y) to the nearest side of a regular hexagon centered at (0,0) with given apothem.
+    Positive inside, 0 on boundary, negative outside.
+    """
+    sqrt3 = math.sqrt(3.0)
+    u1 = x
+    u2 = 0.5*x + 0.5*sqrt3*y
+    u3 = -0.5*x + 0.5*sqrt3*y
+    umax = max(abs(u1), abs(u2), abs(u3))
+    return apothem_mm - umax
 
 # The base universe, define functions to be used for all universes.
 class CVPythonUniverse():
@@ -105,28 +118,33 @@ class CVPythonUniverse():
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
             self.LeptonTheta   = self.ElectronTheta ## <===== fixed beam 3D angle
-            self.LeptonThetaX  = self.ElectronThetaX
-            self.LeptonThetaY  = self.ElectronThetaY
-            self.LeptonTheta2D = self.ElectronTheta2D ## <===== fixed beam 2D angle
-            self.LeptonPhi     = self.ElectronPhi
+            # self.LeptonThetaX  = self.ElectronThetaX
+            # self.LeptonThetaY  = self.ElectronThetaY
+            # self.LeptonTheta2D = self.ElectronTheta2D ## <===== fixed beam 2D angle
+            # self.LeptonPhi     = self.ElectronPhi
             # self.LeptonTheta   = self.ElectronTheta_vtxcorr ## <===== vertex corrected 3D angle
             # self.LeptonThetaX  = self.ElectronThetaX_vtxcorr
             # self.LeptonThetaY  = self.ElectronThetaY_vtxcorr
             # self.LeptonTheta2D = self.ElectronTheta2D_vtxcorr ## <===== vertex corrected 2D angle
             # self.LeptonPhi     = self.ElectronPhi_vtxcorr
-            self.LeptonEnergy  = self.ElectronEnergy
-            self.LeptonP3D     = self.ElectronP3D
-            self.Vertex3D      = self.Vertex_beam
-            self.M_lep_sqr     =  M_e_sqr
-            self.GetCorrection = self.GetLeakageCorrection
+            self.LeptonEnergy      = self.ElectronEnergy
+            self.LeptonP3D_det     = self.ElectronP3D_det
+            self.LeptonP3D         = self.ElectronP3D
+            # self.Vertex3D_beam     = self.Vertex_beam
+            # self.LeptonThetaY_det  = self.ElectronThetaY_det
+            # self.LeptonThetaY_beam = self.ElectronThetaY_beam
+            self.M_lep_sqr         =  M_e_sqr
+            self.GetCorrection     = self.GetLeakageCorrection
             return True
         else:
-            self.LeptonTheta   = self.GetThetamu
-            self.LeptonEnergy  = self.GetEmu
-            self.LeptonP3D     = self.GetPmu
-            self.Vertex3D      = self.Vertex_beam
-            self.M_lep_sqr =  M_mu_sqr
-            self.GetCorrection = self.GetNuEFuzz
+            self.LeptonTheta       = self.GetThetamu
+            self.LeptonEnergy      = self.GetEmu
+            self.LeptonP3D_det     = self.MuonP3D
+            self.LeptonP3D         = self.MuonP3D_beam
+            # self.LeptonP3D         = self.GetPmu
+            # self.Vertex3D_beam     = self.Vertex_beam
+            self.M_lep_sqr         =  M_mu_sqr
+            self.GetCorrection     = self.GetNuEFuzz
             return False
 
     @property
@@ -295,15 +313,44 @@ class CVPythonUniverse():
         r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
         return r(v_det)
 
-    # def ElectronP3D_det(self):
-    #     electronp = self.GetVecOfVecDouble("prong_part_E")
-    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-    #     return ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+    def ElectronTheta(self):
+        return self.ElectronP3D().Theta()
+
+    # def ElectronThetaX(self):
+    #     p = self.ElectronP3D()  # already in beam coordinates in your code
+    #     return math.atan2(p.X(), p.Z())
+
+    # def ElectronThetaY(self):
+    #     p = self.ElectronP3D()
+    #     return math.atan2(p.Y(), p.Z())
+
+    # def ElectronTheta2D(self):
+    #     p = self.ElectronP3D()
+    #     theta_x = math.atan2(p.X(), p.Z())
+    #     theta_y = math.atan2(p.Y(), p.Z())
+    #     return math.sqrt(theta_x*theta_x + theta_y*theta_y)
+
+    # def ElectronPhi(self):
+    #     p = self.ElectronP3D()
+    #     return math.atan2(p.Y(), p.X())   # radians
+
+    def ElectronP3D_det(self):
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+        return ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
 
     # def ElectronP3D_beam(self):
     #     p = self.ElectronP3D_det()
     #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
     #     return r(p)
+
+    # def ElectronThetaY_det(self):
+    #     p = self.ElectronP3D_det()
+    #     return math.atan2(p.Y(), p.Z())
+
+    # def ElectronThetaY_beam(self):
+    #     p = self.ElectronP3D_beam()
+    #     return math.atan2(p.Y(), p.Z())
 
     def ElectronProtonAngle(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
@@ -468,28 +515,6 @@ class CVPythonUniverse():
         ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
         return math.atan2(ulep.Dot(ey), ulep.Dot(ex))
 
-
-    def ElectronTheta(self):
-        return self.ElectronP3D().Theta()
-
-    def ElectronThetaX(self):
-        p = self.ElectronP3D()  # already in beam coordinates in your code
-        return math.atan2(p.X(), p.Z())
-
-    def ElectronThetaY(self):
-        p = self.ElectronP3D()
-        return math.atan2(p.Y(), p.Z())
-
-    def ElectronTheta2D(self):
-        p = self.ElectronP3D()
-        theta_x = math.atan2(p.X(), p.Z())
-        theta_y = math.atan2(p.Y(), p.Z())
-        return math.sqrt(theta_x*theta_x + theta_y*theta_y)
-
-    def ElectronPhi(self):
-        p = self.ElectronP3D()
-        return math.atan2(p.Y(), p.X())   # radians
-
     def PrimaryProtonTheta(self):
         theta = self.MasterAnaDev_proton_theta
         return math.degrees(theta) if theta>=0 else -1
@@ -501,10 +526,105 @@ class CVPythonUniverse():
         return e*psi
 
     def ConeOutsideE(self):
-        localVec = list(self.GetVecDouble("ExtraEnergy"))
+        localVec = list(self.GetVecDouble("ExtraEnergyVis"))
         e = sum(localVec)
 	#print e, 'out'
         return e 
+
+
+    def NeighborhoodE(self, shell_thickness_mm=50.0, _debug=False):
+        def dbg(*args):
+            if _debug:
+                print("[NeighborhoodE DEBUG]", *args)
+
+        R0_mm = 40.0
+        tan_alpha = math.tan(math.radians(10.0))
+        ip = 0
+
+        # clusters
+        X  = list(self.GetVecDouble("ExtraEnergyClusters_X"))
+        Y  = list(self.GetVecDouble("ExtraEnergyClusters_Y"))
+        Z  = list(self.GetVecDouble("ExtraEnergyClusters_Z"))
+        Ecl = list(self.GetVecDouble("ExtraEnergyClusters_energy"))
+        if len(Ecl) == 0:
+            dbg("RETURN 0: no clusters")
+            return 0.0
+
+        # cone start (mm)
+        vtx_all = self.GetVecOfVecDouble("prong_axis_vertex")
+        x0, y0, z0 = float(vtx_all[ip][0]), float(vtx_all[ip][1]), float(vtx_all[ip][2])
+
+        # axis: use ElectronP3D (already beam-rotated)
+        p3 = self.ElectronP3D()
+        px, py, pz = float(p3.X()), float(p3.Y()), float(p3.Z())
+        pnorm = math.sqrt(px*px + py*py + pz*pz)
+        if pnorm == 0.0:
+            dbg("RETURN 0: |p|==0")
+            return 0.0
+        ux, uy, uz = px/pnorm, py/pnorm, pz/pnorm
+
+        neigh = 0.0
+        pass_s = pass_delta = pass_shell = 0
+
+        for j in range(len(Ecl)):
+            dx = X[j] - x0
+            dy = Y[j] - y0
+            dz = Z[j] - z0
+
+            s = dx*ux + dy*uy + dz*uz
+            if s <= 0.0:
+                continue
+            pass_s += 1
+
+            rperp2 = dx*dx + dy*dy + dz*dz - s*s
+            if rperp2 < 0.0:
+                rperp2 = 0.0
+            rperp = math.sqrt(rperp2)
+
+            rcone = R0_mm + s * tan_alpha
+            delta = rperp - rcone
+
+            if delta <= 0.0:
+                continue
+            pass_delta += 1
+
+            if delta < shell_thickness_mm:
+                pass_shell += 1
+                neigh += Ecl[j]
+
+        dbg("cutflow: s>0", pass_s, "delta>0", pass_delta,
+            f"delta<{shell_thickness_mm}", pass_shell, "neigh", neigh)
+
+        return neigh
+
+    def DistToHexEdge(self, apothem_mm=881.25):
+        x = self.GetVecElem("vtx", 0)
+        y = self.GetVecElem("vtx", 1)
+        return _hex_edge_distance_mm(x, y, apothem_mm)
+
+    def MuonP3D_det(self):
+        """
+        Reco muon 3-momentum (px,py,pz) in DETECTOR coordinates, MeV.
+
+        This matches the components used in MuonFunctions.h:GetPmu_nominal()
+        via: GetAnaToolName() + "_leptonE".
+        """
+        lepton_branch = self.GetAnaToolName() + "_leptonE"
+        px = self.GetVecElem(lepton_branch, 0)
+        py = self.GetVecElem(lepton_branch, 1)
+        pz = self.GetVecElem(lepton_branch, 2)
+        return ROOT.Math.XYZVector(px, py, pz)
+
+    def MuonP3D_beam(self):
+        """
+        Muon 3-momentum rotated into the same BEAM coordinate convention
+        used by ElectronP3D() (RotationX(BEAM_ANGLE)).
+        """
+        p = self.MuonP3D_det()
+        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        return r(p)
+
+
 
     @staticmethod
     def Scale4VectorMomentum(vet,scale):

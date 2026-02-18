@@ -82,11 +82,14 @@ class KinematicsCalculator(object):
 #       print "clearing kinematics"
         self.reco_q2_cal = None
         self.reco_theta_lep = None
+        self.reco_theta_lep_rad_det = None
         self.reco_theta_lep_rad = None
+        self.reco_thetaX_lep_rad_det = None
         self.reco_thetaX_lep_rad = None
+        self.reco_thetaY_lep_rad_det = None
         self.reco_thetaY_lep_rad = None
-        self.reco_theta2D_lep_rad = None
-        self.reco_phi_lep_rad = None
+        # self.reco_theta2D_lep_rad = None
+        # self.reco_phi_lep_rad = None
         self.reco_cos_theta_lep = None
 
         self.reco_E_lep = None
@@ -114,6 +117,8 @@ class KinematicsCalculator(object):
             self.true_q3 = None
             self.true_q2 = None
             self.true_visE = None
+            self.true_LeptonP3D = None
+            self.true_LeptonP3D_det = None
             if self.include_hadron_momenta:
                 self.proton_momenta = []
                 self.proton_thetas = []
@@ -147,12 +152,28 @@ class KinematicsCalculator(object):
         event = self.event
 
         #decide if whether it is muon or electron event, and get lepton kinematics
-        self.reco_theta_lep_rad = event.LeptonTheta()
-        self.reco_thetaX_lep_rad = event.LeptonThetaX()
-        self.reco_thetaY_lep_rad = event.LeptonThetaY()
-        self.reco_theta2D_lep_rad = event.LeptonTheta2D()
-        self.reco_phi_lep_rad = event.LeptonPhi()
-        self.reco_vertex3D_beam = event.Vertex3D()
+        # self.reco_theta_lep_rad = event.LeptonTheta()
+        # self.reco_thetaX_lep_rad = event.LeptonThetaX()
+        # self.reco_thetaY_lep_rad = event.LeptonThetaY()
+        # self.reco_theta2D_lep_rad = event.LeptonTheta2D()
+        # self.reco_phi_lep_rad = event.LeptonPhi()
+        # self.reco_vertex3D_beam      = event.Vertex3D_beam()
+        self.reco_LeptonP3D_det      = event.LeptonP3D_det()
+        self.reco_LeptonP3D          = event.LeptonP3D()
+
+        # print(type(self.reco_LeptonP3D_det))
+        # print([m for m in dir(self.reco_LeptonP3D_det) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2")])
+
+
+        self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
+        self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()
+        self.reco_thetaX_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.X(), self.reco_LeptonP3D_det.Z())
+        self.reco_thetaX_lep_rad     = math.atan2(self.reco_LeptonP3D.X(), self.reco_LeptonP3D.Z())
+        self.reco_thetaY_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.Y(), self.reco_LeptonP3D_det.Z())
+        self.reco_thetaY_lep_rad     = math.atan2(self.reco_LeptonP3D.Y(), self.reco_LeptonP3D.Z())
+
+        # self.reco_thetaY_lep_rad_det = event.LeptonThetaY_det()
+        # self.reco_thetaY_lep_rad     = event.LeptonThetaY_beam()
         self.reco_E_lep = event.LeptonEnergy()/1e3
         self.M_lep_sqr = event.M_lep_sqr/1e6
         self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
@@ -241,7 +262,16 @@ class KinematicsCalculator(object):
         py = self.event.GetVecElem("mc_primFSLepton", 1)
         pz = self.event.GetVecElem("mc_primFSLepton", 2)
         p3 = ROOT.TVector3(px, py, pz)
+        self.true_LeptonP3D_det = p3
+        # print(type(p3))
+        # print([m for m in dir(p3) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2")])
+        self.true_theta_lep_rad_det  = p3.Theta()
+        self.true_thetaX_lep_rad_det = math.atan2(p3.X(), p3.Z())
+        self.true_thetaY_lep_rad_det = math.atan2(p3.Y(), p3.Z())
+
         p3.RotateX(SystematicsConfig.BEAM_ANGLE)
+        self.true_LeptonP3D = p3
+        
 
 
 
@@ -253,8 +283,8 @@ class KinematicsCalculator(object):
         self.true_thetaY_lep_rad = math.atan2(p3.Y(), p3.Z())
         self.true_thetaX_lep = math.degrees(self.true_thetaX_lep_rad)
         self.true_thetaY_lep = math.degrees(self.true_thetaY_lep_rad)
-        self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
-        self.true_phi_lep_rad = math.atan2(p3.Y(), p3.X())
+        # self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
+        # self.true_phi_lep_rad = math.atan2(p3.Y(), p3.X())
     
     
         vtxX = self.event.GetVecElem("mc_vtx", 0)

@@ -358,8 +358,8 @@ CUT_CONFIGS = {
         "variable_range": [0.1*i for i in range(0,21)]
     },
     "Etheta": {
-        # "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
-        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * CalTheta2Hybrid(event.kin_cal.reco_thetaX_lep_rad, event.kin_cal.true_thetaY_lep_rad),
+        "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
+        # "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * CalTheta2Hybrid(event.kin_cal.reco_thetaX_lep_rad, event.kin_cal.true_thetaY_lep_rad),
         "cut_fn": lambda vals: vals >= CutConfig.Ethetasquared_CUT,
     },
     "EthetaSideband": {
