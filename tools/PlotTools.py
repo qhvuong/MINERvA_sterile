@@ -507,107 +507,96 @@ def FitProfileLine(prof, xmin=None, xmax=None, fit_opts="QS"):
     res = prof.Fit(f, opts)  # returns TFitResultPtr if "S" in opts
     return f, res
 
-# def MakeProfile1D(prof): 
-#     prof.DrawCopy("E1")
+def profile_to_graph(p, xmin=None, xmax=None, err_max=None):
+    g = ROOT.TGraphErrors()
+    g.SetName(p.GetName() + "_gr")
 
-# def MakeProfile1D(prof, xmin=None, xmax=None):
-#     if prof is None:
-#         return
+    n = 0
+    for i in range(1, p.GetNbinsX() + 1):
+        x = p.GetXaxis().GetBinCenter(i)
+        if xmin is not None and x < xmin:
+            continue
+        if xmax is not None and x > xmax:
+            continue
 
-#     # Draw a copy (this is what works in your setup)
-#     h = prof.DrawCopy("E1")   # <-- returns the drawn copy
-#     if h is None:
-#         return
+        y  = p.GetBinContent(i)
+        ey = p.GetBinError(i)
 
-#     # Fit range
-#     xlo = xmin if xmin is not None else h.GetXaxis().GetXmin()
-#     xhi = xmax if xmax is not None else h.GetXaxis().GetXmax()
+        if not math.isfinite(y) or not math.isfinite(ey) or ey <= 0:
+            continue
+        if err_max is not None and ey > err_max:
+            continue
 
-#     f = ROOT.TF1(f"{h.GetName()}_pol1", "pol1", xlo, xhi)
+        ex = 0.5 * p.GetXaxis().GetBinWidth(i)
+        g.SetPoint(n, x, y)
+        g.SetPointError(n, ex, ey)
+        n += 1
 
-#     # Fit the *copy* and do NOT let ROOT redraw automatically
-#     res = h.Fit(f, "QSR0")
-
-#     f.SetLineColor(ROOT.kRed)
-#     f.SetLineWidth(2)
-#     f.Draw("same")
-
-#     if ROOT.gPad:
-#         ROOT.gPad.Modified()
-#         ROOT.gPad.Update()
-
-#     # Print parameters
-#     p0, e0 = f.GetParameter(0), f.GetParError(0)
-#     p1, e1 = f.GetParameter(1), f.GetParError(1)
-#     print(f"[FIT] {h.GetName()} : y = p0 + p1*x")
-#     print(f"      p0 = {p0:.6g} ± {e0:.3g}")
-#     print(f"      p1 = {p1:.6g} ± {e1:.3g}")
-#     if res is not None and hasattr(res, "Chi2"):
-#         print(f"      chi2/ndf = {res.Chi2():.3g}/{res.Ndf()}")
-
+    return g
 
 
 # Keep python-owned ROOT objects alive (critical in PyROOT)
 _ROOT_KEEP = []
 
-def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05):
+def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=False):
     drawn = prof.DrawCopy("E1")
     if drawn is None:
         return
 
-    # --- choose fit range automatically (if you already have your auto-range, use that here)
-    # fallback: full range
-    xlo = xmin if xmin is not None else drawn.GetXaxis().GetXmin()
-    xhi = xmax if xmax is not None else drawn.GetXaxis().GetXmax()
+    # Auto-pick fit range unless user provided one
+    if xmin is None or xmax is None:
+        xlo_auto, xhi_auto, err_max = _auto_fit_range_from_profile(
+            drawn, err_scale=err_scale, trim_frac=trim_frac
+        )
+        xlo = xlo_auto if xmin is None else xmin
+        xhi = xhi_auto if xmax is None else xmax
+    else:
+        xlo, xhi = xmin, xmax
+        med = _median_err(drawn)
+        err_max = (err_scale * med) if med is not None else None
 
-    # --- error-based masking (using your helpers)
-    med = _median_err(drawn)
-    err_max = (err_scale * med) if med is not None else None
-    fitprof = _masked_profile_by_error(drawn, err_max=err_max)
+    # Build graph from (good) profile bins and fit that instead of TProfile::Fit
+    g = profile_to_graph(drawn, xmin=xlo, xmax=xhi, err_max=err_max)
 
     f = ROOT.TF1(f"{drawn.GetName()}_pol1", "pol1", xlo, xhi)
 
-    # Fit without auto-drawing; we'll draw everything ourselves
-    res = fitprof.Fit(f, "QSR0")
+    # Fit options: Q quiet, S save, R use range, 0 don't draw
+    # If your errors are unreliable (weighted profiles), try unweighted=True (adds W)
+    fitopt = "QSR0W" if unweighted else "QSR0"
+    res = g.Fit(f, fitopt)
 
-    # Draw the line
     f.SetLineColor(ROOT.kRed)
     f.SetLineWidth(2)
     f.Draw("same")
 
-    # Force pad to exist/update before placing NDC text
+    # Force pad update before placing text
     if ROOT.gPad:
         ROOT.gPad.Modified()
         ROOT.gPad.Update()
 
-    # --- parameters
+    # Parameters
     p0, e0 = f.GetParameter(0), f.GetParError(0)
     p1, e1 = f.GetParameter(1), f.GetParError(1)
     chi2 = f.GetChisquare()
     ndf  = f.GetNDF()
     chi2ndf = (chi2 / ndf) if ndf > 0 else float("nan")
 
-    # --- text box (NDC coords)
     box = ROOT.TPaveText(0.55, 0.72, 0.88, 0.88, "NDC")
-    box.SetFillStyle(0)      # transparent
+    box.SetFillStyle(0)
     box.SetBorderSize(1)
     box.SetTextAlign(12)
     box.SetTextSize(0.03)
-
-    # box.AddText("Fit: y = p0 + p1 x")
     box.AddText(f"p0 = {p0:.4g} #pm {e0:.2g}")
     box.AddText(f"p1 = {p1:.4g} #pm {e1:.2g}")
     box.AddText(f"#chi^{{2}}/ndf = {chi2ndf:.3g}")
-
     box.Draw("same")
 
-    # Keep it alive (otherwise it may vanish)
-    _ROOT_KEEP.append(box)
-    _ROOT_KEEP.append(f)
+    _ROOT_KEEP.extend([box, f, g])
 
     if ROOT.gPad:
         ROOT.gPad.Modified()
         ROOT.gPad.Update()
+
 
 
 

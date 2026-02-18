@@ -4,6 +4,10 @@ set -euo pipefail
 tag=${1:?You must provide a selection_tag}
 sideband=${2:-None}
 
+logfile="runningNotes/${tag}_$(date +%Y-%m-%d_%H%M%S).txt"
+echo "Logging to $logfile"
+exec > >(tee -a "$logfile") 2>&1
+
 # Build the sideband part exactly how you want:
 # - Always include --use-sideband
 # - If sideband is None/empty, add nothing after it
@@ -17,6 +21,7 @@ if [[ -n "${sideband}" && "${sideband}" != "None" ]]; then
 fi
 
 for name in 1 7 9 13C; do
+# for name in 7 9 13C; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6

@@ -37,6 +37,37 @@ delta_m_sqr = 7.34 # eV^2
 L = 1
 E = 1
 
+def corrected_theta3D_from_thetaY(px, py, pz, vtxY_mm, p0, p1):
+    # reco projection angles
+    thetaX = math.atan2(px, pz)
+    thetaY = math.atan2(py, pz)
+
+    # apply correction (rad)
+    thetaY_corr = thetaY - (p0 + p1 * vtxY_mm)
+
+    # rebuild 3D unit direction from slopes
+    a = math.tan(thetaX)        # px/pz
+    b = math.tan(thetaY_corr)   # py/pz after correction
+    norm = math.sqrt(1.0 + a*a + b*b)
+
+    ux, uy, uz = a/norm, b/norm, 1.0/norm
+
+    # 3D polar angle
+    theta3D_corr = math.acos(uz)
+    return theta3D_corr, (ux, uy, uz)
+
+def corrected_p3_and_theta(px, py, pz, vtxY_mm, p0, p1):
+    thetaY = math.atan2(py, pz)
+    thetaY_corr = thetaY - (p0 + p1 * vtxY_mm)
+
+    py_corr = pz * math.tan(thetaY_corr)
+
+    p_corr = ROOT.TVector3(px, py_corr, pz)
+    theta3D_corr = p_corr.Theta()
+    return p_corr, theta3D_corr
+
+
+
 class KinematicsCalculator(object):
     DEFAULTS = {
         "correct_beam_angle": True,

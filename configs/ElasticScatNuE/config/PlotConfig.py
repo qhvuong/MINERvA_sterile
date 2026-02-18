@@ -123,7 +123,7 @@ ELECTRON_ANGLE_BINNING_DET = list(np.linspace(-0.1, 0., 51))
 # ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
 ELECTRON_PHI_BINNING = list(np.linspace(-1., 1., 51))
 # Vertex X and Y in mm
-ELECTRON_VERTEX_BINNING_DET = [40*i for i in range(-30, 31)]   # -1200 → +1200 mm
+ELECTRON_VERTEX_BINNING_DET = [40*i for i in range(30, 31)]   # -1200 → +1200 mm
 ELECTRON_VERTEX_BINNING = [20*i for i in range(-40, 81)]   # -800 → +1600 mm
 HEX_EDGE_DIST_BINNING = [i for i in range(-50, 401, 10)]  # -50..400 mm, 10 mm steps
 ELECTRON_PX_BINNING = [i for i in range(-300, 301, 10)]
