@@ -117,7 +117,10 @@ class CVPythonUniverse():
 
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
-            self.LeptonTheta   = self.ElectronTheta ## <===== fixed beam 3D angle
+            self.LeptonTheta       = self.ElectronTheta ## <===== fixed beam 3D angle
+            self.LeptonEnergy      = self.ElectronEnergy
+            self.LeptonP3D_det     = self.ElectronP3D_det
+            self.LeptonP3D         = self.ElectronP3D
             # self.LeptonThetaX  = self.ElectronThetaX
             # self.LeptonThetaY  = self.ElectronThetaY
             # self.LeptonTheta2D = self.ElectronTheta2D ## <===== fixed beam 2D angle
@@ -127,9 +130,7 @@ class CVPythonUniverse():
             # self.LeptonThetaY  = self.ElectronThetaY_vtxcorr
             # self.LeptonTheta2D = self.ElectronTheta2D_vtxcorr ## <===== vertex corrected 2D angle
             # self.LeptonPhi     = self.ElectronPhi_vtxcorr
-            self.LeptonEnergy      = self.ElectronEnergy
-            self.LeptonP3D_det     = self.ElectronP3D_det
-            self.LeptonP3D         = self.ElectronP3D
+
             # self.Vertex3D_beam     = self.Vertex_beam
             # self.LeptonThetaY_det  = self.ElectronThetaY_det
             # self.LeptonThetaY_beam = self.ElectronThetaY_beam
@@ -137,12 +138,12 @@ class CVPythonUniverse():
             self.GetCorrection     = self.GetLeakageCorrection
             return True
         else:
-            self.LeptonTheta       = self.GetThetamu
+            self.LeptonTheta       = self.GetThetamu        # angle in BEAM coord
             self.LeptonEnergy      = self.GetEmu
             self.LeptonP3D_det     = self.MuonP3D_det
             self.LeptonP3D         = self.MuonP3D_beam
-            # self.LeptonP3D         = self.GetPmu
-            # self.Vertex3D_beam     = self.Vertex_beam
+            # # self.LeptonP3D         = self.GetPmu
+            # # self.Vertex3D_beam     = self.Vertex_beam
             self.M_lep_sqr         =  M_mu_sqr
             self.GetCorrection     = self.GetNuEFuzz
             return False
@@ -293,7 +294,9 @@ class CVPythonUniverse():
     def ElectronEnergy(self):
         return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
 
-    def ElectronP3D(self):
+    ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
+    ## to be in beam coord
+    def ElectronP3D(self):              # momentum in DET coord already, need to rotate
         electronp = self.GetVecOfVecDouble("prong_part_E")
         scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
         p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
@@ -303,15 +306,16 @@ class CVPythonUniverse():
             print (p,r,tuple(list(electronp[0])[:3]))
         return s
 
-    # def Lepton_Vtx(self):
-    #     """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
-    #     vx = self.GetVecElem("vtx", 0)
-    #     vy = self.GetVecElem("vtx", 1)
-    #     vz = self.GetVecElem("vtx", 2)
-    #     v_det = ROOT.Math.XYZVector(vx, vy, vz)
-
-    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-    #     return r(v_det)
+    # def ElectronP3D(self):              # momentum in BEAM coord already, no need to rotate
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+    #     # r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     # s=r(p)
+    #     # if s is None:
+    #     #     print (p,r,tuple(list(electronp[0])[:3]))
+    #     return p
+    #     # return s
 
     def Vertex_beam(self):
         """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
@@ -326,10 +330,23 @@ class CVPythonUniverse():
     def ElectronTheta(self):
         return self.ElectronP3D().Theta()
 
+    ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
     def ElectronP3D_det(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
         scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-        return ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+        return p
+
+    # def ElectronP3D_det(self):
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+    #     r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
+    #     s=r(p)
+    #     if s is None:
+    #         print (p,r,tuple(list(electronp[0])[:3]))
+    #     # return p
+    #     return s
 
     def ElectronProtonAngle(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
@@ -581,9 +598,9 @@ class CVPythonUniverse():
         y = self.GetVecElem("vtx", 1)
         return _hex_edge_distance_mm(x, y, apothem_mm)
 
-    def MuonP3D_det(self):
+    def MuonP3D_beam(self):
         """
-        Reco muon 3-momentum (px,py,pz) in DETECTOR coordinates, MeV.
+        Reco muon 3-momentum (px,py,pz) in BEAM coordinates, MeV.
 
         This matches the components used in MuonFunctions.h:GetPmu_nominal()
         via: GetAnaToolName() + "_leptonE".
@@ -594,13 +611,13 @@ class CVPythonUniverse():
         pz = self.GetVecElem(lepton_branch, 2)
         return ROOT.Math.XYZVector(px, py, pz)
 
-    def MuonP3D_beam(self):
+    def MuonP3D_det(self):
         """
-        Muon 3-momentum rotated into the same BEAM coordinate convention
-        used by ElectronP3D() (RotationX(BEAM_ANGLE)).
+        Muon 3-momentum rotated into the same DET coordinate convention
+        used by ElectronP3D() (RotationX(-BEAM_ANGLE)).
         """
         p = self.MuonP3D_det()
-        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
         return r(p)
 
 

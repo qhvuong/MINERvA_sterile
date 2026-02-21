@@ -10,7 +10,8 @@ import itertools
 import operator
 import random
 import re
-
+import numpy as np
+import math
 import ROOT
 import PlotUtils
 import ctypes
@@ -30,26 +31,44 @@ M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
 #Alias:
-#ROOT.PythonMinervaUniverse = PlotUtils.DefaultCVUniverse
+#ROOT.PythonMinervaUniverse = PlotUtils.DefaultCVPythonUniverse
 
 #MethodName: UpperCaseCamel
 #universeShortName: lower_case_underscore
 
+def _clamp(x, lo=-1.0, hi=1.0):
+    return lo if x < lo else hi if x > hi else x
+
+def _hex_edge_distance_mm(x, y, apothem_mm=881.25):
+    """
+    Distance (mm) from point (x,y) to the nearest side of a regular hexagon centered at (0,0) with given apothem.
+    Positive inside, 0 on boundary, negative outside.
+    """
+    sqrt3 = math.sqrt(3.0)
+    u1 = x
+    u2 = 0.5*x + 0.5*sqrt3*y
+    u3 = -0.5*x + 0.5*sqrt3*y
+    umax = max(abs(u1), abs(u2), abs(u3))
+    return apothem_mm - umax
+
 # The base universe, define functions to be used for all universes.
-class CVUniverse(ROOT.PythonMinervaUniverse):
+class CVPythonUniverse():
     is_pc = False
     def __init__(self, chain, nsigma = None): #nsigma is None for data because we don't shift data
-        #ROOT.PythonMinervaUniverse.__init__(self, chain, 0 if nsigma is None else nsigma)
-        super(CVUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
         self.weight = None
         self.tuning_weight = None
         self.InitWithoutSuper(chain,nsigma)
 
     def InitWithoutSuper(self,chain,nsigma):
+        self.weight = None
+        self.tuning_weight = None
         self.nEntries = chain.GetEntries()
         self.mc = nsigma is not None
         self.chain=chain
         self.pcweighter = pcweight.MyWeighter
+
+    def ResetWeight(self):
+        self.weight = None
 
     # magic function that allow direct access to TBranch by Universe.TBranch, but prohibit any python magic variable being generated.
     def __getattr__(self,attrName):
@@ -96,27 +115,37 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
         self.kin_cal = kinematicCalculator
         self.classifier = eventClassifier
 
-    def SetCVEntry(self,n_entry):
-        #go to another event, discard weight calculated.
-        self.weight = None
-        self.tuning_weight = None
-        CVUniverse.LLR = None
-        super(CVUniverse,self).SetEntry(n_entry)
-
     def SetLeptonType(self):
         if abs(SystematicsConfig.AnaNuPDG) == 12: 
-            self.LeptonTheta = self.ElectronTheta
-            self.LeptonEnergy = self.ElectronEnergy
-            self.LeptonP3D = self.ElectronP3D
-            self.M_lep_sqr =  M_e_sqr
-            self.GetCorrection = self.GetLeakageCorrection
+            self.LeptonTheta       = self.ElectronTheta ## <===== fixed beam 3D angle
+            self.LeptonEnergy      = self.ElectronEnergy
+            self.LeptonP3D_det     = self.ElectronP3D_det
+            self.LeptonP3D         = self.ElectronP3D
+            # self.LeptonThetaX  = self.ElectronThetaX
+            # self.LeptonThetaY  = self.ElectronThetaY
+            # self.LeptonTheta2D = self.ElectronTheta2D ## <===== fixed beam 2D angle
+            # self.LeptonPhi     = self.ElectronPhi
+            # self.LeptonTheta   = self.ElectronTheta_vtxcorr ## <===== vertex corrected 3D angle
+            # self.LeptonThetaX  = self.ElectronThetaX_vtxcorr
+            # self.LeptonThetaY  = self.ElectronThetaY_vtxcorr
+            # self.LeptonTheta2D = self.ElectronTheta2D_vtxcorr ## <===== vertex corrected 2D angle
+            # self.LeptonPhi     = self.ElectronPhi_vtxcorr
+
+            # self.Vertex3D_beam     = self.Vertex_beam
+            # self.LeptonThetaY_det  = self.ElectronThetaY_det
+            # self.LeptonThetaY_beam = self.ElectronThetaY_beam
+            self.M_lep_sqr         =  M_e_sqr
+            self.GetCorrection     = self.GetLeakageCorrection
             return True
         else:
-            self.LeptonTheta = self.GetThetamu
-            self.LeptonEnergy  = self.GetEmu
-            self.LeptonP3D = self.GetPmu
-            self.M_lep_sqr =  M_mu_sqr
-            self.GetCorrection = self.GetNuEFuzz
+            self.LeptonTheta       = self.GetThetamu        # angle in BEAM coord
+            self.LeptonEnergy      = self.GetEmu
+            self.LeptonP3D_det     = self.MuonP3D_det
+            self.LeptonP3D         = self.MuonP3D_beam
+            # # self.LeptonP3D         = self.GetPmu
+            # # self.Vertex3D_beam     = self.Vertex_beam
+            self.M_lep_sqr         =  M_mu_sqr
+            self.GetCorrection     = self.GetNuEFuzz
             return False
 
     @property
@@ -155,11 +184,12 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
             else:
                 print("Not neutrino PDG? {}".format(pdg))
         pdg = newpdg
-        weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
+        # weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
 
         weight *= self.GetLowRecoil2p2hWeight()
         weight *= self.GetRPAWeight()
         weight *= self.GetMyLowQ2PiWeight() # using MENU1PI for Aaron's result
+        # weight *= self.GetGeantHadronWeight()
         weight *= self.GetMyMinosEfficiencyWeight()
 
         ### MnvTune v4.3.1 block below ###
@@ -170,9 +200,6 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
 
         return weight
 
-
-    #def GetPCWeight(self):
-    #    return 1.0
     def GetMyMinosEfficiencyWeight(self):
          if self.HasNoBackExitingTracks:
              return 1
@@ -183,7 +210,7 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
         if channel is None:
             return 1
         else:
-            return super(CVUniverse,self).GetLowQ2PiWeight(channel.upper())
+            return self.GetLowQ2PiWeight(channel.upper())
 
     def GetModelWeight(self):
         w = GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0) 
@@ -267,9 +294,10 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
     def ElectronEnergy(self):
         return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
 
-    def ElectronP3D(self):
+    ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
+    ## to be in beam coord
+    def ElectronP3D(self):              # momentum in DET coord already, need to rotate
         electronp = self.GetVecOfVecDouble("prong_part_E")
-        #print([electronp[0][i] for i in range(4)])
         scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
         p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
         r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
@@ -277,6 +305,58 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
         if s is None:
             print (p,r,tuple(list(electronp[0])[:3]))
         return s
+
+    # def ElectronP3D(self):              # momentum in BEAM coord already, no need to rotate
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+    #     # r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     # s=r(p)
+    #     # if s is None:
+    #     #     print (p,r,tuple(list(electronp[0])[:3]))
+    #     return p
+    #     # return s
+
+    # def Lepton_Vtx(self):
+    #     """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
+    #     vx = self.GetVecElem("vtx", 0)
+    #     vy = self.GetVecElem("vtx", 1)
+    #     vz = self.GetVecElem("vtx", 2)
+    #     v_det = ROOT.Math.XYZVector(vx, vy, vz)
+
+    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     return r(v_det)
+
+    def Vertex_beam(self):
+        """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
+        vx = self.GetVecElem("vtx", 0)
+        vy = self.GetVecElem("vtx", 1)
+        vz = self.GetVecElem("vtx", 2)
+        v_det = ROOT.Math.XYZVector(vx, vy, vz)
+
+        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        return r(v_det)
+
+    def ElectronTheta(self):
+        return self.ElectronP3D().Theta()
+
+    ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
+    def ElectronP3D_det(self):
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+        return p
+
+    # def ElectronP3D_det(self):
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+    #     r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
+    #     s=r(p)
+    #     if s is None:
+    #         print (p,r,tuple(list(electronp[0])[:3]))
+    #     # return p
+    #     return s
 
     def ElectronProtonAngle(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")
@@ -296,8 +376,150 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
         else:
             return -5
 
-    def ElectronTheta(self):
-        return self.ElectronP3D().Theta()
+
+    # --- NEW: vertex-based incident neutrino direction unit vector ---
+    def NuDirUnitFromVertex(self, Lmm=900000.0):
+        """
+        Estimate incident neutrino direction at this event using the reconstructed vertex.
+
+        Returns a unit vector in the SAME coordinate system as ElectronP3D()
+        (i.e. after RotationX(BEAM_ANGLE) is applied).
+
+        Lmm is the effective upstream distance to the source point (mm),
+        interpreted along the NOMINAL BEAM axis (beam-coordinate -z).
+        """
+        # Reco vertex in detector coordinates (mm)
+        vx = self.GetVecElem("vtx", 0)
+        vy = self.GetVecElem("vtx", 1)
+        vz = self.GetVecElem("vtx", 2)
+
+        v_det = ROOT.Math.XYZVector(vx, vy, vz)
+
+        # Rotate vertex into the "beam" coordinate convention, matching ElectronP3D()
+        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        v_beam = r(v_det)
+
+        # Effective source point upstream along -z in BEAM coordinates
+        # source_beam = (0, 0, -Lmm)
+        # dir_beam    = v_beam - source_beam = (x, y, z + Lmm)
+        nu = ROOT.Math.XYZVector(v_beam.X(), v_beam.Y(), v_beam.Z() + Lmm)
+
+        mag = nu.R()
+        if mag <= 0:
+            return ROOT.Math.XYZVector(0, 0, 1)  # safe fallback (beam +z)
+        return nu * (1.0 / mag)
+
+
+    # --- NEW: build ν-aligned transverse basis (beam coords) ---
+    def _NuAlignedBasis(self, Lmm=900000.0):
+        """
+        Construct an orthonormal basis (ex, ey, ez) in BEAM coordinates such that:
+        ez = inferred neutrino direction at this vertex
+        ex, ey span the plane transverse to ez
+
+        This is used to define vertex-corrected thetaX/thetaY consistently.
+        """
+        ez = self.NuDirUnitFromVertex(Lmm=Lmm)  # unit vector in beam coords
+
+        # Pick a reference axis not (nearly) parallel to ez
+        yref = ROOT.Math.XYZVector(0, 1, 0)
+        if abs(ez.Dot(yref)) > 0.95:
+            yref = ROOT.Math.XYZVector(1, 0, 0)
+
+        ex = yref.Cross(ez)
+        ex_mag = ex.R()
+        if ex_mag <= 0:
+            # extreme fallback
+            ex = ROOT.Math.XYZVector(1, 0, 0)
+            ex_mag = ex.R()
+        ex = ex * (1.0 / ex_mag)
+
+        ey = ez.Cross(ex)
+        ey_mag = ey.R()
+        if ey_mag > 0:
+            ey = ey * (1.0 / ey_mag)
+
+        return ex, ey, ez
+
+
+    # --- NEW: theta using dot product with vertex-based ν direction ---
+    def ElectronTheta_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected electron theta: opening angle between reconstructed lepton direction
+        and estimated incident ν direction at this vertex.
+        """
+        # Reco lepton momentum (already rotated into beam coords inside ElectronP3D)
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+
+        ulep = p * (1.0 / pmag)
+        unu  = self.NuDirUnitFromVertex(Lmm=Lmm)
+
+        cosang = _clamp(ulep.Dot(unu))
+        return math.acos(cosang)
+
+
+    def ElectronThetaX_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected thetaX: lepton angular component in ν-aligned frame.
+        Defined as atan2(u·ex, u·ez).
+        """
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+        ulep = p * (1.0 / pmag)
+
+        ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
+        ux = ulep.Dot(ex)
+        uz = ulep.Dot(ez)
+
+        return math.atan2(ux, uz)
+
+
+    def ElectronThetaY_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected thetaY: lepton angular component in ν-aligned frame.
+        Defined as atan2(u·ey, u·ez).
+        """
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+        ulep = p * (1.0 / pmag)
+
+        ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
+        uy = ulep.Dot(ey)
+        uz = ulep.Dot(ez)
+
+        return math.atan2(uy, uz)
+
+
+    def ElectronTheta2D_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        Vertex-corrected 2D electron angle, consistent with the ν-aligned thetaX/thetaY:
+            theta2D = sqrt(thetaX^2 + thetaY^2)
+        """
+        tx = self.ElectronThetaX_vtxcorr(prong=prong, Lmm=Lmm)
+        ty = self.ElectronThetaY_vtxcorr(prong=prong, Lmm=Lmm)
+        return math.sqrt(tx*tx + ty*ty)
+
+
+    def ElectronPhi_vtxcorr(self, prong=0, Lmm=900000.0):
+        """
+        (Optional) Vertex-corrected azimuth phi of the lepton around the inferred ν axis.
+        This is the angle in the ν-transverse plane: atan2(u·ey, u·ex).
+        """
+        p = self.ElectronP3D()
+        pmag = p.R()
+        if pmag <= 0:
+            return 0.0
+        ulep = p * (1.0 / pmag)
+
+        ex, ey, ez = self._NuAlignedBasis(Lmm=Lmm)
+        return math.atan2(ulep.Dot(ey), ulep.Dot(ex))
 
     def PrimaryProtonTheta(self):
         theta = self.MasterAnaDev_proton_theta
@@ -310,10 +532,105 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
         return e*psi
 
     def ConeOutsideE(self):
-        localVec = list(self.GetVecDouble("ExtraEnergy"))
+        localVec = list(self.GetVecDouble("ExtraEnergyVis"))
         e = sum(localVec)
 	#print e, 'out'
         return e 
+
+
+    def NeighborhoodE(self, shell_thickness_mm=50.0, _debug=False):
+        def dbg(*args):
+            if _debug:
+                print("[NeighborhoodE DEBUG]", *args)
+
+        R0_mm = 40.0
+        tan_alpha = math.tan(math.radians(10.0))
+        ip = 0
+
+        # clusters
+        X  = list(self.GetVecDouble("ExtraEnergyClusters_X"))
+        Y  = list(self.GetVecDouble("ExtraEnergyClusters_Y"))
+        Z  = list(self.GetVecDouble("ExtraEnergyClusters_Z"))
+        Ecl = list(self.GetVecDouble("ExtraEnergyClusters_energy"))
+        if len(Ecl) == 0:
+            dbg("RETURN 0: no clusters")
+            return 0.0
+
+        # cone start (mm)
+        vtx_all = self.GetVecOfVecDouble("prong_axis_vertex")
+        x0, y0, z0 = float(vtx_all[ip][0]), float(vtx_all[ip][1]), float(vtx_all[ip][2])
+
+        # axis: use ElectronP3D (already beam-rotated)
+        p3 = self.ElectronP3D()
+        px, py, pz = float(p3.X()), float(p3.Y()), float(p3.Z())
+        pnorm = math.sqrt(px*px + py*py + pz*pz)
+        if pnorm == 0.0:
+            dbg("RETURN 0: |p|==0")
+            return 0.0
+        ux, uy, uz = px/pnorm, py/pnorm, pz/pnorm
+
+        neigh = 0.0
+        pass_s = pass_delta = pass_shell = 0
+
+        for j in range(len(Ecl)):
+            dx = X[j] - x0
+            dy = Y[j] - y0
+            dz = Z[j] - z0
+
+            s = dx*ux + dy*uy + dz*uz
+            if s <= 0.0:
+                continue
+            pass_s += 1
+
+            rperp2 = dx*dx + dy*dy + dz*dz - s*s
+            if rperp2 < 0.0:
+                rperp2 = 0.0
+            rperp = math.sqrt(rperp2)
+
+            rcone = R0_mm + s * tan_alpha
+            delta = rperp - rcone
+
+            if delta <= 0.0:
+                continue
+            pass_delta += 1
+
+            if delta < shell_thickness_mm:
+                pass_shell += 1
+                neigh += Ecl[j]
+
+        dbg("cutflow: s>0", pass_s, "delta>0", pass_delta,
+            f"delta<{shell_thickness_mm}", pass_shell, "neigh", neigh)
+
+        return neigh
+
+    def DistToHexEdge(self, apothem_mm=881.25):
+        x = self.GetVecElem("vtx", 0)
+        y = self.GetVecElem("vtx", 1)
+        return _hex_edge_distance_mm(x, y, apothem_mm)
+
+    def MuonP3D_beam(self):
+        """
+        Reco muon 3-momentum (px,py,pz) in BEAM coordinates, MeV.
+
+        This matches the components used in MuonFunctions.h:GetPmu_nominal()
+        via: GetAnaToolName() + "_leptonE".
+        """
+        lepton_branch = self.GetAnaToolName() + "_leptonE"
+        px = self.GetVecElem(lepton_branch, 0)
+        py = self.GetVecElem(lepton_branch, 1)
+        pz = self.GetVecElem(lepton_branch, 2)
+        return ROOT.Math.XYZVector(px, py, pz)
+
+    def MuonP3D_det(self):
+        """
+        Muon 3-momentum rotated into the same DET coordinate convention
+        used by ElectronP3D() (RotationX(-BEAM_ANGLE)).
+        """
+        p = self.MuonP3D_det()
+        r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
+        return r(p)
+
+
 
     @staticmethod
     def Scale4VectorMomentum(vet,scale):
@@ -392,103 +709,55 @@ class CVUniverse(ROOT.PythonMinervaUniverse):
             total+=dedx[i]
         return outer/total 
 
-class FluxUniverse:
-    def __init__(self, chain, universe_number):
-        self.universe = ROOT.PlotUtils.FluxUniverse[ROOT.PythonMinervaUniverse](chain, 1, universe_number)
-        self.cv_universe = CVUniverse(chain, 1)
-        if universe_number >= 100:
-            raise ValueError(f"Universe index {universe_number} out of range. Max allowed for LE is 99.")
+class CVSystematicUniverse(ROOT.PythonMinervaUniverse, CVPythonUniverse):
+    def __init__(self,chain,nsigma):
+        #self.weight = None
+        #self.tuning_weight = None
+        super(CVSystematicUniverse,self).__init__(chain,0 if nsigma is None else nsigma)
+        super(ROOT.PythonMinervaUniverse,self).InitWithoutSuper(chain, 1 if nsigma is not None else None)
 
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
+    def SetEntry(self,n_entry):
+        #go to another event, discard weight calculated.
+        self.weight = None
+        self.tuning_weight = None
+        CVPythonUniverse.LLR = None
+        super(CVSystematicUniverse,self).SetEntry(n_entry)
+        super(ROOT.PythonMinervaUniverse,self).ResetWeight()
 
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetWeightRatioToCV()
-        return weight
+    def __repr__(self):
+        return self.LatexName()+" Universe at sigma: "+ str(self.GetSigma())
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    # @staticmethod
-    # def GetSystematicsUniverses(chainwrapper):
-    #     n = SystematicsConfig.NUM_FLUX_UNIVERSE
-    #     universes = []
-    #     for i in range(n):
-    #         try:
-    #             u = FluxUniverse(chainwrapper, i)
-    #             # Smoke test with explicit values (avoid reading from the tree)
-    #             _ = u.universe.GetFluxAndCVWeight(Enu=1.0, nu_pdg=14)  # or 12
-    #             universes.append(u)
-    #         except Exception as e:
-    #             print(f"[WARNING] Skipping flux universe {i}: {e}")
-    #             break
-    #     return universes
+class FluxUniverse( ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
+    def __init__(self,chain,universe_number):
+        super(FluxUniverse,self).__init__(chain,1,universe_number)
+        super(ROOT.PlotUtils.FluxUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
 
     @staticmethod
     def GetSystematicsUniverses(chain):
-        print(f"[FluxUniverse:GetSystematicsUniverses] building {SystematicsConfig.NUM_FLUX_UNIVERSE} universes")
         return [FluxUniverse(chain,  i ) for i in range(0,SystematicsConfig.NUM_FLUX_UNIVERSE)]
 
-class GenieUniverse():
+class GenieUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,nsigma,universe_name):
-        self.universe = ROOT.PlotUtils.GenieUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_name)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
-        return weight
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to GenieUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+        super(GenieUniverse,self).__init__(chain,nsigma,universe_name)
+        super(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieUniverse(chain,i,j) for j in SystematicsConfig.GENIE_UNIVERSES for i in OneSigmaShift]
 
-class GenieRvx1piUniverse():
+class GenieRvx1piUniverse(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma,universe_name):
-        self.universe = ROOT.PlotUtils.GenieRvx1piUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_name)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
-        return weight
+        super(GenieRvx1piUniverse,self).__init__(chain,nsigma,universe_name)
+        super(ROOT.PlotUtils.GenieRvx1piUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieRvx1piUniverse(chain,i,j) for j in ["Rvn1pi","Rvp1pi"] for i in OneSigmaShift]
 
-class GenieFaCCQEUniverse():
+class GenieFaCCQEUniverse(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma,universe_number):
-        self.universe = ROOT.PlotUtils.GenieFaCCQEUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, universe_number)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
-        return weight
+        super(GenieFaCCQEUniverse,self).__init__(chain,nsigma,universe_number)
+        super(ROOT.PlotUtils.GenieFaCCQEUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
@@ -497,113 +766,67 @@ class GenieFaCCQEUniverse():
         else:
             return [GenieFaCCQEUniverse(chain,i,-1) for i in OneSigmaShift]
 
-class GenieNormCCResUniverse():
+class GenieNormCCResUniverse(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.GenieNormCCResUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
-        return weight
+        super(GenieNormCCResUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.GenieNormCCResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieNormCCResUniverse(chain,i) for i in OneSigmaShift]
 
-class GenieMaResUniverse():
+class GenieMaResUniverse(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.GenieMaResUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
-        return weight
+        super(GenieMaResUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.GenieMaResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieMaResUniverse(chain,i) for i in OneSigmaShift]
 
-class GenieMvResUniverse():
+class GenieMvResUniverse(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.GenieMvResUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGenieWeight()
-        return weight
+        super(GenieMvResUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.GenieMvResUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [GenieMvResUniverse(chain,i) for i in OneSigmaShift]
 
 # I don't think nu_e analysis need minos shift
-# class MinosUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVUniverse):
+# class MinosUniverse(ROOT.PlotUtils.GenieUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
 
-class Universe2p2h():
+class Universe2p2h(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,universe_number):
-        self.universe = ROOT.PlotUtils.Universe2p2h[ROOT.PythonMinervaUniverse](chain, 1, universe_number)
-        self.cv_universe = CVUniverse(chain, 1)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+        super(Universe2p2h,self).__init__(chain,1,universe_number)
+        super(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [Universe2p2h(chain, i) for i in SystematicsConfig.UNIVERSES_2P2H]
 
-class RPAUniverse():
+class RPAUniverse(ROOT.PlotUtils.RPAUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain, universe_number,q2_region):
-        self.universe = ROOT.PlotUtils.RPAUniverse[ROOT.PythonMinervaUniverse](chain, 1, universe_number, q2_region)
-        self.cv_universe = CVUniverse(chain, 1)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+        super(RPAUniverse,self).__init__(chain,1,universe_number,q2_region)
+        super(ROOT.PlotUtils.RPAUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain, 1)
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [RPAUniverse(chain, i,j) for j in SystematicsConfig.RPA_UNIVERSES for i in SystematicsConfig.RPA_UNIVERSES[j] ]
 
-class ResponseUniverse():
+class ResponseUniverse(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,nsigma,name):
-        self.universe = ROOT.PlotUtils.ResponseUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, name)
-        self.cv_universe = CVUniverse(chain, 1)  
+        super(ResponseUniverse,self).__init__(chain,nsigma,name)
+        super(ROOT.PlotUtils.ResponseUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
         self.re = "^blob_.*_E_(tracker|ecal|od|nucl|hcal)$"
 
-    def __getattr__(self, attrName):
-        """Redirect attribute access to ResponseUniverse, then CVUniverse"""
-        if re.match(self.re, attrName) is None:
-            return getattr(self.universe, attrName, getattr(self.cv_universe, attrName, None))
+    def __getattr__(self,attrName):
+        if re.match(self.re,attrName) is None:
+            return super(ResponseUniverse,self).__getattr__(attrName)
         else:
-            # Fetching the attribute and performing the custom calculation
-            r = getattr(self.universe, attrName, None)
-            shift = getattr(self.universe, f"{attrName}_{self.m_name}", None) * self.m_frac_unc
-            return r + self.nsigma * shift
+            r = super(ResponseUniverse,self).__getattr__(attrName)
+            shift = super(ResponseUniverse,self).__getattr__("{}_{}".format(attrName,self.m_name))* self.m_frac_unc
+            return r+self.nsigma*shift
 
     def RecoilClustersCalorimetry(self,splined):
         return super(ResponseUniverse,self).RecoilClustersCalorimetry(splined)+self.GetRecoilShift()
@@ -612,128 +835,99 @@ class ResponseUniverse():
     def GetSystematicsUniverses(chain):
         return [ResponseUniverse(chain,i,j) for j in SystematicsConfig.RESPONSE_BRANCHES for i in OneSigmaShift]
 
-# class LowQ2PionUniverse():
-#     def __init__(self,chain,nsigma,channel):
-#         self.universe = ROOT.PlotUtils.LowQ2PionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, channel)
-#         self.cv_universe = CVUniverse(chain, nsigma)  
-#         self.channel = channel.upper() if channel is not None else None
-
-#     def __getattr__(self, attr):
-#         """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-#         return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-#     def GetMyLowQ2PiWeight(self):
-#         if self.nsigma == 0 or self.channel is None:
-#             return 1
-#         else :
-#             return super(LowQ2PionUniverse,self).GetLowQ2PiWeight(self.channel)
-
-#     @staticmethod
-#     def GetSystematicsUniverses(chain):
-#         cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
-#         return cvshifts
-
-class LowQ2PionUniverse:
-    def __init__(self, chain, nsigma, channel):
-        # Use the 2-arg ctor that exists in your library
-        self.universe = ROOT.PlotUtils.LowQ2PionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)
-        self.nsigma = nsigma
-        # Store channel for use when asking for the weight
-        self.channel = (channel or "").lower()  # keep lowercase: GENIE/PlotUtils often expect this
-
-    def __getattr__(self, attr):
-        # delegate to the C++ syst universe first, then CV
-        try:
-            return getattr(self.universe, attr)
-        except AttributeError:
-            return getattr(self.cv_universe, attr)
+class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
+    def __init__(self,chain,nsigma,channel):
+        super(LowQ2PionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+        self.channel = channel.upper() if channel is not None else None
 
     def GetMyLowQ2PiWeight(self):
-        # nsigma==0 or no channel => no shift
-        if not self.channel or self.nsigma == 0:
-            return 1.0
-        # Call the method on the wrapped C++ universe
-        return self.universe.GetLowQ2PiWeight(self.channel)
+        if self.nsigma == 0 or self.channel is None:
+            return 1
+        else :
+            return super(LowQ2PionUniverse,self).GetLowQ2PiWeight(self.channel)
 
     @staticmethod
     def GetSystematicsUniverses(chain):
-        # Build ±1σ universes only if a channel is configured
-        if SystematicsConfig.LowQ2PiWeightChannel is None:
-            return []
-        ch = SystematicsConfig.LowQ2PiWeightChannel
-        return [LowQ2PionUniverse(chain, i, ch) for i in OneSigmaShift]
+        cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
+        #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
+        return cvshifts
 
+class LowQ2PionUniverseAlt(CVPythonUniverse):
+    def __init__(self,chain,channel):
+        super(LowQ2PionUniverseAlt,self).__init__(chain, 0)
+        self.channel = channel
 
-class MuonAngleXResolutionUniverse():
+    def ShortName(self):
+        return "LowQ2Pi_{}".format(self.channel)
+
+    def LatexName(self):
+        return "Low Q2 Pion Suppression Channel {}".format(self.channel)
+
+    def GetMyLowQ2PiWeight(self):
+        return super(LowQ2PionUniverseAlt,self).GetMyLowQ2PiWeight(self.channel)
+
+    def IsVerticalOnly(self):
+        return True
+
+    @staticmethod
+    def GetSystematicsUniverses(chain):
+        return [LowQ2PionUniverseAlt(chain,i) for i in SystematicsConfig.LowQ2PiWeightSysChannel]
+
+class MuonAngleXResolutionUniverse(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.MuonAngleXResolutionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
+        super(MuonAngleXResolutionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonAngleXResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonAngleXResolutionUniverse(chain,i) for i in OneSigmaShift]
 
-class MuonResolutionUniverse():
+class MuonResolutionUniverse(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.MuonResolutionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+        super(MuonResolutionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonResolutionUniverse(chain,i) for i in OneSigmaShift]
 
-class MuonAngleYResolutionUniverse():
+class MuonAngleYResolutionUniverse(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.MuonAngleYResolutionUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)  
+        super(MuonAngleYResolutionUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonAngleYResolutionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonAngleYResolutionUniverse(chain,i) for i in OneSigmaShift]
 
-class MuonUniverseMinerva():
+class MuonUniverseMinerva(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.MuonUniverseMinerva[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)
+        super(MuonUniverseMinerva,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonUniverseMinerva(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonUniverseMinerva(chain,i) for i in OneSigmaShift]
 
-class MuonUniverseMinos():
-    def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.MuonUniverseMinos[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
+class MuonUniverseMinos(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUniverse),CVPythonUniverse):
+    def __init__(self,chain,nsigma):
+        super(MuonUniverseMinos,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MuonUniverseMinos(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
+
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MuonUniverseMinos(chain,i) for i in OneSigmaShift]
 
-class MinosEfficiencyUniverse():
+class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.MinosEfficiencyUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)
+        super(MinosEfficiencyUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     def GetMyMinosEfficiencyWeight(self):
          if self.HasNoBackExitingTracks:
@@ -741,23 +935,16 @@ class MinosEfficiencyUniverse():
          else:
              return super(MinosEfficiencyUniverse,self).GetMinosEfficiencyWeight()
 
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [MinosEfficiencyUniverse(chain,i) for i in OneSigmaShift]
 
 ###########################################################################
-class ElectronEnergyShiftUniverse():
+class ElectronEnergyShiftUniverse(CVSystematicUniverse):
     def __init__(self,chain, nsigma,region):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super(ElectronEnergyShiftUniverse,self).__init__(chain, nsigma)
         self.region = region
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def GetEMEnergyShift(self):
         return self.nsigma*SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY[self.region]*self.GetVecElem("prong_"+self.region+"CalibE",0)
@@ -766,7 +953,7 @@ class ElectronEnergyShiftUniverse():
         return "elE_"+self.region
 
     def LatexName(self):
-        return "EM Energy Scale in "+self.region
+        return "EM Energy Scale in "+ self.region
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -774,15 +961,11 @@ class ElectronEnergyShiftUniverse():
 
 
 ###########################################################################
-class ElectronAngleShiftUniverse():
+class ElectronAngleShiftUniverse(CVSystematicUniverse):
     def __init__(self,chain, nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
         self.axis_angle = random.random()*math.pi
         self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def ShortName(self):
         return "eltheta"
@@ -812,13 +995,9 @@ class ElectronAngleShiftUniverse():
     
 
 ###########################################################################
-class BirksShiftUniverse():
+class BirksShiftUniverse(CVSystematicUniverse):
     def __init__(self,chain, nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
+        super(BirksShiftUniverse,self).__init__(chain, nsigma)
 
     @property
     def prong_part_score(self):
@@ -844,14 +1023,10 @@ class BirksShiftUniverse():
 
 ###########################################################################
 
-class BeamAngleShiftUniverse():
+class BeamAngleShiftUniverse(CVSystematicUniverse):
     def __init__(self,chain, nsigma, x):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
         self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def ShortName(self):
         return "beam_angle"
@@ -868,67 +1043,40 @@ class BeamAngleShiftUniverse():
         return [BeamAngleShiftUniverse(chain, i, j) for j in [True,False] for i in OneSigmaShift]
 
 
-class GeantHadronUniverse():
+class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
     def __init__(self,chain,nsigma,pdg):
-        self.universe = ROOT.PlotUtils.GeantHadronUniverse[ROOT.PythonMinervaUniverse](chain, nsigma, pdg)
-        self.cv_universe = CVUniverse(chain, nsigma)  
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
-
-    def GetWeight(self,test=None):
-        return self.GetStandardWeight()
-
-    def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight *= self.universe.GetGeantHadronWeight()
-        return weight
+        super(GeantHadronUniverse,self).__init__(chain,nsigma,pdg)
+        super(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [GeantHadronUniverse(chain,i,j) for j in SystematicsConfig.GEANT_PARTICLES for i in OneSigmaShift]
 
-class TargetMassUniverse():
+class TargetMassUniverse(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),CVPythonUniverse):
     def __init__(self,chain,nsigma):
-        self.universe = ROOT.PlotUtils.TargetMassScintillatorUniverse[ROOT.PythonMinervaUniverse](chain, nsigma)
-        self.cv_universe = CVUniverse(chain, nsigma)
-
-    def GetWeight(self, test=None):
-        return self.GetStandardWeight()
-
+        super(TargetMassUniverse,self).__init__(chain,nsigma)
+        super(ROOT.PlotUtils.TargetMassScintillatorUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
     def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
+        weight = super(TargetMassUniverse,self).GetStandardWeight()
         weight*= self.GetWeightRatioToCV()
         return weight
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.universe, attr, getattr(self.cv_universe, attr, None))
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [TargetMassUniverse(chain, i) for i in OneSigmaShift]
 
-class MKModelUniverse():
+class MKModelUniverse(CVSystematicUniverse):
     def __init__(self,chain,nsigma):
-        self.cv_universe = CVUniverse(chain, nsigma)  
+        super(MKModelUniverse,self).__init__(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.MKReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def IsVerticalOnly(self):
         return True
 
     def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight*= self.reweighter.GetWeight(self.cv_universe,ROOT.PlotUtils.detail.empty())
+        weight = super(MKModelUniverse,self).GetStandardWeight()
+        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
-
-    def GetWeight(self, test=None):
-        return self.GetStandardWeight()
 
     def ShortName(self):
         return "MK_model"
@@ -941,24 +1089,17 @@ class MKModelUniverse():
         return [MKModelUniverse(chain,1)]
 
 
-class FSIWeightUniverse():
+class FSIWeightUniverse(CVSystematicUniverse):
     def __init__(self,chain,nsigma,iweight):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super(FSIWeightUniverse,self).__init__(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.FSIReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)((iweight+1)//2,(iweight+1)%2)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def IsVerticalOnly(self):
         return True
 
-    def GetWeight(self, test=None):
-        return self.GetStandardWeight()
-
     def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight*= self.reweighter.GetWeight(self.cv_universe,ROOT.PlotUtils.detail.empty())
+        weight = super(FSIWeightUniverse,self).GetStandardWeight()
+        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
 
     def ShortName(self):
@@ -971,14 +1112,10 @@ class FSIWeightUniverse():
     def GetSystematicsUniverses(chain):
         return [FSIWeightUniverse(chain,1,i) for i in range(3)]
 
-class SusaValenciaUniverse():
+class SusaValenciaUniverse(CVSystematicUniverse):
     def __init__(self,chain,nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
+        super(SusaValenciaUniverse,self).__init__(chain,nsigma)
         self.reweighter = ROOT.PlotUtils.SuSAFromValencia2p2hReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
 
     def IsVerticalOnly(self):
         return True
@@ -995,25 +1132,18 @@ class SusaValenciaUniverse():
     def LatexName(self):
         return "SuSA Valencia Weight"
 
-    def GetWeight(self, test=None):
-        return self.GetStandardWeight()
-
     def GetStandardWeight(self):
-        weight = self.cv_universe.GetStandardWeight()
-        weight*= self.reweighter.GetWeight(self.cv_universe,ROOT.PlotUtils.detail.empty())
+        weight = super(SusaValenciaUniverse,self).GetStandardWeight()
+        weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
 
     @staticmethod
     def GetSystematicsUniverses(chain):
         return [SusaValenciaUniverse(chain,1)]
 
-class LeakageUniverse():
+class LeakageUniverse(CVSystematicUniverse):
     def __init__(self,chain,nsigma):
-        self.cv_universe = CVUniverse(chain,nsigma)
-
-    def __getattr__(self, attr):
-        """Redirect attribute access to FluxUniverse first, then CVUniverse"""
-        return getattr(self.cv_universe, attr, None)
+        super(LeakageUniverse,self).__init__(chain,nsigma)
 
     def GetLeakageCorrection(self): 
         return super(LeakageUniverse,self).GetLeakageCorrection() + ( self.nsigma*SystematicsConfig.LEAKAGE_SYSTEMATICS if abs(self.mc_primaryLepton) ==11 else 0)
@@ -1032,113 +1162,113 @@ class LeakageUniverse():
 def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=None):
     #use list because I want to control the order, process cv first, then vertical shifts, then lateral shifts
     universes = []
-    CVUniverse.is_pc = is_pc
-    CVUniverse.LeafGetters= {}
+    CVPythonUniverse.is_pc = is_pc
+    CVPythonUniverse.LeafGetters= {}
     if is_data:
         #data has only cv universe
-        universes.append(CVUniverse(chain, None))
+        universes.append(CVSystematicUniverse(chain, None))
     else:
-        #append cv universe
-        universes.append(CVUniverse(chain,0))
-        
         #Set Playlist, only MC cares about playlist
         if playlist is None:
             #attempt guess playlist from the chain
             playlist = Utilities.PlaylistLookup(chain.GetValue("mc_run",0))
 
         if not is_pc:
-            CVUniverse.SetPlaylist(playlist)
+            CVSystematicUniverse.SetPlaylist(playlist)
             #Set NuE constraint
-            CVUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
+            CVSystematicUniverse.SetNuEConstraint(SystematicsConfig.USE_NUE_CONSTRAINT)
         else:
-            CVUniverse.SetPlaylist("dummy")
-            CVUniverse.SetNuEConstraint(False)
+            CVSystematicUniverse.SetPlaylist("dummy")
+            CVSystematicUniverse.SetNuEConstraint(False)
 
-        # Set analysis nu PDG if provided as int
-        # CVUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
-        ana_pdg = getattr(SystematicsConfig, "AnaNuPDG", None)
-        if isinstance(ana_pdg, int):
-            CVUniverse.SetAnalysisNuPDG(int(ana_pdg))
+        #Set nu_type
+        CVSystematicUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
 
-        # #Set NonResPi weight
-        # CVUniverse.SetNonResPiReweight(False)
-        # CVUniverse.SetDeuteriumGeniePiTune(False)
-        # CVUniverse.SetZExpansionFaReweight(False) 
-        # CVUniverse.RPAMaterials(False)
+        #Set NonResPi weight
+        CVSystematicUniverse.SetNonResPiReweight(True)
+        CVSystematicUniverse.SetDeuteriumGeniePiTune(True)
+        CVSystematicUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
+        CVSystematicUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
+        CVSystematicUniverse.RPAMaterials(True)
 
-        # Tunes / flux / materials
-        CVUniverse.SetNonResPiReweight(True)
-        CVUniverse.SetDeuteriumGeniePiTune(True)
-        CVUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
-        CVUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
-        CVUniverse.RPAMaterials(True)
-
-        # Truth tree toggle
         if chain.GetTree().GetName() == "Truth":
-            CVUniverse.SetTruth(True)
+            CVSystematicUniverse.SetTruth(True)
 
-        if exclude is None or "all" not in exclude:
-            elastic_mode = bool(getattr(SystematicsConfig, "ELASTIC_MODE", False))
-            abs_pdg = abs(ana_pdg) if isinstance(ana_pdg, int) else None
+        #append cv universe
+        universes.append(CVSystematicUniverse(chain,0))
 
-            # ===== Lepton reconstruction universes =====
-            # For ν–e elastic (ELASTIC_MODE) or CC νe (|PDG|=12), use electron-side universes.
-            if elastic_mode or abs_pdg == 12:
-                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain))
-                universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain))
-            elif abs_pdg == 14:
-                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain))
-                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain))
-                universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain))
-                universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain))
-                universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain))
-                universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain))
-            else:
-                # If PDG is weird and not explicitly in elastic mode
-                if not elastic_mode:
-                    raise ValueError(
-                        "AnaNuPDG should be ±12 or ±14 (or set ELASTIC_MODE=True for ν–e). Got: {}".format(ana_pdg)
-                    )
+        # if exclude is None or "all" not in exclude:
+        #     # Vertical shift first to skip some cut calculation
 
-            # ===== Beam angle (affects θ reconstruction) =====
-            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain))
+        #     # #Electron momentum universe
+        #     if abs(SystematicsConfig.AnaNuPDG)==12:
+        #         universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+        #     elif abs(SystematicsConfig.AnaNuPDG)==14:
+        #         universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
+        #         universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
+        #         universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain ))
+        #         universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain ))
+        #         universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain ))
+        #         universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain ))
+        #     else:
+        #         raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-            # ===== Detector response (ensure EM-only branches for ν–e via SystematicsConfig.RESPONSE_BRANCHES) =====
-            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain))
+        #     #Electron angle universe
+        #     universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-            print("Calc Flux Systematics...")
-            # ===== Flux universes (per-event species weighting) =====
-            universes.extend(FluxUniverse.GetSystematicsUniverses(chain))
-            print("Done Flux Systematics...")
+        #     #Electron momentum universe
+        #     #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
 
-            # ===== Generator/tune/hadronic universes =====
-            # Skip for ν–e elastic signal; include for CC analyses.
-            if not elastic_mode:
-                universes.extend(GenieUniverse.GetSystematicsUniverses(chain))
-                universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain))
-                universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain))
-                universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain))
-                universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain))
-                universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain))
-                print("done Genie")
-                universes.extend(Universe2p2h.GetSystematicsUniverses(chain))
-                print("done 2p2h")
-                universes.extend(RPAUniverse.GetSystematicsUniverses(chain))
-                print("done RPA")
-                #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
-                universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain))
-                print("done Low Q2")
-                #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
-                #universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
-                universes.extend(MKModelUniverse.GetSystematicsUniverses(chain))
-                universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain))
-                universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain))
-                # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain))  # keep off unless needed
+        #     #beam angle shift universe
+        #     universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-            # ===== Leakage & target normalization =====
-            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain))
-            universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain))
+        #     #particle response shift universe
+        #     universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
 
+        #     #Flux universe
+        #     universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
+
+        #     #Genie universe
+        #     universes.extend(GenieUniverse.GetSystematicsUniverses(chain ))
+        #     universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain ))
+        #     universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain ))
+        #     universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain ))
+        #     universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain ))
+        #     universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain ))
+
+        #     #2p2h universes
+        #     universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
+
+        #     #RPA universe:
+        #     universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
+
+        #     #Non resonant pion universe
+        #     # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
+
+        #     #LowQ2PionUniverse
+        #     universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+        #     #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
+
+        #     # #birk shift universe
+        #     ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
+
+        #     #MKModelUniverse
+        #     universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
+
+        #     #FSIWeighUniverse
+        #     universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
+
+        #     #SuSAValenciaUniverse
+        #     universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
+
+        #     #hadron reweight shifting universe
+        #     universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+
+        #     #leakage universe
+        #     universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+
+        #     #target mass universe
+        #     universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.
@@ -1149,12 +1279,11 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
     if exclude is not None and len(univ_dict)>1:
         for i in exclude:
             if i in univ_dict:
-                print("deleting universe {} from {}".format(i,univ_dict[i]))
                 del univ_dict[i]
 
     return univ_dict
 
-#code for test=Noneing new cv universe.
+#code for testing new cv universe.
 if __name__ == "__main__":
 
     #path = "/exp/minerva/data/users/hsu/merged_files/merged-1558038217.root"
@@ -1164,9 +1293,7 @@ if __name__ == "__main__":
     chainWrapper = PlotUtils.ChainWrapper("MasterAnaDev")
     chainWrapper.Add(path)
     chainWrapper.GetValue("prong_part_score",0)
-
     univs = GetAllSystematicsUniverses(chainWrapper,False)
-
     for u in univs.keys():
         print(u)
         for univ in univs[u]:

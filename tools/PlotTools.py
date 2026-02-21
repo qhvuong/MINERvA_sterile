@@ -538,6 +538,9 @@ def profile_to_graph(p, xmin=None, xmax=None, err_max=None):
 # Keep python-owned ROOT objects alive (critical in PyROOT)
 _ROOT_KEEP = []
 
+# def MakeProfile1D(prof): 
+#     prof.DrawCopy("E1")
+
 def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=False):
     drawn = prof.DrawCopy("E1")
     if drawn is None:

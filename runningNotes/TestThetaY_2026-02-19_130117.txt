@@ -1,0 +1,60 @@
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestThetaY --count 12
+--------------------------------------------------
+Copying 1217 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_131512_bffab33b-0cbf-476b-b676-5383354daf0d/CCNuE-le1_p6-mc_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/bffab33b-0cbf-476b-b676-5383354daf0d/CCNuE-le1_p6-mc_wrapper.sh
+Copying 3479 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_131512_bffab33b-0cbf-476b-b676-5383354daf0d/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/bffab33b-0cbf-476b-b676-5383354daf0d/simple.cmd
+Copying 10065 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_131512_bffab33b-0cbf-476b-b676-5383354daf0d/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/bffab33b-0cbf-476b-b676-5383354daf0d/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)...............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+815 job(s) submitted to cluster 26373220.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26373220.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Copying 1221 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_131519_63776607-f1ce-4d73-b421-e5b3db663840/CCNuE-le1_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/63776607-f1ce-4d73-b421-e5b3db663840/CCNuE-le1_p6-data_wrapper.sh
+Copying 3489 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_131519_63776607-f1ce-4d73-b421-e5b3db663840/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/63776607-f1ce-4d73-b421-e5b3db663840/simple.cmd
+Copying 10077 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_131519_63776607-f1ce-4d73-b421-e5b3db663840/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/63776607-f1ce-4d73-b421-e5b3db663840/simple.sh
+Transferring files to web sandbox...
+Submitting job(s).................................................................................................................................................................................................................................................................
+257 job(s) submitted to cluster 82980899.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 82980899.0@jobsub01.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Copying 1217 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_132416_0925ee77-e41c-45a8-9737-2de70908fe5c/CCNuE-le7_p6-mc_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/0925ee77-e41c-45a8-9737-2de70908fe5c/CCNuE-le7_p6-mc_wrapper.sh
+Copying 3478 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_132416_0925ee77-e41c-45a8-9737-2de70908fe5c/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/0925ee77-e41c-45a8-9737-2de70908fe5c/simple.cmd
+Copying 10064 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_132416_0925ee77-e41c-45a8-9737-2de70908fe5c/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/0925ee77-e41c-45a8-9737-2de70908fe5c/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)...............................................................................
+79 job(s) submitted to cluster 89952629.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 89952629.0@jobsub02.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Copying 1221 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_132419_fc6c08a1-04db-4327-a5fc-d16d9ab23cb4/CCNuE-le7_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/fc6c08a1-04db-4327-a5fc-d16d9ab23cb4/CCNuE-le7_p6-data_wrapper.sh
+Copying 3488 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_132419_fc6c08a1-04db-4327-a5fc-d16d9ab23cb4/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/fc6c08a1-04db-4327-a5fc-d16d9ab23cb4/simple.cmd
+Copying 10076 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_19_132419_fc6c08a1-04db-4327-a5fc-d16d9ab23cb4/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_02_19/fc6c08a1-04db-4327-a5fc-d16d9ab23cb4/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)...................................
+35 job(s) submitted to cluster 26433715.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26433715.0@jobsub05.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-02-19-131524.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le9_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestThetaY --count 12
+--------------------------------------------------

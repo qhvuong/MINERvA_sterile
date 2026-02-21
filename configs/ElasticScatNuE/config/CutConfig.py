@@ -109,7 +109,7 @@ SAMPLE_CUTS = {
         "VertexTrackMultiplicity",
         "LeptonEnergy",
         "Q2",
-        "InverseEtheta",
+        # "InverseEtheta",
         "MeanFrontdEdX",
         "Eavail",
     ]

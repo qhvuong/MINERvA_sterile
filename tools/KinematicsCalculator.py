@@ -37,6 +37,40 @@ delta_m_sqr = 7.34 # eV^2
 L = 1
 E = 1
 
+
+def rotate_xyzvector_x(p, angle):
+    r = ROOT.Math.RotationX(angle)
+    return r(p)
+
+def mc_primFSLepton_3frames_xyz(event, beam_angle):
+    px = event.GetVecElem("mc_primFSLepton", 0)
+    py = event.GetVecElem("mc_primFSLepton", 1)
+    pz = event.GetVecElem("mc_primFSLepton", 2)
+
+    p_raw = ROOT.Math.XYZVector(px, py, pz)
+    p_plus  = rotate_xyzvector_x(p_raw, +beam_angle)
+    p_minus = rotate_xyzvector_x(p_raw, -beam_angle)
+
+    return p_raw, p_plus, p_minus
+
+def _phat_xyz(v):
+    """Return (phx, phy, phz) or (None,None,None) for a 3-vector v."""
+    if v is None:
+        return None, None, None
+    # DisplacementVector3D / XYZVector case
+    if hasattr(v, "R"):
+        den = v.R()
+        if den <= 0:
+            return None, None, None
+        return v.X()/den, v.Y()/den, v.Z()/den
+    # TVector3 case
+    if hasattr(v, "Mag"):
+        den = v.Mag()
+        if den <= 0:
+            return None, None, None
+        return v.X()/den, v.Y()/den, v.Z()/den
+    return None, None, None
+
 def corrected_theta3D_from_thetaY(px, py, pz, vtxY_mm, p0, p1):
     # reco projection angles
     thetaX = math.atan2(px, pz)
@@ -195,7 +229,6 @@ class KinematicsCalculator(object):
         # print(type(self.reco_LeptonP3D_det))
         # print([m for m in dir(self.reco_LeptonP3D_det) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2","unit")])
 
-
         self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
         self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()
         self.reco_thetaX_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.X(), self.reco_LeptonP3D_det.Z())
@@ -286,39 +319,45 @@ class KinematicsCalculator(object):
         self.true_visE = self.CalculateVisibleE()
         self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
 
-        # --- NEW: true thetaX, thetaY in beam coordinates ---
-        # mc_primFSLepton = [px, py, pz, E] in MeV in detector coords.
-        # TruthFunctions.h rotates by MinervaUnits::numi_beam_angle_rad before taking angles.
+
+        ## This assumes truth momentum is in DET coord
+        # # --- NEW: true thetaX, thetaY in DET coordinates ---
+        # # mc_primFSLepton = [px, py, pz, E] in MeV in detector coords.
+        # # TruthFunctions.h rotates by MinervaUnits::numi_beam_angle_rad before taking angles.
         px = self.event.GetVecElem("mc_primFSLepton", 0)
         py = self.event.GetVecElem("mc_primFSLepton", 1)
         pz = self.event.GetVecElem("mc_primFSLepton", 2)
 
-        p3 = ROOT.TVector3(px, py, pz)              # beam
-        self.true_LeptonP3D = ROOT.TVector3(p3)     # store a copy (beam)
+        p_det = ROOT.TVector3(px, py, pz)              # det
+        self.true_LeptonP3D_det = ROOT.TVector3(p_det)     # store a copy (beam)
 
-        p_det = ROOT.TVector3(p3)                   # det = inverse rotation
-        p_det.RotateX(-SystematicsConfig.BEAM_ANGLE)
-        self.true_LeptonP3D_det = p_det
+        p_beam = ROOT.TVector3(p_det)                   # beam = rotation
+        p_beam.RotateX(+SystematicsConfig.BEAM_ANGLE)
+        self.true_LeptonP3D = p_beam
+
+
+
 
         # print(type(p3))
         # print([m for m in dir(p3) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2","unit")])
 
         # Use the SAME convention as TruthFunctions.h:
         # p3lep.RotateX(MinervaUnits::numi_beam_angle_rad);
-        # p3.RotateX(ROOT.PlotUtils.MinervaUnits.numi_beam_angle_rad)
+        # p_beam.RotateX(ROOT.PlotUtils.MinervaUnits.numi_beam_angle_rad)
         # det angles
         self.true_theta_lep_rad_det  = p_det.Theta()
         self.true_thetaX_lep_rad_det = math.atan2(p_det.X(), p_det.Z())
         self.true_thetaY_lep_rad_det = math.atan2(p_det.Y(), p_det.Z())
 
         # beam angles
-        self.true_thetaX_lep_rad = math.atan2(p3.X(), p3.Z())
-        self.true_thetaY_lep_rad = math.atan2(p3.Y(), p3.Z())
+        self.true_thetaX_lep_rad = math.atan2(p_beam.X(), p_beam.Z())
+        self.true_thetaY_lep_rad = math.atan2(p_beam.Y(), p_beam.Z())
         self.true_thetaX_lep = math.degrees(self.true_thetaX_lep_rad)
         self.true_thetaY_lep = math.degrees(self.true_thetaY_lep_rad)
-        # self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
-        # self.true_phi_lep_rad = math.atan2(p3.Y(), p3.X())
-    
+        self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
+        self.true_phi_lep_rad = math.atan2(p_beam.Y(), p_beam.X())
+
+        # print("existing true theta = ", self.true_theta_lep_rad, "\t my true theta = ", p_beam.Theta())
     
         vtxX = self.event.GetVecElem("mc_vtx", 0)
         vtxY = self.event.GetVecElem("mc_vtx", 1)
