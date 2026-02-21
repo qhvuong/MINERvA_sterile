@@ -1352,11 +1352,11 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                event.LeptonP3D_det().X() - event.kin_cal.true_LeptonP3D_det.X()
+                reco.X() - true.X()
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and getattr(event.kin_cal, "true_LeptonP3D_det", None) is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
                 )
                 else None
             ),
@@ -1371,11 +1371,11 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                event.LeptonP3D_det().Y() - event.kin_cal.true_LeptonP3D_det.Y()
+                reco.Y() - true.Y()
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and getattr(event.kin_cal, "true_LeptonP3D_det", None) is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
                 )
                 else None
             ),
@@ -1390,11 +1390,11 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                event.LeptonP3D_det().Z() - event.kin_cal.true_LeptonP3D_det.Z()
+                reco.Z() - true.Z()
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and getattr(event.kin_cal, "true_LeptonP3D_det", None) is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
                 )
                 else None
             ),
@@ -1410,15 +1410,17 @@ PLOT_SETTINGS= {
             PlotConfig.PZ_FRAC_RESID_BINNING
         ],
         "value_getter": [
-            # x-axis: detector Y
             lambda event: event.vtx[0],
-
-            # y-axis: fractional pZ residual
             lambda event: (
-                (event.LeptonP3D_det().Z() - event.kin_cal.true_LeptonP3D_det.Z())
-                / event.kin_cal.true_LeptonP3D_det.Z()
-            )
-            if event.kin_cal.true_LeptonP3D_det.Z() != 0 else None
+                (reco.Z() - true_z) / true_z
+                if (
+                    (reco := event.LeptonP3D_det()) is not None
+                    and event.kin_cal is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (true_z := true.Z()) != 0
+                )
+                else None
+            ),
         ],
         "tags": reco_tags
     },
@@ -1433,28 +1435,19 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                (event.LeptonP3D_det().X() / event.LeptonP3D_det().R())
-                - (event.kin_cal.true_LeptonP3D_det.X() / event.kin_cal.true_LeptonP3D_det.Mag())
+                (reco.X() / reco_r) - (true.X() / true_mag)
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and event.kin_cal.true_LeptonP3D_det is not None
-                    and event.LeptonP3D_det().R() > 0
-                    and event.kin_cal.true_LeptonP3D_det.Mag() > 0
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
                 )
                 else None
-            )
-            # lambda event: (
-            #     # event.LeptonP3D_det().Unit().X()
-            #     # - event.kin_cal.true_LeptonP3D_det.Unit().X()
-            #     (event.LeptonP3D_det().X() / event.LeptonP3D_det().R()) 
-            #     - (event.kin_cal.true_LeptonP3D_det.X() / event.kin_cal.true_LeptonP3D_det.Mag())
-            # )
-            # if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
+            ),
         ],
         "tags": reco_tags
     },
-
     "dPhatY vs Vertex X In Det Coordinate":
     {
         "name": "dPhatYVsVertexXDet",
@@ -1466,80 +1459,19 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                (event.LeptonP3D_det().Y() / event.LeptonP3D_det().R())
-                - (event.kin_cal.true_LeptonP3D_det.Y() / event.kin_cal.true_LeptonP3D_det.Mag())
+                (reco.Y() / reco_r) - (true.Y() / true_mag)
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and event.kin_cal.true_LeptonP3D_det is not None
-                    and event.LeptonP3D_det().R() > 0
-                    and event.kin_cal.true_LeptonP3D_det.Mag() > 0
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
                 )
                 else None
             )
         ],
         "tags": reco_tags
     },
-
-
-
-    "dPhatY raw raw vs Vertex X":
-    {
-        "name": "dPhatYVsVertexX_rawraw",
-        "title": "d#hat{p}_{y} raw - raw vs Vertex X; Vertex X (mm); #hat{p}_{y}^{reco}-#hat{p}_{y}^{true}; NEvents",
-        "binning": [
-            PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-            PlotConfig.PHAT_RESID_BINNING
-        ],
-        "value_getter": [
-            lambda event: event.vtx[0],
-            lambda event: (
-                event.kin_cal.reco_phatY_raw - event.kin_cal.true_phatY_raw
-                if (event.kin_cal.reco_phatY_raw is not None and event.kin_cal.true_phatY_raw is not None)
-                else None
-            )
-        ],
-        "tags": truth_tags
-    },
-    "dPhatY raw plus vs Vertex X":
-    {
-        "name": "dPhatYVsVertexX_rawplus",
-        "title": "d#hat{p}_{y} raw - plus vs Vertex X; Vertex X (mm); #hat{p}_{y}^{reco}-#hat{p}_{y}^{true}; NEvents",
-        "binning": [
-            PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-            PlotConfig.PHAT_RESID_BINNING
-        ],
-        "value_getter": [
-            lambda event: event.vtx[0],
-            lambda event: (
-                event.kin_cal.reco_phatY_raw - event.kin_cal.true_phatY_plus
-                if (event.kin_cal.reco_phatY_raw is not None and event.kin_cal.true_phatY_plus is not None)
-                else None
-            )
-        ],
-        "tags": truth_tags
-    },
-    "dPhatY raw minus vs Vertex X":
-    {
-        "name": "dPhatYVsVertexX_rawminus",
-        "title": "d#hat{p}_{y} raw - minus vs Vertex X; Vertex X (mm); #hat{p}_{y}^{reco}-#hat{p}_{y}^{true}; NEvents",
-        "binning": [
-            PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-            PlotConfig.PHAT_RESID_BINNING
-        ],
-        "value_getter": [
-            lambda event: event.vtx[0],
-            lambda event: (
-                event.kin_cal.reco_phatY_raw - event.kin_cal.true_phatY_minus
-                if (event.kin_cal.reco_phatY_raw is not None and event.kin_cal.true_phatY_minus is not None)
-                else None
-            )
-        ],
-        "tags": truth_tags
-    },
-
-
-
     "dPhatZ vs Vertex X In Det Coordinate":
     {
         "name": "dPhatZVsVertexXDet",
@@ -1551,24 +1483,16 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                (event.LeptonP3D_det().Z() / event.LeptonP3D_det().R())
-                - (event.kin_cal.true_LeptonP3D_det.Z() / event.kin_cal.true_LeptonP3D_det.Mag())
+                (reco.Z() / reco_r) - (true.Z() / true_mag)
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and event.kin_cal.true_LeptonP3D_det is not None
-                    and event.LeptonP3D_det().R() > 0
-                    and event.kin_cal.true_LeptonP3D_det.Mag() > 0
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
                 )
                 else None
-            )
-            # lambda event: (
-            #     # event.LeptonP3D_det().Unit().Z()
-            #     # - event.kin_cal.true_LeptonP3D_det.Unit().Z()
-            #     (event.LeptonP3D_det().Z() / event.LeptonP3D_det().R()) 
-            #     - (event.kin_cal.true_LeptonP3D_det.Z() / event.kin_cal.true_LeptonP3D_det.Mag())
-            # )
-            # if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
+            ),
         ],
         "tags": reco_tags
     },
@@ -1591,7 +1515,30 @@ PLOT_SETTINGS= {
         ],
         "tags": reco_tags
     },
-
+    "dPmag vs Vertex X In Det Coordinate":
+    {
+        "name": "dPmagVsVertexXDet",
+        "title": "(Reco-True) |p| vs Vertex X In Det Coordinate; Vertex X (mm); |p|^{reco}-|p|^{true} (MeV); NEvents",
+        "binning": [
+            PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+            PlotConfig.PMAG_RESID_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.vtx[0],
+            lambda event: (
+                reco.R() - true_mag
+                if (
+                    (reco := event.LeptonP3D_det()) is not None
+                    and event.kin_cal is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
+        ],
+        "tags": reco_tags
+    },
     "dPmag_frac vs Vertex X In Det Coordinate":
     {
         "name": "dPmagFracVsVertexXDet",
@@ -1603,10 +1550,16 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[0],
             lambda event: (
-                (event.LeptonP3D_det().R() - event.kin_cal.true_LeptonP3D_det.Mag())
-                / event.kin_cal.true_LeptonP3D_det.Mag()
-            )
-            if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
+                (reco_r - true_mag) / true_mag
+                if (
+                    (reco := event.LeptonP3D_det()) is not None
+                    and event.kin_cal is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
         ],
         "tags": reco_tags
     },
@@ -1616,11 +1569,11 @@ PLOT_SETTINGS= {
         "title": "#hat{p}_{x}^{reco} vs Vertex X In Det Coordinate; Vertex X (mm); #hat{p}_{x}^{reco}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_BINNING],
         "value_getter": [
-            # lambda event: float(event.vtx[1]),
             lambda event: event.vtx[0],
             # lambda event: event.LeptonP3D_det().Unit().Y()
             lambda event: (
-                (lambda p: (p.X()/p.R()) if (p is not None and p.R() > 0) else None)(event.LeptonP3D_det())
+                (lambda p: (p.X()/p.Mag()) if (p is not None and p.Mag() > 0) else None)(
+                    event.LeptonP3D_det())
             )
         ],
         "tags": reco_tags
@@ -1631,7 +1584,6 @@ PLOT_SETTINGS= {
         "title": "#hat{p}_{x}^{true} vs Vertex X In Det Coordinate; Vertex X (mm); #hat{p}_{x}^{true}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_BINNING],
         "value_getter": [
-            # lambda event: float(event.mc_vtx[1]),
             lambda event: event.mc_vtx[0],
             # lambda event: event.kin_cal.true_LeptonP3D_det.Unit().Y()
             lambda event: (
@@ -1762,27 +1714,18 @@ PLOT_SETTINGS= {
         "title": "(Reco-True) #hat{p}_{x} vs Vertex Y In Det Coordinate; Vertex Y (mm); #hat{p}_{x}^{reco}-#hat{p}_{x}^{true}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_RESID_BINNING],
         "value_getter": [
-            # lambda event: float(event.vtx[1]),
             lambda event: event.vtx[1],
             lambda event: (
-                (event.LeptonP3D_det().X() / event.LeptonP3D_det().R())
-                - (event.kin_cal.true_LeptonP3D_det.X() / event.kin_cal.true_LeptonP3D_det.Mag())
+                (reco.X() / reco_r) - (true.X() / true_mag)
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and event.kin_cal.true_LeptonP3D_det is not None
-                    and event.LeptonP3D_det().R() > 0
-                    and event.kin_cal.true_LeptonP3D_det.Mag() > 0
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
                 )
                 else None
-            )
-            # lambda event: (
-            #     # event.LeptonP3D_det().Unit().X()
-            #     # - event.kin_cal.true_LeptonP3D_det.Unit().X()
-            #     (event.LeptonP3D_det().X() / event.LeptonP3D_det().R()) 
-            #     - (event.kin_cal.true_LeptonP3D_det.X() / event.kin_cal.true_LeptonP3D_det.Mag())
-            # )
-            # if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
+            ),
         ],
         "tags": reco_tags
     },
@@ -1792,27 +1735,18 @@ PLOT_SETTINGS= {
         "title": "(Reco-True) #hat{p}_{y} vs Vertex Y In Det Coordinate; Vertex Y (mm); #hat{p}_{y}^{reco}-#hat{p}_{y}^{true}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_RESID_BINNING],
         "value_getter": [
-            # lambda event: float(event.vtx[1]),
             lambda event: event.vtx[1],
             lambda event: (
-                (event.LeptonP3D_det().Y() / event.LeptonP3D_det().R())
-                - (event.kin_cal.true_LeptonP3D_det.Y() / event.kin_cal.true_LeptonP3D_det.Mag())
+                (reco.Y() / reco_r) - (true.Y() / true_mag)
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and event.kin_cal.true_LeptonP3D_det is not None
-                    and event.LeptonP3D_det().R() > 0
-                    and event.kin_cal.true_LeptonP3D_det.Mag() > 0
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
                 )
                 else None
-            )
-            # lambda event: (
-            #     # event.LeptonP3D_det().Unit().Y()
-            #     # - event.kin_cal.true_LeptonP3D_det.Unit().Y()
-            #     (event.LeptonP3D_det().Y() / event.LeptonP3D_det().R()) 
-            #     - (event.kin_cal.true_LeptonP3D_det.Y() / event.kin_cal.true_LeptonP3D_det.Mag())
-            # )
-            # if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
+            ),
         ],
         "tags": reco_tags
     },
@@ -1822,31 +1756,21 @@ PLOT_SETTINGS= {
         "title": "(Reco-True) #hat{p}_{z} vs Vertex Y In Det Coordinate; Vertex Y (mm); #hat{p}_{z}^{reco}-#hat{p}_{z}^{true}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_RESID_BINNING],
         "value_getter": [
-            # lambda event: float(event.vtx[1]),
             lambda event: event.vtx[1],
             lambda event: (
-                (event.LeptonP3D_det().Z() / event.LeptonP3D_det().R())
-                - (event.kin_cal.true_LeptonP3D_det.Z() / event.kin_cal.true_LeptonP3D_det.Mag())
+                (reco.Z() / reco_r) - (true.Z() / true_mag)
                 if (
-                    event.LeptonP3D_det() is not None
+                    (reco := event.LeptonP3D_det()) is not None
                     and event.kin_cal is not None
-                    and event.kin_cal.true_LeptonP3D_det is not None
-                    and event.LeptonP3D_det().R() > 0
-                    and event.kin_cal.true_LeptonP3D_det.Mag() > 0
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
                 )
                 else None
-            )
-            # lambda event: (
-            #     # event.LeptonP3D_det().Unit().Z()
-            #     # - event.kin_cal.true_LeptonP3D_det.Unit().Z()
-            #     (event.LeptonP3D_det().Z() / event.LeptonP3D_det().R()) 
-            #     - (event.kin_cal.true_LeptonP3D_det.Z() / event.kin_cal.true_LeptonP3D_det.Mag())
-            # )
-            # if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
+            ),
         ],
         "tags": reco_tags
     },
-
     "dPmag vs Vertex Y In Det Coordinate":
     {
         "name": "dPmagVsVertexYDet",
@@ -1858,10 +1782,15 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[1],
             lambda event: (
-                event.LeptonP3D_det().R()
-                - event.kin_cal.true_LeptonP3D_det.Mag()
-            )
-            if event.kin_cal.true_LeptonP3D_det.Mag() > 0 else None
+                reco.R() - true_mag
+                if (
+                    (reco := event.LeptonP3D_det()) is not None
+                    and event.kin_cal is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
         ],
         "tags": reco_tags
     },
@@ -1876,10 +1805,15 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: event.vtx[1],
             lambda event: (
-                (event.LeptonP3D_det().R() - event.kin_cal.true_LeptonP3D_det.Mag())
-                / event.kin_cal.true_LeptonP3D_det.Mag()
-            )
-            if event.kin_cal.true_LeptonP3D_det.Mag() > 0 else None
+                (reco.R() - true_mag) / true_mag
+                if (
+                    (reco := event.LeptonP3D_det()) is not None
+                    and event.kin_cal is not None
+                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
         ],
         "tags": reco_tags
     },
