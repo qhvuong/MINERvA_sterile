@@ -941,17 +941,6 @@ PLOT_SETTINGS= {
     #                       lambda event: event.kin_cal.reco_phi_lep_rad],
     #     "tags": reco_tags   
     # },
-    "Reco ThetaX vs Vertex X":
-    {
-        "name" : "RecoThetaXVsVertexXDet",
-
-        "title": "Reco ThetaX vs Vertex X In Det Coordinate; Vertex X (mm); Reco thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[0],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det],
-        "tags": reco_tags   
-    },
     "Reco ThetaX vs Vertex X In Beam Coordinate":
     {
         "name" : "RecoThetaXVsVertexXBeam",
@@ -961,17 +950,6 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[0],
                           lambda event: event.kin_cal.reco_thetaX_lep_rad],
-        "tags": reco_tags   
-    },
-    "Reco ThetaY vs Vertex Y":
-    {
-        "name" : "RecoThetaYVsVertexYDet",
-
-        "title": "Reco ThetaY vs Vertex Y In Det Coordinate; Vertex Y (mm); Reco thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-                     PlotConfig.ELECTRON_ANGLE_BINNING_DET],
-        "value_getter" : [lambda event: event.vtx[1],
-                          lambda event: event.kin_cal.reco_thetaY_lep_rad_det],
         "tags": reco_tags   
     },
     "Reco ThetaY vs Vertex Y In Beam Coordinate":
@@ -985,17 +963,6 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.reco_thetaY_lep_rad],
         "tags": reco_tags   
     },
-    "True ThetaX vs Vertex X":
-    {
-        "name" : "TrueThetaXVsVertexXDet",
-
-        "title": "True ThetaX vs Vertex X In Det Coordinate; Vertex X (mm); True thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.mc_vtx[0],
-                          lambda event: event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": truth_tags   
-    },
     "True ThetaX vs Vertex X In Beam Coordinate":
     {
         "name" : "TrueThetaXVsVertexXBeam",
@@ -1005,17 +972,6 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.mc_vtx[0],
                           lambda event: event.kin_cal.true_thetaX_lep_rad],
-        "tags": truth_tags   
-    },
-    "True ThetaY vs Vertex Y":
-    {
-        "name" : "TrueThetaYVsVertexYDet",
-
-        "title": "True ThetaY vs Vertex Y In Det Coordinate; Vertex Y (mm); True thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-                     PlotConfig.ELECTRON_ANGLE_BINNING_DET],
-        "value_getter" : [lambda event: event.mc_vtx[1],
-                          lambda event: event.kin_cal.true_thetaY_lep_rad_det],
         "tags": truth_tags   
     },
     "True ThetaY vs Vertex Y In Beam Coordinate":
@@ -1032,6 +988,50 @@ PLOT_SETTINGS= {
 
 
 
+
+    "True ThetaX vs Vertex X":
+    {
+        "name" : "TrueThetaXVsVertexXDet",
+        "title": "True ThetaX vs True Vertex X; True Vertex X (mm); True thetaX (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.mc_vtx[0],
+                          lambda event: event.kin_cal.true_thetaX_lep_rad_det],
+        "tags": truth_tags   
+    },
+    "Reco ThetaX vs Vertex X":
+    {
+        "name" : "RecoThetaXVsVertexXDet",
+        "title": "Reco ThetaX vs Vertex X; Vertex X (mm); Reco thetaX (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.vtx[0],
+                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det],
+        "tags": reco_tags   
+    },
+    "True ThetaY vs Vertex Y":
+    {
+        "name" : "TrueThetaYVsVertexYDet",
+        "title": "True ThetaY vs True Vertex Y; True Vertex Y (mm); True thetaY (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.mc_vtx[1],
+                          lambda event: event.kin_cal.true_thetaY_lep_rad_det],
+        "tags": truth_tags   
+    },
+    "Reco ThetaY vs Vertex Y":
+    {
+        "name" : "RecoThetaYVsVertexYDet",
+        "title": "Reco ThetaY vs Vertex Y; Vertex Y (mm); Reco thetaY (rad); NEvents",
+        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+                     PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter" : [lambda event: event.vtx[1],
+                          lambda event: event.kin_cal.reco_thetaY_lep_rad_det],
+        "tags": reco_tags   
+    },
+
+
+
     "dThetaY vs Vertex X":
     {
         "name" : "dThetaYVsVertexXDet",
@@ -1041,7 +1041,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[0],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs Vertex Y":
     {
@@ -1052,7 +1052,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[1],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs Vertex Z":
     {
@@ -1063,7 +1063,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[2],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs Vertex R":
     {
@@ -1074,40 +1074,40 @@ PLOT_SETTINGS= {
         "value_getter": [
             lambda event: math.sqrt(event.vtx[0]**2 + event.vtx[1]**2),
             lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dThetaY vs dVertex X":
     {
         "name" : "dThetaYVsdVertexXDet",
 
         "title": "(Reco-True) ThetaY vs (Reco-True) Vertex X; (reco-true) Vertex X (mm); (reco-true) thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+        "binning" : [PlotConfig.ELECTRON_VTXRES_BINNING_DET,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[0] - event.mc_vtx[0],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs dVertex Y":
     {
         "name" : "dThetaYVsdVertexYDet",
 
         "title": "(Reco-True) ThetaY vs (Reco-True) Vertex Y; (reco-true) Vertex Y (mm); (reco-true) thetaY (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
+        "binning" : [PlotConfig.ELECTRON_VTXRES_BINNING_DET,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[1] - event.mc_vtx[1],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs dVertex Z":
     {
         "name" : "dThetaYVsdVertexZDet",
 
         "title": "(Reco-True) ThetaY vs (Reco-True) Vertex Z; (reco-true) Vertex Z (mm); (reco-true) thetaY (rad); NEvents",
-        "binning" : [[i for i in range(5500,9000,70)],
+        "binning" : [PlotConfig.ELECTRON_VTXRES_BINNING_DET,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.vtx[2] - event.mc_vtx[2],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs true pHatZ":
     {
@@ -1129,7 +1129,7 @@ PLOT_SETTINGS= {
     {
         "name": "dThetaYVsTrueThetaDet",
         "title": "(Reco-True) ThetaY vs true #theta; true #theta (rad); (reco-true) #theta_{y} (rad); NEvents",
-        "binning": [PlotConfig.ELECTRON_ANGLE_BINNING,
+        "binning": [PlotConfig.TRUE_THETA_BINS,
                     PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter": [
             lambda event: event.kin_cal.true_LeptonP3D_det.Theta(),
@@ -1163,7 +1163,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.prong_dEdXMeanFrontTracker[0],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs ConeOutsideE":
     {
@@ -1174,7 +1174,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.ConeOutsideE(),
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs NeighborhoodE":
     {
@@ -1185,7 +1185,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.NeighborhoodE(),
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs Lepton Energy":
     {
@@ -1196,7 +1196,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep,
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs True Lepton Energy":
     {
@@ -1207,7 +1207,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.true_E_lep,
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs Available Energy":
     {
@@ -1218,7 +1218,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_visE,
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaY vs Hex Edge Distance":
     {
@@ -1229,7 +1229,7 @@ PLOT_SETTINGS= {
         "value_getter" : [
             lambda event: event.DistToHexEdge(),
             lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dThetaY vs EMLikeTrackScore":
     {
@@ -1240,7 +1240,7 @@ PLOT_SETTINGS= {
         "value_getter" : [
             lambda event: event.prong_part_score[0],
             lambda event: event.kin_cal.reco_thetaY_lep_rad_det - event.kin_cal.true_thetaY_lep_rad_det],
-        "tags": reco_tags
+        "tags": truth_tags
     },
 
     "dThetaY vs Lepton PX":
@@ -1361,7 +1361,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags,
+        "tags": truth_tags,
     },
     "dPY vs Vertex X In Det Coordinate":
     {
@@ -1380,7 +1380,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags,
+        "tags": truth_tags,
     },
     "dPZ vs Vertex X In Det Coordinate":
     {
@@ -1399,7 +1399,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags,
+        "tags": truth_tags,
     },
     "dPZ_frac vs Vertex X In Det Coordinate":
     {
@@ -1422,7 +1422,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPhatX vs Vertex X In Det Coordinate":
     {
@@ -1437,16 +1437,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.X() / reco_r) - (true.X() / true_mag)
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPhatY vs Vertex X In Det Coordinate":
     {
@@ -1461,16 +1460,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.Y() / reco_r) - (true.Y() / true_mag)
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             )
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPhatZ vs Vertex X In Det Coordinate":
     {
@@ -1485,35 +1483,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.Z() / reco_r) - (true.Z() / true_mag)
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
-    },
-
-    "dPmag vs Vertex X In Det Coordinate":
-    {
-        "name": "dPmagVsVertexXDet",
-        "title": "(Reco-True) |p| vs Vertex X In Det Coordinate; Vertex X (mm); |p|^{reco}-|p|^{true} (MeV); NEvents",
-        "binning": [
-            PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-            PlotConfig.PMAG_RESID_BINNING
-        ],
-        "value_getter": [
-            lambda event: event.vtx[0],
-            lambda event: (
-                event.LeptonP3D_det().R()
-                - event.kin_cal.true_LeptonP3D_det.Mag()
-            )
-            if (event.LeptonP3D_det().R() > 0 and event.kin_cal.true_LeptonP3D_det.Mag() > 0) else None
-        ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPmag vs Vertex X In Det Coordinate":
     {
@@ -1528,16 +1506,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 reco.R() - true_mag
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPmag_frac vs Vertex X In Det Coordinate":
     {
@@ -1552,16 +1529,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco_r - true_mag) / true_mag
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "PhatX_reco vs Vertex X In Det Coordinate":
     {
@@ -1572,8 +1548,7 @@ PLOT_SETTINGS= {
             lambda event: event.vtx[0],
             # lambda event: event.LeptonP3D_det().Unit().Y()
             lambda event: (
-                (lambda p: (p.X()/p.Mag()) if (p is not None and p.Mag() > 0) else None)(
-                    event.LeptonP3D_det())
+                (lambda p: (p.X()/p.R()) if (p is not None and p.R() > 0) else None)(event.kin_cal.reco_LeptonP3D_det)
             )
         ],
         "tags": reco_tags
@@ -1581,7 +1556,7 @@ PLOT_SETTINGS= {
     "PhatX_true vs Vertex X In Det Coordinate":
     {
         "name": "PhatXTrueVsVertexXDet",
-        "title": "#hat{p}_{x}^{true} vs Vertex X In Det Coordinate; Vertex X (mm); #hat{p}_{x}^{true}; NEvents",
+        "title": "#hat{p}_{x}^{true} vs True Vertex X In Det Coordinate; Vertex X (mm); #hat{p}_{x}^{true}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_BINNING],
         "value_getter": [
             lambda event: event.mc_vtx[0],
@@ -1645,7 +1620,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPY vs Vertex Y In Det Coordinate":
     {
@@ -1664,7 +1639,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPZ vs Vertex Y In Det Coordinate":
     {
@@ -1683,7 +1658,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPZ_frac vs Vertex Y In Det Coordinate":
     {
@@ -1706,7 +1681,7 @@ PLOT_SETTINGS= {
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPhatX vs Vertex Y In Det Coordinate":
     {
@@ -1718,16 +1693,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.X() / reco_r) - (true.X() / true_mag)
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPhatY vs Vertex Y In Det Coordinate":
     {
@@ -1739,16 +1713,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.Y() / reco_r) - (true.Y() / true_mag)
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPhatZ vs Vertex Y In Det Coordinate":
     {
@@ -1760,16 +1733,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.Z() / reco_r) - (true.Z() / true_mag)
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
                     and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPmag vs Vertex Y In Det Coordinate":
     {
@@ -1784,15 +1756,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 reco.R() - true_mag
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dPmag_frac vs Vertex Y In Det Coordinate":
     {
@@ -1807,15 +1779,15 @@ PLOT_SETTINGS= {
             lambda event: (
                 (reco.R() - true_mag) / true_mag
                 if (
-                    (reco := event.LeptonP3D_det()) is not None
-                    and event.kin_cal is not None
-                    and (true := getattr(event.kin_cal, "true_LeptonP3D_det", None)) is not None
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
                     and (true_mag := true.Mag()) > 0
                 )
                 else None
             ),
         ],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "PhatY_reco vs Vertex Y In Det Coordinate":
     {
@@ -1827,7 +1799,7 @@ PLOT_SETTINGS= {
             lambda event: event.vtx[1],
             # lambda event: event.LeptonP3D_det().Unit().Y()
             lambda event: (
-                (lambda p: (p.Y()/p.R()) if (p is not None and p.R() > 0) else None)(event.LeptonP3D_det())
+                (lambda p: (p.Y()/p.R()) if (p is not None and p.R() > 0) else None)(event.kin_cal.reco_LeptonP3D_det)
             )
         ],
         "tags": reco_tags
@@ -1835,7 +1807,7 @@ PLOT_SETTINGS= {
     "PhatY_true vs Vertex Y In Det Coordinate":
     {
         "name": "PhatYTrueVsVertexYDet",
-        "title": "#hat{p}_{y}^{true} vs Vertex Y In Det Coordinate; Vertex Y (mm); #hat{p}_{y}^{true}; NEvents",
+        "title": "#hat{p}_{y}^{true} vs True Vertex Y In Det Coordinate; Vertex Y (mm); #hat{p}_{y}^{true}; NEvents",
         "binning": [PlotConfig.ELECTRON_VERTEX_BINNING_DET, PlotConfig.PHAT_BINNING],
         "value_getter": [
             # lambda event: float(event.mc_vtx[1]),
@@ -1859,9 +1831,18 @@ PLOT_SETTINGS= {
         "title": "(Reco-True) ThetaX vs Vertex X; Vertex X (mm); (reco-true) thetaX (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[0],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "value_getter" : [  lambda event: event.vtx[0],
+                            lambda event: (
+                                reco_tx - true_tx
+                                if (
+                                    event.kin_cal is not None
+                                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                                )
+                                else None
+                            ),
+                        ],
+        "tags": truth_tags   
     },
     "dThetaX vs Vertex Y":
     {
@@ -1870,9 +1851,18 @@ PLOT_SETTINGS= {
         "title": "(Reco-True) ThetaX vs Vertex Y; Vertex Y (mm); (reco-true) thetaX (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
                      PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[1],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "value_getter" : [  lambda event: event.vtx[1],
+                            lambda event: (
+                                reco_tx - true_tx
+                                if (
+                                    event.kin_cal is not None
+                                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                                )
+                                else None
+                            ),
+                        ],
+        "tags": truth_tags   
     },
     "dThetaX vs Vertex Z":
     {
@@ -1881,9 +1871,18 @@ PLOT_SETTINGS= {
         "title": "(Reco-True) ThetaX vs Vertex Z; Vertex Z (mm); (reco-true) thetaX (rad); NEvents",
         "binning" : [[i for i in range(5500,9000,70)],
                      PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[2],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "value_getter" : [  lambda event: event.vtx[2],
+                            lambda event: (
+                                reco_tx - true_tx
+                                if (
+                                    event.kin_cal is not None
+                                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                                )
+                                else None
+                            ),
+                        ],
+        "tags": truth_tags   
     },
     "dThetaX vs Vertex R":
     {
@@ -1893,41 +1892,96 @@ PLOT_SETTINGS= {
                     PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter": [
             lambda event: math.sqrt(event.vtx[0]**2 + event.vtx[1]**2),
-            lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags
+            lambda event: (
+                reco_tx - true_tx
+                if (
+                    event.kin_cal is not None
+                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags
     },
     "dThetaX vs dVertex X":
     {
-        "name" : "dThetaXVsdVertexXDet",
-
+        "name": "dThetaXVsdVertexXDet",
         "title": "(Reco-True) ThetaX vs (Reco-True) Vertex X; (reco-true) Vertex X (mm); (reco-true) thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[0] - event.mc_vtx[0],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "binning": [PlotConfig.ELECTRON_VTXRES_BINNING_DET, PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter": [
+            lambda event: (
+                (vx - mcx)
+                if (
+                    (vx := event.vtx[0]) is not None
+                    and (mcx := event.mc_vtx[0]) is not None
+                )
+                else None
+            ),
+            lambda event: (
+                reco_tx - true_tx
+                if (
+                    event.kin_cal is not None
+                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags,
     },
     "dThetaX vs dVertex Y":
     {
-        "name" : "dThetaXVsdVertexYDet",
-
+        "name": "dThetaXVsdVertexYDet",
         "title": "(Reco-True) ThetaX vs (Reco-True) Vertex Y; (reco-true) Vertex Y (mm); (reco-true) thetaX (rad); NEvents",
-        "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[1] - event.mc_vtx[1],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "binning": [PlotConfig.ELECTRON_VTXRES_BINNING_DET, PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter": [
+            lambda event: (
+                (vy - mcy)
+                if (
+                    (vy := event.vtx[1]) is not None
+                    and (mcy := event.mc_vtx[1]) is not None
+                )
+                else None
+            ),
+            lambda event: (
+                reco_tx - true_tx
+                if (
+                    event.kin_cal is not None
+                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags,
     },
     "dThetaX vs dVertex Z":
     {
-        "name" : "dThetaXVsdVertexZDet",
-
+        "name": "dThetaXVsdVertexZDet",
         "title": "(Reco-True) ThetaX vs (Reco-True) Vertex Z; (reco-true) Vertex Z (mm); (reco-true) thetaX (rad); NEvents",
-        "binning" : [[i for i in range(5500,9000,70)],
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
-        "value_getter" : [lambda event: event.vtx[2] - event.mc_vtx[2],
-                          lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        # "binning": [[i for i in range(5500, 9000, 70)], PlotConfig.ELECTRON_ANGLE_BINNING],
+        "binning": [PlotConfig.ELECTRON_VTXRES_BINNING_DET, PlotConfig.ELECTRON_ANGLE_BINNING],
+        "value_getter": [
+            lambda event: (
+                (vz - mcz)
+                if (
+                    (vz := event.vtx[2]) is not None
+                    and (mcz := event.mc_vtx[2]) is not None
+                )
+                else None
+            ),
+            lambda event: (
+                reco_tx - true_tx
+                if (
+                    event.kin_cal is not None
+                    and (reco_tx := getattr(event.kin_cal, "reco_thetaX_lep_rad_det", None)) is not None
+                    and (true_tx := getattr(event.kin_cal, "true_thetaX_lep_rad_det", None)) is not None
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags,
     },
     "dThetaX vs true pHatZ":
     {
@@ -1969,7 +2023,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.prong_dEdXMeanFrontTracker[0],
                           lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaX vs ConeOutsideE":
     {
@@ -1980,7 +2034,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.ConeOutsideE(),
                           lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaX vs NeighborhoodE":
     {
@@ -1991,7 +2045,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.NeighborhoodE(),
                           lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaX vs Lepton Energy":
     {
@@ -2002,7 +2056,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep,
                           lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaX vs True Lepton Energy":
     {
@@ -2013,7 +2067,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.true_E_lep,
                           lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaX vs Available Energy":
     {
@@ -2024,7 +2078,7 @@ PLOT_SETTINGS= {
                      PlotConfig.ELECTRON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_visE,
                           lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags   
+        "tags": truth_tags   
     },
     "dThetaX vs Hex Edge Distance":
     {
@@ -2035,7 +2089,7 @@ PLOT_SETTINGS= {
         "value_getter" : [
             lambda event: event.DistToHexEdge(),
             lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     "dThetaX vs EMLikeTrackScore":
     {
@@ -2046,7 +2100,7 @@ PLOT_SETTINGS= {
         "value_getter" : [
             lambda event: event.prong_part_score[0],
             lambda event: event.kin_cal.reco_thetaX_lep_rad_det - event.kin_cal.true_thetaX_lep_rad_det],
-        "tags": reco_tags
+        "tags": truth_tags
     },
     #### ========================================================================== ####
 

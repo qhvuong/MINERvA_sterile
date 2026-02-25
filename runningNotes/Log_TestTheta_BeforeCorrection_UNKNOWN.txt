@@ -1,0 +1,46 @@
+Diagnostic log generated from runningNotes stamp: UNKNOWN
+Mode: RUN
+Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/runningNotes.txt
+Selection tag (from file): TestTheta_BeforeCorrection
+
+==================================================
+Playlist           : me1A_p4 (raw: me1A_p4)
+Selection tag      : TestTheta_BeforeCorrection
+Stamp              : 2026-02-23-134401
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-134401_hists/
+Expected MC jobs   : 41
+Expected DATA jobs : 1
+Expected TOTAL     : 42
+Seen MC ROOT files : 41
+Seen DATA ROOT files: 1
+Seen TOTAL ROOT files: 42
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist me1A_p4 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-134401_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_BeforeCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+==================================================
+Playlist           : me1A (raw: me1A_p6)
+Selection tag      : TestTheta_BeforeCorrection
+Stamp              : 2026-02-23-162817
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-162817_hists/
+Expected MC jobs   : 41
+Expected DATA jobs : 253
+Expected TOTAL     : 294
+Seen MC ROOT files : 41
+Seen DATA ROOT files: 253
+Seen TOTAL ROOT files: 294
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist me1A --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-162817_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_BeforeCorrection
+
+[RUNNING] counts OK for MC and DATA

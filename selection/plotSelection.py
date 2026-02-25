@@ -38,7 +38,7 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
 
     PlotType = config.setdefault("plot_type",Default_Plot_Type)
     # typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"
-    typeBool = PlotType not in ["migration", "category_hist", "hist2d", "profileX"]
+    typeBool = PlotType not in ["migration", "category_hist", "hist2d", "profileX", "profileXNoFit"]
     slicer = config.setdefault("slicer", DefaultSlicer(data_hists)) if typeBool else PlotTools.IdentitySlicer
     draw_seperate_legend = config.setdefault("draw_seperate_legend",data_hists.dimension!=1 and (PlotType != "migration" or PlotType != "category_hist" or PlotType != "hist2d"))
     if data_hists is None or mc_hists is None:
@@ -51,7 +51,8 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
         # custom_tag = config["tag"]+PlotType if "tag" in config else PlotType
         if PlotType == "custom":
             plotfunction,hists=config["getplotters"](data_hists,mc_hists)
-        elif PlotType == "category_hist":
+        # elif PlotType == "category_hist":
+        elif PlotType in ("category_hist", "profileX"):
             if "args" in config:
                 args = config["args"]
             elif "args" in DefaultPlotters[PlotType]:
@@ -61,8 +62,15 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
             categories = args[0]
             for category in categories:
                 plotfunction,hists = DefaultPlotters[PlotType]["func"](data_hists,mc_hists,categories[category])
-                PlotTools.MakeGridPlot(PlotTools.IdentitySlicer,plotfunction,hists,draw_seperate_legend=False,title=category)
-                PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,sideband,category))
+                cat_title = categories[category].get("title", category)
+                t = hists[0].GetTitle() or data_hists.plot_name
+                parts = t.split(";")
+                parts[0] = f"{parts[0]} ({cat_title})"
+                hists[0].SetTitle(";".join(parts))
+                # PlotTools.MakeGridPlot(PlotTools.IdentitySlicer,plotfunction,hists,draw_seperate_legend=False,title=category)
+                PlotTools.MakeGridPlot(PlotTools.IdentitySlicer,plotfunction,hists,draw_seperate_legend=False)
+                # PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,sideband,category))
+                PlotTools.Print(AnalysisConfig.PlotPath(f"{data_hists.plot_name}_{PlotType}", sideband, category))
                 print("plot {} made for category {}.".format(data_hists.plot_name,category))
 
         # else:

@@ -395,32 +395,70 @@ def _iter_cate_names(category):
         return out
     return []
 
-def CategoryProfileX(data_hists, mc_hists, category, option="s", *args, **kwargs):
+def CategoryProfileX(data_hists, mc_hists, category, option=""):
     if not mc_hists.valid:
         raise KeyError("No MC histogram to profile")
 
-    print(category)
+    # Expect single-group form here: {"cate": {...}, "title": ..., "color": ...}
+    if not (isinstance(category, dict) and "cate" in category):
+        raise KeyError(f"CategoryProfileX expected a dict with key 'cate', got: {type(category)}")
 
-    # Build category-summed TH2
-    cate_names = _iter_cate_names(category)
+    # Sum TH2 over the cate list
+    base = mc_hists.GetHist()
+    hist2d = base.Clone(f"{base.GetName()}_{category.get('title','cat')}_sum2d")
+    hist2d.SetDirectory(0)
+    hist2d.Reset()
 
-    if cate_names:
-        hist2d = mc_hists.GetHist().Clone()
-        hist2d.Reset()
-        for cate in cate_names:
-            if cate in mc_hists.hists:
-                hist2d.Add(mc_hists.hists[cate])
-    else:
-        hist2d = mc_hists.GetHist()
+    for cate in category["cate"]:
+        if cate in mc_hists.hists:
+            hist2d.Add(mc_hists.hists[cate])
 
-    # Mean(Y) vs X
+    # Make profile
     prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
-    prof.SetTitle(hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
-                  + "; <" + hist2d.GetYaxis().GetTitle() + ">")
+    prof.SetDirectory(0)
+
+    # Title
+    prof.SetTitle(
+        # f'{category.get("title","")}; {hist2d.GetXaxis().GetTitle()}; <{hist2d.GetYaxis().GetTitle()}>'
+        f'{hist2d.GetTitle()}; {hist2d.GetXaxis().GetTitle()}; <{hist2d.GetYaxis().GetTitle()}>'
+    )
+
+    # Color (optional)
+    if "color" in category:
+        prof.SetLineColor(category["color"])
+        prof.SetMarkerColor(category["color"])
 
     hists = [prof]
-    plotfunction = lambda mnvplotter, h: MakeProfile1D(h)
+    plotfunction = lambda mnvplotter, h, *args: MakeProfile1D(h)
     return plotfunction, hists
+
+
+# def CategoryProfileX(data_hists, mc_hists, category, option="s", *args, **kwargs):
+#     if not mc_hists.valid:
+#         raise KeyError("No MC histogram to profile")
+
+#     print(category)
+
+#     # Build category-summed TH2
+#     cate_names = _iter_cate_names(category)
+
+#     if cate_names:
+#         hist2d = mc_hists.GetHist().Clone()
+#         hist2d.Reset()
+#         for cate in cate_names:
+#             if cate in mc_hists.hists:
+#                 hist2d.Add(mc_hists.hists[cate])
+#     else:
+#         hist2d = mc_hists.GetHist()
+
+#     # Mean(Y) vs X
+#     prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
+#     prof.SetTitle(hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
+#                   + "; <" + hist2d.GetYaxis().GetTitle() + ">")
+
+#     hists = [prof]
+#     plotfunction = lambda mnvplotter, h: MakeProfile1D(h)
+#     return plotfunction, hists
 
 def _masked_profile_by_error(p, err_max=None):
     h = p.Clone(p.GetName() + "_fitmask")
@@ -538,13 +576,23 @@ def profile_to_graph(p, xmin=None, xmax=None, err_max=None):
 # Keep python-owned ROOT objects alive (critical in PyROOT)
 _ROOT_KEEP = []
 
-# def MakeProfile1D(prof): 
-#     prof.DrawCopy("E1")
 
-def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=False):
-    drawn = prof.DrawCopy("E1")
+
+# def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=True):
+def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=True):
+    # decide whether to draw "same"
+    drawopt = "E1"
+    if ROOT.gPad and ROOT.gPad.GetListOfPrimitives() and ROOT.gPad.GetListOfPrimitives().GetSize() > 0:
+        drawopt = "E1 same"
+
+    drawn = prof.DrawCopy(drawopt)
     if drawn is None:
         return
+    drawn.SetErrorOption("")   # or " " (empty) → default = error on mean (RMS/sqrt(N or Neff))
+    # print("Error option:", drawn.GetErrorOption())
+    # drawn.SetTitleSize(0.02)
+    # print("Title size:", drawn.GetTitleSize())
+    # print("Y title size:", drawn.GetYaxis().GetTitleSize())
 
     # Auto-pick fit range unless user provided one
     if xmin is None or xmax is None:
@@ -602,6 +650,35 @@ def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unw
 
 
 
+# def MakeProfile1DNoFit(prof): 
+#     prof.DrawCopy("E1")
+
+# def CategoryProfileXNoFit(data_hists, mc_hists, category, option="s", *args, **kwargs):
+#     if not mc_hists.valid:
+#         raise KeyError("No MC histogram to profile")
+
+#     print(category)
+
+#     # Build category-summed TH2
+#     cate_names = _iter_cate_names(category)
+
+#     if cate_names:
+#         hist2d = mc_hists.GetHist().Clone()
+#         hist2d.Reset()
+#         for cate in cate_names:
+#             if cate in mc_hists.hists:
+#                 hist2d.Add(mc_hists.hists[cate])
+#     else:
+#         hist2d = mc_hists.GetHist()
+
+#     # Mean(Y) vs X
+#     prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
+#     prof.SetTitle(hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
+#                   + "; <" + hist2d.GetYaxis().GetTitle() + ">")
+
+#     hists = [prof]
+#     lambda mnvplotter, h, *args: MakeProfile1DNoFit(h)
+#     return plotfunction, hists
 
 
 
@@ -989,6 +1066,7 @@ def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canv
     N_plots = len(slices)
     #if N_plots > 1:
     #    N_plots = 9
+    TITLE_SIZE = 0.05  # tune this
     canvas.Divide(*CalMXN(N_plots+int(draw_seperate_legend)))
     for i in range(N_plots):
         canvas.cd(i+1)
@@ -1003,9 +1081,9 @@ def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canv
             #i+=34
         MakingEachPlot(mnvplotter,*slices[i])
         if title:
-            mnvplotter.AddHistoTitle(title)
+            mnvplotter.AddHistoTitle(title, TITLE_SIZE)
         else:
-            mnvplotter.AddHistoTitle(slices[i][0].GetTitle())
+            mnvplotter.AddHistoTitle(slices[i][0].GetTitle(), TITLE_SIZE)
 
         #code.interact(local=locals())
     if draw_seperate_legend:

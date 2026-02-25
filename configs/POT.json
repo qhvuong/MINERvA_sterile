@@ -635,6 +635,20 @@
             }
         }
     },
+    "me1A_p6": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ap6.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Ap6.txt"
+            }
+        }
+    },
     "me1B_p4": {
         "mc": {
             "MAD": {
