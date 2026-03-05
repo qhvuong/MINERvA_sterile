@@ -126,7 +126,7 @@ TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
 TRUTH_CATEGORIES["NCOther"] = lambda event: IsNC(event)
 
 # My signal is one or more of the listed categories.
-SIGNAL_DEFINATION = [
+SIGNAL_DEFINITION = [
     "CCNuEQE",
     "CCNuEDelta",
     "CCNuEDIS",

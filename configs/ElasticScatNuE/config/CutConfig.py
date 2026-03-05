@@ -103,7 +103,7 @@ SAMPLE_CUTS = {
         "DeadTime",
         "Afterpulsing",
         "NonMIPClusFrac",
-        "TransverseGapScore",
+       "TransverseGapScore",
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",

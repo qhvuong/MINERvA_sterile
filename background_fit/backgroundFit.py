@@ -272,6 +272,143 @@ def _solve_scales_per_bin(A_cols, b_vec, kreg=0.0, prior=None):
 
     return x
 
+def _solve_scales_per_bin_tsvd(
+    A_cols,
+    b_vec,
+    prior=None,
+    kmax=None,          # e.g. recipe.kreg == 3 means "keep 3 modes"
+    tol=None,           # optional alternative: relative cutoff; if set, used to define keep set
+    clamp_nonneg=True,
+    min_total_mc=None,  # low-stat fallback threshold (total floated MC across all regions & comps)
+    want_diag=False,
+):
+    """
+    Solve A x ~= b by TSVD on A (R x K).
+
+    A_cols: list length K, each is list length R: A_cols[k][r]
+    b_vec : list length R
+
+    Regularization:
+      - If kmax is not None: keep top kmax singular values
+      - Else if tol is not None: keep s_i >= tol*smax
+      - Else: keep all
+
+    Low-stat fallback:
+      - If min_total_mc is not None and sum(|A|) (or sum(A) if nonnegative) < threshold: return prior
+
+    Diagnostics (if want_diag=True):
+      returns (x, diag_dict)
+    """
+    K = len(A_cols)
+    R = len(b_vec)
+
+    if prior is None:
+        prior = [1.0] * K
+
+    # Early exit: no MC content at all
+    total_mc = 0.0
+    for k in range(K):
+        for r in range(R):
+            total_mc += float(A_cols[k][r])
+
+    if min_total_mc is not None and total_mc < float(min_total_mc):
+        diag = {
+            "used_fallback": True,
+            "total_mc": total_mc,
+            "nsv": min(R, K),
+            "n_kept": 0,
+            "svals": [],
+            "smax": 0.0,
+            "smin_kept": 0.0,
+        }
+        return (prior, diag) if want_diag else prior
+
+    if total_mc == 0.0:
+        diag = {
+            "used_fallback": True,
+            "total_mc": 0.0,
+            "nsv": min(R, K),
+            "n_kept": 0,
+            "svals": [],
+            "smax": 0.0,
+            "smin_kept": 0.0,
+        }
+        return (prior, diag) if want_diag else prior
+
+    # Build A (R x K) and b (R)
+    A = ROOT.TMatrixD(R, K)
+    for r in range(R):
+        for k in range(K):
+            A[r][k] = float(A_cols[k][r])
+
+    b = ROOT.TVectorD(R)
+    for r in range(R):
+        b[r] = float(b_vec[r])
+
+    svd = ROOT.TDecompSVD(A)
+
+    sig = svd.GetSig()  # length min(R,K)
+    nsv = sig.GetNrows()
+    if nsv == 0:
+        diag = {"used_fallback": True, "total_mc": total_mc, "nsv": 0, "n_kept": 0, "svals": [], "smax": 0.0, "smin_kept": 0.0}
+        return (prior, diag) if want_diag else prior
+
+    svals = [float(sig[i]) for i in range(nsv)]
+    smax = max(svals) if svals else 0.0
+    if smax <= 0.0:
+        diag = {"used_fallback": True, "total_mc": total_mc, "nsv": nsv, "n_kept": 0, "svals": svals, "smax": smax, "smin_kept": 0.0}
+        return (prior, diag) if want_diag else prior
+
+    # Decide which modes to keep
+    if kmax is not None:
+        kk = max(0, min(int(kmax), nsv))
+        keep = list(range(kk))  # singular values are ordered descending in ROOT
+    elif tol is not None:
+        keep = [i for i in range(nsv) if svals[i] >= float(tol) * smax]
+    else:
+        keep = list(range(nsv))
+
+    if len(keep) == 0:
+        diag = {"used_fallback": True, "total_mc": total_mc, "nsv": nsv, "n_kept": 0, "svals": svals, "smax": smax, "smin_kept": 0.0}
+        return (prior, diag) if want_diag else prior
+
+    U = svd.GetU()  # (R x nsv)
+    V = svd.GetV()  # (K x nsv)
+
+    # y = U^T b
+    y = [0.0] * nsv
+    for i in range(nsv):
+        acc = 0.0
+        for r in range(R):
+            acc += float(U[r][i]) * float(b[r])
+        y[i] = acc
+
+    # x = sum_{i in keep} V[:,i] * (y_i / s_i)
+    x = [0.0] * K
+    for i in keep:
+        si = svals[i]
+        if si == 0.0:
+            continue
+        coef = y[i] / si
+        for k in range(K):
+            x[k] += float(V[k][i]) * coef
+
+    if clamp_nonneg:
+        x = [max(0.0, xi) for xi in x]
+
+    smin_kept = min(svals[i] for i in keep) if keep else 0.0
+    diag = {
+        "used_fallback": False,
+        "total_mc": total_mc,
+        "nsv": nsv,
+        "n_kept": len(keep),
+        "svals": svals,
+        "smax": smax,
+        "smin_kept": smin_kept,
+    }
+    return (x, diag) if want_diag else x
+
+
 
 def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=None, uni_idx=None, kreg=None):
     """
@@ -290,11 +427,35 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
 
     # Choose a reference hist for binning (use Signal region data)
     href = _get_region_hist(data_holders[recipe.regions[0]], error_band, uni_idx)
+    
+    # define tag early so diagnostics inside loop can use it
+    tag = "CV" if error_band is None else f"{error_band}[{uni_idx}]"
 
     # Output scale hists, one per component
     scales = {comp: href.Clone(f"scale_{comp}") for comp in recipe.components}
     for comp in scales:
         scales[comp].Reset()
+
+    # --- Diagnostics setup ---
+    diag = {
+        "n_bins_total": 0,
+        "n_bins_fallback": 0,
+        "n_bins_dropped": 0,   # kept < full rank
+        "drop_by_nkept": {},   # {n_kept: count}
+        "fallback_bins": [],   # list of (bin, xcenter, total_mc)
+        "dropped_bins": [],    # list of (bin, xcenter, n_kept, svals, total_mc)
+        "worst_cond_bins": [], # list of (bin, xcenter, smin_kept/smax, n_kept)
+    }
+
+    # configurable threshold (events); pick 1.0 as you suggested
+    min_total_mc = getattr(recipe, "min_total_mc", None)
+    if min_total_mc is None:
+        min_total_mc = getattr(BackgroundFitConfig, "MIN_TOTAL_FLOATED_MC", 1.0)
+
+    # For TSVD keep count: interpret recipe.kreg as kmax if set, else keep all
+    # kmax = getattr(recipe, "kreg", None)
+    kmax_used = None
+    tol = 0.05   # or getattr(recipe, "tol", None)
 
     # Build component sums + fixed sums for each region once
     comp_sums_by_region = {}
@@ -341,11 +502,104 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
                 col.append(comp_sums_by_region[reg][comp].GetBinContent(b))
             A_cols.append(col)
 
-        x = _solve_scales_per_bin(A_cols, b_vec, kreg=kreg)
+        # OLD fitting not using regularized SVD
+        # x = _solve_scales_per_bin(A_cols, b_vec, kreg=kreg)
+        # Example settings:
+        # tol=1e-2 keeps modes with s_i >= 1% of smax (often a good start)
+        # kmax=recipe.kreg if you want recipe.kreg to mean "keep this many modes"
+        # kmax = recipe.kreg if getattr(recipe, "kreg", None) is not None else None
+        # x = _solve_scales_per_bin_tsvd(A_cols, b_vec, prior=[1.0]*len(recipe.components), tol=1e-2, kmax=kmax)
+        # total floated MC in this bin (sum over regions and floated comps)
+        total_mc = 0.0
+        for ic in range(len(recipe.components)):
+            for ir in range(len(recipe.regions)):
+                total_mc += float(A_cols[ic][ir])
+
+        if total_mc < min_total_mc:
+            x = [1.0] * len(recipe.components)
+            d = {
+                "used_fallback": True,
+                "total_mc": total_mc,
+                "n_kept": 0,
+                "smax": 0.0,
+                "smin_kept": 0.0,
+                "svals": [],
+            }
+        else:
+            x, d = _solve_scales_per_bin_tsvd(
+                A_cols, b_vec,
+                prior=[1.0]*len(recipe.components),
+                kmax=kmax_used,
+                tol=tol,        
+                clamp_nonneg=True,
+                min_total_mc=None,
+                want_diag=True
+            )
+        diag["n_bins_total"] += 1
+
+        # bin x center (works for 1D)
+        xcenter = href.GetXaxis().GetBinCenter(b) if 1 <= b <= href.GetNbinsX() else float("nan")
+
+        if d["used_fallback"]:
+            diag["n_bins_fallback"] += 1
+            diag["fallback_bins"].append((b, xcenter, d["total_mc"]))
+
+        else:
+            # Print singular values if very truncated
+            if d["n_kept"] <= 2:
+                sv = ",".join(f"{s:.3g}" for s in d["svals"])
+                print(f"[TSVD-DIAG {tag}] bin b={b} x={xcenter:.3g} kept={d['n_kept']} s=[{sv}] totalMC={d['total_mc']:.3g}")
+
+            # full rank is min(R,K)
+            full_rank = min(len(recipe.regions), len(recipe.components))
+            if d["n_kept"] < full_rank:
+                diag["n_bins_dropped"] += 1
+                diag["drop_by_nkept"][d["n_kept"]] = diag["drop_by_nkept"].get(d["n_kept"], 0) + 1
+                diag["dropped_bins"].append((b, xcenter, d["n_kept"], d["svals"], d["total_mc"]))
+
+            # condition-ish metric: smin_kept/smax (smaller => more ill-conditioned)
+            in_range = (1 <= b <= href.GetNbinsX())
+            if in_range:
+                ratio = (d["smin_kept"] / d["smax"]) if (d["smax"] > 0 and d["smin_kept"] > 0) else 0.0
+                diag["worst_cond_bins"].append((b, xcenter, ratio, d["n_kept"]))
+
 
         for ic, comp in enumerate(recipe.components):
             scales[comp].SetBinContent(b, x[ic])
             scales[comp].SetBinError(b, 0.0)  # you can fill via universe spread later
+
+    # --- Print diagnostics summary (CV or per-universe) ---
+    nb = diag["n_bins_total"]
+
+    reg_mode = []
+    if kmax_used is not None:
+        reg_mode.append(f"kmax={kmax_used}")
+    if tol is not None:
+        reg_mode.append(f"tol={tol}")
+    reg_mode_str = " ".join(reg_mode) if reg_mode else "no_reg"
+
+    print(f"[TSVD-DIAG {tag}] bins={nb} fallback={diag['n_bins_fallback']} dropped={diag['n_bins_dropped']} "
+        f"min_total_mc={min_total_mc} {reg_mode_str}")
+
+    if diag["drop_by_nkept"]:
+        items = ", ".join([f"kept{nk}:{ct}" for nk, ct in sorted(diag["drop_by_nkept"].items())])
+        print(f"[TSVD-DIAG {tag}] dropped breakdown: {items}")
+
+    # Show worst-conditioned bins (lowest smin_kept/smax)
+    diag["worst_cond_bins"].sort(key=lambda t: t[2])  # ascending ratio
+    for (bb, xc, ratio, nk) in diag["worst_cond_bins"][:5]:
+        if not math.isnan(xc):
+            print(f"[TSVD-DIAG {tag}] worst bin b={bb} x={xc:.3g} smin/smax={ratio:.3g} n_kept={nk}")
+        else:
+            print(f"[TSVD-DIAG {tag}] worst bin b={bb} smin/smax={ratio:.3g} n_kept={nk}")
+
+    # Show fallback bins (low MC)
+    if diag["n_bins_fallback"] > 0:
+        for (bb, xc, tmc) in diag["fallback_bins"][:10]:
+            if not math.isnan(xc):
+                print(f"[TSVD-DIAG {tag}] fallback bin b={bb} x={xc:.3g} totalMC={tmc:.3g}")
+            else:
+                print(f"[TSVD-DIAG {tag}] fallback bin b={bb} totalMC={tmc:.3g}")
 
     return scales
 

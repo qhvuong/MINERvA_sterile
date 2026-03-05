@@ -28,7 +28,8 @@ M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 M_n_star_sqr = M_n_star**2
 M_p_sqr = M_p**2
-BEAM_ANGLE = math.radians(-3.3)
+# BEAM_ANGLE = math.radians(-3.3)
+BEAM_ANGLE = -0.05887
  
 sin_ee_sqr = 0.4
 sin_ue_sqr = 0.002
@@ -37,215 +38,6 @@ delta_m_sqr = 7.34 # eV^2
 L = 1
 E = 1
 
-
-def rotate_xyzvector_x(p, angle):
-    r = ROOT.Math.RotationX(angle)
-    return r(p)
-
-def mc_primFSLepton_3frames_xyz(event, beam_angle):
-    px = event.GetVecElem("mc_primFSLepton", 0)
-    py = event.GetVecElem("mc_primFSLepton", 1)
-    pz = event.GetVecElem("mc_primFSLepton", 2)
-
-    p_raw = ROOT.Math.XYZVector(px, py, pz)
-    p_plus  = rotate_xyzvector_x(p_raw, +beam_angle)
-    p_minus = rotate_xyzvector_x(p_raw, -beam_angle)
-
-    return p_raw, p_plus, p_minus
-
-def _phat_xyz(v):
-    """Return (phx, phy, phz) or (None,None,None) for a 3-vector v."""
-    if v is None:
-        return None, None, None
-    # DisplacementVector3D / XYZVector case
-    if hasattr(v, "R"):
-        den = v.R()
-        if den <= 0:
-            return None, None, None
-        return v.X()/den, v.Y()/den, v.Z()/den
-    # TVector3 case
-    if hasattr(v, "Mag"):
-        den = v.Mag()
-        if den <= 0:
-            return None, None, None
-        return v.X()/den, v.Y()/den, v.Z()/den
-    return None, None, None
-
-def corrected_theta3D_from_thetaY(px, py, pz, vtxY_mm, p0, p1):
-    # reco projection angles
-    thetaX = math.atan2(px, pz)
-    thetaY = math.atan2(py, pz)
-
-    # apply correction (rad)
-    thetaY_corr = thetaY - (p0 + p1 * vtxY_mm)
-
-    # rebuild 3D unit direction from slopes
-    a = math.tan(thetaX)        # px/pz
-    b = math.tan(thetaY_corr)   # py/pz after correction
-    norm = math.sqrt(1.0 + a*a + b*b)
-
-    ux, uy, uz = a/norm, b/norm, 1.0/norm
-
-    # 3D polar angle
-    theta3D_corr = math.acos(uz)
-    return theta3D_corr, (ux, uy, uz)
-
-def corrected_p3_and_theta(px, py, pz, vtxY_mm, p0, p1):
-    thetaY = math.atan2(py, pz)
-    thetaY_corr = thetaY - (p0 + p1 * vtxY_mm)
-
-    py_corr = pz * math.tan(thetaY_corr)
-
-    p_corr = ROOT.TVector3(px, py_corr, pz)
-    theta3D_corr = p_corr.Theta()
-    return p_corr, theta3D_corr
-
-
-def apply_phat_bias_correction_det(
-    p3_det,
-    vtxX_mm: float,
-    vtxY_mm: float,
-    p0x: float,
-    p1x: float,
-    p0y: float,
-    p1y: float,
-    *,
-    clamp_vtx: bool = True,
-    vtx_min_mm: float = -1200.0,
-    vtx_max_mm: float = 1200.0,
-    make_vec=None,
-):
-    """
-    Correct direction biases in detector coordinates using:
-      <dPhatX>(vtxX) = p0x + p1x*vtxX_mm
-      <dPhatY>(vtxY) = p0y + p1y*vtxY_mm
-
-    Keeps |p| fixed; only changes direction (then renormalizes).
-    Returns a corrected 3-momentum vector in det coords.
-
-    Parameters
-    ----------
-    p3_det : vector-like
-        Reco lepton momentum 3-vector in detector coordinates.
-    vtxX_mm, vtxY_mm : float
-        Reco vertex coordinates in mm.
-    p0x, p1x, p0y, p1y : float
-        Linear fit params for mean dPhatX/Y vs vtxX/Y (units: per mm).
-    clamp_vtx : bool
-        If True, clamps vtx to [vtx_min_mm, vtx_max_mm] to avoid extrapolation.
-    make_vec : callable
-        Factory: make_vec(px,py,pz) -> vector. If None, tries p3_det.__class__.
-
-    Returns
-    -------
-    corrected_p3_det : vector-like
-    """
-    if p3_det is None:
-        return None
-
-    pmag = p3_det.R()
-    if pmag <= 0:
-        return p3_det
-
-    # Unit direction from reco momentum
-    phx = p3_det.X() / pmag
-    phy = p3_det.Y() / pmag
-    phz = p3_det.Z() / pmag
-
-    # Optional clamp
-    if clamp_vtx:
-        vtxX_mm = max(vtx_min_mm, min(vtx_max_mm, vtxX_mm))
-        vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
-
-    # Bias functions
-    bx = p0x + p1x * vtxX_mm
-    by = p0y + p1y * vtxY_mm
-
-    # Subtract biases in X and Y
-    phx_c = phx - bx
-    phy_c = phy - by
-    phz_c = phz  # leave Z; renorm handles coupling
-
-    # Renormalize
-    norm = math.sqrt(phx_c*phx_c + phy_c*phy_c + phz_c*phz_c)
-    if norm <= 0:
-        return p3_det
-
-    phx_c /= norm
-    phy_c /= norm
-    phz_c /= norm
-
-    # Rebuild p3 with same magnitude
-    px_c = pmag * phx_c
-    py_c = pmag * phy_c
-    pz_c = pmag * phz_c
-
-    if make_vec is None:
-        # This works if the vector class constructor is (x,y,z)
-        try:
-            return p3_det.__class__(px_c, py_c, pz_c)
-        except Exception:
-            # If you're using ROOT TVector3, provide make_vec=ROOT.TVector3
-            raise RuntimeError(
-                "apply_phat_bias_correction_det: please pass make_vec (e.g. ROOT.TVector3)"
-            )
-
-    return make_vec(px_c, py_c, pz_c)
-
-
-
-def apply_pmag_frac_correction_det(
-    p3_det,
-    vtxY_mm: float,
-    a0: float,
-    a1: float,
-    *,
-    clamp_vtx: bool = True,
-    vtx_min_mm: float = -1200.0,
-    vtx_max_mm: float = 1200.0,
-    max_abs_frac: float = 0.2,   # safety clamp: 20% by default
-    make_vec=None,
-):
-    """
-    Correct |p| bias using a linear model in vtxY:
-      <dPmagFrac>(vtxY) = a0 + a1*vtxY_mm
-    where dPmagFrac = (|p|reco - |p|true)/|p|true
-
-    We correct reco magnitude:
-      |p|corr = |p|reco / (1 + bias)
-
-    Direction is preserved.
-    """
-    if p3_det is None:
-        return None
-
-    pmag = p3_det.R()
-    if pmag <= 0:
-        return p3_det
-
-    if clamp_vtx:
-        vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
-
-    bias = a0 + a1 * vtxY_mm  # dimensionless
-    # optional clamp to avoid crazy corrections
-    if max_abs_frac is not None:
-        bias = max(-max_abs_frac, min(max_abs_frac, bias))
-
-    denom = 1.0 + bias
-    if denom <= 0:
-        return p3_det
-
-    scale = 1.0 / denom
-    px_c = p3_det.X() * scale
-    py_c = p3_det.Y() * scale
-    pz_c = p3_det.Z() * scale
-
-    if make_vec is None:
-        try:
-            return p3_det.__class__(px_c, py_c, pz_c)
-        except Exception:
-            raise RuntimeError("apply_pmag_frac_correction_det: pass make_vec (e.g. ROOT.Math.XYZVector)")
-    return make_vec(px_c, py_c, pz_c)
 
 
 
@@ -377,63 +169,45 @@ class KinematicsCalculator(object):
         # self.reco_vertex3D_beam      = event.Vertex3D_beam()
         self.reco_LeptonP3D_det      = event.LeptonP3D_det()
         self.reco_LeptonP3D          = event.LeptonP3D()
+        
         # print(self.reco_LeptonP3D_det.Unit())
         # print(type(self.reco_LeptonP3D_det))
         # print([m for m in dir(self.reco_LeptonP3D_det) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2","unit")])
 
-
-        # ### APPLY CORRECTION
+        # ### APPLY CORRECTION to ANGLE
         # # --- apply direction correction in det coords ---
         # vx = float(event.vtx[0])  # mm
         # vy = float(event.vtx[1])  # mm
 
         # make_vec = ROOT.Math.XYZVector  # set appropriately for your vector type
 
-        # # 1) direction correction (your existing)
-        # # p_det_dircorr = apply_phat_bias_correction_det(
-        # p_det_corr = apply_phat_bias_correction_det(
+        # # 1) angular direction correction (new)
+        # p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
         #     event.LeptonP3D_det(),
         #     vx, vy,
-        #     p0x=-0.001172, p1x=1.344e-05,
-        #     p0y=0.0008539, p1y=1.263e-05,
+        #     t0x=-0.0006826, t1x=1.349e-05,   # <dThetaX> vs vtxX (radians per mm)
+        #     t0y=0.001163,   t1y=1.581e-05,   # <dThetaY> vs vtxY (radians per mm)
         #     clamp_vtx=True,
         #     vtx_min_mm=-1200.0,
         #     vtx_max_mm=1200.0,
+        #     keep_pmag=True,
         #     make_vec=make_vec,
         # )
 
-        # # 2) magnitude correction vs vtxY (new)
+        # # 2) magnitude correction (keep as-is if you want)
         # p_det_corr = apply_pmag_frac_correction_det(
-        #     p_det_dircorr,
+        #     p_det_corr,
         #     vy,
-        #     a0=0.0002837, a1=9.079e-05,          # fit from <dPmagFrac> vs vtxY
+        #     a0=4.441e-05, a1=9.729e-05,
         #     make_vec=make_vec
         # )
 
-        # # Recompute beam-coord vector from corrected det vector (preferred)
-        # # Use the same rotation utility your framework uses for LeptonP3D().
-        # self.reco_LeptonP3D_det = p_det_corr    # after correction
+        # self.reco_LeptonP3D_det = p_det_corr
         # r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        # self.reco_LeptonP3D = r(p_det_corr)     # this is beam-coord XYZVector
+        # self.reco_LeptonP3D = r(p_det_corr)
 
-
-        # p0x=0.0004326
-        # p1x=1.156e-05
-        # p0y=0.0007669
-        # p1y=1.05e-05
-        # p_unc = event.LeptonP3D_det()
-        # p_cor = self.reco_LeptonP3D_det
-
-        # phx_unc = p_unc.X()/p_unc.R()
-        # phx_cor = p_cor.X()/p_cor.R()
-
-        # bx = p0x + p1x*vx
-        # print("vx=", vx,
-        #     "phx_unc=", phx_unc,
-        #     "phx_cor=", phx_cor,
-        #     "delta=", phx_cor-phx_unc,
-        #     "expected ~", -bx)
-
+        # # print("comparing corrected theta: ", theta_corr, self.reco_LeptonP3D_det.Theta())
+        # print("comparing corrected momentum: ", event.LeptonP3D_det().R(), self.reco_LeptonP3D_det.R())
 
         self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
         self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()

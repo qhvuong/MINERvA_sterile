@@ -1,6 +1,0 @@
-Diagnostic log generated from runningNotes stamp: TestTheta_DirCorrection_2026-02-23_071138
-Mode: RUN
-Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/TestTheta_DirCorrection_2026-02-23_071138.txt
-Selection tag (from file): UNKNOWN
-
-[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}

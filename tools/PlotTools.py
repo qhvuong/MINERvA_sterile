@@ -245,7 +245,7 @@ def Prepare2DStack(data_hists,mc_hists,Grouping = None):
     return plotfunction,hists
 
 
-def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=0.0008):
+def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
 
@@ -411,6 +411,7 @@ def CategoryProfileX(data_hists, mc_hists, category, option=""):
 
     for cate in category["cate"]:
         if cate in mc_hists.hists:
+            # print("Adding {} category to hist2d plot".format(cate)) # add this line!
             hist2d.Add(mc_hists.hists[cate])
 
     # Make profile

@@ -374,6 +374,10 @@ CUT_CONFIGS = {
         "value_getter": lambda event, nprong: event.kin_cal.reco_visE,
         "cut_fn": lambda val: val >= CutConfig.visE_RANGE[1]
     },
+    "LeptonAngle": {
+        "value_getter": lambda event,nprong: event.kin_cal.reco_theta_lep,
+        "cut_fn": lambda val: CutConfig.LEPTON_ANGLE_RANGE[0] <= val < CutConfig.LEPTON_ANGLE_RANGE[1],
+    },
     "LeptonEnergy": {
         "value_getter": lambda event,nprong: event.kin_cal.reco_E_lep,
         "cut_fn": lambda val: val > CutConfig.ELECTRON_ENERGY_CUT

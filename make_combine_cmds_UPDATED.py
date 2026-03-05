@@ -300,7 +300,8 @@ def main():
     # Write diagnostic log next to runningNotes (ALSO in dry-run)
     out_dir = os.path.dirname(os.path.abspath(args.runningNotes)) or "."
     tag_for_name = first_tag_seen or "UNKNOWN"
-    log_name = f"Log_{tag_for_name}_{notes_stamp}.txt"
+    # log_name = f"Log_{tag_for_name}_{notes_stamp}.txt"
+    log_name = f"Log_{notes_stamp}.txt"
     log_path = os.path.join(out_dir, log_name)
 
     header = [

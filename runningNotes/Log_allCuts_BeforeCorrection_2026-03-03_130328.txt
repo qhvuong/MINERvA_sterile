@@ -1,15 +1,15 @@
-Diagnostic log generated from runningNotes stamp: TestTheta_DirMagCorrection_2026-02-23_081012
+Diagnostic log generated from runningNotes stamp: allCuts_BeforeCorrection_2026-03-03_130328
 Mode: RUN
-Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/TestTheta_DirMagCorrection_2026-02-23_081012.txt
-Selection tag (from file): TestTheta_DirMagCorrection
+Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/allCuts_BeforeCorrection_2026-03-03_130328.txt
+Selection tag (from file): allCuts_BeforeCorrection
 
 [WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
 
 ==================================================
 Playlist           : le1 (raw: le1_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-081014
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-081014_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-130342
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-130342_hists/
 Expected MC jobs   : 815
 Expected DATA jobs : 257
 Expected TOTAL     : 1072
@@ -22,7 +22,7 @@ Seen TOTAL ROOT files: 1072
 ==================================================
 
 Command:
-  python combine_file.py --playlist le1 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-081014_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le1 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-130342_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -30,9 +30,9 @@ Command:
 
 ==================================================
 Playlist           : le7 (raw: le7_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-081452
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-081452_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-131308
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-131308_hists/
 Expected MC jobs   : 79
 Expected DATA jobs : 35
 Expected TOTAL     : 114
@@ -45,7 +45,7 @@ Seen TOTAL ROOT files: 114
 ==================================================
 
 Command:
-  python combine_file.py --playlist le7 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-081452_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le7 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-131308_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -53,9 +53,9 @@ Command:
 
 ==================================================
 Playlist           : le9 (raw: le9_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-081935
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-081935_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-132041
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-132041_hists/
 Expected MC jobs   : 83
 Expected DATA jobs : 46
 Expected TOTAL     : 129
@@ -68,7 +68,7 @@ Seen TOTAL ROOT files: 129
 ==================================================
 
 Command:
-  python combine_file.py --playlist le9 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-081935_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le9 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-132041_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -76,9 +76,9 @@ Command:
 
 ==================================================
 Playlist           : le13C (raw: le13C_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-082347
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-082347_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-132745
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-132745_hists/
 Expected MC jobs   : 953
 Expected DATA jobs : 597
 Expected TOTAL     : 1550
@@ -91,7 +91,7 @@ Seen TOTAL ROOT files: 1550
 ==================================================
 
 Command:
-  python combine_file.py --playlist le13C --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-082347_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le13C --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-132745_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -99,9 +99,9 @@ Command:
 
 ==================================================
 Playlist           : le13A (raw: le13A_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-082757
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-082757_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-133501
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-133501_hists/
 Expected MC jobs   : 0
 Expected DATA jobs : 65
 Expected TOTAL     : 65
@@ -114,7 +114,7 @@ Seen TOTAL ROOT files: 65
 ==================================================
 
 Command:
-  python combine_file.py --playlist le13A --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-082757_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le13A --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-133501_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -122,9 +122,9 @@ Command:
 
 ==================================================
 Playlist           : le13B (raw: le13B_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-083154
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-083154_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-134110
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-134110_hists/
 Expected MC jobs   : 0
 Expected DATA jobs : 171
 Expected TOTAL     : 171
@@ -137,7 +137,7 @@ Seen TOTAL ROOT files: 171
 ==================================================
 
 Command:
-  python combine_file.py --playlist le13B --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-083154_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le13B --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-134110_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -145,9 +145,9 @@ Command:
 
 ==================================================
 Playlist           : le13D (raw: le13D_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-083538
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-083538_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-134721
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-134721_hists/
 Expected MC jobs   : 0
 Expected DATA jobs : 30
 Expected TOTAL     : 30
@@ -160,7 +160,7 @@ Seen TOTAL ROOT files: 30
 ==================================================
 
 Command:
-  python combine_file.py --playlist le13D --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-083538_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le13D --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-134721_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA
 
@@ -168,9 +168,9 @@ Command:
 
 ==================================================
 Playlist           : le13E (raw: le13E_p6)
-Selection tag      : TestTheta_DirMagCorrection
-Stamp              : 2026-02-23-083944
-Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-083944_hists/
+Selection tag      : allCuts_BeforeCorrection
+Stamp              : 2026-03-03-135309
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-135309_hists/
 Expected MC jobs   : 0
 Expected DATA jobs : 241
 Expected TOTAL     : 241
@@ -183,6 +183,6 @@ Seen TOTAL ROOT files: 241
 ==================================================
 
 Command:
-  python combine_file.py --playlist le13E --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-02-23-083944_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestTheta_DirMagCorrection
+  python combine_file.py --playlist le13E --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-03-135309_hists/ --cal_POT --ntuple_tag MAD --selection_tag allCuts_BeforeCorrection
 
 [RUNNING] counts OK for MC and DATA

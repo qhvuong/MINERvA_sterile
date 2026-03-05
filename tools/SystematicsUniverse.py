@@ -51,6 +51,244 @@ def _hex_edge_distance_mm(x, y, apothem_mm=881.25):
     umax = max(abs(u1), abs(u2), abs(u3))
     return apothem_mm - umax
 
+def apply_theta_bias_correction_det(
+    p3_det,
+    vtxX_mm: float,
+    vtxY_mm: float,
+    t0x: float,
+    t1x: float,
+    t0y: float,
+    t1y: float,
+    *,
+    clamp_vtx: bool = True,
+    vtx_min_mm: float = -1200.0,
+    vtx_max_mm: float = 1200.0,
+    keep_pmag: bool = True,
+    max_abs_angle_rad = None,
+    make_vec=None,
+):
+    """
+    Correct direction using angular biases (projected angles):
+      <dThetaX>(vtxX) = t0x + t1x*vtxX_mm
+      <dThetaY>(vtxY) = t0y + t1y*vtxY_mm
+
+    Definitions:
+      thetaX = atan2(px, pz)
+      thetaY = atan2(py, pz)
+
+    After correcting thetaX/thetaY, reconstruct a UNIT direction using:
+      tx = tan(thetaX_corr), ty = tan(thetaY_corr)
+      u  ∝ (tx, ty, 1), then normalize.
+
+    Returns:
+      (p3_corr, thetaX_corr, thetaY_corr, theta_corr)
+    where theta_corr is the 3D polar angle: atan2(sqrt(px^2+py^2), pz).
+    """
+    if p3_det is None:
+        return None, None, None, None
+
+    px, py, pz = float(p3_det.X()), float(p3_det.Y()), float(p3_det.Z())
+    pmag = float(p3_det.R())
+    if pmag <= 0:
+        return p3_det, None, None, None
+
+    if clamp_vtx:
+        vtxX_mm = max(vtx_min_mm, min(vtx_max_mm, vtxX_mm))
+        vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
+
+    # Current projected angles (radians)
+    thetaX = math.atan2(px, pz)
+    thetaY = math.atan2(py, pz)
+
+    # Bias models (radians)
+    bx = t0x + t1x * vtxX_mm
+    by = t0y + t1y * vtxY_mm
+
+    # Apply correction (subtract mean bias)
+    thetaX_corr = thetaX - bx
+    thetaY_corr = thetaY - by
+
+    # Optional safety clamp on corrected angles
+    if max_abs_angle_rad is not None:
+        thetaX_corr = max(-max_abs_angle_rad, min(max_abs_angle_rad, thetaX_corr))
+        thetaY_corr = max(-max_abs_angle_rad, min(max_abs_angle_rad, thetaY_corr))
+
+    # Rebuild a UNIT direction from corrected projected angles
+    tx = math.tan(thetaX_corr)
+    ty = math.tan(thetaY_corr)
+
+    inv_norm = 1.0 / math.sqrt(1.0 + tx*tx + ty*ty)
+    ux = tx * inv_norm
+    uy = ty * inv_norm
+    uz = 1.0 * inv_norm
+
+    # 3D polar angle from corrected direction
+    theta_corr = math.atan2(math.sqrt(ux*ux + uy*uy), uz)
+
+    # Scale to momentum magnitude (or not)
+    scale = pmag if keep_pmag else 1.0
+    px_c, py_c, pz_c = scale * ux, scale * uy, scale * uz
+
+    if make_vec is None:
+        try:
+            p3_corr = p3_det.__class__(px_c, py_c, pz_c)
+        except Exception:
+            raise RuntimeError("apply_theta_bias_correction_det: please pass make_vec (e.g. ROOT.Math.XYZVector)")
+    else:
+        p3_corr = make_vec(px_c, py_c, pz_c)
+
+    return p3_corr, thetaX_corr, thetaY_corr, theta_corr
+
+
+# def apply_phat_bias_correction_det(
+#     p3_det,
+#     vtxX_mm: float,
+#     vtxY_mm: float,
+#     p0x: float,
+#     p1x: float,
+#     p0y: float,
+#     p1y: float,
+#     *,
+#     clamp_vtx: bool = True,
+#     vtx_min_mm: float = -1200.0,
+#     vtx_max_mm: float = 1200.0,
+#     make_vec=None,
+# ):
+#     """
+#     Correct direction biases in detector coordinates using:
+#       <dPhatX>(vtxX) = p0x + p1x*vtxX_mm
+#       <dPhatY>(vtxY) = p0y + p1y*vtxY_mm
+
+#     Keeps |p| fixed; only changes direction (then renormalizes).
+#     Returns a corrected 3-momentum vector in det coords.
+
+#     Parameters
+#     ----------
+#     p3_det : vector-like
+#         Reco lepton momentum 3-vector in detector coordinates.
+#     vtxX_mm, vtxY_mm : float
+#         Reco vertex coordinates in mm.
+#     p0x, p1x, p0y, p1y : float
+#         Linear fit params for mean dPhatX/Y vs vtxX/Y (units: per mm).
+#     clamp_vtx : bool
+#         If True, clamps vtx to [vtx_min_mm, vtx_max_mm] to avoid extrapolation.
+#     make_vec : callable
+#         Factory: make_vec(px,py,pz) -> vector. If None, tries p3_det.__class__.
+
+#     Returns
+#     -------
+#     corrected_p3_det : vector-like
+#     """
+#     if p3_det is None:
+#         return None
+
+#     pmag = p3_det.R()
+#     if pmag <= 0:
+#         return p3_det
+
+#     # Unit direction from reco momentum
+#     phx = p3_det.X() / pmag
+#     phy = p3_det.Y() / pmag
+#     phz = p3_det.Z() / pmag
+
+#     # Optional clamp
+#     if clamp_vtx:
+#         vtxX_mm = max(vtx_min_mm, min(vtx_max_mm, vtxX_mm))
+#         vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
+
+#     # Bias functions
+#     bx = p0x + p1x * vtxX_mm
+#     by = p0y + p1y * vtxY_mm
+
+#     # Subtract biases in X and Y
+#     phx_c = phx - bx
+#     phy_c = phy - by
+#     phz_c = phz  # leave Z; renorm handles coupling
+
+#     # Renormalize
+#     norm = math.sqrt(phx_c*phx_c + phy_c*phy_c + phz_c*phz_c)
+#     if norm <= 0:
+#         return p3_det
+
+#     phx_c /= norm
+#     phy_c /= norm
+#     phz_c /= norm
+
+#     # Rebuild p3 with same magnitude
+#     px_c = pmag * phx_c
+#     py_c = pmag * phy_c
+#     pz_c = pmag * phz_c
+
+#     if make_vec is None:
+#         # This works if the vector class constructor is (x,y,z)
+#         try:
+#             return p3_det.__class__(px_c, py_c, pz_c)
+#         except Exception:
+#             # If you're using ROOT TVector3, provide make_vec=ROOT.TVector3
+#             raise RuntimeError(
+#                 "apply_phat_bias_correction_det: please pass make_vec (e.g. ROOT.TVector3)"
+#             )
+
+#     return make_vec(px_c, py_c, pz_c)
+
+
+
+def apply_pmag_frac_correction_det(
+    p3_det,
+    vtxY_mm: float,
+    a0: float,
+    a1: float,
+    *,
+    clamp_vtx: bool = True,
+    vtx_min_mm: float = -1200.0,
+    vtx_max_mm: float = 1200.0,
+    max_abs_frac: float = 0.2,   # safety clamp: 20% by default
+    make_vec=None,
+):
+    """
+    Correct |p| bias using a linear model in vtxY:
+      <dPmagFrac>(vtxY) = a0 + a1*vtxY_mm
+    where dPmagFrac = (|p|reco - |p|true)/|p|true
+
+    We correct reco magnitude:
+      |p|corr = |p|reco / (1 + bias)
+
+    Direction is preserved.
+    """
+    if p3_det is None:
+        return None
+
+    pmag = p3_det.R()
+    if pmag <= 0:
+        return p3_det
+
+    if clamp_vtx:
+        vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
+
+    bias = a0 + a1 * vtxY_mm  # dimensionless
+    # optional clamp to avoid crazy corrections
+    if max_abs_frac is not None:
+        bias = max(-max_abs_frac, min(max_abs_frac, bias))
+
+    denom = 1.0 + bias
+    if denom <= 0:
+        return p3_det
+
+    scale = 1.0 / denom
+    px_c = p3_det.X() * scale
+    py_c = p3_det.Y() * scale
+    pz_c = p3_det.Z() * scale
+
+    if make_vec is None:
+        try:
+            return p3_det.__class__(px_c, py_c, pz_c)
+        except Exception:
+            raise RuntimeError("apply_pmag_frac_correction_det: pass make_vec (e.g. ROOT.Math.XYZVector)")
+    return make_vec(px_c, py_c, pz_c)
+
+
+
+
 # The base universe, define functions to be used for all universes.
 class CVPythonUniverse():
     is_pc = False
@@ -287,66 +525,138 @@ class CVPythonUniverse():
 
     #################### functions to be overide in systematics shift universes #################
 
-    def ElectronEnergyRaw(self):
-        return self.GetVecElem("prong_part_E",0,3)
+    # def ElectronEnergyRaw(self):
+    #     return self.GetVecElem("prong_part_E",0,3)
 
-    @Utilities.decorator_ReLU
-    def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
+    # @Utilities.decorator_ReLU
+    # def ElectronEnergy(self):
+    #     return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
 
-    ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
-    ## to be in beam coord
-    def ElectronP3D(self):              # momentum in DET coord already, need to rotate
-        electronp = self.GetVecOfVecDouble("prong_part_E")
-        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        s=r(p)
-        if s is None:
-            print (p,r,tuple(list(electronp[0])[:3]))
-        return s
-
-    # def ElectronP3D(self):              # momentum in BEAM coord already, no need to rotate
-    #     electronp = self.GetVecOfVecDouble("prong_part_E")
-    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-    #     # r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-    #     # s=r(p)
-    #     # if s is None:
-    #     #     print (p,r,tuple(list(electronp[0])[:3]))
-    #     return p
-    #     # return s
-
-    def Vertex_beam(self):
-        """Reco vertex rotated into beam coordinates (matching ElectronP3D())."""
-        vx = self.GetVecElem("vtx", 0)
-        vy = self.GetVecElem("vtx", 1)
-        vz = self.GetVecElem("vtx", 2)
-        v_det = ROOT.Math.XYZVector(vx, vy, vz)
-
-        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        return r(v_det)
-
-    def ElectronTheta(self):
-        return self.ElectronP3D().Theta()
-
-    ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
-    def ElectronP3D_det(self):
-        electronp = self.GetVecOfVecDouble("prong_part_E")
-        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-        return p
-
+    # ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
     # def ElectronP3D_det(self):
     #     electronp = self.GetVecOfVecDouble("prong_part_E")
     #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
     #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-    #     r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
+    #     return p
+
+    # ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
+    # ## to be in beam coord
+    # def ElectronP3D(self):              # momentum in DET coord already, need to rotate
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
     #     s=r(p)
     #     if s is None:
     #         print (p,r,tuple(list(electronp[0])[:3]))
-    #     # return p
     #     return s
+
+
+
+    def ElectronP3D_det(self):
+        # ---- 0) build uncorrected p(det) from branches + existing EM energy shift ----
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3] > 0) else 0.0
+        p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3])) * (1.0 + scale)
+
+        # ---- 1) get vertex (mm) ----
+        # If you already have self.vtx like event.vtx, use it:
+        vx = float(self.vtx[0])
+        vy = float(self.vtx[1])
+
+        # If you *don’t* have self.vtx, replace the two lines above with however you access vtx:
+        # vtx = self.GetVecDouble("vtx")  # example
+        # vx, vy = float(vtx[0]), float(vtx[1])
+
+        make_vec = ROOT.Math.XYZVector
+
+        # ---- 2) apply direction correction (keep |p|) ----
+        p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
+            p_det,
+            vx, vy,
+            t0x=-0.0006826, t1x=1.349e-05,
+            t0y=0.001163,   t1y=1.581e-05,
+            clamp_vtx=True,
+            vtx_min_mm=-1200.0,
+            vtx_max_mm=1200.0,
+            keep_pmag=True,
+            make_vec=make_vec,
+        )
+
+        # ---- 3) apply magnitude correction ----
+        p_det_corr = apply_pmag_frac_correction_det(
+            p_det_corr,
+            vy,
+            a0=4.441e-05, a1=9.729e-05,
+            make_vec=make_vec
+        )
+
+        return p_det_corr
+
+
+    def ElectronP3D_det_noEMshift(self):
+        # Build unshifted p(det) from branches (NO EM energy shift scaling here)
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))
+
+        vx = float(self.vtx[0])
+        vy = float(self.vtx[1])
+
+        make_vec = ROOT.Math.XYZVector
+
+        # direction correction (keep |p|)
+        p_det_corr, _, _, _ = apply_theta_bias_correction_det(
+            p_det,
+            vx, vy,
+            t0x=-0.0006826, t1x=1.349e-05,
+            t0y=0.001163,   t1y=1.581e-05,
+            clamp_vtx=True,
+            vtx_min_mm=-1200.0,
+            vtx_max_mm=1200.0,
+            keep_pmag=True,
+            make_vec=make_vec,
+        )
+
+        # magnitude correction
+        p_det_corr = apply_pmag_frac_correction_det(
+            p_det_corr,
+            vy,
+            a0=4.441e-05, a1=9.729e-05,
+            make_vec=make_vec
+        )
+
+        return p_det_corr
+
+    ## Electron momentum in BEAM coord:
+    ## - get corrected momentum in DET coord
+    ## - rotate into beam coord
+    def ElectronP3D(self):
+        # corrected det-coordinate momentum (XYZqVector)
+        p_det_corr = self.ElectronP3D_det()
+
+        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        p_beam = r(p_det_corr)
+
+        if p_beam is None:
+            print(p_det_corr, r)
+
+        return p_beam
+
+    # Recalculate electron energy using corrected momentum
+    def ElectronEnergy(self):
+        # Use corrected det momentum (or beam — magnitude is the same either way)
+        p = self.ElectronP3D_det().R()   # |p| from corrected momentum
+        return math.sqrt(p*p + M_e_sqr)
+
+    def ElectronEnergyRaw(self):
+        p = self.ElectronP3D_det_noEMshift().R()   # |p| from corrected momentum
+        return math.sqrt(p*p + M_e_sqr)
+
+
+    def ElectronTheta(self):
+        return self.ElectronP3D().Theta()
+
+
 
     def ElectronProtonAngle(self):
         electronp = self.GetVecOfVecDouble("prong_part_E")

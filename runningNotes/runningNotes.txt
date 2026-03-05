@@ -1,26 +1,143 @@
-python selection/gridSelection.py --playlist me1A_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestTheta_BeforeCorrection --count 1
-tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-02-24-224531.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestMemory_100 --count 100            tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-05-100950.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+Attempting to get token from https://htvaultprod.fnal.gov:8200 ... succeeded
+Storing bearer token in /run/user/58291/bt_u58291
 Transferring files to web sandbox...
-Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_24_224936_50f1e024-e0b5-4e40-b49a-82001dfb672d/CCNuE-me1A_p6-mc_wrapper.sh   [DONE]  after 0s
-Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_24_224936_50f1e024-e0b5-4e40-b49a-82001dfb672d/simple.cmd   [DONE]  after 0s
-Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_24_224936_50f1e024-e0b5-4e40-b49a-82001dfb672d/simple.sh   [DONE]  after 0s
-Submitting job(s).........................................
-41 job(s) submitted to cluster 26489634.
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_102657_f91a6250-5648-47e1-af86-f68d193b6134/CCNuE-le1_p6-mc_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_102657_f91a6250-5648-47e1-af86-f68d193b6134/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_102657_f91a6250-5648-47e1-af86-f68d193b6134/simple.sh   [DONE]  after 0s
+Submitting job(s)..................................................................................................
+98 job(s) submitted to cluster 83156905.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-Use job id 26489634.0@jobsub04.fnal.gov to retrieve output
+Use job id 83156905.0@jobsub01.fnal.gov to retrieve output
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
 Transferring files to web sandbox...
-Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_24_224938_8221923f-d574-4208-8238-b93a13533758/CCNuE-me1A_p6-data_wrapper.sh   [DONE]  after 0s
-Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_24_224938_8221923f-d574-4208-8238-b93a13533758/simple.cmd   [DONE]  after 0s
-Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_02_24_224938_8221923f-d574-4208-8238-b93a13533758/simple.sh   [DONE]  after 0s
-Submitting job(s).............................................................................................................................................................................................................................................................
-253 job(s) submitted to cluster 83076707.
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_102700_902414d5-96ef-4cb2-b10e-144ee3cb9291/CCNuE-le1_p6-data_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_102700_902414d5-96ef-4cb2-b10e-144ee3cb9291/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_102700_902414d5-96ef-4cb2-b10e-144ee3cb9291/simple.sh   [DONE]  after 0s
+Submitting job(s)...............................
+31 job(s) submitted to cluster 90231537.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-Use job id 83076707.0@jobsub01.fnal.gov to retrieve output
+Use job id 90231537.0@jobsub02.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestMemory_300 --count 300
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-05-110502.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+Attempting to get token from https://htvaultprod.fnal.gov:8200 ... succeeded
+Storing bearer token in /run/user/58291/bt_u58291
+Transferring files to web sandbox...
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_111658_4e9983c0-1eef-443a-9cca-a1c228f2afd9/CCNuE-le1_p6-mc_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_111658_4e9983c0-1eef-443a-9cca-a1c228f2afd9/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_111658_4e9983c0-1eef-443a-9cca-a1c228f2afd9/simple.sh   [DONE]  after 0s
+Submitting job(s).................................
+33 job(s) submitted to cluster 26578386.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26578386.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Transferring files to web sandbox...
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_111700_4a0b07e4-1f47-4fa3-8c43-8cc20574d1ca/CCNuE-le1_p6-data_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_111700_4a0b07e4-1f47-4fa3-8c43-8cc20574d1ca/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_111700_4a0b07e4-1f47-4fa3-8c43-8cc20574d1ca/simple.sh   [DONE]  after 0s
+Submitting job(s)...........
+11 job(s) submitted to cluster 26694234.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26694234.0@jobsub05.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+
+
+
+
+
+
+
+
+python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestMemory_400 --count 400
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-05-131816.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+Attempting to get token from https://htvaultprod.fnal.gov:8200 ... succeeded
+Storing bearer token in /run/user/58291/bt_u58291
+Transferring files to web sandbox...
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_133339_92153352-b0fb-4d2d-962c-d9e1ffe7aa0f/CCNuE-le1_p6-mc_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_133339_92153352-b0fb-4d2d-962c-d9e1ffe7aa0f/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_133339_92153352-b0fb-4d2d-962c-d9e1ffe7aa0f/simple.sh   [DONE]  after 0s
+Submitting job(s).........................
+25 job(s) submitted to cluster 26579522.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26579522.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Transferring files to web sandbox...
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_133342_3b387c1d-554f-4a87-a0f6-0511a15ce672/CCNuE-le1_p6-data_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_133342_3b387c1d-554f-4a87-a0f6-0511a15ce672/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_133342_3b387c1d-554f-4a87-a0f6-0511a15ce672/simple.sh   [DONE]  after 0s
+Submitting job(s)........
+8 job(s) submitted to cluster 90232756.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 90232756.0@jobsub02.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+
+
+
+
+
+
+
+
+python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestMemory_350 --count 350
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-05-141806.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+Transferring files to web sandbox...
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_142810_e5e4e215-55db-4373-9e93-0cce64009a4b/CCNuE-le1_p6-mc_wrapper.sh   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_142810_e5e4e215-55db-4373-9e93-0cce64009a4b/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_142810_e5e4e215-55db-4373-9e93-0cce64009a4b/simple.sh   [DONE]  after 0s
+Submitting job(s)............................
+28 job(s) submitted to cluster 26694778.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26694778.0@jobsub05.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Transferring files to web sandbox...
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_142813_2becbd13-e6ad-4e30-820e-380d7928f028/CCNuE-le1_p6-data_wrapper.sh   [DONE]  after 2s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_142813_2becbd13-e6ad-4e30-820e-380d7928f028/simple.cmd   [DONE]  after 0s
+Copying file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_05_142813_2becbd13-e6ad-4e30-820e-380d7928f028/simple.sh   [DONE]  after 0s
+Submitting job(s).........
+9 job(s) submitted to cluster 26694779.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26694779.0@jobsub05.fnal.gov to retrieve output
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

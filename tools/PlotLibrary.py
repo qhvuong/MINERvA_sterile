@@ -374,7 +374,8 @@ PLOT_SETTINGS= {
         "name" : "E_Theta_Squared",
         "title" : "E_{lepton} #theta^{2} ; E_{lepton} #theta^{2} (GeV) ; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_EE_THETA_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.reco_E_lep*(event.kin_cal.reco_theta_lep_rad)**2],
+        "value_getter" : [lambda event: event.kin_cal.reco_Etheta2],
+        # "value_getter" : [lambda event: event.kin_cal.reco_E_lep*(event.kin_cal.reco_theta_lep_rad)**2],
         # "value_getter" : [lambda event: event.kin_cal.reco_E_lep * CalTheta2Hybrid(event.kin_cal.reco_thetaX_lep_rad, event.kin_cal.true_thetaY_lep_rad)],
         "tags":reco_tags
     },
@@ -1014,7 +1015,7 @@ PLOT_SETTINGS= {
         "name" : "TrueThetaYVsVertexYDet",
         "title": "True ThetaY vs True Vertex Y; True Vertex Y (mm); True thetaY (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
+                     PlotConfig.ELECTRON_ANGLE_BINNING_DET],
         "value_getter" : [lambda event: event.mc_vtx[1],
                           lambda event: event.kin_cal.true_thetaY_lep_rad_det],
         "tags": truth_tags   
@@ -1024,7 +1025,7 @@ PLOT_SETTINGS= {
         "name" : "RecoThetaYVsVertexYDet",
         "title": "Reco ThetaY vs Vertex Y; Vertex Y (mm); Reco thetaY (rad); NEvents",
         "binning" : [PlotConfig.ELECTRON_VERTEX_BINNING_DET,
-                     PlotConfig.ELECTRON_ANGLE_BINNING],
+                     PlotConfig.ELECTRON_ANGLE_BINNING_DET],
         "value_getter" : [lambda event: event.vtx[1],
                           lambda event: event.kin_cal.reco_thetaY_lep_rad_det],
         "tags": reco_tags   

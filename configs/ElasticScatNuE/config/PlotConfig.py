@@ -312,6 +312,25 @@ HISTS_TO_MAKE = [
     # "Biased Neutrino Energy",
 	# "Visible Energy",
 	# "True Lepton Energy",
+	# "Front dEdX",
+	# "Reco Q2",
+	# "Cone Outside Energy",
+	# "Neighborhood Energy",
+	# "Neutrino Vertex Z",
+	# "Neutrino Vertex Apothem",
+	# "EMLikeTrackScore",
+	# "TransverseGapScore",
+	# "NonMIPClusFrac",
+	# "ODCalVisE",
+	# "DSCalVisE",
+	# "Afterpulsing",
+	# "DeadTime",
+	# "VertexTrackMultiplicity",
+	# "StartPointVertexMultiplicity",
+	# "HasNoVertexMismatch",
+	# "HasTracks",
+	# "HasNoBackExitingTracks",
+
 	# "True vs Reconstructed Lepton Energy",
 	# "True vs Reconstructed Lepton Theta In Det Coordinate",
 	# "True vs Reconstructed Lepton Theta In Beam Coordinate",
@@ -321,11 +340,9 @@ HISTS_TO_MAKE = [
 	# "True vs Reconstructed Lepton Theta Y In Beam Coordinate",
 	# "True vs Reconstructed Lepton Theta 2D",
 	# "True vs Reconstructed Lepton Phi",
-	"Reco ThetaX vs Vertex X",
-	"True ThetaX vs Vertex X",
+
 	# # "Reco ThetaX vs Vertex X In Beam Coordinate",
-	"Reco ThetaY vs Vertex Y",
-	"True ThetaY vs Vertex Y",
+
 	# # "Reco ThetaY vs Vertex Y In Beam Coordinate",
 
 	# "dThetaY vs Lepton Vertex Y",
@@ -345,6 +362,11 @@ HISTS_TO_MAKE = [
 	# "dPX vs Vertex Y",
 	# "dPY vs Vertex Y",
 	# "dPZ vs Vertex Y",
+
+	"Reco ThetaX vs Vertex X",
+	"True ThetaX vs Vertex X",
+	"Reco ThetaY vs Vertex Y",
+	"True ThetaY vs Vertex Y",
 
 	"dPX vs Vertex X In Det Coordinate",
 	"dPY vs Vertex X In Det Coordinate",
@@ -411,25 +433,11 @@ HISTS_TO_MAKE = [
 	# "True ThetaX vs Vertex X In Beam Coordinate",
 	# "True ThetaY vs Vertex Y In Det Coordinate",
 	# "True ThetaY vs Vertex Y In Beam Coordinate",
-	# "Front dEdX",
-	# "Reco Q2",
-	# "Cone Outside Energy",
 	# "Cone Outside Energy vs True Lepton Energy",
-	# "Neighborhood Energy",
 	# "Neighborhood Energy vs True Lepton Energy",
-	# "Neutrino Vertex Z",
-	# "Neutrino Vertex Apothem",
-	# "EMLikeTrackScore",
-	# "TransverseGapScore",
-	# "NonMIPClusFrac",
-	# "ODCalVisE",
-	# "DSCalVisE",
-	# "Afterpulsing",
-	# "DeadTime",
-	# "VertexTrackMultiplicity",
-	# "StartPointVertexMultiplicity",
-	# "HasNoVertexMismatch",
-	# "HasTracks",
-	# "HasNoBackExitingTracks",
+	
+
+
+
 
 ]

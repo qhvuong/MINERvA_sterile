@@ -61,7 +61,11 @@ def submitJob( tupleName):
   my_wrapper.write( "cd $CCNUEROOT/selection\n")
   my_wrapper.write( "export USER=$(whoami)\n")
 
-  my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s &> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring,tupleName) )
+  # my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s &> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring,tupleName) )
+  my_wrapper.write(
+    "( /usr/bin/time -v python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d --output $CONDOR_DIR_HISTS %s ) &> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n"
+    % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring, tupleName)
+  )
   # Add a check for expected output files
   my_wrapper.write("status=$?\n")
   my_wrapper.write("if [ $status -ne 0 ]; then\n")
@@ -113,7 +117,7 @@ if __name__ == '__main__':
         continue
 
       if gridargs.memory is None:
-        memory = 1000 if dataSwitch == "data" else 8000
+        memory = 1000 if dataSwitch == "data" else 1500
       else:
         memory = gridargs.memory
     

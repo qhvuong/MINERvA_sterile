@@ -16,7 +16,7 @@ HACK_R2 = False
 DS_CAL_VISE_CUT = 0.2
 OD_CAL_VISE_CUT = 0.05
 PSI_FLAT_CUT = 0.1
-FRONT_DEDX_CUT = 2.4  # in MeV/cm
+FRONT_DEDX_CUT = 2.64  # in MeV/cm
 PID_SCORE_CUT = 0.7
 MIN_VERTEX_TRACK_MULTIPLICITY = 2
 MAX_VERTEX_TRACK_MULTIPLICITY = 5
@@ -25,14 +25,18 @@ NONMIP_CLUS_FRAC_CUT = 0.4
 TRANSVERSE_GAP_SCORE_CUT = 15
 FIRST_FIRE_FRACTION_CUT = 0.25
 UPSTREAM_OD_ENERGY_CUT = 5000
-EXUV_CUT = 0.2
-EUV_CUT = 0.3
+# EXUV_CUT = 0.2
+# EUV_CUT = 0.3
 
-DEDX_PLANES = [5,9]
-HELICITY= 1
+# DEDX_PLANES = [5,9]
+# HELICITY= 1
 
-FIDUCIAL_APOTHEM = 850
-FIDUCIAL_Z_RANGE = [5980,8422]
+#OLD
+# FIDUCIAL_APOTHEM = 850
+# FIDUCIAL_Z_RANGE = [5980,8422]
+FIDUCIAL_APOTHEM = 881.25
+FIDUCIAL_Z_RANGE = [5840,8422]
+
 
 # Kinematics cutoffs
 ELECTRON_ENERGY_RANGE = [1.5, float("inf")] # in GeV
@@ -73,8 +77,11 @@ SAMPLE_CUTS = {
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
-        "Etheta",
+        # "Etheta",
         "MeanFrontdEdX",
+        "LeptonAngle",
+        "Eavail",
+        "Pt",
     ],
     "dEdX" : [
         "NoCut",
@@ -94,12 +101,15 @@ SAMPLE_CUTS = {
         "VertexTrackMultiplicity",
         "Etheta",
         "InverseMeanFrontdEdX",
+        "LeptonAngle",
+        "Eavail",
+        "Pt",
     ]
 }
 
 KINEMATICS_CUTS = [
-    "LeptonAngle",
-    "Eavail",
-    "Pt",
+    # "LeptonAngle",
+    # "Eavail",
+    # "Pt",
 ]
 #######################################
