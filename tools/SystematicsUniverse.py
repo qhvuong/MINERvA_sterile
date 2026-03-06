@@ -51,93 +51,6 @@ def _hex_edge_distance_mm(x, y, apothem_mm=881.25):
     umax = max(abs(u1), abs(u2), abs(u3))
     return apothem_mm - umax
 
-def apply_theta_bias_correction_det(
-    p3_det,
-    vtxX_mm: float,
-    vtxY_mm: float,
-    t0x: float,
-    t1x: float,
-    t0y: float,
-    t1y: float,
-    *,
-    clamp_vtx: bool = True,
-    vtx_min_mm: float = -1200.0,
-    vtx_max_mm: float = 1200.0,
-    keep_pmag: bool = True,
-    max_abs_angle_rad = None,
-    make_vec=None,
-):
-    """
-    Correct direction using angular biases (projected angles):
-      <dThetaX>(vtxX) = t0x + t1x*vtxX_mm
-      <dThetaY>(vtxY) = t0y + t1y*vtxY_mm
-
-    Definitions:
-      thetaX = atan2(px, pz)
-      thetaY = atan2(py, pz)
-
-    After correcting thetaX/thetaY, reconstruct a UNIT direction using:
-      tx = tan(thetaX_corr), ty = tan(thetaY_corr)
-      u  ∝ (tx, ty, 1), then normalize.
-
-    Returns:
-      (p3_corr, thetaX_corr, thetaY_corr, theta_corr)
-    where theta_corr is the 3D polar angle: atan2(sqrt(px^2+py^2), pz).
-    """
-    if p3_det is None:
-        return None, None, None, None
-
-    px, py, pz = float(p3_det.X()), float(p3_det.Y()), float(p3_det.Z())
-    pmag = float(p3_det.R())
-    if pmag <= 0:
-        return p3_det, None, None, None
-
-    if clamp_vtx:
-        vtxX_mm = max(vtx_min_mm, min(vtx_max_mm, vtxX_mm))
-        vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
-
-    # Current projected angles (radians)
-    thetaX = math.atan2(px, pz)
-    thetaY = math.atan2(py, pz)
-
-    # Bias models (radians)
-    bx = t0x + t1x * vtxX_mm
-    by = t0y + t1y * vtxY_mm
-
-    # Apply correction (subtract mean bias)
-    thetaX_corr = thetaX - bx
-    thetaY_corr = thetaY - by
-
-    # Optional safety clamp on corrected angles
-    if max_abs_angle_rad is not None:
-        thetaX_corr = max(-max_abs_angle_rad, min(max_abs_angle_rad, thetaX_corr))
-        thetaY_corr = max(-max_abs_angle_rad, min(max_abs_angle_rad, thetaY_corr))
-
-    # Rebuild a UNIT direction from corrected projected angles
-    tx = math.tan(thetaX_corr)
-    ty = math.tan(thetaY_corr)
-
-    inv_norm = 1.0 / math.sqrt(1.0 + tx*tx + ty*ty)
-    ux = tx * inv_norm
-    uy = ty * inv_norm
-    uz = 1.0 * inv_norm
-
-    # 3D polar angle from corrected direction
-    theta_corr = math.atan2(math.sqrt(ux*ux + uy*uy), uz)
-
-    # Scale to momentum magnitude (or not)
-    scale = pmag if keep_pmag else 1.0
-    px_c, py_c, pz_c = scale * ux, scale * uy, scale * uz
-
-    if make_vec is None:
-        try:
-            p3_corr = p3_det.__class__(px_c, py_c, pz_c)
-        except Exception:
-            raise RuntimeError("apply_theta_bias_correction_det: please pass make_vec (e.g. ROOT.Math.XYZVector)")
-    else:
-        p3_corr = make_vec(px_c, py_c, pz_c)
-
-    return p3_corr, thetaX_corr, thetaY_corr, theta_corr
 
 
 # def apply_phat_bias_correction_det(
@@ -230,6 +143,95 @@ def apply_theta_bias_correction_det(
 #             )
 
 #     return make_vec(px_c, py_c, pz_c)
+
+
+def apply_theta_bias_correction_det(
+    p3_det,
+    vtxX_mm: float,
+    vtxY_mm: float,
+    t0x: float,
+    t1x: float,
+    t0y: float,
+    t1y: float,
+    *,
+    clamp_vtx: bool = True,
+    vtx_min_mm: float = -1200.0,
+    vtx_max_mm: float = 1200.0,
+    keep_pmag: bool = True,
+    max_abs_angle_rad = None,
+    make_vec=None,
+):
+    """
+    Correct direction using angular biases (projected angles):
+      <dThetaX>(vtxX) = t0x + t1x*vtxX_mm
+      <dThetaY>(vtxY) = t0y + t1y*vtxY_mm
+
+    Definitions:
+      thetaX = atan2(px, pz)
+      thetaY = atan2(py, pz)
+
+    After correcting thetaX/thetaY, reconstruct a UNIT direction using:
+      tx = tan(thetaX_corr), ty = tan(thetaY_corr)
+      u  ∝ (tx, ty, 1), then normalize.
+
+    Returns:
+      (p3_corr, thetaX_corr, thetaY_corr, theta_corr)
+    where theta_corr is the 3D polar angle: atan2(sqrt(px^2+py^2), pz).
+    """
+    if p3_det is None:
+        return None, None, None, None
+
+    px, py, pz = float(p3_det.X()), float(p3_det.Y()), float(p3_det.Z())
+    pmag = float(p3_det.R())
+    if pmag <= 0:
+        return p3_det, None, None, None
+
+    if clamp_vtx:
+        vtxX_mm = max(vtx_min_mm, min(vtx_max_mm, vtxX_mm))
+        vtxY_mm = max(vtx_min_mm, min(vtx_max_mm, vtxY_mm))
+
+    # Current projected angles (radians)
+    thetaX = math.atan2(px, pz)
+    thetaY = math.atan2(py, pz)
+
+    # Bias models (radians)
+    bx = t0x + t1x * vtxX_mm
+    by = t0y + t1y * vtxY_mm
+
+    # Apply correction (subtract mean bias)
+    thetaX_corr = thetaX - bx
+    thetaY_corr = thetaY - by
+
+    # Optional safety clamp on corrected angles
+    if max_abs_angle_rad is not None:
+        thetaX_corr = max(-max_abs_angle_rad, min(max_abs_angle_rad, thetaX_corr))
+        thetaY_corr = max(-max_abs_angle_rad, min(max_abs_angle_rad, thetaY_corr))
+
+    # Rebuild a UNIT direction from corrected projected angles
+    tx = math.tan(thetaX_corr)
+    ty = math.tan(thetaY_corr)
+
+    inv_norm = 1.0 / math.sqrt(1.0 + tx*tx + ty*ty)
+    ux = tx * inv_norm
+    uy = ty * inv_norm
+    uz = 1.0 * inv_norm
+
+    # 3D polar angle from corrected direction
+    theta_corr = math.atan2(math.sqrt(ux*ux + uy*uy), uz)
+
+    # Scale to momentum magnitude (or not)
+    scale = pmag if keep_pmag else 1.0
+    px_c, py_c, pz_c = scale * ux, scale * uy, scale * uz
+
+    if make_vec is None:
+        try:
+            p3_corr = p3_det.__class__(px_c, py_c, pz_c)
+        except Exception:
+            raise RuntimeError("apply_theta_bias_correction_det: please pass make_vec (e.g. ROOT.Math.XYZVector)")
+    else:
+        p3_corr = make_vec(px_c, py_c, pz_c)
+
+    return p3_corr, thetaX_corr, thetaY_corr, theta_corr
 
 
 
