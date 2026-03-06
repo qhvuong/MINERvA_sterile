@@ -1,4 +1,0 @@
---------------------------------------------------
-Running command:
- python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_noEtheta_AfterCorrection --count 12
---------------------------------------------------

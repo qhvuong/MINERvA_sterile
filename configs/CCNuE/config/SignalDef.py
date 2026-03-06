@@ -108,7 +108,7 @@ def IsInKinematicPhaseSpace(event):
 TRUTH_CATEGORIES = OrderedDict()
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuE(event) and not IsInKinematicPhaseSpace(event)
+# TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuE(event) and not IsInKinematicPhaseSpace(event)
 
 TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event) and IsAntiNu(event)
 TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)

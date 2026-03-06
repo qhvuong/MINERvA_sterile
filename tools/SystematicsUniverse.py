@@ -574,8 +574,12 @@ class CVPythonUniverse():
         p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
             p_det,
             vx, vy,
-            t0x=-0.0006826, t1x=1.349e-05,
-            t0y=0.001163,   t1y=1.581e-05,
+            # # nu+e fit parameters
+            # t0x=-0.0006826, t1x=1.349e-05,
+            # t0y=0.001163,   t1y=1.581e-05,
+            # CCnue fit parameters
+            t0x=0.0001096,  t1x=8.982e-06,
+            t0y=0.0004818,  t1y=1.563e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
@@ -587,7 +591,10 @@ class CVPythonUniverse():
         p_det_corr = apply_pmag_frac_correction_det(
             p_det_corr,
             vy,
-            a0=4.441e-05, a1=9.729e-05,
+            # # nu+e fit parameters
+            # a0=4.441e-05, a1=9.729e-05,
+            # CCnue fit parameters
+            a0=0.009994, a1=8.422e-05,
             make_vec=make_vec
         )
 
