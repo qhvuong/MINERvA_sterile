@@ -31,8 +31,10 @@ EUV_CUT = 0.3
 DEDX_PLANES = [5,9]
 HELICITY= 1
 
-FIDUCIAL_APOTHEM = 850
-FIDUCIAL_Z_RANGE = [5980,8422]
+# FIDUCIAL_APOTHEM = 850
+# FIDUCIAL_Z_RANGE = [5980,8422]
+FIDUCIAL_APOTHEM = 881.25
+FIDUCIAL_Z_RANGE = [5840,8422]
 
 # Kinematics cutoffs
 ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
@@ -67,13 +69,16 @@ SAMPLE_CUTS = {
         #"ZDifference_vtx",
         #"ProtonEnd",
         #"ContainedProton",
+        "LeptonAngle",
+        "Eavail",
+        "Pt",
      ]
 }
 
 KINEMATICS_CUTS = [
-    "LeptonAngle",
-    "Eavail",
-    "Pt",
+    # "LeptonAngle",
+    # "Eavail",
+    # "Pt",
 ]
 
 #######################################

@@ -745,7 +745,7 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.ElectronProtonAngle()],
         "tags":reco_tags
     },
-    "Neutrino Z Vertex":
+    "Neutrino Vertex Z":
     {
         "name" : "neutrino_vertex_z",
         "title" : "Reco Neutrino Z Vertex; Z [ 10 mm ]; NEvents",

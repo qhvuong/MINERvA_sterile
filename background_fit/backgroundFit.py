@@ -228,49 +228,49 @@ def _build_fixed_sum(recipe, mc_holder, error_band=None, uni_idx=None):
     return fixed
 
 
-def _solve_scales_per_bin(A_cols, b_vec, kreg=0.0, prior=None):
-    K = len(A_cols)
-    R = len(b_vec)
+# def _solve_scales_per_bin(A_cols, b_vec, kreg=0.0, prior=None):
+#     K = len(A_cols)
+#     R = len(b_vec)
 
-    if prior is None:
-        prior = [1.0] * K
+#     if prior is None:
+#         prior = [1.0] * K
 
-    # Early exit: no MC content in any floated component in this bin
-    if all(sum(abs(A_cols[k][r]) for r in range(R)) == 0.0 for k in range(K)):
-        return prior
+#     # Early exit: no MC content in any floated component in this bin
+#     if all(sum(abs(A_cols[k][r]) for r in range(R)) == 0.0 for k in range(K)):
+#         return prior
 
-    # Build normal equations
-    m = ROOT.TMatrixD(K, K)
-    y = ROOT.TVectorD(K)
+#     # Build normal equations
+#     m = ROOT.TMatrixD(K, K)
+#     y = ROOT.TVectorD(K)
 
-    for i in range(K):
-        # y_i = sum_r A_ir * b_r   (note: A_cols stores columns, so A_ir = A_cols[i][r])
-        s = 0.0
-        for r in range(R):
-            s += A_cols[i][r] * b_vec[r]
-        y[i] = s
+#     for i in range(K):
+#         # y_i = sum_r A_ir * b_r   (note: A_cols stores columns, so A_ir = A_cols[i][r])
+#         s = 0.0
+#         for r in range(R):
+#             s += A_cols[i][r] * b_vec[r]
+#         y[i] = s
 
-        for j in range(K):
-            sij = 0.0
-            for r in range(R):
-                sij += A_cols[i][r] * A_cols[j][r]
-            if i == j:
-                sij += float(kreg)
-            m[i][j] = sij
+#         for j in range(K):
+#             sij = 0.0
+#             for r in range(R):
+#                 sij += A_cols[i][r] * A_cols[j][r]
+#             if i == j:
+#                 sij += float(kreg)
+#             m[i][j] = sij
 
-    svd = ROOT.TDecompSVD(m)
+#     svd = ROOT.TDecompSVD(m)
 
-    # IMPORTANT: Solve(b) overwrites b with x and returns bool in PyROOT
-    xvec = ROOT.TVectorD(y)      # make a copy; will be overwritten into the solution
-    ok = svd.Solve(xvec)         # <- ok is bool; xvec becomes the solution if ok==True
+#     # IMPORTANT: Solve(b) overwrites b with x and returns bool in PyROOT
+#     xvec = ROOT.TVectorD(y)      # make a copy; will be overwritten into the solution
+#     ok = svd.Solve(xvec)         # <- ok is bool; xvec becomes the solution if ok==True
 
-    if not ok:
-        return prior
+#     if not ok:
+#         return prior
 
-    x = [float(xvec[i]) for i in range(K)]
-    x = [max(0.0, xi) for xi in x]   # clamp physical
+#     x = [float(xvec[i]) for i in range(K)]
+#     x = [max(0.0, xi) for xi in x]   # clamp physical
 
-    return x
+#     return x
 
 def _solve_scales_per_bin_tsvd(
     A_cols,
@@ -408,6 +408,137 @@ def _solve_scales_per_bin_tsvd(
     }
     return (x, diag) if want_diag else x
 
+
+def _solve_scales_all_bins_smooth_2comp(
+    A_cols_by_bin,   # list over bins: [ [col_comp0, col_comp1], ... ], each col is list over regions
+    b_vec_by_bin,    # list over bins: [ [b_r...], ... ]
+    prior=(1.0, 1.0),
+    lam_bkg=1.0,
+    lam_sig=1.0,
+    curvature=True,
+    clamp_nonneg=True,
+    fallback_det_tol=1e-12,
+):
+    """
+    Global penalized least squares for 2 components across all bins.
+
+    Minimize:
+      sum_b ||A_b x_b - d_b||^2
+      + lam * smoothness(x across bins)
+
+    x_b = [s_bkg(b), s_sig(b)]
+
+    If curvature=True, penalize second differences:
+      (x_{b+1} - 2 x_b + x_{b-1})^2
+    else penalize first differences:
+      (x_{b+1} - x_b)^2
+    """
+    nbins = len(A_cols_by_bin)
+    npar = 2 * nbins  # [bkg bin0..N-1, sig bin0..N-1]
+
+    H = ROOT.TMatrixD(npar, npar)  # normal matrix
+    y = ROOT.TVectorD(npar)        # RHS
+
+    def ibkg(b):
+        return b
+
+    def isig(b):
+        return nbins + b
+
+    # -----------------------------
+    # data term: sum_b ||A_b x_b - d_b||^2
+    # -----------------------------
+    for b in range(nbins):
+        A_cols = A_cols_by_bin[b]
+        d = b_vec_by_bin[b]
+
+        # A is R x 2, stored as columns
+        # col0 = bkg component across regions
+        # col1 = sig component across regions
+        a0 = A_cols[0]
+        a1 = A_cols[1]
+
+        # Build A^T A and A^T d contribution for this bin
+        ata00 = 0.0
+        ata01 = 0.0
+        ata11 = 0.0
+        atd0 = 0.0
+        atd1 = 0.0
+
+        for r in range(len(d)):
+            ata00 += a0[r] * a0[r]
+            ata01 += a0[r] * a1[r]
+            ata11 += a1[r] * a1[r]
+            atd0  += a0[r] * d[r]
+            atd1  += a1[r] * d[r]
+
+        i0 = ibkg(b)
+        i1 = isig(b)
+
+        H[i0][i0] += ata00
+        H[i0][i1] += ata01
+        H[i1][i0] += ata01
+        H[i1][i1] += ata11
+
+        y[i0] += atd0
+        y[i1] += atd1
+
+    # -----------------------------
+    # smoothness term
+    # -----------------------------
+    def add_penalty(indices, coeffs, lam):
+        # adds lam * (sum_k coeffs[k] * x[idx_k])^2
+        for i in range(len(indices)):
+            ii = indices[i]
+            ci = coeffs[i]
+            for j in range(len(indices)):
+                jj = indices[j]
+                cj = coeffs[j]
+                H[ii][jj] += lam * ci * cj
+
+    if curvature:
+        # second differences: x_{b+1} - 2x_b + x_{b-1}
+        for b in range(1, nbins - 1):
+            add_penalty([ibkg(b-1), ibkg(b), ibkg(b+1)], [1.0, -2.0, 1.0], lam_bkg)
+            add_penalty([isig(b-1), isig(b), isig(b+1)], [1.0, -2.0, 1.0], lam_sig)
+    else:
+        # first differences: x_{b+1} - x_b
+        for b in range(nbins - 1):
+            add_penalty([ibkg(b), ibkg(b+1)], [-1.0, 1.0], lam_bkg)
+            add_penalty([isig(b), isig(b+1)], [-1.0, 1.0], lam_sig)
+
+    # Tiny prior anchor to avoid singular global system
+    # eps = 1e-8
+    # for b in range(nbins):
+    #     H[ibkg(b)][ibkg(b)] += eps
+    #     H[isig(b)][isig(b)] += eps
+    #     y[ibkg(b)] += eps * prior[0]
+    #     y[isig(b)] += eps * prior[1]
+    prior_bkg = 0.2
+    prior_sig = 0.5
+    for b in range(nbins):
+        H[ibkg(b)][ibkg(b)] += prior_bkg
+        y[ibkg(b)] += prior_bkg * prior[0]
+
+        H[isig(b)][isig(b)] += prior_sig
+        y[isig(b)] += prior_sig * prior[1]
+
+    svd = ROOT.TDecompSVD(H)
+    xvec = ROOT.TVectorD(y)
+    ok = svd.Solve(xvec)
+
+    if not ok:
+        xb = [prior[0]] * nbins
+        xs = [prior[1]] * nbins
+    else:
+        xb = [float(xvec[ibkg(b)]) for b in range(nbins)]
+        xs = [float(xvec[isig(b)]) for b in range(nbins)]
+
+    if clamp_nonneg:
+        xb = [max(0.0, v) for v in xb]
+        xs = [max(0.0, v) for v in xs]
+
+    return xb, xs
 
 
 def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=None, uni_idx=None, kreg=None):
@@ -604,14 +735,160 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
     return scales
 
 
+def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders, error_band=None, uni_idx=None):
+    """
+    Special solver for 2-component recipes:
+      - build all bins
+      - solve globally across bins with smoothness penalty
+    """
+    if len(recipe.components) != 2:
+        raise RuntimeError("RunUniverseMinimizer_MatrixFit_2CompSmooth requires exactly 2 components")
+
+    href = _get_region_hist(data_holders[recipe.regions[0]], error_band, uni_idx)
+    tag = "CV" if error_band is None else f"{error_band}[{uni_idx}]"
+
+    scales = {comp: href.Clone(f"scale_{comp}") for comp in recipe.components}
+    for comp in scales:
+        scales[comp].Reset()
+
+    comp_sums_by_region = {}
+    fixed_by_region = {}
+    data_by_region = {}
+
+    for reg in recipe.regions:
+        comp_sums_by_region[reg] = _build_component_sums(recipe, mc_holders[reg], error_band, uni_idx)
+        fixed_by_region[reg] = _build_fixed_sum(recipe, mc_holders[reg], error_band, uni_idx)
+        data_by_region[reg] = _get_region_hist(data_holders[reg], error_band, uni_idx)
+
+    if AnalysisConfig.pseudodata:
+        for reg in recipe.regions:
+            mctot = mc_holders[reg].hists.get("Total", None)
+            if mctot is None:
+                continue
+            mct = mctot if error_band is None else mctot.GetVertErrorBand(error_band).GetHist(uni_idx)
+            for b in range(0, data_by_region[reg].GetNbinsX() + 2):
+                data_by_region[reg].SetBinContent(b, mct.GetBinContent(b))
+                data_by_region[reg].SetBinError(b,   mct.GetBinError(b))
+
+    # collect only real bins; keep under/overflow at 1 later
+    A_cols_by_bin = []
+    b_vec_by_bin = []
+    real_bins = []
+
+    min_total_mc = getattr(recipe, "min_total_mc", None)
+    if min_total_mc is None:
+        min_total_mc = getattr(BackgroundFitConfig, "MIN_TOTAL_FLOATED_MC", 1.0)
+
+    for b in range(1, href.GetNbinsX() + 1):
+        b_vec = []
+        for reg in recipe.regions:
+            bval = data_by_region[reg].GetBinContent(b) - fixed_by_region[reg].GetBinContent(b)
+            b_vec.append(bval)
+
+        A_cols = []
+        total_mc = 0.0
+        for comp in recipe.components:
+            col = []
+            for reg in recipe.regions:
+                v = comp_sums_by_region[reg][comp].GetBinContent(b)
+                col.append(v)
+                total_mc += float(v)
+            A_cols.append(col)
+
+        if total_mc < min_total_mc:
+            # weak bin: still include, but anchor with near-prior by setting tiny A and d ~ prior
+            # simplest is just use actual A,d and let smoothness handle it; if truly empty, use zeros
+            pass
+
+        A_cols_by_bin.append(A_cols)
+        b_vec_by_bin.append(b_vec)
+        real_bins.append(b)
+
+    lam_bkg = getattr(recipe, "smooth_lambda_bkg", 1.0)
+    lam_sig = getattr(recipe, "smooth_lambda_sig", 1.0)
+    curvature = getattr(recipe, "smooth_use_curvature", True)
+
+    xb, xs = _solve_scales_all_bins_smooth_2comp(
+        A_cols_by_bin,
+        b_vec_by_bin,
+        prior=(1.0, 1.0),
+        lam_bkg=lam_bkg,
+        lam_sig=lam_sig,
+        curvature=curvature,
+        clamp_nonneg=True,
+    )
+
+    comp0, comp1 = recipe.components[0], recipe.components[1]
+
+    # default under/overflow = 1
+    for b in range(0, href.GetNbinsX() + 2):
+        scales[comp0].SetBinContent(b, 1.0)
+        scales[comp1].SetBinContent(b, 1.0)
+        scales[comp0].SetBinError(b, 0.0)
+        scales[comp1].SetBinError(b, 0.0)
+
+    for i, b in enumerate(real_bins):
+        scales[comp0].SetBinContent(b, xb[i])
+        scales[comp1].SetBinContent(b, xs[i])
+
+    print(f"[SMOOTH-2COMP {tag}] lam_bkg={lam_bkg} lam_sig={lam_sig} curvature={curvature}")
+    print(f"[SMOOTH-2COMP {tag}] {comp0}: min={min(xb):.3g} max={max(xb):.3g}")
+    print(f"[SMOOTH-2COMP {tag}] {comp1}: min={min(xs):.3g} max={max(xs):.3g}")
+
+    # ---- DEBUG: print bin-by-bin scales ----
+    for comp in recipe.components:
+        h = scales[comp]
+        vals = [(b, h.GetXaxis().GetBinCenter(b), h.GetBinContent(b))
+                for b in range(1, h.GetNbinsX()+1)]
+
+        print(f"[SMOOTH-2COMP {tag}] {comp} bins:")
+        for bb, xx, vv in vals:
+            print(f"  b={bb:2d} x={xx:6.3f} scale={vv:7.3f}")
+    # ----------------------------------------
+
+    return scales
+
+
+
+
+
+# def RunMinimizer_MatrixFit(recipe, data_holders, mc_holders, scale_hists_out):
+#     """
+#     Fill scale_hists_out (dict[comp] -> MnvH1D with error bands) for:
+#       - CV
+#       - every vertical error-band universe
+#     """
+#     # CV
+#     cv_scales = RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=None, uni_idx=None)
+#     WriteScaleToMnvH1D(scale_hists_out, cv_scales, errorband=None, uni_idx=None)
+#     print("[MatrixFit] Done with CV scales")
+
+#     any_hist = mc_holders[recipe.regions[0]].GetHist()
+#     for error_band in any_hist.GetErrorBandNames():
+#         nuni = any_hist.GetVertErrorBand(error_band).GetNHists()
+#         for i in range(nuni):
+#             uni_scales = RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i)
+#             WriteScaleToMnvH1D(scale_hists_out, uni_scales, errorband=error_band, uni_idx=i)
+
+#         print(f"[MatrixFit] Done with universes for band {error_band} (N={nuni})")
+
 def RunMinimizer_MatrixFit(recipe, data_holders, mc_holders, scale_hists_out):
     """
     Fill scale_hists_out (dict[comp] -> MnvH1D with error bands) for:
       - CV
       - every vertical error-band universe
     """
-    # CV
-    cv_scales = RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=None, uni_idx=None)
+    use_smooth_2comp = (len(recipe.components) == 2)
+
+    if use_smooth_2comp:
+        cv_scales = RunUniverseMinimizer_MatrixFit_2CompSmooth(
+            recipe, data_holders, mc_holders, error_band=None, uni_idx=None
+        )
+    else:
+        cv_scales = RunUniverseMinimizer_MatrixFit(
+            recipe, data_holders, mc_holders, error_band=None, uni_idx=None
+        )
+
     WriteScaleToMnvH1D(scale_hists_out, cv_scales, errorband=None, uni_idx=None)
     print("[MatrixFit] Done with CV scales")
 
@@ -619,7 +896,14 @@ def RunMinimizer_MatrixFit(recipe, data_holders, mc_holders, scale_hists_out):
     for error_band in any_hist.GetErrorBandNames():
         nuni = any_hist.GetVertErrorBand(error_band).GetNHists()
         for i in range(nuni):
-            uni_scales = RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i)
+            if use_smooth_2comp:
+                uni_scales = RunUniverseMinimizer_MatrixFit_2CompSmooth(
+                    recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
+                )
+            else:
+                uni_scales = RunUniverseMinimizer_MatrixFit(
+                    recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
+                )
             WriteScaleToMnvH1D(scale_hists_out, uni_scales, errorband=error_band, uni_idx=i)
 
         print(f"[MatrixFit] Done with universes for band {error_band} (N={nuni})")
@@ -1051,6 +1335,7 @@ if __name__ == "__main__":
     data_holders = {}
     mc_holders = {}
     fit_obs = recipe.hist_observable if recipe.hist_observable is not None else BackgroundFitConfig.HIST_OBSERVABLE
+    print("fit_obs =", fit_obs)
 
     for region in recipe.regions:
         data_holders[region] = HistHolder(fit_obs, datafile, region, False)

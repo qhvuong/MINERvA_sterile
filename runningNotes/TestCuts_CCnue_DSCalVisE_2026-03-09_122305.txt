@@ -1,0 +1,198 @@
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le1_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300
+--------------------------------------------------
+Copying 1243 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122620_29fb5737-fd3e-4830-8290-002d66816e42/CCNuE-le1_p6-mc_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/29fb5737-fd3e-4830-8290-002d66816e42/CCNuE-le1_p6-mc_wrapper.sh
+Copying 3476 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122620_29fb5737-fd3e-4830-8290-002d66816e42/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/29fb5737-fd3e-4830-8290-002d66816e42/simple.cmd
+Copying 10063 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122620_29fb5737-fd3e-4830-8290-002d66816e42/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/29fb5737-fd3e-4830-8290-002d66816e42/simple.sh
+Transferring files to web sandbox...
+Submitting job(s).................................
+33 job(s) submitted to cluster 90287422.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 90287422.0@jobsub02.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Copying 1247 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122622_e5226872-a0f6-439a-824c-ca3771cfc1a2/CCNuE-le1_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/e5226872-a0f6-439a-824c-ca3771cfc1a2/CCNuE-le1_p6-data_wrapper.sh
+Copying 3486 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122622_e5226872-a0f6-439a-824c-ca3771cfc1a2/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/e5226872-a0f6-439a-824c-ca3771cfc1a2/simple.cmd
+Copying 10075 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122622_e5226872-a0f6-439a-824c-ca3771cfc1a2/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/e5226872-a0f6-439a-824c-ca3771cfc1a2/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)...........
+11 job(s) submitted to cluster 26620687.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26620687.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-122308.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le7_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300
+--------------------------------------------------
+Attempting to get token from https://htvaultprod.fnal.gov:8200 ... succeeded
+Storing bearer token in /run/user/58291/bt_u58291
+Copying 1243 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122935_c8858149-9a48-4b64-8286-75d95b2153d4/CCNuE-le7_p6-mc_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/c8858149-9a48-4b64-8286-75d95b2153d4/CCNuE-le7_p6-mc_wrapper.sh
+Copying 3475 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122935_c8858149-9a48-4b64-8286-75d95b2153d4/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/c8858149-9a48-4b64-8286-75d95b2153d4/simple.cmd
+Copying 10062 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122935_c8858149-9a48-4b64-8286-75d95b2153d4/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/c8858149-9a48-4b64-8286-75d95b2153d4/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)....
+4 job(s) submitted to cluster 83217118.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 83217118.0@jobsub01.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Copying 1247 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122937_9209bab1-1f3e-43e7-be3b-30485199e418/CCNuE-le7_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/9209bab1-1f3e-43e7-be3b-30485199e418/CCNuE-le7_p6-data_wrapper.sh
+Copying 3485 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122937_9209bab1-1f3e-43e7-be3b-30485199e418/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/9209bab1-1f3e-43e7-be3b-30485199e418/simple.cmd
+Copying 10074 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_122937_9209bab1-1f3e-43e7-be3b-30485199e418/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/9209bab1-1f3e-43e7-be3b-30485199e418/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)..
+2 job(s) submitted to cluster 26768709.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26768709.0@jobsub05.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-122627.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le9_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300
+--------------------------------------------------
+Copying 1243 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123308_92195ca2-f865-4fe4-8ab0-bcf5c8406aa0/CCNuE-le9_p6-mc_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/92195ca2-f865-4fe4-8ab0-bcf5c8406aa0/CCNuE-le9_p6-mc_wrapper.sh
+Copying 3475 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123308_92195ca2-f865-4fe4-8ab0-bcf5c8406aa0/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/92195ca2-f865-4fe4-8ab0-bcf5c8406aa0/simple.cmd
+Copying 10062 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123308_92195ca2-f865-4fe4-8ab0-bcf5c8406aa0/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/92195ca2-f865-4fe4-8ab0-bcf5c8406aa0/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)....
+4 job(s) submitted to cluster 26620688.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26620688.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Copying 1247 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123311_e8c9ca56-c174-4d57-80cb-4dd0ef573f4f/CCNuE-le9_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/e8c9ca56-c174-4d57-80cb-4dd0ef573f4f/CCNuE-le9_p6-data_wrapper.sh
+Copying 3485 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123311_e8c9ca56-c174-4d57-80cb-4dd0ef573f4f/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/e8c9ca56-c174-4d57-80cb-4dd0ef573f4f/simple.cmd
+Copying 10074 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123311_e8c9ca56-c174-4d57-80cb-4dd0ef573f4f/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/e8c9ca56-c174-4d57-80cb-4dd0ef573f4f/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)..
+2 job(s) submitted to cluster 68799188.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 68799188.0@jobsub03.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-122942.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le13C_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300
+--------------------------------------------------
+Copying 1247 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123635_187074ee-88dc-4550-b2ab-6f80f1176c36/CCNuE-le13C_p6-mc_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/187074ee-88dc-4550-b2ab-6f80f1176c36/CCNuE-le13C_p6-mc_wrapper.sh
+Copying 3486 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123635_187074ee-88dc-4550-b2ab-6f80f1176c36/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/187074ee-88dc-4550-b2ab-6f80f1176c36/simple.cmd
+Copying 10075 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123635_187074ee-88dc-4550-b2ab-6f80f1176c36/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/187074ee-88dc-4550-b2ab-6f80f1176c36/simple.sh
+Transferring files to web sandbox...
+Submitting job(s).......................................
+39 job(s) submitted to cluster 68799189.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 68799189.0@jobsub03.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Copying 1251 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123638_eece135c-2c42-4731-923f-769641690a58/CCNuE-le13C_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/eece135c-2c42-4731-923f-769641690a58/CCNuE-le13C_p6-data_wrapper.sh
+Copying 3496 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123638_eece135c-2c42-4731-923f-769641690a58/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/eece135c-2c42-4731-923f-769641690a58/simple.cmd
+Copying 10087 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_123638_eece135c-2c42-4731-923f-769641690a58/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/eece135c-2c42-4731-923f-769641690a58/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)........................
+24 job(s) submitted to cluster 90287423.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 90287423.0@jobsub02.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-123315.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le13A_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300 --data_only
+--------------------------------------------------
+Copying 1251 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124006_386f4be3-5bea-4a5c-9578-1c4be11a36aa/CCNuE-le13A_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/386f4be3-5bea-4a5c-9578-1c4be11a36aa/CCNuE-le13A_p6-data_wrapper.sh
+Copying 3495 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124006_386f4be3-5bea-4a5c-9578-1c4be11a36aa/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/386f4be3-5bea-4a5c-9578-1c4be11a36aa/simple.cmd
+Copying 10086 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124006_386f4be3-5bea-4a5c-9578-1c4be11a36aa/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/386f4be3-5bea-4a5c-9578-1c4be11a36aa/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)...
+3 job(s) submitted to cluster 26620689.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26620689.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-123642.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le13B_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300 --data_only
+--------------------------------------------------
+Copying 1251 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124320_76815468-a21a-4c8a-a5dd-ccc9fadd961a/CCNuE-le13B_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/76815468-a21a-4c8a-a5dd-ccc9fadd961a/CCNuE-le13B_p6-data_wrapper.sh
+Copying 3495 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124320_76815468-a21a-4c8a-a5dd-ccc9fadd961a/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/76815468-a21a-4c8a-a5dd-ccc9fadd961a/simple.cmd
+Copying 10086 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124320_76815468-a21a-4c8a-a5dd-ccc9fadd961a/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/76815468-a21a-4c8a-a5dd-ccc9fadd961a/simple.sh
+Transferring files to web sandbox...
+Submitting job(s).......
+7 job(s) submitted to cluster 68799209.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 68799209.0@jobsub03.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-124011.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le13D_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300 --data_only
+--------------------------------------------------
+Copying 1251 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124641_dd2f0aef-77f7-4207-9b6c-f16855ffe55f/CCNuE-le13D_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/dd2f0aef-77f7-4207-9b6c-f16855ffe55f/CCNuE-le13D_p6-data_wrapper.sh
+Copying 3495 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124641_dd2f0aef-77f7-4207-9b6c-f16855ffe55f/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/dd2f0aef-77f7-4207-9b6c-f16855ffe55f/simple.cmd
+Copying 10086 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124641_dd2f0aef-77f7-4207-9b6c-f16855ffe55f/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/dd2f0aef-77f7-4207-9b6c-f16855ffe55f/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)..
+2 job(s) submitted to cluster 26620718.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 26620718.0@jobsub04.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-124325.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt
+--------------------------------------------------
+Running command:
+ python selection/gridSelection.py --playlist le13E_p6 --ntuple_tag MAD --use-sideband --truth --cal_POT --selection_tag TestCuts_CCnue_DSCalVisE --count 300 --data_only
+--------------------------------------------------
+Copying 1251 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124955_039b2af1-9e74-4376-b35e-5f37bf23adb9/CCNuE-le13E_p6-data_wrapper.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/039b2af1-9e74-4376-b35e-5f37bf23adb9/CCNuE-le13E_p6-data_wrapper.sh
+Copying 3496 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124955_039b2af1-9e74-4376-b35e-5f37bf23adb9/simple.cmd => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/039b2af1-9e74-4376-b35e-5f37bf23adb9/simple.cmd
+Copying 10087 bytes file:///nashome/q/qvuong/.cache/jobsub_lite/js_2026_03_09_124955_039b2af1-9e74-4376-b35e-5f37bf23adb9/simple.sh => https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2026_03_09/039b2af1-9e74-4376-b35e-5f37bf23adb9/simple.sh
+Transferring files to web sandbox...
+Submitting job(s)..........
+10 job(s) submitted to cluster 83217165.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Use job id 83217165.0@jobsub01.fnal.gov to retrieve output
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+tar -czf /pnfs/minerva/resilient/tarballs/qvuong-CCNUE_selection_2026-03-09-124646.tar.gz -C /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/selection/../../ CC-NuE-XSec opt

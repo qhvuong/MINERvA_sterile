@@ -1,0 +1,188 @@
+Diagnostic log generated from runningNotes stamp: TestCuts_CCnue_VertexTrackMultiplicity_2026-03-09_221414
+Mode: RUN
+Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/TestCuts_CCnue_VertexTrackMultiplicity_2026-03-09_221414.txt
+Selection tag (from file): TestCuts_CCnue_VertexTrackMultiplicity
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le1 (raw: le1_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-221433
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-221433_hists/
+Expected MC jobs   : 33
+Expected DATA jobs : 11
+Expected TOTAL     : 44
+Seen MC ROOT files : 33
+Seen DATA ROOT files: 11
+Seen TOTAL ROOT files: 44
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le1 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-221433_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le7 (raw: le7_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-223012
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-223012_hists/
+Expected MC jobs   : 4
+Expected DATA jobs : 2
+Expected TOTAL     : 6
+Seen MC ROOT files : 4
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 6
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le7 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-223012_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le9 (raw: le9_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-223830
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-223830_hists/
+Expected MC jobs   : 4
+Expected DATA jobs : 2
+Expected TOTAL     : 6
+Seen MC ROOT files : 4
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 6
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le9 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-223830_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13C (raw: le13C_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-224539
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-224539_hists/
+Expected MC jobs   : 39
+Expected DATA jobs : 24
+Expected TOTAL     : 63
+Seen MC ROOT files : 39
+Seen DATA ROOT files: 24
+Seen TOTAL ROOT files: 63
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13C --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-224539_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13A (raw: le13A_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-225218
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-225218_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 3
+Expected TOTAL     : 3
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 3
+Seen TOTAL ROOT files: 3
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13A --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-225218_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13B (raw: le13B_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-225741
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-225741_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 7
+Expected TOTAL     : 7
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 7
+Seen TOTAL ROOT files: 7
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13B --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-225741_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13D (raw: le13D_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-230235
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-230235_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 2
+Expected TOTAL     : 2
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 2
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13D --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-230235_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13E (raw: le13E_p6)
+Selection tag      : TestCuts_CCnue_VertexTrackMultiplicity
+Stamp              : 2026-03-09-230802
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-230802_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 10
+Expected TOTAL     : 10
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 10
+Seen TOTAL ROOT files: 10
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13E --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-230802_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_VertexTrackMultiplicity
+
+[RUNNING] counts OK for MC and DATA

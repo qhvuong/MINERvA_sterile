@@ -30,7 +30,7 @@ for name in 1 7 9 13C; do
     --truth
     --cal_POT
     --selection_tag "${tag}"
-    --count 350
+    --count 300
   )
 
   echo "--------------------------------------------------"
@@ -51,7 +51,7 @@ for name in 13A 13B 13D 13E; do
     --truth
     --cal_POT
     --selection_tag "${tag}"
-    --count 350
+    --count 300
     --data_only
   )
 

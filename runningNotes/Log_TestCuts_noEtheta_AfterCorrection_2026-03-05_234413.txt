@@ -1,0 +1,188 @@
+Diagnostic log generated from runningNotes stamp: TestCuts_noEtheta_AfterCorrection_2026-03-05_234413
+Mode: RUN
+Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/TestCuts_noEtheta_AfterCorrection_2026-03-05_234413.txt
+Selection tag (from file): TestCuts_noEtheta_AfterCorrection
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le1 (raw: le1_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-05-234416
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-05-234416_hists/
+Expected MC jobs   : 28
+Expected DATA jobs : 9
+Expected TOTAL     : 37
+Seen MC ROOT files : 28
+Seen DATA ROOT files: 9
+Seen TOTAL ROOT files: 37
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le1 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-05-234416_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le7 (raw: le7_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-000113
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-000113_hists/
+Expected MC jobs   : 3
+Expected DATA jobs : 2
+Expected TOTAL     : 5
+Seen MC ROOT files : 3
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 5
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le7 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-000113_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le9 (raw: le9_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-001116
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-001116_hists/
+Expected MC jobs   : 3
+Expected DATA jobs : 2
+Expected TOTAL     : 5
+Seen MC ROOT files : 3
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 5
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le9 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-001116_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13C (raw: le13C_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-002102
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-002102_hists/
+Expected MC jobs   : 33
+Expected DATA jobs : 21
+Expected TOTAL     : 54
+Seen MC ROOT files : 33
+Seen DATA ROOT files: 21
+Seen TOTAL ROOT files: 54
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13C --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-002102_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13A (raw: le13A_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-003051
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-003051_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 3
+Expected TOTAL     : 3
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 3
+Seen TOTAL ROOT files: 3
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13A --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-003051_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13B (raw: le13B_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-004103
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-004103_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 6
+Expected TOTAL     : 6
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 6
+Seen TOTAL ROOT files: 6
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13B --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-004103_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13D (raw: le13D_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-005146
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-005146_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 2
+Expected TOTAL     : 2
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 2
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13D --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-005146_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13E (raw: le13E_p6)
+Selection tag      : TestCuts_noEtheta_AfterCorrection
+Stamp              : 2026-03-06-010245
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-010245_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 9
+Expected TOTAL     : 9
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 9
+Seen TOTAL ROOT files: 9
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13E --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-06-010245_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_noEtheta_AfterCorrection
+
+[RUNNING] counts OK for MC and DATA

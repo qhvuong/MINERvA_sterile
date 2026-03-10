@@ -13,8 +13,9 @@
 HACK_R2 = False
 
 # tuned cut values
-DS_CAL_VISE_CUT = 0.2
-OD_CAL_VISE_CUT = 0.05
+# DS_CAL_VISE_CUT = 0.2
+DS_CAL_VISE_CUT = 0.1
+OD_CAL_VISE_CUT = 0.005
 PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.64  # in MeV/cm
 PID_SCORE_CUT = 0.7
@@ -23,7 +24,8 @@ MAX_VERTEX_TRACK_MULTIPLICITY = 5
 
 NONMIP_CLUS_FRAC_CUT = 0.4
 TRANSVERSE_GAP_SCORE_CUT = 15
-FIRST_FIRE_FRACTION_CUT = 0.25
+# FIRST_FIRE_FRACTION_CUT = 0.25
+FIRST_FIRE_FRACTION_CUT = 0.7
 UPSTREAM_OD_ENERGY_CUT = 5000
 # EXUV_CUT = 0.2
 # EUV_CUT = 0.3
@@ -50,7 +52,7 @@ TRUE_Q3_RANGE = [0,4]
 PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 visE_RANGE = [0.0,0.7]
-Ethetasquared_CUT = .003
+Ethetasquared_CUT = .0032
 FRONT_DEDX_PI0_UPPERBOUND = 5
 
 EAVAIL_LOW = [0.0,0.05]
@@ -77,7 +79,7 @@ SAMPLE_CUTS = {
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
-        # "Etheta",
+        "Etheta",
         "MeanFrontdEdX",
         "LeptonAngle",
         "Eavail",

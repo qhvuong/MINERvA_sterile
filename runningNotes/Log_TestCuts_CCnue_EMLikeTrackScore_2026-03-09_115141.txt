@@ -1,0 +1,188 @@
+Diagnostic log generated from runningNotes stamp: TestCuts_CCnue_EMLikeTrackScore_2026-03-09_115141
+Mode: DRY-RUN
+Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/TestCuts_CCnue_EMLikeTrackScore_2026-03-09_115141.txt
+Selection tag (from file): TestCuts_CCnue_EMLikeTrackScore
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le1 (raw: le1_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-115144
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-115144_hists/
+Expected MC jobs   : 33
+Expected DATA jobs : 11
+Expected TOTAL     : 44
+Seen MC ROOT files : 33
+Seen DATA ROOT files: 11
+Seen TOTAL ROOT files: 44
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le1 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-115144_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le7 (raw: le7_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-115551
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-115551_hists/
+Expected MC jobs   : 4
+Expected DATA jobs : 2
+Expected TOTAL     : 6
+Seen MC ROOT files : 4
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 6
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le7 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-115551_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le9 (raw: le9_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-115923
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-115923_hists/
+Expected MC jobs   : 4
+Expected DATA jobs : 2
+Expected TOTAL     : 6
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 0
+Seen TOTAL ROOT files: 0
+[WARN] MC mismatch (expected 4, saw 0)
+[WARN] DATA mismatch (expected 2, saw 0)
+[WARN] TOTAL mismatch (expected 6, saw 0)
+==================================================
+
+Command:
+  python combine_file.py --playlist le9 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-115923_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would SKIP combine_file.py (count mismatch)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13C (raw: le13C_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-120314
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-120314_hists/
+Expected MC jobs   : 39
+Expected DATA jobs : 24
+Expected TOTAL     : 63
+Seen MC ROOT files : 39
+Seen DATA ROOT files: 24
+Seen TOTAL ROOT files: 63
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13C --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-120314_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13A (raw: le13A_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-120658
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-120658_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 3
+Expected TOTAL     : 3
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 3
+Seen TOTAL ROOT files: 3
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13A --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-120658_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13B (raw: le13B_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-121037
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-121037_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 7
+Expected TOTAL     : 7
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 7
+Seen TOTAL ROOT files: 7
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13B --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-121037_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13D (raw: le13D_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-121357
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-121357_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 2
+Expected TOTAL     : 2
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 2
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13D --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-121357_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)
+
+[WARN] Incomplete block, skipping: {'playlist': None, 'selection_tag': None, 'stamp': None, 'expected_mc_jobs': 0, 'expected_data_jobs': 0}
+
+==================================================
+Playlist           : le13E (raw: le13E_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-121749
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-121749_hists/
+Expected MC jobs   : 0
+Expected DATA jobs : 10
+Expected TOTAL     : 10
+Seen MC ROOT files : 0
+Seen DATA ROOT files: 10
+Seen TOTAL ROOT files: 10
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le13E --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-121749_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[DRY-RUN] would execute combine_file.py (counts OK for MC and DATA)

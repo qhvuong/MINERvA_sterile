@@ -1,0 +1,25 @@
+Diagnostic log generated from runningNotes stamp: UNKNOWN
+Mode: RUN
+Input runningNotes: /exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/runningNotes/runningNotes.txt
+Selection tag (from file): TestCuts_CCnue_EMLikeTrackScore
+
+==================================================
+Playlist           : le9 (raw: le9_p6)
+Selection tag      : TestCuts_CCnue_EMLikeTrackScore
+Stamp              : 2026-03-09-144108
+Input dir          : /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-144108_hists/
+Expected MC jobs   : 4
+Expected DATA jobs : 2
+Expected TOTAL     : 6
+Seen MC ROOT files : 4
+Seen DATA ROOT files: 2
+Seen TOTAL ROOT files: 6
+[OK] MC count matches
+[OK] DATA count matches
+[OK] TOTAL count matches
+==================================================
+
+Command:
+  python combine_file.py --playlist le9 --i /pnfs/minerva/persistent/users/qvuong/CCNUE_selection_2026-03-09-144108_hists/ --cal_POT --ntuple_tag MAD --selection_tag TestCuts_CCnue_EMLikeTrackScore
+
+[RUNNING] counts OK for MC and DATA
