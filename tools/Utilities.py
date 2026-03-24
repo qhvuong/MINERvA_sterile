@@ -21,26 +21,128 @@ def writeJSON(path,data):
 def guessPlaylistName(playlist,st,nickname):
     return "file_option/playlist_ccqenue_{}{}_{}.txt".format(st,playlist,nickname)
 
-def composeTChain(input_txt,tree, start=None, count=None):
+
+# def good_root_file(path):
+#     print(f"[DEBUG good_root_file] about to open: {path}")
+#     f = None
+#     try:
+#         f = ROOT.TFile.Open(path, "READ")
+#         print(f"[DEBUG good_root_file] returned from open: {path}")
+
+#         if not f:
+#             print(f"[WARN] Could not open file: {path}")
+#             return False
+#         if f.IsZombie():
+#             print(f"[WARN] Zombie file: {path}")
+#             return False
+#         if f.TestBit(ROOT.TFile.kRecovered):
+#             print(f"[WARN] Recovered/incomplete file: {path}")
+#             return False
+
+#         print(f"[DEBUG good_root_file] file is good: {path}")
+#         return True
+
+#     except Exception as e:
+#         print(f"[WARN] Exception while opening {path}: {e}")
+#         return False
+
+#     finally:
+#         if f:
+#             print(f"[DEBUG good_root_file] closing: {path}")
+#             f.Close()
+
+def good_root_file(path): 
+    f = None 
+    try: 
+        f = ROOT.TFile.Open(path, "READ") 
+    
+        if not f: 
+            print(f"[WARN] Could not open file: {path}") 
+            return False 
+        if f.IsZombie(): 
+            print(f"[WARN] Zombie file: {path}") 
+            return False 
+        if f.TestBit(ROOT.TFile.kRecovered): 
+            print(f"[WARN] Recovered/incomplete file: {path}") 
+            return False 
+        
+        return True 
+    
+    except Exception as e: 
+        print(f"[WARN] Exception while opening {path}: {e}") 
+        return False 
+        
+    finally: 
+        if f: 
+            f.Close()
+
+def composeTChain(input_txt, tree, start=None, count=None):
     chain = PlotUtils.ChainWrapper(tree)
+    added = 0
+    skipped = 0
+
     if start is None and count is None:
-        #process the playlist at once.
-        chain.AddPlaylist(input_txt)
+        with open(input_txt) as playlist:
+            for i, line in enumerate(playlist):
+                path = line.rstrip("\n")
+                # print(f"[DEBUG composeTChain] considering line {i}: {path}")
+                if not path:
+                    continue
+                if good_root_file(path):
+                    chain.Add(path)
+                    print(f"[ADD] {i} {path}")
+                    added += 1
+                else:
+                    print(f"[SKIP] {i} {path}")
+                    skipped += 1
+
     elif start is not None and count is not None:
-        #process the playlist at slices for grid parallelization
         with open(input_txt) as playlist:
             counter = 0
             for i, line in enumerate(playlist):
-                if  (counter > 0) or i == start:
-                    chain.Add(line.rstrip("\n"))
-                    print(i,line.rstrip("\n"))
+                if (counter > 0) or i == start:
+                    path = line.rstrip("\n")
+                    if not path:
+                        counter += 1
+                        continue
+
+                    if good_root_file(path):
+                        chain.Add(path)
+                        print(f"[ADD] {i} {path}")
+                        added += 1
+                    else:
+                        print(f"[SKIP] {i} {path}")
+                        skipped += 1
+
                     counter += 1
                 if counter >= count:
                     break
     else:
-        #Only recieve start or count varible, cant proceed
         raise ValueError("I don't know how to proceed b/c only one of start/count is given")
+
+    print(f"[SUMMARY] added={added} skipped={skipped}")
     return chain
+
+# def composeTChain(input_txt,tree, start=None, count=None):
+#     chain = PlotUtils.ChainWrapper(tree)
+#     if start is None and count is None:
+#         #process the playlist at once.
+#         chain.AddPlaylist(input_txt)
+#     elif start is not None and count is not None:
+#         #process the playlist at slices for grid parallelization
+#         with open(input_txt) as playlist:
+#             counter = 0
+#             for i, line in enumerate(playlist):
+#                 if  (counter > 0) or i == start:
+#                     chain.Add(line.rstrip("\n"))
+#                     print(i,line.rstrip("\n"))
+#                     counter += 1
+#                 if counter >= count:
+#                     break
+#     else:
+#         #Only recieve start or count varible, cant proceed
+#         raise ValueError("I don't know how to proceed b/c only one of start/count is given")
+#     return chain
 
 def findPlaylistFile(playlist,st,nickname):
     data = loadJSON(POT_FILE)

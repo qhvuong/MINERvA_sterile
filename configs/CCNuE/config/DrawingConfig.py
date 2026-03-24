@@ -189,6 +189,60 @@ ThesisCategories = {
         "color": COLORS1[4]
     }
 }
+
+DiagnosticCategories = {
+    "CCNuEQE" :
+    {
+        "title" : "CC #nu_{e}-QE",
+        "cate":{"CCNuEQE"},
+        "color": COLORS[3]
+    },
+    "CCNuEOthers" :
+    {
+        "title" : "CC #nu_{e} Others",
+        "cate":{"CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+        "color": COLORS[4]
+    },
+    "CCNuEWrongSign" : {
+        "title" : "CC #nu_{e} wrong sign",
+        "cate"  : {"CCNuEWrongSign"},
+        "color" : COLORS[2]
+    },
+    "NCDiff" :
+    {
+        "title" : "NC Diffractive",
+        "color": COLORS[9]
+    },
+    "NuEElastic" : {
+        "title" : "#nu + e",
+        "color": COLORS[1]
+    },
+    "CCPi0" : {
+        "title" : "CC #nu_{#mu} #pi^{0}",
+        "cate": {"CCPi0"},
+        "color": COLORS[6]
+    },
+    "NCPi0" : {
+        "title" : "NC #pi^{0}",
+        "cate": {"NCPi0"},
+        "color": COLORS[5]
+    },
+    "CCOther" : {
+        "title" : "CC #nu_{#mu} other",
+        "cate": {"CCPi","CCOther"},
+        "color": COLORS[7]
+    },
+    "NCOther" : {
+        "title" : "NC #nu_{#mu} other",
+        "cate": {"NCPi","NCOther"},
+        "color": COLORS[8]
+    },
+    "NCCohPi0": {
+        "title" : "NC Coh #pi^{0}", 
+        "color": COLORS[12]
+    }
+}
+
 BackgroundDecomposition = {
     "NCDiff" :
     {
@@ -310,6 +364,25 @@ SignalChargedBackground = {
     }
 }
 
+CCnueNuEElasticOthers = {
+    "CCnue" :
+    {
+        "title" : "CC #nu_{e}",
+        "cate":{"CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+        "color": COLORS[0]
+    },
+    "NuEElastic" : {
+        "title" : "#nu+e",
+        "cate": {"NuEElastic"},
+        "color": COLORS[2]
+    },
+    "Others" : {
+        "title" : "Others",
+        "cate": {"CCPi0","CCPi0Proton","CCOther","CCPi","NCOther","NCDiff","NCCohPi0","NCPi0","NCPi0Proton","NCPi"},
+        "color": COLORS[1]
+    }
+}
+
 ChargedBackground = {
     "CCBackground" : {
         "title" : "Charged Current Backgrounds",
@@ -388,7 +461,9 @@ DefaultPlotters={
     "err": {"func": PlotTools.PrepareErr,
             "args":(SignalDecomposition,True,False,CONSOLIDATED_ERROR_GROUPS)},
     "stacked":{"func":PlotTools.PrepareStack,
-               "args": (ThesisCategories,)},
+               "args": (DiagnosticCategories,)},
+    "stackedSignalDecomp":{"func":PlotTools.PrepareStack,
+               "args": (SignalDecomposition,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
     #            "args": (SignalDecomposition,)},
     "2Dstacked":{"func":PlotTools.Prepare2DStack,
@@ -399,9 +474,9 @@ DefaultPlotters={
     "migration":{"func":PlotTools.PrepareMigration,
                     "args": (SignalOnly,)},
     "category_hist":{"func":PlotTools.CategoryHist,
-                     "args": (SignalChargedBackground,)},
+                     "args": (CCnueNuEElasticOthers,)},
     "profileX":{"func":PlotTools.CategoryProfileX,
-                     "args": (SignalChargedBackground,)},
+                     "args": (CCnueNuEElasticOthers,)},
     "sigdep":{"func":PlotTools.PrepareSignalDecompose,
               "args": (ChargedBackground,True,False)},
     "sigdepratio":{"func":PlotTools.PrepareSignalDecomposeRatio,
@@ -837,105 +912,187 @@ PLOTS_TO_MAKE = [
 
 
 
-   #  {"name":"Lepton Energy",
-   #      "plot_type" : "stacked"},
-   #  {"name":"E Theta Squared",
-   #      "plot_type" : "stacked"},
-   #  {"name":"True E Theta Squared",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Reco Energy vs L/E",
-   #     "plot_type" : "migration"},
-   #  {"name":"Estimator vs Front dEdX",
-   #      "plot_type" : "stacked"},
+    # {"name":"Lepton Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"E Theta Squared",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"True E Theta Squared",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Reco Energy vs L/E",
+    #    "plot_type" : "migration"},
+    # {"name":"Estimator vs Front dEdX",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Visible Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"True Lepton Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Front dEdX",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Reco Q2",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Cone Outside Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Neighborhood Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Neutrino Vertex Apothem",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"EMLikeTrackScore",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"TransverseGapScore",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"NonMIPClusFrac",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"ODCalVisE",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"DSCalVisE",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Afterpulsing",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"DeadTime",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"VertexTrackMultiplicity",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"StartPointVertexMultiplicity",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"HasNoVertexMismatch",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"HasTracks",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"HasNoBackExitingTracks",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Lepton Angle",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Lepton Pt",
+    #     "plot_type" : "stackedSignalDecomp"},
+
+
+
+    # {"name":"Lepton Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"E Theta Squared",
+    #     "plot_type" : "stacked"},
+    # {"name":"True E Theta Squared",
+    #     "plot_type" : "stacked"},
+    # {"name":"Reco Energy vs L/E",
+    #    "plot_type" : "migration"},
+    # {"name":"Estimator vs Front dEdX",
+    #     "plot_type" : "stacked"},
     {"name":"Biased Neutrino Energy",
         "plot_type" : "stacked"},
-   #  {"name":"Visible Energy",
-   #      "plot_type" : "stacked"},
-   #  {"name":"True Lepton Energy",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Front dEdX",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Reco Q2",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Cone Outside Energy",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Neighborhood Energy",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Neutrino Vertex Z",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Neutrino Vertex Apothem",
-   #      "plot_type" : "stacked"},
-   #  {"name":"EMLikeTrackScore",
-   #      "plot_type" : "stacked"},
-   #  {"name":"TransverseGapScore",
-   #      "plot_type" : "stacked"},
-   #  {"name":"NonMIPClusFrac",
-   #      "plot_type" : "stacked"},
-   #  {"name":"ODCalVisE",
-   #      "plot_type" : "stacked"},
-   #  {"name":"DSCalVisE",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Afterpulsing",
-   #      "plot_type" : "stacked"},
-   #  {"name":"DeadTime",
-   #      "plot_type" : "stacked"},
-   #  {"name":"VertexTrackMultiplicity",
-   #      "plot_type" : "stacked"},
-   #  {"name":"StartPointVertexMultiplicity",
-   #      "plot_type" : "stacked"},
-   #  {"name":"HasNoVertexMismatch",
-   #      "plot_type" : "stacked"},
-   #  {"name":"HasTracks",
-   #      "plot_type" : "stacked"},
-   #  {"name":"HasNoBackExitingTracks",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Lepton Angle",
-   #      "plot_type" : "stacked"},
-   #  {"name":"Lepton Pt",
-   #      "plot_type" : "stacked"},
+    {"name":"Biased Neutrino Energy Background Fit",
+        "plot_type" : "stacked"},        
+    {"name":"Visible Energy",
+        "plot_type" : "stacked"},
+    # {"name":"True Lepton Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Front dEdX",
+    #     "plot_type" : "stacked"},
+    # {"name":"Reco Q2",
+    #     "plot_type" : "stacked"},
+    # {"name":"Cone Outside Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neighborhood Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Apothem",
+    #     "plot_type" : "stacked"},
+    # # {"name":"EMLikeTrackScore",
+    # #     "plot_type" : "stacked"},
+    # {"name":"TransverseGapScore",
+    #     "plot_type" : "stacked"},
+    # {"name":"NonMIPClusFrac",
+    #     "plot_type" : "stacked"},
+    # {"name":"ODCalVisE",
+    #     "plot_type" : "stacked"},
+    # {"name":"DSCalVisE",
+    #     "plot_type" : "stacked"},
+    # # {"name":"Afterpulsing",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"DeadTime",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"VertexTrackMultiplicity",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"StartPointVertexMultiplicity",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"HasNoVertexMismatch",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"HasTracks",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"HasNoBackExitingTracks",
+    # #     "plot_type" : "stacked"},
+    {"name":"Lepton Angle",
+        "plot_type" : "stacked"},
+    {"name":"Lepton Pt",
+        "plot_type" : "stacked"},
 
-   #  {"name":"Reco ThetaX vs Vertex X",
-   #     "plot_type" : "profileX"}, 
-   #  {"name":"Reco ThetaX vs Vertex X",
-   #     "plot_type" : "category_hist"}, 
+    # {"name":"Reco ThetaX vs Vertex X",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"Reco ThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
 
-   #  {"name":"True ThetaX vs Vertex X",
-   #     "plot_type" : "profileX"}, 
-   #  {"name":"True ThetaX vs Vertex X",
-   #     "plot_type" : "category_hist"}, 
-
-
-   #  {"name":"Reco ThetaY vs Vertex Y",
-   #     "plot_type" : "profileX"},    
-   #  {"name":"Reco ThetaY vs Vertex Y",
-   #     "plot_type" : "category_hist"}, 
-
-   #  {"name":"True ThetaY vs Vertex Y",
-   #     "plot_type" : "profileX"},
-   #  {"name":"True ThetaY vs Vertex Y",
-   #     "plot_type" : "category_hist"}, 
+    # {"name":"True ThetaX vs Vertex X",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"True ThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
 
 
-   #  {"name":"dThetaX vs Vertex X",
-   #     "plot_type" : "profileX"},  
-   #  {"name":"dThetaX vs Vertex X",
-   #     "plot_type" : "category_hist"},  
+    # {"name":"Reco ThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},    
+    # {"name":"Reco ThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"}, 
 
-   #  {"name":"dThetaY vs Vertex Y",
-   #     "plot_type" : "profileX"},  
-   #  {"name":"dThetaY vs Vertex Y",
-   #     "plot_type" : "category_hist"},  
+    # {"name":"True ThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},
+    # {"name":"True ThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"}, 
 
 
-   #  {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-   #     "plot_type" : "profileX"}, 
-   #  {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-   #     "plot_type" : "category_hist"}, 
+    # {"name":"dThetaX vs Vertex X",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"},  
 
-   #  {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-   #     "plot_type" : "profileX"}, 
-   #  {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-   #     "plot_type" : "category_hist"}, 
+    # {"name":"dThetaX vs Vertex Y",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex Y",
+    #    "plot_type" : "category_hist"},  
+
+    # {"name":"dThetaX vs Vertex Z",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex Z",
+    #    "plot_type" : "category_hist"},         
+
+
+    # {"name":"dThetaY vs Vertex X",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"dThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"},  
+
+    # {"name":"dThetaY vs Vertex Z",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex Z",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+    #    "plot_type" : "category_hist"}, 
 
 
   

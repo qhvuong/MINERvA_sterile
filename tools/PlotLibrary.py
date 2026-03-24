@@ -190,6 +190,14 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
         "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
     },
+    # "Biased Neutrino Energy Background Fit":
+    # {
+    #     "name" : "EN4_bkgFit",
+    #     "title" : "E_{e}+E_{avail} (GeV)",
+    #     #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+    #     "binning" : PlotConfig.NEUTRINO4_EE_BINNING_FIT,
+    #     "value_getter" : lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE,
+    # },
     "Neutrino Length Travelled":
     {
         "name" : "nu_length",
@@ -243,6 +251,15 @@ PLOT_SETTINGS= {
         "title" : "E_{e}+E_{avail} (GeV)",
         #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
+        "tags":reco_tags
+    },
+    "Biased Neutrino Energy Background Fit":
+    {
+        "name" : "EN4_bkgFit",
+        "title" : "E_{e}+E_{avail} (GeV)",
+        #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING_FIT],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
         "tags":reco_tags
     },
@@ -824,7 +841,8 @@ PLOT_SETTINGS= {
     {
         "name" : "E_avail",
         "title" : "Available Energy; E_{avail} (GeV); NEvents",
-        "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
+        # "binning" : [PlotConfig.LOW_RECOIL_BIN_Q0],
+        "binning" : [PlotConfig.E_AVAILABLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_visE],
         "tags":reco_tags
     },

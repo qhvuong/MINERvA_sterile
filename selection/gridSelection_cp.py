@@ -1,4 +1,3 @@
-import subprocess
 import datetime as dt
 import os, time, sys, math
 from config.GRIDConfig import gridargs,anaargs
@@ -14,8 +13,7 @@ def createTarball(outDir):
   if(not found):
     cmd = "tar -czf %s -C %s %s"%(outDir, baseDir+"../", "{} {}".format(MacroName,MAT))# remove /Ana/CCNuE from baseDir bc want to tar the release.
     print(cmd)
-    # os.system(cmd)
-    subprocess.run(cmd, shell=True, check=True)
+    os.system(cmd)
 
 def unpackTarball( mywrapper):
   mywrapper.write("cd $CONDOR_DIR_INPUT\n")
@@ -65,7 +63,7 @@ def submitJob( tupleName):
 
   # my_wrapper.write( "python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d  --output $CONDOR_DIR_HISTS %s &> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n" % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring,tupleName) )
   my_wrapper.write(
-    "( /usr/bin/time -v python eventSelection.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d --output $CONDOR_DIR_HISTS %s ) &> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n"
+    "( /usr/bin/time -v python eventSelection_cp.py -p %s --grid --%s-only --ntuple_tag %s --count %d %d --output $CONDOR_DIR_HISTS %s ) &> $CONDOR_DIR_LOGS/%s-${PROCESS}.log\n"
     % (playlist, dataSwitch, gridargs.ntuple_tag, start, count, argstring, tupleName)
   )
   # Add a check for expected output files
@@ -91,7 +89,7 @@ def submitJob( tupleName):
   
   # cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
   # --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest
-  cmd = "jobsub_submit -c has_avx2==True --group=minerva --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 5, os.environ["PWD"] , wrapper_name )
+  cmd = "jobsub_submit -c has_avx2==True --group=minerva --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 36, os.environ["PWD"] , wrapper_name )
   os.system(cmd)
 
   #cmdname = "jobsub_commands/submit_wrapper.sh"
@@ -111,9 +109,6 @@ if __name__ == '__main__':
   os.system( "mkdir -p %s" % outdir_logs )
   os.system( "mkdir -p grid_wrappers/%s" % processingID )
   outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/%s-%s.tar.gz" % (os.environ["USER"],processingID)
-  # tarball_dir = "/pnfs/minerva/scratch/users/%s/tarballs" % os.environ["USER"]
-  # os.system("mkdir -p %s" % tarball_dir)
-  # outdir_tarball = gridargs.tarball if gridargs.tarball else "%s/%s-%s.tar.gz" % (tarball_dir, os.environ["USER"], processingID)
   createTarball(outdir_tarball)
 
   for playlist in gridargs.playlists:

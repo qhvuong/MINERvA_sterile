@@ -576,27 +576,34 @@ class CVPythonUniverse():
         p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
             p_det,
             vx, vy,
-            # # nu+e fit parameters
-            # t0x=-0.0006826, t1x=1.349e-05,
-            # t0y=0.001163,   t1y=1.581e-05,
-            # CCnue fit parameters
-            t0x=0.0001096,  t1x=8.982e-06,
-            t0y=0.0004818,  t1y=1.563e-05,
+            # This is nu+e fit parameters
+            # We use nu+e angle correction coefficients for both nu+e and CCnue
+            t0x=0.0001289, t1x=1.402e-05,
+            t0y=0.001007,  t1y=1.87e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
             keep_pmag=True,
             make_vec=make_vec,
         )
+        
+        # print("SystematicsConfig.ELASTIC_MODE: ", SystematicsConfig.ELASTIC_MODE)
+        # ---- 3) choose magnitude correction by analysis mode ----
+        if SystematicsConfig.ELASTIC_MODE:
+            # nu+e coefficients
+            a0 = -0.01189
+            a1 = 1.06e-04
+        else:
+            # CCnue coefficients
+            a0 = 0.01914
+            a1 = 6.03e-05
 
-        # ---- 3) apply magnitude correction ----
+        # ---- 4) apply magnitude correction ----
         p_det_corr = apply_pmag_frac_correction_det(
             p_det_corr,
             vy,
-            # # nu+e fit parameters
-            # a0=4.441e-05, a1=9.729e-05,
-            # CCnue fit parameters
-            a0=0.009994, a1=8.422e-05,
+            a0=a0,
+            a1=a1,
             make_vec=make_vec
         )
 
@@ -617,12 +624,10 @@ class CVPythonUniverse():
         p_det_corr, _, _, _ = apply_theta_bias_correction_det(
             p_det,
             vx, vy,
-            # # nu+e fit parameters
-            # t0x=-0.0006826, t1x=1.349e-05,
-            # t0y=0.001163,   t1y=1.581e-05,
-            # CCnue fit parameters
-            t0x=0.0001096,  t1x=8.982e-06,
-            t0y=0.0004818,  t1y=1.563e-05,
+            # This is nu+e fit parameters
+            # We use nu+e angle correction coefficients for both nu+e and CCnue
+            t0x=0.0001289, t1x=1.402e-05,
+            t0y=0.001007,  t1y=1.87e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
@@ -630,14 +635,22 @@ class CVPythonUniverse():
             make_vec=make_vec,
         )
 
+        # choose magnitude correction by analysis mode ----
+        if SystematicsConfig.ELASTIC_MODE:
+            # nu+e coefficients
+            a0 = -0.01189
+            a1 = 1.06e-04
+        else:
+            # CCnue coefficients
+            a0 = 0.01914
+            a1 = 6.03e-05
+
         # magnitude correction
         p_det_corr = apply_pmag_frac_correction_det(
             p_det_corr,
             vy,
-            # # nu+e fit parameters
-            # a0=4.441e-05, a1=9.729e-05,
-            # CCnue fit parameters
-            a0=0.009994, a1=8.422e-05,
+            a0=a0,
+            a1=a1,
             make_vec=make_vec
         )
 
@@ -935,6 +948,10 @@ class CVPythonUniverse():
         px = self.GetVecElem(lepton_branch, 0)
         py = self.GetVecElem(lepton_branch, 1)
         pz = self.GetVecElem(lepton_branch, 2)
+
+        # print("Muon beam p:", px, py, pz)
+        # print("lepton_branch: ", lepton_branch)
+
         return ROOT.Math.XYZVector(px, py, pz)
 
     def MuonP3D_det(self):
@@ -942,9 +959,13 @@ class CVPythonUniverse():
         Muon 3-momentum rotated into the same DET coordinate convention
         used by ElectronP3D() (RotationX(-BEAM_ANGLE)).
         """
-        p = self.MuonP3D_det()
+        p = self.MuonP3D_beam()
         r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
-        return r(p)
+        p_det = r(p)
+
+        # print("Muon det vec:", p_det.X(), p_det.Y(), p_det.Z(), " |p|=", p_det.R())
+
+        return p_det
 
 
 
@@ -962,7 +983,7 @@ class CVPythonUniverse():
         return math.degrees(theta) if theta>=0 else -1
 
 
-    # =============== collcetion of all recoil energy stuff.========
+    # =============== collection of all recoil energy stuff.========
     def GetEAvail(self):
         if self.GetAnaToolName() == "MasterAnaDev" or self.GetAnaToolName() == "CCQENu":
             return self.blob_recoil_E_tracker+self.blob_recoil_E_ecal 

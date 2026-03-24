@@ -4,8 +4,15 @@ import re
 import sys
 import argparse
 import subprocess
+
+argv_backup = sys.argv[:]
+sys.argv = [sys.argv[0]]
+from config.AnalysisConfig import AnalysisConfig
+sys.argv = argv_backup
+
 from datetime import datetime
 from typing import Dict, Optional, List, Tuple
+
 
 RE_RUN_CMD = re.compile(r'^\s*Running command:\s*$')
 RE_SEL_CMD = re.compile(r'^\s*python\s+selection/gridSelection\.py\b(.*)$')
@@ -177,6 +184,104 @@ def handle_block(block: dict, dry_run: bool, log_sink: Optional[List[str]] = Non
                 log_sink.append("[SKIP] Not running combine_file.py because counts did not match for MC and/or DATA")
                 log_sink.append("")
 
+EXPECTED_MC_PLAYLISTS = ["le1", "le7", "le9", "le13C"]
+EXPECTED_DATA_PLAYLISTS = ["le1", "le7", "le9", "le13A", "le13B", "le13C", "le13D", "le13E"]
+
+def combined_output_path(playlist: str, selection_tag: str, is_data: bool, ntuple_tag: str = "MAD") -> str:
+    old_playlist = getattr(AnalysisConfig, "playlist", None)
+    old_selection_tag = getattr(AnalysisConfig, "selection_tag", None)
+    old_ntuple_tag = getattr(AnalysisConfig, "ntuple_tag", None)
+
+    try:
+        AnalysisConfig.playlist = playlist
+        AnalysisConfig.selection_tag = selection_tag
+        AnalysisConfig.ntuple_tag = ntuple_tag
+        return AnalysisConfig.SelectionHistoPath(playlist, is_data)
+    finally:
+        AnalysisConfig.playlist = old_playlist
+        AnalysisConfig.selection_tag = old_selection_tag
+        AnalysisConfig.ntuple_tag = old_ntuple_tag
+
+
+def maybe_hadd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
+    mc_files = [
+        combined_output_path(pl, selection_tag, False)
+        for pl in EXPECTED_MC_PLAYLISTS
+    ]
+    data_files = [
+        combined_output_path(pl, selection_tag, True)
+        for pl in EXPECTED_DATA_PLAYLISTS
+    ]
+
+    # Put FHC outputs in the same directory as the first corresponding input
+    mc_dir = os.path.dirname(mc_files[0]) if mc_files else "."
+    data_dir = os.path.dirname(data_files[0]) if data_files else "."
+
+    out_mc = os.path.join(mc_dir, f"kin_dist_mcleFHC_{selection_tag}_MAD.root")
+    out_data = os.path.join(data_dir, f"kin_dist_dataleFHC_{selection_tag}_MAD.root")
+
+    missing_mc = [f for f in mc_files if not os.path.exists(f)]
+    missing_data = [f for f in data_files if not os.path.exists(f)]
+
+    lines = []
+    lines.append("################ FHC MERGE CHECK ################")
+    lines.append(f"Selection tag: {selection_tag}")
+    lines.append(f"MC output dir : {mc_dir}")
+    lines.append(f"DATA output dir: {data_dir}")
+    lines.append(f"Found MC      : {len(mc_files) - len(missing_mc)}/{len(mc_files)}")
+    lines.append(f"Found DATA    : {len(data_files) - len(missing_data)}/{len(data_files)}")
+
+    if missing_mc:
+        lines.append("[WARN] Missing MC files:")
+        lines.extend([f"  {x}" for x in missing_mc])
+    else:
+        lines.append("[OK] All MC playlist outputs are present")
+
+    if missing_data:
+        lines.append("[WARN] Missing DATA files:")
+        lines.extend([f"  {x}" for x in missing_data])
+    else:
+        lines.append("[OK] All DATA playlist outputs are present")
+
+    print("\n".join(lines))
+    if log_sink is not None:
+        log_sink.extend(lines)
+        log_sink.append("")
+
+    if missing_mc or missing_data:
+        msg = "[SKIP] Not running hadd because not all expected merged playlist outputs exist"
+        print(msg)
+        if log_sink is not None:
+            log_sink.append(msg)
+            log_sink.append("")
+        return
+
+    cmd_mc = ["hadd", "-f", out_mc] + mc_files
+    cmd_data = ["hadd", "-f", out_data] + data_files
+
+    print("FHC MC hadd command:")
+    print(" ", " ".join(cmd_mc))
+    print("FHC DATA hadd command:")
+    print(" ", " ".join(cmd_data))
+
+    if log_sink is not None:
+        log_sink.append("FHC MC hadd command:")
+        log_sink.append("  " + " ".join(cmd_mc))
+        log_sink.append("FHC DATA hadd command:")
+        log_sink.append("  " + " ".join(cmd_data))
+        log_sink.append("")
+
+    if dry_run:
+        print("[DRY-RUN] would run FHC MC/DATA hadd")
+        if log_sink is not None:
+            log_sink.append("[DRY-RUN] would run FHC MC/DATA hadd")
+            log_sink.append("")
+    else:
+        print("[RUNNING] hadd for FHC MC")
+        subprocess.run(cmd_mc, check=False)
+        print("[RUNNING] hadd for FHC DATA")
+        subprocess.run(cmd_data, check=False)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("runningNotes", help="runningNotes.txt file")
@@ -209,6 +314,7 @@ def main():
     log_lines: List[str] = []
     first_tag_seen: Optional[str] = None
     # log_timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    tags_seen = set()
 
     def start_new_block():
         nonlocal current, last_submit_type
@@ -229,6 +335,9 @@ def main():
         blocks_processed += 1
         if first_tag_seen is None and current.get("selection_tag"):
             first_tag_seen = current["selection_tag"]
+        tag = current.get("selection_tag")
+        if tag:
+            tags_seen.add(tag)
 
     with open(args.runningNotes, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -296,6 +405,9 @@ def main():
     # Handle last block (if we didn't break early due to max-blocks)
     if current is not None and (args.max_blocks is None or blocks_processed < args.max_blocks):
         finalize_block()
+
+    for tag in sorted(tags_seen):
+        maybe_hadd_fhc(tag, args.dry_run, log_lines)
 
     # Write diagnostic log next to runningNotes (ALSO in dry-run)
     out_dir = os.path.dirname(os.path.abspath(args.runningNotes)) or "."

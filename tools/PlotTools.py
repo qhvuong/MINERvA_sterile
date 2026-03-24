@@ -31,7 +31,7 @@ MNVPLOTTER.legend_n_columns = 1
 
 CANVAS = ROOT.TCanvas("c2","c2",1200,1000)
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
-MNVPLOTTER.error_summary_group_map.clear();
+MNVPLOTTER.error_summary_group_map.clear()
 for k,v in CONSOLIDATED_ERROR_GROUPS.items():
     vec = ROOT.vector("std::string")()
     for vs in v :
@@ -263,6 +263,9 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
         else:
             data_hist_plot = data_hist
 
+        # data_hist_plot.SetMinimum(1.)
+        # data_hist_plot.SetMaximum(1e6)
+
         plotfunction = lambda mnvplotter, data_hist_in, *mc_ints: partial(
             MakeDataMCStackedPlot,
             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
@@ -280,9 +283,11 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
         )(mc_hist, mc_ints)
 
-        tmp = mc_hists.GetHist().Clone()
-        tmp.Reset()
-        hists = [tmp]
+        # tmp = mc_hists.GetHist().Clone()
+        # tmp.Reset()
+        # tmp.SetMinimum(1.)
+        # tmp.SetMaximum(1e6)
+        # hists = [tmp]
 
     # Axis titles for MC hists
     for hist in mc_list:
@@ -433,34 +438,6 @@ def CategoryProfileX(data_hists, mc_hists, category, option=""):
     plotfunction = lambda mnvplotter, h, *args: MakeProfile1D(h)
     return plotfunction, hists
 
-
-# def CategoryProfileX(data_hists, mc_hists, category, option="s", *args, **kwargs):
-#     if not mc_hists.valid:
-#         raise KeyError("No MC histogram to profile")
-
-#     print(category)
-
-#     # Build category-summed TH2
-#     cate_names = _iter_cate_names(category)
-
-#     if cate_names:
-#         hist2d = mc_hists.GetHist().Clone()
-#         hist2d.Reset()
-#         for cate in cate_names:
-#             if cate in mc_hists.hists:
-#                 hist2d.Add(mc_hists.hists[cate])
-#     else:
-#         hist2d = mc_hists.GetHist()
-
-#     # Mean(Y) vs X
-#     prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
-#     prof.SetTitle(hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
-#                   + "; <" + hist2d.GetYaxis().GetTitle() + ">")
-
-#     hists = [prof]
-#     plotfunction = lambda mnvplotter, h: MakeProfile1D(h)
-#     return plotfunction, hists
-
 def _masked_profile_by_error(p, err_max=None):
     h = p.Clone(p.GetName() + "_fitmask")
     h.SetDirectory(0)
@@ -579,8 +556,8 @@ _ROOT_KEEP = []
 
 
 
+def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=False):
 # def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=True):
-def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unweighted=True):
     # decide whether to draw "same"
     drawopt = "E1"
     if ROOT.gPad and ROOT.gPad.GetListOfPrimitives() and ROOT.gPad.GetListOfPrimitives().GetSize() > 0:
@@ -1114,6 +1091,8 @@ def SetMargin(pad):
     ROOT.TGaxis.SetExponentOffset(0.04,-0.1,"y")
 
 def SetMarginMulti(pad):
+    if not pad:
+        return
     pad.SetRightMargin(0.1)
     pad.SetLeftMargin(0.1)
     pad.SetTopMargin(0.08)
@@ -1175,6 +1154,9 @@ def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = 
 
         TArray.Add(h)
 
+    # canvas.cd() 
+    # Logy(canvas)
+
     if data_hist is not None and data_hist.Integral() > 0:
         try:
             mnvplotter.DrawDataStackedMC(
@@ -1184,6 +1166,7 @@ def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = 
             print("DrawDataStackedMC failed:", e)
     else:
         mnvplotter.DrawStackedMC(TArray, pot_scale, legend, 0, 0, 1001)
+
 
 
 def MakeMigrationPlots(hist, output, no_text = False, fix_width = True, mnvplotter= MNVPLOTTER, canvas = CANVAS):

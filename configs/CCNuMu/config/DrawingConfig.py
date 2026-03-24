@@ -8,7 +8,7 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GR
 
 
 Default_Plot_Type="stacked"
-Default_Scale = lambda histHolder:histHolder.POTScale(True)
+Default_Scale = lambda histHolder:histHolder.POTScale(False)
 DefaultSlicer = PlotTools.PrepareSlicer
 
 
@@ -164,10 +164,15 @@ SignalDecomposition = {
     "CCNuMuWrongSign": {
         "title" : "CC #nu_{#mu} wrong sign", 
         "color": COLORS[7]
+    },
+    "Background" : {
+        "title" : "Backgrounds",
+        "cate" : {"NCDiff", "NuEElastic", "NC", "CC"}, 
+        "color": COLORS[8]
     }
 }
 
-SIGNAL_DEFINATION = SignalDecomposition
+SIGNAL_DEFINITION = SignalDecomposition
 
 #SignalDecomposition = {
 #    "NueBar" :
@@ -202,28 +207,34 @@ SIGNAL_DEFINATION = SignalDecomposition
 #    }
 #}
 
+# SignalBackground = {
+#     "Signal" :
+#     {
+#         "title" : "CC #nu_{e}",
+#         "cate":{"CCNu","CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+#         "color": COLORS[0]
+#     },
+#     "Background" : {
+#         "title" : "Backgrounds",
+#         #"cate": {"CCPi0","Other","NCDiff","NuEElastic","NonPhaseSpace","NonFiducial","NCCohPi0","NCPi0","CCNu"},
+#         #"cate": {"CCPi0","Other","NCDiff","NuEElastic","NCCohPi0","NCPi0","CCNu"},
+#         "cate": {"CCPi0","CCPi","NCPi","NCOther","CCOther","NCDiff","NuEElastic","NCCohPi0","NCPi0"},
+#         "color": COLORS[4]
+#     }
+# }
+
 SignalBackground = {
     "Signal" :
     {
-        "title" : "CC #nu_{e}",
-        "cate":{"CCNu","CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+        "title" : "CC #nu_{#mu}",
+        "cate":{"CCNuMuQE","CCNuMuDelta","CCNuMu2p2h","CCNuMuDIS","CCNuMu","CCNuMuWrongSign"},
         "color": COLORS[0]
     },
-    "Background" : {
-        "title" : "Backgrounds",
-        #"cate": {"CCPi0","Other","NCDiff","NuEElastic","NonPhaseSpace","NonFiducial","NCCohPi0","NCPi0","CCNu"},
-        #"cate": {"CCPi0","Other","NCDiff","NuEElastic","NCCohPi0","NCPi0","CCNu"},
-        "cate": {"CCPi0","CCPi","NCPi","NCOther","CCOther","NCDiff","NuEElastic","NCCohPi0","NCPi0"},
-        "color": COLORS[4]
-    }
-}
-
-SignalChargedBackground = {
-    "Signal" :
+    "Background" :
     {
-        "title" : "CC #nu_{e}",
-        "cate":{"CCQE","CCDelta","CC2p2h","CCDIS","CCOther","CCWrongSign"},
-        "color": COLORS[0]
+        "title" : "Background",
+        "cate"  : {"NC", "NCDiff", "NuEElastic", "CC"},
+        "color": COLORS[1]
     }
 }
 
@@ -320,7 +331,9 @@ DefaultPlotters={
     "2Dstacked":{"func":PlotTools.Prepare2DStack,
                "args": (SignalDecomposition,)},
     "category_hist":{"func":PlotTools.CategoryHist,
-                     "args": (SignalChargedBackground,)},
+                     "args": (SignalBackground,)},
+    "profileX":{"func":PlotTools.CategoryProfileX,
+                     "args": (SignalBackground,)},
     "sigdep":{"func":PlotTools.PrepareSignalDecompose,
               "args": (ChargedBackground,True,False)},
     "sigdepratio":{"func":PlotTools.PrepareSignalDecomposeRatio,
@@ -569,19 +582,82 @@ PLOTS_TO_MAKE = [
     #{"name":"Available Energy vs True W"},
     #{"name":"Available Energy vs Lepton Pt"},
     #{"name":"Front dEdX"},
-    {"name":"Biased Neutrino Energy"},
-    {"name":"Biased Neutrino Energy",
-         "plot_type" : "err"},
+    # {"name":"Biased Neutrino Energy"},
+    # {"name":"Biased Neutrino Energy",
+    #      "plot_type" : "err"},
     # {"name":"True Energy vs Biased Neutrino Energy",
     #         "plot_type" : 'migration'},
+    {"name":"Biased Neutrino Energy",
+        "plot_type" : "stacked"},
+    {"name":"Visible Energy",
+        "plot_type" : "stacked"},
+    # {"name":"HasNoBackExitingTracks",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Apothem",
+        # "plot_type" : "stacked"},
+    {"name":"E Theta Squared",
+        "plot_type" : "stacked"},
+    {"name":"Lepton Angle",
+        "plot_type" : "stacked"},
+    {"name":"Lepton Pt",
+        "plot_type" : "stacked"},
     {"name":"Reco Energy vs L/E",
        "plot_type" : "migration"},
+
+    # {"name":"Reco ThetaX vs Vertex X",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"Reco ThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"True ThetaX vs Vertex X",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"True ThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"Reco ThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},    
+    # {"name":"Reco ThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"True ThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},
+    # {"name":"True ThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"dThetaX vs Vertex X",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"},  
+
+    # {"name":"dThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"},  
+
+
+    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+    #    "plot_type" : "category_hist"}, 
+
+
+
+
     #{"name":"True Energy vs Biased Neutrino Energy",
     #     "plot_type" : "category_hist"},
     #{"name":"True Energy vs Biased Neutrino Energy",
     #     "plot_type" : "migration"},
-    {"name":"Reco Energy vs L/E",
-       "plot_type" : "category_hist"},
+    # {"name":"Reco Energy vs L/E",
+    #    "plot_type" : "category_hist"},
 
 
     #{"name":"True Energy vs Biased Neutrino Energy"},

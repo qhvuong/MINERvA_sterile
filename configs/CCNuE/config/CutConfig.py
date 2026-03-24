@@ -19,7 +19,7 @@ OD_CAL_VISE_CUT = 0.005
 PSI_FLAT_CUT = 0.1
 FRONT_DEDX_CUT = 2.64  # in MeV/cm
 PID_SCORE_CUT = 0.7
-MIN_VERTEX_TRACK_MULTIPLICITY = 2
+MIN_VERTEX_TRACK_MULTIPLICITY = 1
 MAX_VERTEX_TRACK_MULTIPLICITY = 5
 
 NONMIP_CLUS_FRAC_CUT = 0.4
@@ -34,10 +34,10 @@ UPSTREAM_OD_ENERGY_CUT = 5000
 # HELICITY= 1
 
 #OLD
-# FIDUCIAL_APOTHEM = 850
+FIDUCIAL_APOTHEM = 850
+FIDUCIAL_Z_RANGE = [5980,8422]
+# FIDUCIAL_APOTHEM = 881.25
 # FIDUCIAL_Z_RANGE = [5980,8422]
-FIDUCIAL_APOTHEM = 881.25
-FIDUCIAL_Z_RANGE = [5840,8422]
 
 
 # Kinematics cutoffs
@@ -66,24 +66,26 @@ SAMPLE_CUTS = {
     "Signal" : [ 
         "NoCut",
         "HasNoBackExitingTracks",
-        "HasTracks",
-        "Vertex_Z",
-        "Vertex_Apothem",
-        "EMLikeTrackScore",
-        "DSCalVisE",
-        "ODCalVisE",
-        "DeadTime",
-        "Afterpulsing",
-        "NonMIPClusFrac",
-        "TransverseGapScore",
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
-        "Etheta",
+        "HasTracks",
+        "Vertex_Z",
+        "Vertex_Apothem",
+        "DeadTime",
+        "Afterpulsing",
+        "DSCalVisE",
+        "ODCalVisE",
+        "EMLikeTrackScore",
         "MeanFrontdEdX",
-        "LeptonAngle",
+        "Etheta",
         "Eavail",
-        "Pt",
+        # "Pt",
+        # "LeptonAngle",
+
+        ## REMOVED CUTS
+        # "NonMIPClusFrac",
+        # "TransverseGapScore",
     ],
     "dEdX" : [
         "NoCut",

@@ -169,45 +169,12 @@ class KinematicsCalculator(object):
         # self.reco_vertex3D_beam      = event.Vertex3D_beam()
         self.reco_LeptonP3D_det      = event.LeptonP3D_det()
         self.reco_LeptonP3D          = event.LeptonP3D()
-        
-        # print(self.reco_LeptonP3D_det.Unit())
-        # print(type(self.reco_LeptonP3D_det))
-        # print([m for m in dir(self.reco_LeptonP3D_det) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2","unit")])
 
-        # ### APPLY CORRECTION to ANGLE
-        # # --- apply direction correction in det coords ---
-        # vx = float(event.vtx[0])  # mm
-        # vy = float(event.vtx[1])  # mm
-
-        # make_vec = ROOT.Math.XYZVector  # set appropriately for your vector type
-
-        # # 1) angular direction correction (new)
-        # p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
-        #     event.LeptonP3D_det(),
-        #     vx, vy,
-        #     t0x=-0.0006826, t1x=1.349e-05,   # <dThetaX> vs vtxX (radians per mm)
-        #     t0y=0.001163,   t1y=1.581e-05,   # <dThetaY> vs vtxY (radians per mm)
-        #     clamp_vtx=True,
-        #     vtx_min_mm=-1200.0,
-        #     vtx_max_mm=1200.0,
-        #     keep_pmag=True,
-        #     make_vec=make_vec,
-        # )
-
-        # # 2) magnitude correction (keep as-is if you want)
-        # p_det_corr = apply_pmag_frac_correction_det(
-        #     p_det_corr,
-        #     vy,
-        #     a0=4.441e-05, a1=9.729e-05,
-        #     make_vec=make_vec
-        # )
-
-        # self.reco_LeptonP3D_det = p_det_corr
-        # r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        # self.reco_LeptonP3D = r(p_det_corr)
-
-        # # print("comparing corrected theta: ", theta_corr, self.reco_LeptonP3D_det.Theta())
-        # print("comparing corrected momentum: ", event.LeptonP3D_det().R(), self.reco_LeptonP3D_det.R())
+        if self.reco_LeptonP3D_det is not None and self.reco_LeptonP3D is not None:
+            reco_det_mag  = self.reco_LeptonP3D_det.R()
+            reco_beam_mag = self.reco_LeptonP3D.R()
+            if abs(reco_det_mag - reco_beam_mag) > 1e-6:
+                print(f"[WARN] reco |p| mismatch: det={reco_det_mag:.6f}, beam={reco_beam_mag:.6f}, diff={reco_det_mag-reco_beam_mag:.6e}")
 
         self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
         self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()
@@ -299,22 +266,37 @@ class KinematicsCalculator(object):
         self.true_visE = self.CalculateVisibleE()
         self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
 
+        lep_pdg = abs(int(self.event.GetVecElem("mc_FSPartPDG", 0)))
 
-        ## This assumes truth momentum is in DET coord
-        # # --- NEW: true thetaX, thetaY in DET coordinates ---
-        # # mc_primFSLepton = [px, py, pz, E] in MeV in detector coords.
-        # # TruthFunctions.h rotates by MinervaUnits::numi_beam_angle_rad before taking angles.
         px = self.event.GetVecElem("mc_primFSLepton", 0)
         py = self.event.GetVecElem("mc_primFSLepton", 1)
         pz = self.event.GetVecElem("mc_primFSLepton", 2)
 
-        p_det = ROOT.TVector3(px, py, pz)              # det
-        self.true_LeptonP3D_det = ROOT.TVector3(p_det)     # store a copy (beam)
+        if lep_pdg == 13:
+            # muon truth momentum stored in BEAM
+            p_beam = ROOT.TVector3(px, py, pz)
+            p_det = ROOT.TVector3(p_beam)
+            p_det.RotateX(-SystematicsConfig.BEAM_ANGLE)
 
-        p_beam = ROOT.TVector3(p_det)                   # beam = rotation
-        p_beam.RotateX(+SystematicsConfig.BEAM_ANGLE)
-        self.true_LeptonP3D = p_beam
+        else:
+            # electron & other particles truth momentum stored in DET
+            p_det = ROOT.TVector3(px, py, pz)
+            p_beam = ROOT.TVector3(p_det)
+            p_beam.RotateX(+SystematicsConfig.BEAM_ANGLE)
 
+
+
+        # else:
+        #     raise ValueError(f"Unexpected mc_FSPartPDG[0] = {lep_pdg}")
+
+        self.true_LeptonP3D_det = ROOT.TVector3(p_det)
+        self.true_LeptonP3D     = ROOT.TVector3(p_beam)
+
+        # if self.true_LeptonP3D_det is not None and self.true_LeptonP3D is not None:
+        #     true_det_mag  = self.true_LeptonP3D_det.Mag()
+        #     true_beam_mag = self.true_LeptonP3D.Mag()
+        #     if abs(true_det_mag - true_beam_mag) > 1e-6:
+        #         print(f"[WARN] true |p| mismatch: det={true_det_mag:.6f}, beam={true_beam_mag:.6f}, diff={true_det_mag-true_beam_mag:.6e}")
 
 
         # print(type(p3))

@@ -103,14 +103,22 @@ PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 # NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
 # NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
-NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]		## THIS IS NU+E BINNING THAT MATCHES JAEWON'S
+NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]
+NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
 NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
-NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
+# NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
+NEUTRINO4_P_BINNING = [i*.05 for i in range(40)]
 NEUTRINO4_LE_BINNING = [i*.015 for i in range(34)]
 # NEUTRINO4_EE_THETA_BINNING = [.001 * i for i in range(len(NEUTRINO4_EE_BINNING))]
-NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
+# NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
+NEUTRINO4_EE_THETA_BINNING = [i*0.0008 for i in range(51)]
 # NEUTRINO4_THETA_BINNING = [0.01 * i for i in range(158)]
 NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549, .579, .609, .639, .670, .700, .730, .760, .790, .820, .850, .880, .910, .940, .970, 1.000]
+
+#E_available binning
+E_AVAILABLE_BINNING = [i*0.05 for i in range(41)]
+
 
 EMLIKETRACKSCORE_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
 # EMLIKETRACKSCORE_BINNING = [-0.01, 0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.01]
@@ -298,40 +306,47 @@ HISTS_TO_MAKE = [
 	# "Front dEdX",
 	# "Q2",
 
-	"Lepton Energy",
+	# "Lepton Energy",
 	"E Theta Squared",
-	"True E Theta Squared",
     "Reco Energy vs L/E",
-    "Estimator vs Front dEdX",
+    # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
 	"Visible Energy",
-	"True Lepton Energy",
-	"Front dEdX",
-	"Reco Q2",
-	"Cone Outside Energy",
-	"Neighborhood Energy",
+	"HasNoBackExitingTracks",
 	"Neutrino Vertex Z",
 	"Neutrino Vertex Apothem",
-	"EMLikeTrackScore",
-	"TransverseGapScore",
-	"NonMIPClusFrac",
-	"ODCalVisE",
-	"DSCalVisE",
-	"Afterpulsing",
-	"DeadTime",
-	"VertexTrackMultiplicity",
-	"StartPointVertexMultiplicity",
-	"HasNoVertexMismatch",
-	"HasTracks",
-	"HasNoBackExitingTracks",
+	# "Front dEdX",
+	# "Reco Q2",
+	# "Cone Outside Energy",
+	# "Neighborhood Energy",
+	"Lepton Angle",
+	"Lepton Pt",
 
-	"Reco ThetaX vs Vertex X",
-	"True ThetaX vs Vertex X",
-	"dThetaX vs Vertex X",
-	"Reco ThetaY vs Vertex Y",
-	"True ThetaY vs Vertex Y",
-	"dThetaY vs Vertex Y",
-	"dPmag_frac vs Vertex X In Det Coordinate",
-	"dPmag_frac vs Vertex Y In Det Coordinate",
+	# "Reco ThetaX vs Vertex X",
+	# "True ThetaX vs Vertex X",
+	# "dThetaX vs Vertex X",
+	# "Reco ThetaY vs Vertex Y",
+	# "True ThetaY vs Vertex Y",
+	# "dThetaY vs Vertex Y",
+	# "dPmag_frac vs Vertex X In Det Coordinate",
+	# "dPmag_frac vs Vertex Y In Det Coordinate",
+
+
+
+
+
+	# "EMLikeTrackScore",
+	# "TransverseGapScore",
+	# "NonMIPClusFrac",
+	# "ODCalVisE",
+	# "DSCalVisE",
+	# "Afterpulsing",
+	# "DeadTime",
+	# "VertexTrackMultiplicity",
+	# "StartPointVertexMultiplicity",
+	# "HasNoVertexMismatch",
+	# "HasTracks",
+	# "True Lepton Energy",
+	# "True E Theta Squared",
 
 ]

@@ -16,7 +16,7 @@ HACK_R2 = False
 DS_CAL_VISE_CUT = 0.2
 OD_CAL_VISE_CUT = 0.05
 PSI_FLAT_CUT = 0.1
-FRONT_DEDX_CUT = 2.4  # in MeV/cm
+FRONT_DEDX_CUT = 2.64  # in MeV/cm
 PID_SCORE_CUT = 0.7
 MIN_VERTEX_TRACK_MULTIPLICITY = 2
 MAX_VERTEX_TRACK_MULTIPLICITY = 5 
@@ -31,10 +31,10 @@ EUV_CUT = 0.3
 DEDX_PLANES = [5,9]
 HELICITY= 1
 
-# FIDUCIAL_APOTHEM = 850
-# FIDUCIAL_Z_RANGE = [5980,8422]
-FIDUCIAL_APOTHEM = 881.25
-FIDUCIAL_Z_RANGE = [5840,8422]
+FIDUCIAL_APOTHEM = 850
+FIDUCIAL_Z_RANGE = [5980,8422]
+# FIDUCIAL_APOTHEM = 881.25
+# FIDUCIAL_Z_RANGE = [5840,8422]
 
 # Kinematics cutoffs
 ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
@@ -54,7 +54,7 @@ visE_FHCRANGE = [0.0,0.7]
 RECO_ANGLE = [20,90]
 FRONT_DEDX_PI0_UPPERBOUND = 5
 PsiEe_CUT = 0.5
-Ethetasquared_CUT = .003
+Ethetasquared_CUT = .0032
 
 ############################################################################
 # choose the cuts you want from cut library
@@ -65,13 +65,15 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
+        "Eavail",
+        # "LeptonAngle",
+        # "Pt",
+
+        # Removed Cuts
         #"ZDifference",
         #"ZDifference_vtx",
         #"ProtonEnd",
         #"ContainedProton",
-        "LeptonAngle",
-        "Eavail",
-        "Pt",
      ]
 }
 

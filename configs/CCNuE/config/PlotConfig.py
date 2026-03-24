@@ -104,14 +104,28 @@ PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 # NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 # NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]		## THIS IS NU+E BINNING THAT MATCHES JAEWON'S
-NEUTRINO4_EE_BINNING = [0.0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 16.0, 20.0]
+# NEUTRINO4_EE_BINNING = [0.0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 16.0, 20.0]
+
+
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.1, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning4
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.5, 16.0, 20.0]  # ==> newBinning3
+NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning2
+# NEUTRINO4_EE_BINNING = [0.0, 1.2, 1.6, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.5, 9.5, 12.0, 16.0, 20.0] # ==> newBinning
+
+NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
+
+
 NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 NEUTRINO4_P_BINNING = [i*.05 for i in range(40)]
 NEUTRINO4_LE_BINNING = [i*.015 for i in range(34)]
 # NEUTRINO4_EE_THETA_BINNING = [.001 * i for i in range(len(NEUTRINO4_EE_BINNING))]
-NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
+# NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
+NEUTRINO4_EE_THETA_BINNING = [i*0.0008 for i in range(51)]
 # NEUTRINO4_THETA_BINNING = [0.01 * i for i in range(158)]
 NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549, .579, .609, .639, .670, .700, .730, .760, .790, .820, .850, .880, .910, .940, .970, 1.000]
+
+#E_available binning
+E_AVAILABLE_BINNING = [i*0.05 for i in range(41)]
 
 EMLIKETRACKSCORE_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
 # EMLIKETRACKSCORE_BINNING = [-0.01, 0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.01]
@@ -302,45 +316,52 @@ HISTS_TO_MAKE = [
 
 
 ### MY PLOTS ###
-	"Lepton Energy",
-	"E Theta Squared",
-	"True E Theta Squared",
-    "Reco Energy vs L/E",
-    "Estimator vs Front dEdX",
+	# "Lepton Energy",
+	# "E Theta Squared",
+	# "True E Theta Squared",
+    # "Reco Energy vs L/E",
+    # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
+    "Biased Neutrino Energy Background Fit",
 	"Visible Energy",
-	"True Lepton Energy",
-	"Front dEdX",
-	"Reco Q2",
-	"Cone Outside Energy",
-	"Neighborhood Energy",
-	"Neutrino Vertex Z",
-	"Neutrino Vertex Apothem",
-	"EMLikeTrackScore",
-	"TransverseGapScore",
-	"NonMIPClusFrac",
-	"ODCalVisE",
-	"DSCalVisE",
-	"Afterpulsing",
-	"DeadTime",
-	"VertexTrackMultiplicity",
-	"StartPointVertexMultiplicity",
-	"HasNoVertexMismatch",
-	"HasTracks",
-	"HasNoBackExitingTracks",
+	# "True Lepton Energy",
+	# "Front dEdX",
+	# "Reco Q2",
+	# "Cone Outside Energy",
+	# "Neighborhood Energy",
+	# "Neutrino Vertex Z",
+	# "Neutrino Vertex Apothem",
+	# "EMLikeTrackScore",
+	# "TransverseGapScore",
+	# "NonMIPClusFrac",
+	# "ODCalVisE",
+	# "DSCalVisE",
+	# "Afterpulsing",
+	# "DeadTime",
+	# "VertexTrackMultiplicity",
+	# "StartPointVertexMultiplicity",
+	# "HasNoVertexMismatch",
+	# "HasTracks",
+	# "HasNoBackExitingTracks",
 	"Lepton Angle",
 	"Lepton Pt",
-	# "Neutrino Vertex Apothem",
-	# "Neutrino Vertex Z",
 
-	"Reco ThetaX vs Vertex X",
-	"True ThetaX vs Vertex X",
-	"dThetaX vs Vertex X",
-	"Reco ThetaY vs Vertex Y",
-	"True ThetaY vs Vertex Y",
-	"dThetaY vs Vertex Y",
-	"dPmag_frac vs Vertex X In Det Coordinate",
-	"dPmag_frac vs Vertex Y In Det Coordinate",
+	# "Reco ThetaX vs Vertex X",
+	# "True ThetaX vs Vertex X",
+
+	# "Reco ThetaY vs Vertex Y",
+	# "True ThetaY vs Vertex Y",
+
+	# "dThetaX vs Vertex X",
+	# "dThetaX vs Vertex Y",
+	# "dThetaX vs Vertex Z",
+
+	# "dThetaY vs Vertex X",
+	# "dThetaY vs Vertex Y",
+	# "dThetaY vs Vertex Z",	
+
+	# "dPmag_frac vs Vertex X In Det Coordinate",
+	# "dPmag_frac vs Vertex Y In Det Coordinate",
 
 
     # "True Energy vs L/E",

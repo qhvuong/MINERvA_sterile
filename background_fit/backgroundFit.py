@@ -415,25 +415,108 @@ def _solve_scales_all_bins_smooth_2comp(
     prior=(1.0, 1.0),
     lam_bkg=1.0,
     lam_sig=1.0,
-    curvature=True,
+    curvature=False,
     clamp_nonneg=True,
     fallback_det_tol=1e-12,
+    use_original_binwise=False,
+    use_prior=False,
+    prior_bkg=0.2,
+    prior_sig=0.5,
 ):
     """
-    Global penalized least squares for 2 components across all bins.
+    Solve for 2 component scale factors across bins.
 
-    Minimize:
-      sum_b ||A_b x_b - d_b||^2
-      + lam * smoothness(x across bins)
+    Modes
+    -----
+    1) use_original_binwise=True
+       Solve each bin independently (the "original" fit).
+       If use_prior=True, add a per-bin prior penalty toward `prior`.
 
-    x_b = [s_bkg(b), s_sig(b)]
+    2) use_original_binwise=False
+       Solve one global penalized least-squares problem across all bins.
+       If curvature=True, smooth with second-difference penalty.
+       If curvature=False, smooth with first-difference penalty.
+       If use_prior=True, add a per-bin prior penalty toward `prior`.
 
-    If curvature=True, penalize second differences:
-      (x_{b+1} - 2 x_b + x_{b-1})^2
-    else penalize first differences:
-      (x_{b+1} - x_b)^2
+    Inputs
+    ------
+    A_cols_by_bin[b] = [col_bkg, col_sig]
+      where each column is a list over regions.
+      So for bin b:
+        col_bkg[r] = MC_bkg(region r, bin b)
+        col_sig[r] = MC_sig(region r, bin b)
+
+    b_vec_by_bin[b][r] = data(region r, bin b) - fixed(region r, bin b)
+
+    Returns
+    -------
+    xb, xs
+      lists of background and signal scale factors for each bin.
     """
     nbins = len(A_cols_by_bin)
+
+    # ------------------------------------------------------------------
+    # MODE 1: original per-bin analytic / least-squares solution
+    # ------------------------------------------------------------------
+    if use_original_binwise:
+        xb = []
+        xs = []
+
+        for b in range(nbins):
+            A_cols = A_cols_by_bin[b]
+            d = b_vec_by_bin[b]
+
+            # columns across regions
+            a0 = A_cols[0]   # background component
+            a1 = A_cols[1]   # signal component
+
+            # Build normal equations for this bin:
+            #   M x = y
+            # where M = A^T A, y = A^T d
+            m00 = 0.0
+            m01 = 0.0
+            m11 = 0.0
+            y0  = 0.0
+            y1  = 0.0
+
+            for r in range(len(d)):
+                m00 += a0[r] * a0[r]
+                m01 += a0[r] * a1[r]
+                m11 += a1[r] * a1[r]
+                y0  += a0[r] * d[r]
+                y1  += a1[r] * d[r]
+
+            # Optional prior: add penalty
+            #   prior_bkg * (sb - prior[0])^2 + prior_sig * (ss - prior[1])^2
+            if use_prior:
+                m00 += prior_bkg
+                y0  += prior_bkg * prior[0]
+
+                m11 += prior_sig
+                y1  += prior_sig * prior[1]
+
+            det = m00 * m11 - m01 * m01
+
+            # Fallback if singular / nearly singular
+            if abs(det) < fallback_det_tol:
+                sb = prior[0]
+                ss = prior[1]
+            else:
+                sb = ( y0 * m11 - y1 * m01) / det
+                ss = (-y0 * m01 + y1 * m00) / det
+
+            if clamp_nonneg:
+                sb = max(0.0, sb)
+                ss = max(0.0, ss)
+
+            xb.append(sb)
+            xs.append(ss)
+
+        return xb, xs
+
+    # ------------------------------------------------------------------
+    # MODE 2: global smooth fit across all bins
+    # ------------------------------------------------------------------
     npar = 2 * nbins  # [bkg bin0..N-1, sig bin0..N-1]
 
     H = ROOT.TMatrixD(npar, npar)  # normal matrix
@@ -453,17 +536,14 @@ def _solve_scales_all_bins_smooth_2comp(
         d = b_vec_by_bin[b]
 
         # A is R x 2, stored as columns
-        # col0 = bkg component across regions
-        # col1 = sig component across regions
-        a0 = A_cols[0]
-        a1 = A_cols[1]
+        a0 = A_cols[0]  # bkg
+        a1 = A_cols[1]  # sig
 
-        # Build A^T A and A^T d contribution for this bin
         ata00 = 0.0
         ata01 = 0.0
         ata11 = 0.0
-        atd0 = 0.0
-        atd1 = 0.0
+        atd0  = 0.0
+        atd1  = 0.0
 
         for r in range(len(d)):
             ata00 += a0[r] * a0[r]
@@ -507,22 +587,18 @@ def _solve_scales_all_bins_smooth_2comp(
             add_penalty([ibkg(b), ibkg(b+1)], [-1.0, 1.0], lam_bkg)
             add_penalty([isig(b), isig(b+1)], [-1.0, 1.0], lam_sig)
 
-    # Tiny prior anchor to avoid singular global system
-    # eps = 1e-8
-    # for b in range(nbins):
-    #     H[ibkg(b)][ibkg(b)] += eps
-    #     H[isig(b)][isig(b)] += eps
-    #     y[ibkg(b)] += eps * prior[0]
-    #     y[isig(b)] += eps * prior[1]
-    prior_bkg = 0.2
-    prior_sig = 0.5
-    for b in range(nbins):
-        H[ibkg(b)][ibkg(b)] += prior_bkg
-        y[ibkg(b)] += prior_bkg * prior[0]
+    # -----------------------------
+    # optional prior anchor
+    # -----------------------------
+    if use_prior:
+        for b in range(nbins):
+            H[ibkg(b)][ibkg(b)] += prior_bkg
+            y[ibkg(b)] += prior_bkg * prior[0]
 
-        H[isig(b)][isig(b)] += prior_sig
-        y[isig(b)] += prior_sig * prior[1]
+            H[isig(b)][isig(b)] += prior_sig
+            y[isig(b)] += prior_sig * prior[1]
 
+    # Solve H x = y
     svd = ROOT.TDecompSVD(H)
     xvec = ROOT.TVectorD(y)
     ok = svd.Solve(xvec)
@@ -735,6 +811,53 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
     return scales
 
 
+
+
+
+def Evaluate2CompChi2(
+    A_cols_by_bin,
+    b_vec_by_bin,
+    xb,
+    xs,
+    lam_bkg=1.0,
+    lam_sig=1.0,
+    curvature=False,
+):
+    # -------------------------
+    # data term
+    # -------------------------
+    chi2_data = 0.0
+    for b in range(len(A_cols_by_bin)):
+        a_bkg = A_cols_by_bin[b][0]   # list over regions
+        a_sig = A_cols_by_bin[b][1]   # list over regions
+        dvec  = b_vec_by_bin[b]       # data-fixed over regions
+
+        for r in range(len(dvec)):
+            pred = a_bkg[r] * xb[b] + a_sig[r] * xs[b]
+            resid = pred - dvec[r]
+            chi2_data += resid * resid
+
+    # -------------------------
+    # penalty term
+    # -------------------------
+    chi2_pen = 0.0
+
+    if curvature:
+        for b in range(1, len(xb) - 1):
+            db = xb[b+1] - 2.0 * xb[b] + xb[b-1]
+            ds = xs[b+1] - 2.0 * xs[b] + xs[b-1]
+            chi2_pen += lam_bkg * db * db
+            chi2_pen += lam_sig * ds * ds
+    else:
+        for b in range(len(xb) - 1):
+            db = xb[b+1] - xb[b]
+            ds = xs[b+1] - xs[b]
+            chi2_pen += lam_bkg * db * db
+            chi2_pen += lam_sig * ds * ds
+
+    chi2_tot = chi2_data + chi2_pen
+    return chi2_data, chi2_pen, chi2_tot
+
 def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders, error_band=None, uni_idx=None):
     """
     Special solver for 2-component recipes:
@@ -775,11 +898,17 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
     b_vec_by_bin = []
     real_bins = []
 
+    skip_bins = set(getattr(recipe, "skip_fit_bins", [1]))
+
     min_total_mc = getattr(recipe, "min_total_mc", None)
     if min_total_mc is None:
         min_total_mc = getattr(BackgroundFitConfig, "MIN_TOTAL_FLOATED_MC", 1.0)
 
+    # for b in range(1, href.GetNbinsX() + 1):
     for b in range(1, href.GetNbinsX() + 1):
+        if b in skip_bins:
+            continue
+        
         b_vec = []
         for reg in recipe.regions:
             bval = data_by_region[reg].GetBinContent(b) - fixed_by_region[reg].GetBinContent(b)
@@ -804,10 +933,138 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
         b_vec_by_bin.append(b_vec)
         real_bins.append(b)
 
+
+    # curvature = getattr(recipe, "smooth_use_curvature", True)
+    curvature = False
+
+    use_original_binwise = getattr(recipe, "use_original_binwise", False)
+    use_original_binwise = False
+
+    use_prior = getattr(recipe, "use_prior", False)
+    prior_bkg = getattr(recipe, "prior_bkg", 0.2)
+    prior_sig = getattr(recipe, "prior_sig", 0.5)
+
+    # ----------------------------------------
+    # Lambda scan + plots
+    # ----------------------------------------
+    lambda_scan = [0.0, 0.1, 0.3, 0.6, 1.0, 3.0, 6.0, 10.0]
+
+    print(f"[LAMBDA-SCAN {tag}] mode={'original' if use_original_binwise else ('curvature' if curvature else 'slope')} use_prior={use_prior}")
+
+    lambda_vals = []
+    chi2_data_vals = []
+    chi2_pen_vals = []
+    chi2_tot_vals = []
+    max_bkg_vals = []
+    max_sig_vals = []
+
+    for lamb in lambda_scan:
+        xb_scan, xs_scan = _solve_scales_all_bins_smooth_2comp(
+            A_cols_by_bin,
+            b_vec_by_bin,
+            prior=(1.0, 1.0),
+            lam_bkg=lamb,
+            lam_sig=lamb,
+            curvature=curvature,
+            clamp_nonneg=True,
+            use_original_binwise=use_original_binwise,
+            use_prior=use_prior,
+            prior_bkg=prior_bkg,
+            prior_sig=prior_sig,
+        )
+
+        chi2_data_scan, chi2_pen_scan, chi2_tot_scan = Evaluate2CompChi2(
+            A_cols_by_bin,
+            b_vec_by_bin,
+            xb_scan,
+            xs_scan,
+            lam_bkg=lamb,
+            lam_sig=lamb,
+            curvature=curvature,
+        )
+
+        lambda_vals.append(float(lamb))
+        chi2_data_vals.append(float(chi2_data_scan))
+        chi2_pen_vals.append(float(chi2_pen_scan))
+        chi2_tot_vals.append(float(chi2_tot_scan))
+        max_bkg_vals.append(float(max(xb_scan)))
+        max_sig_vals.append(float(max(xs_scan)))
+
+        print(
+            f"[LAMBDA-SCAN {tag}] lam={lamb:.3g} "
+            f"chi2_data={chi2_data_scan:.6g} "
+            f"chi2_pen={chi2_pen_scan:.6g} "
+            f"chi2_tot={chi2_tot_scan:.6g} "
+            f"max_{recipe.components[0]}={max(xb_scan):.6g} "
+            f"max_{recipe.components[1]}={max(xs_scan):.6g}"
+        )
+
+    # --- chi2 graphs ---
+    g_data = ROOT.TGraph(len(lambda_vals), array('d', lambda_vals), array('d', chi2_data_vals))
+    g_pen  = ROOT.TGraph(len(lambda_vals), array('d', lambda_vals), array('d', chi2_pen_vals))
+    g_tot  = ROOT.TGraph(len(lambda_vals), array('d', lambda_vals), array('d', chi2_tot_vals))
+
+    g_pen.SetTitle(f"Lambda scan ({tag});#lambda;#chi^{{2}}")
+    g_pen.SetMinimum(1e-4)
+    g_data.SetLineWidth(2)
+    g_pen.SetLineWidth(2)
+    g_tot.SetLineWidth(2)
+
+    g_data.SetLineColor(ROOT.kBlue + 1)
+    g_pen.SetLineColor(ROOT.kRed + 1)
+    g_tot.SetLineColor(ROOT.kBlack)
+
+    c_lambda = ROOT.TCanvas(f"c_lambda_{tag}", f"c_lambda_{tag}", 800, 600)
+    g_pen.Draw("ALP")
+    g_data.Draw("LP SAME")
+    g_tot.Draw("LP SAME")
+
+    leg = ROOT.TLegend(0.58, 0.28, 0.88, 0.58)
+    leg.SetFillStyle(0)
+    leg.SetBorderSize(0)
+    leg.AddEntry(g_data, "#chi^{2}_{data}", "lp")
+    leg.AddEntry(g_pen,  "#chi^{2}_{pen}", "lp")
+    leg.AddEntry(g_tot,  "#chi^{2}_{tot}", "lp")
+    leg.Draw()
+
+    c_lambda.SetLogy(0)
+    c_lambda.Print(f"lambda_scan_chi2_newBinning.png")
+    c_lambda.SetLogy(1)
+    c_lambda.Print(f"lambda_scan_chi2_newBinning_logy.png")
+
+
+    # # --- max scale graphs ---
+    # g_max_bkg = ROOT.TGraph(len(lambda_vals), array('d', lambda_vals), array('d', max_bkg_vals))
+    # g_max_sig = ROOT.TGraph(len(lambda_vals), array('d', lambda_vals), array('d', max_sig_vals))
+
+    # g_max_bkg.SetTitle(f"Lambda scan max scales ({tag});#lambda;max scale factor")
+    # g_max_bkg.SetLineWidth(2)
+    # g_max_sig.SetLineWidth(2)
+
+    # g_max_bkg.SetLineColor(ROOT.kGreen + 2)
+    # g_max_sig.SetLineColor(ROOT.kMagenta + 1)
+
+    # c_max = ROOT.TCanvas(f"c_max_{tag}", f"c_max_{tag}", 800, 600)
+    # g_max_bkg.Draw("ALP")
+    # g_max_sig.Draw("LP SAME")
+
+    # leg2 = ROOT.TLegend(0.28, 0.75, 0.58, 0.88)
+    # leg2.SetFillStyle(0)
+    # leg2.SetBorderSize(0)
+    # leg2.AddEntry(g_max_bkg, f"max {recipe.components[0]}", "lp")
+    # leg2.AddEntry(g_max_sig, f"max {recipe.components[1]}", "lp")
+    # leg2.Draw()
+
+    # c_max.Print(f"lambda_scan_maxscale_{tag}.png")
+
+
+
+
+    # -------------------------------------------------
+    # Actual fit with the chosen lambda values
+    # -------------------------------------------------
     lam_bkg = getattr(recipe, "smooth_lambda_bkg", 1.0)
     lam_sig = getattr(recipe, "smooth_lambda_sig", 1.0)
-    curvature = getattr(recipe, "smooth_use_curvature", True)
-
     xb, xs = _solve_scales_all_bins_smooth_2comp(
         A_cols_by_bin,
         b_vec_by_bin,
@@ -816,6 +1073,20 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
         lam_sig=lam_sig,
         curvature=curvature,
         clamp_nonneg=True,
+        use_original_binwise=use_original_binwise,
+        use_prior=use_prior,
+        prior_bkg=prior_bkg,
+        prior_sig=prior_sig,
+    )
+
+    chi2_data, chi2_pen, chi2_tot = Evaluate2CompChi2(
+        A_cols_by_bin,
+        b_vec_by_bin,
+        xb,
+        xs,
+        lam_bkg=lam_bkg,
+        lam_sig=lam_sig,
+        curvature=curvature,
     )
 
     comp0, comp1 = recipe.components[0], recipe.components[1]
@@ -831,7 +1102,21 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
         scales[comp0].SetBinContent(b, xb[i])
         scales[comp1].SetBinContent(b, xs[i])
 
-    print(f"[SMOOTH-2COMP {tag}] lam_bkg={lam_bkg} lam_sig={lam_sig} curvature={curvature}")
+    mode = "original" if use_original_binwise else ("curvature" if curvature else "slope")
+
+    if use_original_binwise:
+        print(
+            f"[SMOOTH-2COMP {tag}] mode={mode} use_prior={use_prior} "
+            f"prior_bkg={prior_bkg} prior_sig={prior_sig}"
+        )
+    else:
+        print(
+            f"[SMOOTH-2COMP {tag}] mode={mode} use_prior={use_prior} "
+            f"lam_bkg={lam_bkg} lam_sig={lam_sig} "
+            f"prior_bkg={prior_bkg} prior_sig={prior_sig}"
+        )
+
+    print(f"[SMOOTH-2COMP {tag}] chi2_data={chi2_data:.6g} chi2_pen={chi2_pen:.6g} chi2_tot={chi2_tot:.6g}")
     print(f"[SMOOTH-2COMP {tag}] {comp0}: min={min(xb):.3g} max={max(xb):.3g}")
     print(f"[SMOOTH-2COMP {tag}] {comp1}: min={min(xs):.3g} max={max(xs):.3g}")
 

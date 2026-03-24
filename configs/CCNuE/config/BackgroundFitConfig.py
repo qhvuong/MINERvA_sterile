@@ -317,7 +317,7 @@ class MatrixFitRecipe:
 # Safer than relying on PlotConfig.SIGNAL_DEFINITION unless you KNOW it matches HistHolder.hists keys.
 # If you do have an authoritative list of category keys, replace CCNUE_SIGNAL_KEYS with that.
 CCNUE_SIGNAL_KEYS = set([
-    "CCNuE", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h",
+    "CCNuE", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuEWrongSign"
     # include other CCnue signal buckets you actually have as HistHolder keys
 ])
 
@@ -357,8 +357,8 @@ CCNUE_MATRIX_RECIPE = MatrixFitRecipe(
     kreg=2,
     hist_to_fit="Biased Neutrino Energy",
     hist_observable="Biased Neutrino Energy",
-    smooth_lambda_bkg=1.0,
-    smooth_lambda_sig=2.0,
+    smooth_lambda_bkg=0.5,
+    smooth_lambda_sig=0.5,
     smooth_use_curvature=True,
 )
 
