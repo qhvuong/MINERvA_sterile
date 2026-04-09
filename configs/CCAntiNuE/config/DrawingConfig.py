@@ -314,6 +314,78 @@ ThesisCategories = {
     }
 }
 
+DiagnosticCategories = {
+    "CCNuEQE" :
+    {
+        "title" : "CC #nu_{e}-QE",
+        "cate":{"CCNuEQE"},
+        "color": COLORS[3]
+    },
+    "CCNuEOthers" :
+    {
+        "title" : "CC #nu_{e} Others",
+        "cate":{"CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+        "color": COLORS[4]
+    },
+    "CCNuEWrongSign" : {
+        "title" : "CC #nu_{e} wrong sign",
+        "cate"  : {"CCNuEWrongSign"},
+        "color" : COLORS[2]
+    },
+    "NCDiff" :
+    {
+        "title" : "NC Diffractive",
+        "color": COLORS[9]
+    },
+    "NuEElastic" : {
+        "title" : "#nu + e",
+        "color": COLORS[1]
+    },
+    "CCPi0" : {
+        "title" : "CC #nu_{#mu} #pi^{0}",
+        "cate": {"CCPi0"},
+        "color": COLORS[6]
+    },
+    "NCPi0" : {
+        "title" : "NC #pi^{0}",
+        "cate": {"NCPi0"},
+        "color": COLORS[5]
+    },
+    "CCOther" : {
+        "title" : "CC #nu_{#mu} other",
+        "cate": {"CCPi","CCOther"},
+        "color": COLORS[7]
+    },
+    "NCOther" : {
+        "title" : "NC #nu_{#mu} other",
+        "cate": {"NCPi","NCOther"},
+        "color": COLORS[8]
+    },
+    "NCCohPi0": {
+        "title" : "NC Coh #pi^{0}", 
+        "color": COLORS[12]
+    }
+}
+
+CCnueNuEElasticOthers = {
+    "CCnue" :
+    {
+        "title" : "CC #nu_{e}",
+        "cate":{"CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+        "color": COLORS[0]
+    },
+    "NuEElastic" : {
+        "title" : "#nu+e",
+        "cate": {"NuEElastic"},
+        "color": COLORS[2]
+    },
+    "Others" : {
+        "title" : "Others",
+        "cate": {"CCPi0","CCPi0Proton","CCOther","CCPi","NCOther","NCDiff","NCCohPi0","NCPi0","NCPi0Proton","NCPi"},
+        "color": COLORS[1]
+    }
+}
+
 ChargedBackground = {
     "CCBackground" : {
         "title" : "Charged Current Backgrounds",
@@ -398,14 +470,18 @@ DefaultPlotters={
     "err": {"func": PlotTools.PrepareErr,
             "args":(SignalOnly,True,False,CONSOLIDATED_ERROR_GROUPS)},
     "stacked":{"func":PlotTools.PrepareStack,
-        "args": (ThesisCategories,)},
+               "args": (DiagnosticCategories,)},
+    "stackedSignalDecomp":{"func":PlotTools.PrepareStack,
+               "args": (SignalDecomposition,)},
     "diff":{"func":PlotTools.PrepareDiff},
     "migration":{"func":PlotTools.PrepareMigration,
                     "args": (SignalOnly,)},
     "2Dstacked":{"func":PlotTools.Prepare2DStack,
                "args": (ThesisCategories,)},
     "category_hist":{"func":PlotTools.CategoryHist,
-                     "args": (SignalChargedBackground,)},
+                     "args": (CCnueNuEElasticOthers,)},
+    "profileX":{"func":PlotTools.CategoryProfileX,
+                     "args": (CCnueNuEElasticOthers,)},
     "sigdep":{"func":PlotTools.PrepareSignalDecompose,
               "args": (ChargedBackground,True,False)},
     "sigdepratio":{"func":PlotTools.PrepareSignalDecomposeRatio,
@@ -443,43 +519,63 @@ PLOTS_TO_MAKE = [
     #{"name":"Available Energy vs Lepton Pt",
     #    "plot_type":"2Dstacked"},
 
-    #{"name":"Estimator vs Front dEdX",
-    #    "plot_type":"2Dstacked"},
-    #{"name":"Estimator vs Front dEdX",
-    # "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Estimator vs Front dEdX",
-        "plot_type":"2Dstacked"},
-    {"name":"Estimator vs Front dEdX",
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Estimator vs Front dEdX",
-        "plot_type":"ratio",
-     "slicer": lambda hist: PlotTools.Make2DSlice(hist,interval=5),},
-    {"name":"Biased Neutrino Energy"},
-    {"name":"Visible Energy",
+    # {"name":"Lepton Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"E Theta Squared",
+    #     "plot_type" : "stacked"},
+    # {"name":"True E Theta Squared",
+    #     "plot_type" : "stacked"},
+    # {"name":"Reco Energy vs L/E",
+    #    "plot_type" : "migration"},
+    # {"name":"Estimator vs Front dEdX",
+    #     "plot_type" : "stacked"},
+    {"name":"Biased Neutrino Energy",
         "plot_type" : "stacked"},
-    {"name":"Lepton Pt",
-        "plot_type" : "stacked"},
-    # {"name":"Biased Neutrino Energy",
-    #     "plot_type" : "err"},
-    {"name":"Front dEdX",
-        "plot_type" : "stacked"},
-    {"name":"E Theta Squared",
-        "plot_type" : "stacked"},
-    #{"name":"True Energy vs Biased Neutrino Energy",
-    #     "plot_type" : "category_hist"},
-    {"name":"True Energy vs Biased Neutrino Energy",
-        "plot_type" : "migration"},
-    #{"name":"Reco Energy vs L/E",
-    #    "plot_type" : "category_hist"},
-    #{"name":"Biased Neutrino Energy",
-            #     "plot_type" : "err"},
-    #{"name":"Q2"},
-    #{"name":"Available Energy vs Lepton Pt",
-    #        "plot_type" : '2Dstacked'},
-    #{"name":"Front dEdX"},
-    #{"name":"True Energy vs Biased Neutrino Energy"},
-    #{"name":"Biased Neutrino Energy",
-    #     "plot_type" : "sigdepratio"},
-    #{"name":"Biased Neutrino Energy",
-    #     "plot_type" : "err"},
+    # {"name":"Biased Neutrino Energy Background Fit",
+    #     "plot_type" : "stacked"},        
+    # {"name":"Visible Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"True Lepton Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Front dEdX",
+    #     "plot_type" : "stacked"},
+    # {"name":"Reco Q2",
+    #     "plot_type" : "stacked"},
+    # {"name":"Cone Outside Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neighborhood Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Apothem",
+    #     "plot_type" : "stacked"},
+    # # {"name":"EMLikeTrackScore",
+    # #     "plot_type" : "stacked"},
+    # {"name":"TransverseGapScore",
+    #     "plot_type" : "stacked"},
+    # {"name":"NonMIPClusFrac",
+    #     "plot_type" : "stacked"},
+    # {"name":"ODCalVisE",
+    #     "plot_type" : "stacked"},
+    # {"name":"DSCalVisE",
+    #     "plot_type" : "stacked"},
+    # # {"name":"Afterpulsing",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"DeadTime",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"VertexTrackMultiplicity",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"StartPointVertexMultiplicity",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"HasNoVertexMismatch",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"HasTracks",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"HasNoBackExitingTracks",
+    # #     "plot_type" : "stacked"},
+    # {"name":"Lepton Angle",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton Pt",
+    #     "plot_type" : "stacked"},
+
 ]

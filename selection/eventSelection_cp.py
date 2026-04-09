@@ -290,6 +290,50 @@ def CopyMetaTreeToOutPutFile(outfile):
     del metatree
     copiedtree.Write()
 
+
+# def CopyMetaTreeToOutPutFile(outfile, st):
+#     print("[DEBUG CopyMeta] start")
+#     print("[DEBUG CopyMeta] playlist =", AnalysisConfig.playlist)
+#     print("[DEBUG CopyMeta] st =", st)
+#     print("[DEBUG CopyMeta] ntuple_tag =", AnalysisConfig.ntuple_tag)
+#     print("[DEBUG CopyMeta] count =", AnalysisConfig.count)
+
+#     print("[DEBUG CopyMeta] about to call fileChain")
+#     metatree = Utilities.fileChain(
+#         AnalysisConfig.playlist,
+#         st,
+#         AnalysisConfig.ntuple_tag,
+#         "Meta",
+#         AnalysisConfig.count[0],
+#         AnalysisConfig.count[1]
+#     )
+#     print("[DEBUG CopyMeta] returned from fileChain")
+
+#     if AnalysisConfig.is_pc:
+#         print("[DEBUG CopyMeta] is_pc return")
+#         return None
+
+#     print("[DEBUG CopyMeta] about to GetChain")
+#     raw_metatree = metatree.GetChain()
+#     print("[DEBUG CopyMeta] returned from GetChain")
+
+#     print("[DEBUG CopyMeta] about to SetBranchStatus")
+#     raw_metatree.SetBranchStatus("*", 0)
+#     raw_metatree.SetBranchStatus("POT_Used", 1)
+#     print("[DEBUG CopyMeta] finished SetBranchStatus")
+
+#     outfile.cd()
+#     print("[DEBUG CopyMeta] about to CopyTree")
+#     copiedtree = raw_metatree.CopyTree("")
+#     print("[DEBUG CopyMeta] returned from CopyTree")
+
+#     del metatree
+
+#     print("[DEBUG CopyMeta] about to Write")
+#     copiedtree.Write()
+#     print("[DEBUG CopyMeta] done")
+
+
 if __name__ == "__main__":
 
     Reco = AnalysisConfig.run_reco
@@ -299,15 +343,23 @@ if __name__ == "__main__":
     for st in AnalysisConfig.data_types:
         print(st)
         outputSelectionHistogram = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,"data" in st,True)
-       
+        # print("DEBUG: about to open output file")
         output_file = ROOT.TFile.Open(outputSelectionHistogram,"RECREATE")
+
+        # print("DEBUG outputSelectionHistogram =", outputSelectionHistogram)
+        # print("DEBUG AnalysisConfig.count =", AnalysisConfig.count)
         
+        # print("DEBUG: about to copy meta tree")
         CopyMetaTreeToOutPutFile(output_file)
+        # CopyMetaTreeToOutPutFile(output_file, st)
+
         if st=="mc" and Truth:
             print("selecting truth")
             plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
+            # print("DEBUG: finished truth loop")
         if Reco :
             print("selecting reco")
             plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
+            # print("DEBUG: finished reco loop")
         output_file.Close()
         print("selection is done for ", st, AnalysisConfig.playlist)

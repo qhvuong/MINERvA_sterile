@@ -775,6 +775,14 @@
             }
         }
     },
+    "me1N_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Np8.txt"
+            }
+        }
+    },
     "me1O_p4": {
         "mc": {
             "MAD": {
@@ -808,6 +816,14 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Ascattering.txt"
+            }
+        }
+    },
+    "me1A_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ap8scattering.txt"
             }
         }
     },
@@ -1001,11 +1017,11 @@
             }
         }
     },
-    "le13C_2p2hp6": {
+    "le13C_2p2h_p6": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
-                "playlist_location": "file_option/playlist_mcle13C_2p2hp6.txt"
+                "playlist_location": "file_option/playlist_mcle13C_2p2h_p6.txt"
             }
         }
     },

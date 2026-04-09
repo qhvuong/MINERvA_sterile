@@ -66,8 +66,8 @@ SAMPLE_CUTS = {
         "Vertex_Apothem",
         "Etheta",
         "Eavail",
-        # "LeptonAngle",
-        # "Pt",
+        "LeptonAngle",
+        "Pt",
 
         # Removed Cuts
         #"ZDifference",

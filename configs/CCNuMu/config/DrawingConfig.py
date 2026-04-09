@@ -596,7 +596,7 @@ PLOTS_TO_MAKE = [
     # {"name":"Neutrino Vertex Z",
     #     "plot_type" : "stacked"},
     # {"name":"Neutrino Vertex Apothem",
-        # "plot_type" : "stacked"},
+    #     "plot_type" : "stacked"},
     {"name":"E Theta Squared",
         "plot_type" : "stacked"},
     {"name":"Lepton Angle",

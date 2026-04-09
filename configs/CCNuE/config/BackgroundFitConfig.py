@@ -379,16 +379,32 @@ def cate_to_comp_NUE(cate: str):
     if cate.startswith("NuEElastic"):
         return "Signal"
 
+    # # --- CC backgrounds (everything CC) ---
+    # if cate.startswith("CC"):
+    #     return "BkgCC"
+
+    # # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
+    # if cate in ("NCNuECohPi0", "NCNuMuCohPi0", "NCPi0"):
+    #     return "BkgPhoton"
+
+    # # --- everything else (NC non-pi0, unknown/diff, etc.) ---
+    # if cate in ("NCPi", "NCOther", "NCDiff", "Other"):
+    #     return "BkgOther"
+
+    # Etheta2 sideband
     # --- CC backgrounds (everything CC) ---
-    if cate.startswith("CC"):
+    # if cate.startswith("CC"):
+    if cate in ("CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuE"):
         return "BkgCC"
 
+    # dEdX sideband
     # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
-    if cate in ("NCNuECohPi0", "NCNuMuCohPi0", "NCPi0"):
+    if cate in ("CCNuEWrongSignQE", "CCNuEWrongSign", "CCPi", "NCNuECohPi0", "NCNuMuCohPi0"):
         return "BkgPhoton"
 
+    # Eavail sideband
     # --- everything else (NC non-pi0, unknown/diff, etc.) ---
-    if cate in ("NCPi", "NCOther", "NCDiff", "Other"):
+    if cate in ("CCPi0", "CCNuMuWrongSign", "CCNuMu", "CCOther", "NCPi0", "NCPi", "NCOther", "NCDiff"):
         return "BkgOther"
 
     # If something new appears, fail loudly (better than silently unmapped)

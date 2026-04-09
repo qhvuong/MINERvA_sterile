@@ -103,8 +103,12 @@ PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 # NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
 # NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
-NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
-NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 9.0, 20.0]		# testBinning
+# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 1.5, 3.0, 6.0, 10.0, 20.0]		# testBinning2
+NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 1.8, 3.0, 5.0, 9.0, 20.0]		# testBinning3
+NEUTRINO4_EE_BINNING_DIAGNOSTICS = 	[i*0.5 for i in range(41)]
+# NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 9.0, 20.0]
 NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
 NEUTRINO4_LE_BINNING = [i*.015 for i in range(34)]
 # NEUTRINO4_EE_THETA_BINNING = [.001 * i for i in range(len(NEUTRINO4_EE_BINNING))]
@@ -112,9 +116,15 @@ NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
 # NEUTRINO4_THETA_BINNING = [0.01 * i for i in range(158)]
 NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549, .579, .609, .639, .670, .700, .730, .760, .790, .820, .850, .880, .910, .940, .970, 1.000]
 
+# This is only used for CCnue background fit
+NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
+
+#E_available binning
+E_AVAILABLE_BINNING = [i*0.05 for i in range(41)]
+
 EMLIKETRACKSCORE_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
 # EMLIKETRACKSCORE_BINNING = [-0.01, 0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.01]
-TRANSVERSEGAPSCORE_BINNING = [3* i for i in range(51)]
+TRANSVERSEGAPSCORE_BINNING = [1* i for i in range(51)]
 NONMIPCLUSFRAC_BINNING = [0.1*i for i in range(11)]
 ODCALVISE_BINNING = [0.005* i for i in range(11)]
 DSCALVISE_BINNING = [0.05* i for i in range(11)]
@@ -304,20 +314,20 @@ HISTS_TO_MAKE = [
 ### MY PLOTS ###
 	"Lepton Energy",
 	"E Theta Squared",
-	"True E Theta Squared",
+	# "True E Theta Squared",
     # "Reco Energy vs L/E",
     # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
     # "Estimator vs Front dEdX",
     # "Biased Neutrino Energy",
-	# "Visible Energy",
+	"Visible Energy",
 	# "True Lepton Energy",
-	# "Front dEdX",
+	"Front dEdX",
 	# "Reco Q2",
 	# "Cone Outside Energy",
 	# "Neighborhood Energy",
-	# "Neutrino Vertex Z",
-	# "Neutrino Vertex Apothem",
+	"Neutrino Vertex Z",
+	"Neutrino Vertex Apothem",
 	# "EMLikeTrackScore",
 	# "TransverseGapScore",
 	# "NonMIPClusFrac",
@@ -363,70 +373,75 @@ HISTS_TO_MAKE = [
 	# "dPY vs Vertex Y",
 	# "dPZ vs Vertex Y",
 
-	"Reco ThetaX vs Vertex X",
-	"True ThetaX vs Vertex X",
-	"Reco ThetaY vs Vertex Y",
-	"True ThetaY vs Vertex Y",
+	# "Reco ThetaX vs Vertex X",
+	# "True ThetaX vs Vertex X",
+	# "Reco ThetaY vs Vertex Y",
+	# "True ThetaY vs Vertex Y",
 
-	"dPX vs Vertex X In Det Coordinate",
-	"dPY vs Vertex X In Det Coordinate",
-	"dPZ vs Vertex X In Det Coordinate",
-	"dPZ_frac vs Vertex X In Det Coordinate",
-	"dPhatX vs Vertex X In Det Coordinate",
-	"dPhatY vs Vertex X In Det Coordinate",
-	"dPhatZ vs Vertex X In Det Coordinate",
-	"dPmag vs Vertex X In Det Coordinate",
-	"dPmag_frac vs Vertex X In Det Coordinate",
-	"PhatX_reco vs Vertex X In Det Coordinate",
-	"PhatX_true vs Vertex X In Det Coordinate",
+	# "dPX vs Vertex X In Det Coordinate",
+	# "dPY vs Vertex X In Det Coordinate",
+	# "dPZ vs Vertex X In Det Coordinate",
+	# "dPZ_frac vs Vertex X In Det Coordinate",
+	# "dPhatX vs Vertex X In Det Coordinate",
+	# "dPhatY vs Vertex X In Det Coordinate",
+	# "dPhatZ vs Vertex X In Det Coordinate",
+	# "dPmag vs Vertex X In Det Coordinate",
+	# "dPmag_frac vs Vertex X In Det Coordinate",
+	# "PhatX_reco vs Vertex X In Det Coordinate",
+	# "PhatX_true vs Vertex X In Det Coordinate",
 
 
 
-	"dPX vs Vertex Y In Det Coordinate",
-	"dPY vs Vertex Y In Det Coordinate",
-	"dPZ vs Vertex Y In Det Coordinate",
-	"dPZ_frac vs Vertex Y In Det Coordinate",
-	"dPhatX vs Vertex Y In Det Coordinate",
-	"dPhatY vs Vertex Y In Det Coordinate",
-	"dPhatZ vs Vertex Y In Det Coordinate",
-	"dPmag vs Vertex Y In Det Coordinate",
-	"dPmag_frac vs Vertex Y In Det Coordinate",
-	"PhatY_reco vs Vertex Y In Det Coordinate",
-	"PhatY_true vs Vertex Y In Det Coordinate",
+	# "dPX vs Vertex Y In Det Coordinate",
+	# "dPY vs Vertex Y In Det Coordinate",
+	# "dPZ vs Vertex Y In Det Coordinate",
+	# "dPZ_frac vs Vertex Y In Det Coordinate",
+	# "dPhatX vs Vertex Y In Det Coordinate",
+	# "dPhatY vs Vertex Y In Det Coordinate",
+	# "dPhatZ vs Vertex Y In Det Coordinate",
+	# "dPmag vs Vertex Y In Det Coordinate",
+	# "dPmag_frac vs Vertex Y In Det Coordinate",
+	# "PhatY_reco vs Vertex Y In Det Coordinate",
+	# "PhatY_true vs Vertex Y In Det Coordinate",
 
-	"dThetaX vs Vertex X",
-	"dThetaX vs Vertex Y",
-	"dThetaX vs Vertex Z",
-	"dThetaX vs Vertex R",
-	"dThetaX vs dVertex X",
-	"dThetaX vs dVertex Y",
-	"dThetaX vs dVertex Z",
-	"dThetaX vs true pHatZ",
-	"dThetaX vs true Theta",
-	"dThetaX vs Front dEdX",
-	"dThetaX vs ConeOutsideE",
-	"dThetaX vs NeighborhoodE",
-	"dThetaX vs Lepton Energy",
-	"dThetaX vs Available Energy",
-	"dThetaX vs Hex Edge Distance",
-	"dThetaX vs EMLikeTrackScore",
 
-	"dThetaY vs Vertex X",
-	"dThetaY vs Vertex Y",
-	"dThetaY vs Vertex Z",	
-	"dThetaY vs Vertex R",
-	"dThetaY vs dVertex X",
-	"dThetaY vs dVertex Y",
-	"dThetaY vs dVertex Z",	
-	"dThetaY vs true pHatZ",
-	"dThetaY vs true Theta",
-	"dThetaY vs Front dEdX",
-	"dThetaY vs ConeOutsideE",
-	"dThetaY vs NeighborhoodE",
-	"dThetaY vs Lepton Energy",
-	"dThetaY vs Available Energy",
-	"dThetaY vs Hex Edge Distance",
-	"dThetaY vs EMLikeTrackScore",
+	# "dPmag_frac vs Vertex Z In Det Coordinate",
+	# "dPmag_frac vs Lepton Energy",
+	# "dPmag_frac vs HCAL Fraction",
+
+	# "dThetaX vs Vertex X",
+	# "dThetaX vs Vertex Y",
+	# "dThetaX vs Vertex Z",
+	# "dThetaX vs Vertex R",
+	# "dThetaX vs dVertex X",
+	# "dThetaX vs dVertex Y",
+	# "dThetaX vs dVertex Z",
+	# "dThetaX vs true pHatZ",
+	# "dThetaX vs true Theta",
+	# "dThetaX vs Front dEdX",
+	# "dThetaX vs ConeOutsideE",
+	# "dThetaX vs NeighborhoodE",
+	# "dThetaX vs Lepton Energy",
+	# "dThetaX vs Available Energy",
+	# "dThetaX vs Hex Edge Distance",
+	# "dThetaX vs EMLikeTrackScore",
+
+	# "dThetaY vs Vertex X",
+	# "dThetaY vs Vertex Y",
+	# "dThetaY vs Vertex Z",	
+	# "dThetaY vs Vertex R",
+	# "dThetaY vs dVertex X",
+	# "dThetaY vs dVertex Y",
+	# "dThetaY vs dVertex Z",	
+	# "dThetaY vs true pHatZ",
+	# "dThetaY vs true Theta",
+	# "dThetaY vs Front dEdX",
+	# "dThetaY vs ConeOutsideE",
+	# "dThetaY vs NeighborhoodE",
+	# "dThetaY vs Lepton Energy",
+	# "dThetaY vs Available Energy",
+	# "dThetaY vs Hex Edge Distance",
+	# "dThetaY vs EMLikeTrackScore",
 
 	
 	# "True ThetaX vs Vertex X In Det Coordinate",

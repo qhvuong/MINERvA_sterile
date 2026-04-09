@@ -1842,6 +1842,77 @@ PLOT_SETTINGS= {
     },
 
 
+    "dPmag_frac vs Vertex Z In Det Coordinate":
+    {
+        "name": "dPmagFracVsVertexZDet",
+        "title": "(Reco-True)/True |p| vs Vertex Z (Det); Vertex Z (mm); (|p|^{reco}-|p|^{true})/|p|^{true}; NEvents",
+        "binning": [
+            [i for i in range(5500,8800,300)],
+            PlotConfig.PMAG_FRAC_RESID_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.vtx[2],
+            lambda event: (
+                (reco.R() - true_mag) / true_mag
+                if (
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags
+    },
+    "dPmag_frac vs Lepton Energy":
+    {
+        "name": "dPmagFracVsLeptonEnergy",
+        "title": "(Reco-True)/True |p| vs Lepton Energy; Lepton Energy (GeV); (|p|^{reco}-|p|^{true})/|p|^{true}; NEvents",
+        "binning": [
+            PlotConfig.NEUTRINO4_EE_BINNING,
+            PlotConfig.PMAG_FRAC_RESID_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_E_lep,
+            lambda event: (
+                (reco.R() - true_mag) / true_mag
+                if (
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags
+    },
+    "dPmag_frac vs HCAL Fraction":
+    {
+        "name": "dPmagFracVsHCALFraction",
+        "title": "(Reco-True)/True |p| vs HCAL fraction; HCAL fraction; (|p|^{reco}-|p|^{true})/|p|^{true}; NEvents",
+        "binning": [
+            # [i*0.002 for i in range(11)],
+            [0, 0.0001, 0.002, 0.005, 0.008, 0.012, 0.02],
+            PlotConfig.PMAG_FRAC_RESID_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.prong_HCALVisE[0]/event.prong_TotalVisE[0],
+            lambda event: (
+                (reco.R() - true_mag) / true_mag
+                if (
+                    (reco := getattr(getattr(event, "kin_cal", None), "reco_LeptonP3D_det", None)) is not None
+                    and (true := getattr(getattr(event, "kin_cal", None), "true_LeptonP3D_det", None)) is not None
+                    and (reco_r := reco.R()) > 0
+                    and (true_mag := true.Mag()) > 0
+                )
+                else None
+            ),
+        ],
+        "tags": truth_tags
+    },
+
 
     "dThetaX vs Vertex X":
     {
@@ -2331,6 +2402,38 @@ for i in PlotConfig.LOW_RECOIL_BIN_Q0:
              "cuts": cuts}
 
     PLOT_SETTINGS[key] = entry
+
+
+def PrintBinYields(h, label="hist", include_underflow_overflow=True):
+    if not h:
+        print(f"{label}: None")
+        return
+
+    cv = h.GetCVHistoWithStatError() if hasattr(h, "GetCVHistoWithStatError") else h
+    nb = cv.GetNbinsX()
+
+    print(f"\n--- {label} ---")
+    total = 0.0
+
+    start = 0 if include_underflow_overflow else 1
+    end   = nb + 1 if include_underflow_overflow else nb
+
+    for i in range(start, end + 1):
+        val = cv.GetBinContent(i)
+        err = cv.GetBinError(i)
+        if i == 0:
+            name = "underflow"
+        elif i == nb + 1:
+            name = "overflow"
+        else:
+            name = f"bin {i} [{cv.GetBinLowEdge(i)}, {cv.GetBinLowEdge(i+1)})"
+        print(f"{name:30s} : {val:.6g} ± {err:.6g}")
+        total += val
+
+    print(f"sum of printed bins             : {total:.6g}")
+    print(f"Integral(0, nb+1)              : {cv.Integral(0, nb+1):.6g}")
+
+
 #like histfolio, connect related histograms together
 class HistHolder:
     def __init__(self, name, f, sideband, is_mc, pot=1.0,data_pot=None): 
@@ -2471,13 +2574,27 @@ class HistHolder:
         if not self.valid:
             return None
 
-        def _yield_integral(h):
+        # def _yield_integral(h):
+        #     if not h:
+        #         return 0.0
+        #     cv = h.GetCVHistoWithStatError() if hasattr(h, "GetCVHistoWithStatError") else h
+        #     if cv.InheritsFrom("TH2"):
+        #         return float(cv.Integral(0, cv.GetNbinsX() + 1, 0, cv.GetNbinsY() + 1))
+        #     return float(cv.Integral(0, cv.GetNbinsX() + 1))
+
+        def _yield_integral(h, include_flow=False):
             if not h:
                 return 0.0
             cv = h.GetCVHistoWithStatError() if hasattr(h, "GetCVHistoWithStatError") else h
             if cv.InheritsFrom("TH2"):
-                return float(cv.Integral(0, cv.GetNbinsX() + 1, 0, cv.GetNbinsY() + 1))
-            return float(cv.Integral(0, cv.GetNbinsX() + 1))
+                if include_flow:
+                    return float(cv.Integral(0, cv.GetNbinsX() + 1, 0, cv.GetNbinsY() + 1))
+                return float(cv.Integral(1, cv.GetNbinsX(), 1, cv.GetNbinsY()))
+            else:
+                if include_flow:
+                    return float(cv.Integral(0, cv.GetNbinsX() + 1))
+                return float(cv.Integral(1, cv.GetNbinsX()))
+
 
         _mc_hists, _colors, _titles, _yields = [], [], [], []
         local_grouping = grouping or {}
@@ -2508,8 +2625,18 @@ class HistHolder:
 
             hist.SetTitle(config["title"])
 
+            # cv = hist.GetCVHistoWithStatError() if hasattr(hist, "GetCVHistoWithStatError") else hist
+            # print("nbins =", cv.GetNbinsX())
+            # nb = cv.GetNbinsX()
+            # for i in range(1, nb + 1):
+            #     print(i, cv.GetBinLowEdge(i), cv.GetBinLowEdge(i+1))
+            # print("overflow bin index =", nb + 1)
+            # for i in range(0, nb + 2):
+            #     print(config["title"], "bin", i, cv.GetBinContent(i))
+            # print("total =", cv.Integral(0, nb + 1))
+
             # Compute yield BEFORE width scaling
-            yld = _yield_integral(hist)
+            yld = _yield_integral(hist, include_flow=False)
             _yields.append(yld)
 
             # Optionally return width-scaled clone for plotting

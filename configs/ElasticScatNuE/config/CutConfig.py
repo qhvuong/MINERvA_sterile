@@ -73,8 +73,12 @@ MAX_VERTEX_TRACK_MULTIPLICITY = 1
 NONMIP_CLUS_FRAC_CUT = 0.3
 TRANSVERSE_GAP_SCORE_CUT = 13
 FIRST_FIRE_FRACTION_CUT = 0.70
-FIDUCIAL_APOTHEM = 881.25
-FIDUCIAL_Z_RANGE = [5840,8422]
+
+#OLD
+FIDUCIAL_APOTHEM = 850
+FIDUCIAL_Z_RANGE = [5980,8422]
+# FIDUCIAL_APOTHEM = 881.25
+# FIDUCIAL_Z_RANGE = [5840,8422]
 
 # # Kinematics cutoffs
 ELECTRON_ENERGY_CUT = 0.8 #GeV
@@ -103,15 +107,17 @@ SAMPLE_CUTS = {
         "DeadTime",
         "Afterpulsing",
         "NonMIPClusFrac",
-        "TransverseGapScore",
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
-        # "LeptonEnergy",
-        # "Q2",
-        # "InverseEtheta",
+        "LeptonEnergy",
+        "InverseEtheta",
         "MeanFrontdEdX",
         "Eavail",
+
+        # Removed cuts
+        # "TransverseGapScore",
+        # "Q2",
     ]
     ,
     "dEdX" : [
@@ -126,15 +132,17 @@ SAMPLE_CUTS = {
         "DeadTime",
         "Afterpulsing",
         "NonMIPClusFrac",
-        "TransverseGapScore",
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "LeptonEnergy",
-        "Q2",
         "InverseEtheta",
         "InverseMeanFrontdEdX",
         "Eavail",
+
+        # Removed cuts
+        # "TransverseGapScore",
+        # "Q2",
     ]
     ,
     "Eavail" : [ 
@@ -149,15 +157,17 @@ SAMPLE_CUTS = {
         "DeadTime",
         "Afterpulsing",
         "NonMIPClusFrac",
-        "TransverseGapScore",
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "LeptonEnergy",
-        "Q2",
         "InverseEtheta",
         "MeanFrontdEdX",
         "EavailSideband",
+
+        # Removed cuts
+        # "TransverseGapScore",
+        # "Q2",
     ]
     ,
     "Etheta" : [ 
@@ -172,15 +182,17 @@ SAMPLE_CUTS = {
         "DeadTime",
         "Afterpulsing",
         "NonMIPClusFrac",
-        "TransverseGapScore",
         "HasNoVertexMismatch", 
         "StartPointVertexMultiplicity",
         "VertexTrackMultiplicity",
         "LeptonEnergy",
-        "Q2",
         "EthetaSideband",
         "MeanFrontdEdX",
         "Eavail",
+
+        # Removed cuts
+        # "TransverseGapScore",
+        # "Q2",
     ]
 }
 

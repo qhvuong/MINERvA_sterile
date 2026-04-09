@@ -195,6 +195,44 @@ SignalDecomposition = {
     }
 }
 
+SignalDecomposition = {
+    "CCNuMuQE" :
+    {
+        "title" : "CC #nu_{#mu}-QE",
+        "color": COLORS[5]
+    },
+    "CCNuMu2p2h" : {
+        "title" : "CC #nu_{#mu}-2p2h",
+        "color": COLORS[6]
+    },
+    "CCNuMuDelta" : {
+        "title" : "CC #nu_{#mu}-Delta Res",
+        "color": COLORS[1]
+    },
+    "CCNuMu": {
+        "title" : "CC #nu_{#mu}-Res", 
+        "color": COLORS[4]
+    },
+    "CCNuMuDIS" : {
+        "title" : "CC #nu_{#mu}-DIS",
+        "color": COLORS[2]
+    },
+    "CCNuMuWrongSign": {
+        "title" : "CC #nu_{#mu} wrong sign", 
+        "color": COLORS[7]
+    },
+    "Background" : {
+        "title" : "Backgrounds",
+        "cate" : {"NCDiff", "NuEElastic", "NC"}, 
+        # "cate": ["NCDiff", "NuEElastic", "NC", "CC"],
+        "color": COLORS[8]
+    }
+}
+
+
+
+SIGNAL_DEFINITION = SignalDecomposition
+
 #SignalDecomposition = {
 #    "NueBar" :
 #    {
@@ -367,7 +405,9 @@ DefaultPlotters={
     "hist2d":{"func":PlotTools.PrepareHist2D,
         "args": (SignalDecomposition,)},
     "category_hist":{"func":PlotTools.CategoryHist,
-                     "args": (SignalChargedBackground,)},
+                     "args": (SignalBackground,)},
+    "profileX":{"func":PlotTools.CategoryProfileX,
+                     "args": (SignalBackground,)},
     "sigdep":{"func":PlotTools.PrepareSignalDecompose,
               "args": (ChargedBackground,True,False)},
     "sigdepratio":{"func":PlotTools.PrepareSignalDecomposeRatio,
@@ -604,25 +644,24 @@ PLOTS_TO_MAKE = [
     #    "plot_type" : "migration"},
     #{"name":"electron_energy",
     #    "plot_type" : "sigdep"},
+    {"name":"Biased Neutrino Energy",
+        "plot_type" : "stacked"},
+    {"name":"Visible Energy",
+        "plot_type" : "stacked"},
+    # {"name":"HasNoBackExitingTracks",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Apothem",
+    #     "plot_type" : "stacked"},
+    {"name":"E Theta Squared",
+        "plot_type" : "stacked"},
+    {"name":"Lepton Angle",
+        "plot_type" : "stacked"},
+    {"name":"Lepton Pt",
+        "plot_type" : "stacked"},
     {"name":"Reco Energy vs L/E",
        "plot_type" : "migration"},
-    #{"name":"E Theta Squared"},
-    #{"name":"True Energy vs Biased Neutrino Energy",
-    #        "plot_type" : "category_hist"},
-    #{"name":"True Energy vs Biased Neutrino Energy",
-    #        "plot_type" : 'migration'},
-    #{"name":"Reco Energy vs L/E",
-    #    "plot_type" : "migration"},
-    #{"name":"True Energy vs Biased Neutrino Energy",
-    #     "plot_type" : "category_hist"},
-    #{"name":"True Energy vs Biased Neutrino Energy",
-    #     "plot_type" : "migration"},
-    {"name":"Reco Energy vs L/E",
-       "plot_type" : "category_hist"},
-    
-    {"name":"Biased Neutrino Energy"},
-    {"name":"Biased Neutrino Energy",
-         "plot_type" : "err"},
     #{"name":"Q2"},
     #{"name":"Available Energy vs True W"},
     #{"name":"Available Energy vs Lepton Pt"},

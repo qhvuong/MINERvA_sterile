@@ -526,7 +526,7 @@ class CVPythonUniverse():
             return 1.0
 
     #################### functions to be overide in systematics shift universes #################
-
+    #### No correction
     # def ElectronEnergyRaw(self):
     #     return self.GetVecElem("prong_part_E",0,3)
 
@@ -554,7 +554,7 @@ class CVPythonUniverse():
     #     return s
 
 
-
+    #### Yes correction
     def ElectronP3D_det(self):
         # ---- 0) build uncorrected p(det) from branches + existing EM energy shift ----
         electronp = self.GetVecOfVecDouble("prong_part_E")
@@ -598,6 +598,9 @@ class CVPythonUniverse():
             a0 = 0.01914
             a1 = 6.03e-05
 
+
+        # a0 = -0.01189
+        # a1 = 1.06e-04
         # ---- 4) apply magnitude correction ----
         p_det_corr = apply_pmag_frac_correction_det(
             p_det_corr,
@@ -680,6 +683,11 @@ class CVPythonUniverse():
     def ElectronEnergyRaw(self):
         p = self.ElectronP3D_det_noEMshift().R()   # |p| from corrected momentum
         return math.sqrt(p*p + M_e_sqr)
+
+
+
+
+
 
 
     def ElectronTheta(self):

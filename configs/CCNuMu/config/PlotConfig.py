@@ -103,9 +103,16 @@ PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 # NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
 # NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
-# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]		## THIS IS NU+E BINNING THAT MATCHES JAEWON'S
-NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]
+
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.1, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning4
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.5, 16.0, 20.0]  # ==> newBinning3
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning2
+# NEUTRINO4_EE_BINNING = [0.0, 1.2, 1.6, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.5, 9.5, 12.0, 16.0, 20.0] # ==> newBinning
+NEUTRINO4_EE_BINNING = [0.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
+
 NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
+
+
 NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 # NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
 NEUTRINO4_P_BINNING = [i*.05 for i in range(40)]
@@ -312,9 +319,9 @@ HISTS_TO_MAKE = [
     # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
 	"Visible Energy",
-	"HasNoBackExitingTracks",
-	"Neutrino Vertex Z",
-	"Neutrino Vertex Apothem",
+	# "HasNoBackExitingTracks",
+	# "Neutrino Vertex Z",
+	# "Neutrino Vertex Apothem",
 	# "Front dEdX",
 	# "Reco Q2",
 	# "Cone Outside Energy",

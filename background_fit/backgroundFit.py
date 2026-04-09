@@ -662,7 +662,7 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
     # For TSVD keep count: interpret recipe.kreg as kmax if set, else keep all
     # kmax = getattr(recipe, "kreg", None)
     kmax_used = None
-    tol = 0.05   # or getattr(recipe, "tol", None)
+    tol = 0.02   # or getattr(recipe, "tol", None)
 
     # Build component sums + fixed sums for each region once
     comp_sums_by_region = {}
@@ -694,7 +694,10 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
 
     # Solve bin-by-bin
     nb = href.GetNbinsX()
+    # skip_fit_bins = {1}
     for b in range(0, nb + 2):  # include under/overflow
+        # if b in skip_fit_bins:
+        #     continue
         # b_vec = data - fixed for each region
         b_vec = []
         for reg in recipe.regions:
@@ -1732,6 +1735,33 @@ if __name__ == "__main__":
         )
         subbedData.Write(data_hist.plot_name + "_data_bkgSubbed")
         mc_prediction.Write(data_hist.plot_name + "_predicted_Signal")
+
+        # -------------------- PLOT BACKGROUND-SUBTRACTED RESULT --------------------
+        c_sub = ROOT.TCanvas(f"c_sub_{data_hist.plot_name}", f"c_sub_{data_hist.plot_name}", 800, 600)
+
+        subbedData.SetTitle("Background-subtracted data vs predicted signal")
+        subbedData.GetYaxis().SetTitle("Events")
+        subbedData.GetXaxis().SetTitle(data_hist.GetHist().GetXaxis().GetTitle())
+
+        mnvplotter.DrawDataMCWithErrorBand(subbedData, subbedMC, 1.0, "TR")
+        PlotTools.Print(
+            AnalysisConfig.PlotPath(data_hist.plot_name + "_bkgSubtracted", region_signal, background_fit_tag),
+            mnvplotter,
+            c_sub,
+        )
+
+        # # Optional: data-only background-subtracted plot
+        # c_sub_data = ROOT.TCanvas(f"c_sub_data_{data_hist.plot_name}", f"c_sub_data_{data_hist.plot_name}", 800, 600)
+
+        # subbedData.SetTitle("Background-subtracted data")
+        # subbedData.Draw("E1")
+        # PlotTools.Print(
+        #     AnalysisConfig.PlotPath(data_hist.plot_name + "_bkgSubtractedDataOnly", region_signal, background_fit_tag),
+        #     mnvplotter,
+        #     c_sub_data,
+        # )
+
+
 
     # -------------------- (RE)OPEN FILES IF NEEDED FOR PLOTTING --------------------
     type_path_map = {

@@ -9,6 +9,7 @@ from itertools import chain
 from config.AnalysisConfig import AnalysisConfig
 from config.SignalDef import SIGNAL_DEFINITION
 from tools import Utilities
+import shutil
 
 # Get This from Rob. Thanks Rob.
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
@@ -58,6 +59,13 @@ def is_valid_root_file(filepath):
         return False
 
 
+def MakeNo2p2hName(path):
+    base, ext = os.path.splitext(path)
+    return base + "_no2p2h" + ext
+def MakeOnly2p2hName(path):
+    base, ext = os.path.splitext(path)
+    return base + "_only2p2h" + ext
+
 
 def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     input_file = ROOT.TFile.Open(input_string)
@@ -89,7 +97,25 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     print("done a file")
 
 
-def MaddWrapper(output_playlist, input_files, is_data):
+# def MaddWrapper(output_playlist, input_files, is_data):
+#     valid_files = [f for f in input_files if is_valid_root_file(f)]
+#     print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
+
+#     if not valid_files:
+#         print(f"❌ No valid files to combine for {output_playlist} — skipping.")
+#         return
+
+#     # Optional: sort to make sure the first file is reliable
+#     valid_files.sort()
+
+#     args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist, is_data)]
+#     args.extend(valid_files)
+
+#     print(f"📦 Running madd on output: {args[1]}")
+#     subprocess.run(args, stdout=subprocess.DEVNULL)
+#     print("✅ Finished madd.")
+
+def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
     valid_files = [f for f in input_files if is_valid_root_file(f)]
     print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
 
@@ -97,34 +123,94 @@ def MaddWrapper(output_playlist, input_files, is_data):
         print(f"❌ No valid files to combine for {output_playlist} — skipping.")
         return
 
-    # Optional: sort to make sure the first file is reliable
     valid_files.sort()
 
-    args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist, is_data)]
+    out = output_file or AnalysisConfig.SelectionHistoPath(output_playlist, is_data)
+    args = ["madd", out]
     args.extend(valid_files)
 
-    print(f"📦 Running madd on output: {args[1]}")
+    print(f"📦 Running madd on output: {out}")
     subprocess.run(args, stdout=subprocess.DEVNULL)
     print("✅ Finished madd.")
 
 
-def MergeHistograms():
-    for sample_type in dict_of_files:
-        #smaple_type is data or mc
-        if sample_type not in AnalysisConfig.data_types:
-           continue
-        if sample_type == "data":
-            MaddWrapper(AnalysisConfig.playlist,chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),True)
-        elif sample_type == "mc":
-            MaddWrapper(AnalysisConfig.playlist,chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),False)
-    for special_sample in dict_of_special_mc_samples:
-        if "BigGenie" in list(dict_of_special_mc_samples[special_sample].keys())[0]:
-            MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
-            MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False),None,None,True)
-        else:
-            MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
-            MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False))
 
+
+# def MergeHistograms():
+#     for sample_type in dict_of_files:
+#         #smaple_type is data or mc
+#         if sample_type not in AnalysisConfig.data_types:
+#            continue
+#         if sample_type == "data":
+#             MaddWrapper(AnalysisConfig.playlist,chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),True)
+#         elif sample_type == "mc":
+#             MaddWrapper(AnalysisConfig.playlist,chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),False)
+#     for special_sample in dict_of_special_mc_samples:
+#         if "BigGenie" in list(dict_of_special_mc_samples[special_sample].keys())[0]:
+#             MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
+#             MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False),None,None,True)
+#         else:
+#             MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
+#             MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False))
+
+def MergeHistograms():
+    nominal_mc = None
+
+    # First produce the standard merged outputs
+    for sample_type in dict_of_files:
+        if sample_type not in AnalysisConfig.data_types:
+            continue
+
+        if sample_type == "data":
+            MaddWrapper(
+                AnalysisConfig.playlist,
+                chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),
+                True
+            )
+
+        elif sample_type == "mc":
+            MaddWrapper(
+                AnalysisConfig.playlist,
+                chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),
+                False
+            )
+
+            nominal_mc = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist, False)
+            mc_no2p2h = MakeNo2p2hName(nominal_mc)
+
+            if os.path.exists(nominal_mc):
+                shutil.copy2(nominal_mc, mc_no2p2h)
+                print(f"Saved nominal-only MC as: {mc_no2p2h}")
+            else:
+                raise FileNotFoundError(f"Nominal MC file not found: {nominal_mc}")
+
+    if nominal_mc is None:
+        return
+
+    # Then build each special-sample-only file and add it into the usual MC file
+    for i, special_sample in enumerate(dict_of_special_mc_samples):
+        special_files = chain.from_iterable(
+            iter(dict_of_special_mc_samples[special_sample].values())
+        )
+
+        if len(dict_of_special_mc_samples) == 1:
+            special_output_file = MakeOnly2p2hName(nominal_mc)
+        else:
+            base, ext = os.path.splitext(MakeOnly2p2hName(nominal_mc))
+            special_output_file = f"{base}_{i}{ext}"
+
+        MaddWrapper(
+            AnalysisConfig.playlist,
+            special_files,
+            False,
+            output_file=special_output_file
+        )
+
+        first_key = list(dict_of_special_mc_samples[special_sample].keys())[0]
+        if "BigGenie" in first_key:
+            MergeTuples(nominal_mc, special_output_file, None, None, True)
+        else:
+            MergeTuples(nominal_mc, special_output_file)
 
 
 def MergeTuples(tuple1,tuple2,pot1=None,pot2=None,bigGenie=False):

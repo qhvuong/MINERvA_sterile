@@ -109,8 +109,9 @@ NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 
 # NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.1, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning4
 # NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.5, 16.0, 20.0]  # ==> newBinning3
-NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning2
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning2
 # NEUTRINO4_EE_BINNING = [0.0, 1.2, 1.6, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.5, 9.5, 12.0, 16.0, 20.0] # ==> newBinning
+NEUTRINO4_EE_BINNING = [0.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
 
 NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
 
@@ -317,13 +318,13 @@ HISTS_TO_MAKE = [
 
 ### MY PLOTS ###
 	# "Lepton Energy",
-	# "E Theta Squared",
+	"E Theta Squared",
 	# "True E Theta Squared",
-    # "Reco Energy vs L/E",
+    "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
-    "Biased Neutrino Energy Background Fit",
-	"Visible Energy",
+    # "Biased Neutrino Energy Background Fit",
+	# "Visible Energy",
 	# "True Lepton Energy",
 	# "Front dEdX",
 	# "Reco Q2",

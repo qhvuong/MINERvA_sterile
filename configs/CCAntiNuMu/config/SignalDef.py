@@ -109,7 +109,8 @@ def IsInKinematicPhaseSpace(event):
 TRUTH_CATEGORIES = OrderedDict()
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
+TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
+# TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
 
 TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNuMu(event) and not IsAntiNu(event)
 TRUTH_CATEGORIES["CCNuMuQE"] = lambda event: IsCC(event) and IsNuMu(event) and IsQE(event)
@@ -117,9 +118,10 @@ TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) an
 TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuMu2p2h"] = lambda event: IsCC(event) and IsNuMu(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNuMu(event)
+TRUTH_CATEGORIES["CC"] = lambda event: IsCC(event)
 
 # My signal is one or more of the listed categories.
-SIGNAL_DEFINATION = [
+SIGNAL_DEFINITION = [
     "CCNuMuQE",
     "CCNuMuDelta",
     "CCNuMuDIS",

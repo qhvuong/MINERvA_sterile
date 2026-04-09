@@ -58,24 +58,33 @@ TRUE_Q3_RANGE = [0,4]
 PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 visE_RANGE = [0.0,0.3]
-Ethetasquared_CUT = .003
+Ethetasquared_CUT = .0032
 
 ############################################################################
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-    "Signal" : [ 
+    "Signal" : [
         "InverseHasNoBackExitingTracks",
         "Vertex_Z",
         "Vertex_Apothem",
         "Etheta",
-    ]
+        "Eavail",
+        # "LeptonAngle",
+        "Pt",
+
+        # Removed Cuts
+        #"ZDifference",
+        #"ZDifference_vtx",
+        #"ProtonEnd",
+        #"ContainedProton",
+     ]
 }
 
 KINEMATICS_CUTS = [
-    "LeptonAngle",
-    "Eavail",
-    "Pt",
+    # "LeptonAngle",
+    # "Eavail",
+    # "Pt",
 ]
 
 #######################################

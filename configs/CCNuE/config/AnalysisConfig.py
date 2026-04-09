@@ -347,15 +347,15 @@ if options.data_only and options.mc_only:
 if not options.run_reco:
     options.POT_cal=True
 
-# if options.grid:
-#     #override start variable by $PROCESS variable
-#     nth_job = int(os.environ["PROCESS"])
-#     options.count[0]=nth_job*options.count[1]+options.count[0]
 if options.grid:
-    # For grid jobs, the wrapper already passes the correct starting offset:
-    #   --count <count_start> <count_n>
-    # so do not apply PROCESS again here.
-    pass
+    #override start variable by $PROCESS variable
+    nth_job = int(os.environ["PROCESS"])
+    options.count[0]=nth_job*options.count[1]+options.count[0]
+# if options.grid:
+#     # For grid jobs, the wrapper already passes the correct starting offset:
+#     #   --count <count_start> <count_n>
+#     # so do not apply PROCESS again here.
+#     pass
 
 
 if options.testing:

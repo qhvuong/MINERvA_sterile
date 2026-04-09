@@ -263,9 +263,6 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
         else:
             data_hist_plot = data_hist
 
-        # data_hist_plot.SetMinimum(1.)
-        # data_hist_plot.SetMaximum(1e6)
-
         plotfunction = lambda mnvplotter, data_hist_in, *mc_ints: partial(
             MakeDataMCStackedPlot,
             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
@@ -282,12 +279,6 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
             MakeDataMCStackedPlot,
             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
         )(mc_hist, mc_ints)
-
-        # tmp = mc_hists.GetHist().Clone()
-        # tmp.Reset()
-        # tmp.SetMinimum(1.)
-        # tmp.SetMaximum(1e6)
-        # hists = [tmp]
 
     # Axis titles for MC hists
     for hist in mc_list:
@@ -628,35 +619,237 @@ def MakeProfile1D(prof, xmin=None, xmax=None, err_scale=3.0, trim_frac=0.05, unw
 
 
 
-# def MakeProfile1DNoFit(prof): 
-#     prof.DrawCopy("E1")
+def MakeProfile1DNoFit(prof):
+    drawopt = "E1"
+    if ROOT.gPad and ROOT.gPad.GetListOfPrimitives() and ROOT.gPad.GetListOfPrimitives().GetSize() > 0:
+        drawopt = "E1 same"
 
-# def CategoryProfileXNoFit(data_hists, mc_hists, category, option="s", *args, **kwargs):
-#     if not mc_hists.valid:
-#         raise KeyError("No MC histogram to profile")
+    drawn = prof.DrawCopy(drawopt)
+    if drawn:
+        drawn.SetErrorOption("")
 
-#     print(category)
+    if ROOT.gPad:
+        ROOT.gPad.Modified()
+        ROOT.gPad.Update()
 
-#     # Build category-summed TH2
-#     cate_names = _iter_cate_names(category)
 
-#     if cate_names:
-#         hist2d = mc_hists.GetHist().Clone()
-#         hist2d.Reset()
-#         for cate in cate_names:
-#             if cate in mc_hists.hists:
-#                 hist2d.Add(mc_hists.hists[cate])
-#     else:
-#         hist2d = mc_hists.GetHist()
+def CategoryProfileXNoFit(data_hists, mc_hists, category, option="", *args, **kwargs):
+    if not mc_hists.valid:
+        raise KeyError("No MC histogram to profile")
 
-#     # Mean(Y) vs X
-#     prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
-#     prof.SetTitle(hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
-#                   + "; <" + hist2d.GetYaxis().GetTitle() + ">")
+    cate_names = _iter_cate_names(category)
 
-#     hists = [prof]
-#     lambda mnvplotter, h, *args: MakeProfile1DNoFit(h)
-#     return plotfunction, hists
+    if cate_names:
+        hist2d = mc_hists.GetHist().Clone(f"{mc_hists.GetHist().GetName()}_sum2d_nofit")
+        hist2d.SetDirectory(0)
+        hist2d.Reset()
+        for cate in cate_names:
+            if cate in mc_hists.hists:
+                hist2d.Add(mc_hists.hists[cate])
+    else:
+        hist2d = mc_hists.GetHist().Clone(f"{mc_hists.GetHist().GetName()}_base2d_nofit")
+        hist2d.SetDirectory(0)
+
+    prof = hist2d.ProfileX(f"{hist2d.GetName()}_pfx", 1, -1, option)
+    prof.SetDirectory(0)
+    prof.SetErrorOption("")
+    prof.SetTitle(
+        hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle()
+        + "; <" + hist2d.GetYaxis().GetTitle() + ">"
+    )
+
+    hists = [prof]
+    plotfunction = lambda mnvplotter, h, *args: MakeProfile1DNoFit(h)
+    return plotfunction, hists
+
+
+
+
+
+
+
+
+
+
+
+
+
+def MakeProjection1DNoFit(h1):
+    drawopt = "HIST"
+    if ROOT.gPad and ROOT.gPad.GetListOfPrimitives() and ROOT.gPad.GetListOfPrimitives().GetSize() > 0:
+        drawopt = "HIST same"
+
+    drawn = h1.DrawCopy(drawopt)
+
+    if ROOT.gPad:
+        ROOT.gPad.Modified()
+        ROOT.gPad.Update()
+
+
+def CategoryProjectionXNoFit(data_hists, mc_hists, category, *args, **kwargs):
+    if not mc_hists.valid:
+        raise KeyError("No MC histogram to project")
+
+    cate_names = _iter_cate_names(category)
+
+    if cate_names:
+        hist2d = mc_hists.GetHist().Clone(f"{mc_hists.GetHist().GetName()}_sum2d_projx")
+        hist2d.SetDirectory(0)
+        hist2d.Reset()
+        for cate in cate_names:
+            if cate in mc_hists.hists:
+                hist2d.Add(mc_hists.hists[cate])
+    else:
+        hist2d = mc_hists.GetHist().Clone(f"{mc_hists.GetHist().GetName()}_base2d_projx")
+        hist2d.SetDirectory(0)
+
+    # Counts vs X, summing over all Y bins
+    proj = hist2d.ProjectionX(f"{hist2d.GetName()}_px", 1, -1)
+    proj.SetDirectory(0)
+
+    proj.SetTitle(
+        hist2d.GetTitle() + "; " + hist2d.GetXaxis().GetTitle() + "; Events"
+    )
+
+    if "color" in category:
+        proj.SetLineColor(category["color"])
+        proj.SetMarkerColor(category["color"])
+
+    hists = [proj]
+    plotfunction = lambda mnvplotter, h, *args: MakeProjection1DNoFit(h)
+    return plotfunction, hists
+
+
+
+
+
+
+
+
+def MakeProjectionY1DNoFit(h1):
+    drawopt = "E1"
+    if ROOT.gPad and ROOT.gPad.GetListOfPrimitives() and ROOT.gPad.GetListOfPrimitives().GetSize() > 0:
+        drawopt = "E1 same"
+
+    drawn = h1.DrawCopy(drawopt)
+    if not drawn:
+        return
+
+    n = drawn.GetEntries()
+    mean = drawn.GetMean()
+    rms = drawn.GetRMS()
+    skew = drawn.GetSkewness()
+
+    box = ROOT.TPaveText(0.58, 0.70, 0.88, 0.88, "NDC")
+    box.SetFillStyle(0)
+    box.SetBorderSize(1)
+    box.SetTextAlign(12)
+    box.SetTextSize(0.03)
+    box.AddText(f"N = {n:.0f}")
+    box.AddText(f"Mean = {mean:.4g}")
+    box.AddText(f"RMS = {rms:.4g}")
+    box.AddText(f"Skewness = {skew:.4g}")
+    box.Draw("same")
+
+    _ROOT_KEEP.extend([box])
+
+    if ROOT.gPad:
+        ROOT.gPad.Modified()
+        ROOT.gPad.Update()
+
+
+def CategoryProjectionYNoFit(data_hists, mc_hists, category, *args, **kwargs):
+    if not mc_hists.valid:
+        raise KeyError("No MC histogram to project")
+
+    cate_names = _iter_cate_names(category)
+
+    if cate_names:
+        hist2d = mc_hists.GetHist().Clone(f"{mc_hists.GetHist().GetName()}_sum2d_projy")
+        hist2d.SetDirectory(0)
+        hist2d.Reset()
+        for cate in cate_names:
+            if cate in mc_hists.hists:
+                hist2d.Add(mc_hists.hists[cate])
+    else:
+        hist2d = mc_hists.GetHist().Clone(f"{mc_hists.GetHist().GetName()}_base2d_projy")
+        hist2d.SetDirectory(0)
+
+    # Y distribution, summing over all X bins
+    proj = hist2d.ProjectionY(f"{hist2d.GetName()}_py", 1, -1)
+    proj.SetDirectory(0)
+
+    proj.SetTitle(
+        hist2d.GetTitle() + "; " + hist2d.GetYaxis().GetTitle() + "; Events"
+    )
+
+    if "color" in category:
+        proj.SetLineColor(category["color"])
+        proj.SetMarkerColor(category["color"])
+
+    hists = [proj]
+    plotfunction = lambda mnvplotter, h, *args: MakeProjectionY1DNoFit(h)
+    return plotfunction, hists
+
+
+
+def CategoryProjectionYPerXBin(data_hists, mc_hists, category, *args, **kwargs):
+    if not mc_hists.valid:
+        raise KeyError("No MC histogram to project")
+
+    cate_names = _iter_cate_names(category)
+
+    if cate_names:
+        base = mc_hists.GetHist()
+        hist2d = base.Clone(f"{base.GetName()}_sum2d_projy_perx")
+        hist2d.SetDirectory(0)
+        hist2d.Reset()
+        for cate in cate_names:
+            if cate in mc_hists.hists:
+                hist2d.Add(mc_hists.hists[cate])
+    else:
+        base = mc_hists.GetHist()
+        hist2d = base.Clone(f"{base.GetName()}_base2d_projy_perx")
+        hist2d.SetDirectory(0)
+
+    hists = []
+    xax = hist2d.GetXaxis()
+
+    for ix in range(1, xax.GetNbins() + 1):
+        xlo = xax.GetBinLowEdge(ix)
+        xhi = xax.GetBinUpEdge(ix)
+
+        proj = hist2d.ProjectionY(f"{hist2d.GetName()}_py_bin{ix}", ix, ix)
+        proj.SetDirectory(0)
+        # proj.SetTitle(
+        #     f"{hist2d.GetTitle()} | {xax.GetTitle()} in [{xlo:.3g}, {xhi:.3g}]; "
+        #     f"{hist2d.GetYaxis().GetTitle()}; Events"
+        # )
+        proj.SetTitle(f"{xax.GetTitle()} [{xlo:.3g}, {xhi:.3g}]; {hist2d.GetYaxis().GetTitle()}; Events")
+
+        if "color" in category:
+            proj.SetLineColor(category["color"])
+            proj.SetMarkerColor(category["color"])
+
+        hists.append(proj)
+
+        print(
+            f"X bin {ix}: [{xlo:.4g}, {xhi:.4g}]  "
+            f"N={proj.GetEntries():.0f}  Mean={proj.GetMean():.6g}  RMS={proj.GetRMS():.6g}"
+        )
+
+    plotfunction = lambda mnvplotter, h, *args: MakeProjectionY1DNoFit(h)
+    return plotfunction, hists
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1153,9 +1346,6 @@ def MakeDataMCStackedPlot(data_hist, mc_hists, color=None, title=None, legend = 
                 h.SetTitle(f"{title[i]}")
 
         TArray.Add(h)
-
-    # canvas.cd() 
-    # Logy(canvas)
 
     if data_hist is not None and data_hist.Integral() > 0:
         try:
