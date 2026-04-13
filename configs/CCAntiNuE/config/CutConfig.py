@@ -46,7 +46,7 @@ NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
 RECO_PT_RANGE= [.2,1.0]
-TRUE_PT_RANGE= [.2,1.6]
+TRUE_PT_RANGE= [.2,1.0]
 TRUE_Q3_RANGE = [0,4]
 
 PSIEE_FLAT_CUT = 0.5
@@ -76,7 +76,7 @@ SAMPLE_CUTS = {
         "EMLikeTrackScore",
         "MeanFrontdEdX",
         "Etheta",
-        # "Eavail",
+        "Eavail",
         "Pt",
         "LeptonAngle",
         "HasNoVertexMismatch", 

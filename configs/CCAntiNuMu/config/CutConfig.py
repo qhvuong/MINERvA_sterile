@@ -16,7 +16,7 @@ HACK_R2 = False
 DS_CAL_VISE_CUT = 0.2
 OD_CAL_VISE_CUT = 0.05
 PSI_FLAT_CUT = 0.1
-FRONT_DEDX_CUT = 2.4  # in MeV/cm
+FRONT_DEDX_CUT = 2.64  # in MeV/cm
 PID_SCORE_CUT = 0.7
 MIN_VERTEX_TRACK_MULTIPLICITY = 1
 MAX_VERTEX_TRACK_MULTIPLICITY = 2
@@ -52,7 +52,7 @@ NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
 RECO_PT_RANGE= [.2,1.0]
-TRUE_PT_RANGE= [.2,1]
+TRUE_PT_RANGE= [.2,1.]
 TRUE_Q3_RANGE = [0,4]
 
 PSIEE_FLAT_CUT = 0.5
@@ -70,7 +70,7 @@ SAMPLE_CUTS = {
         "Vertex_Apothem",
         "Etheta",
         "Eavail",
-        # "LeptonAngle",
+        "LeptonAngle",
         "Pt",
 
         # Removed Cuts

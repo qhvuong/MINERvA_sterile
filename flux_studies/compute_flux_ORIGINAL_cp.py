@@ -399,6 +399,7 @@ class FluxCalculator(object):
                 testing = testing if testing is not None else self._testing
                 
                 self._ntuple_chain.Reset()
+                # self._meta_chain.Reset()
                 
                 # by default (if nothing else is specified),
                 # we attempt to find the appropriate file list
@@ -506,8 +507,55 @@ class FluxCalculator(object):
         def GetPOTFromMetaTree(self):
                 total_pot = 0.0
                 for oneFile in self._meta_chain:
-                        total_pot += oneFile.POT_Total
+                        # total_pot += oneFile.POT_Total
+                        total_pot += oneFile.POT_Used
                 return total_pot
+        # def GetPOTFromMetaTree(self):
+        #         total_pot = 0.0
+        #         nfiles = 0
+
+        #         filelist = os.path.expandvars(self._ntuple_filelist)
+        #         with open(filelist) as f:
+        #                 for line in f:
+        #                         line = line.strip()
+        #                         if len(line) == 0 or line[0] == '#':
+        #                                 continue
+
+        #                         tf = ROOT.TFile.Open(line)
+        #                         if not tf or tf.IsZombie():
+        #                                 print("WARNING: couldn't open file for POT:", line)
+        #                                 continue
+
+        #                         meta = tf.Get("Meta")
+        #                         if not meta:
+        #                                 print("WARNING: no Meta tree in file:", line)
+        #                                 tf.Close()
+        #                                 continue
+
+        #                         # Re-get the leaf from this tree/file only
+        #                         nentries = meta.GetEntries()
+        #                         file_pot = 0.0
+
+        #                         for i in range(nentries):
+        #                                 got = meta.GetEntry(i)
+        #                                 if got <= 0:
+        #                                         continue
+
+        #                                 leaf = meta.GetLeaf("POT_Total")
+        #                                 if not leaf:
+        #                                         raise RuntimeError("Meta tree in file '%s' has no leaf 'POT_Total'" % line)
+
+        #                                 file_pot += leaf.GetValue()
+
+        #                         total_pot += file_pot
+        #                         nfiles += 1
+        #                         tf.Close()
+
+        #         if nfiles == 0:
+        #                 raise RuntimeError("No valid files with Meta tree/POT_Total were found")
+
+        #         print("Summed POT from %d files" % nfiles)
+        #         return total_pot
         def PrintConfig(self):
                 print(("  Horn current mode:", HornCurrent[self._horn_current]))
                 print(("  Interaction current:", InteractionCurrent[self._int_current]))

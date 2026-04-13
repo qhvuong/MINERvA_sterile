@@ -424,7 +424,7 @@ class CVPythonUniverse():
             else:
                 print("Not neutrino PDG? {}".format(pdg))
         pdg = newpdg
-        # weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
+        weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
 
         weight *= self.GetLowRecoil2p2hWeight()
         weight *= self.GetRPAWeight()

@@ -19,26 +19,16 @@ void FluxCalculatorLoop::EventLoop(TChain * chain, const TEventList * evtList, P
   double * combinedWeights = new double[1000];
   double combinedCVContr;
   
-  std::map<std::string, int*> universeWeightsInt;
-  std::map<std::string, double*> universeWeights;  // converted, scaled
+  std::map<std::string, double*> universeWeights;
   std::map<std::string, double> cvWeightContributions;
   std::vector<std::string> vertErrorBandNames = histogram->GetVertErrorBandNames();
   for (std::vector<std::string>::const_iterator it_band = vertErrorBandNames.begin();
        it_band != vertErrorBandNames.end(); ++it_band) {
     
   //  std::cout << "band names" << "  " << *it_band;
-  universeWeights[*it_band] = new double[1000];
-
-  std::string wgtName = "mc_wgt_" + *it_band;
-  const bool isIntScaled = (*it_band == "Flux_BeamFocus" || *it_band == "ppfx1_Total");
-
-  if (isIntScaled) {
-    universeWeightsInt[*it_band] = new int[1000];
-    chain->SetBranchAddress(wgtName.c_str(), universeWeightsInt[*it_band]);
-  } else {
-    chain->SetBranchAddress(wgtName.c_str(), universeWeights[*it_band]); // read doubles directly
-  }
-
+    universeWeights[*it_band] = new double[1000];
+    std::string wgtName = "mc_wgt_" + *it_band;
+    chain->SetBranchAddress( wgtName.c_str(), universeWeights[*it_band] );
     
     std::string name = *it_band;
     if( *it_band == "Flux_BeamFocus" ) name = "hornCurrent";                
@@ -83,18 +73,6 @@ void FluxCalculatorLoop::EventLoop(TChain * chain, const TEventList * evtList, P
       
       unsigned long long entrynum = evtList->GetEntry(i);
       chain->GetEntry(entrynum);
-
-      for (const auto& band : vertErrorBandNames) {
-        if (band == "Flux") continue;
-
-        if (band == "Flux_BeamFocus" || band == "ppfx1_Total") {
-          for (unsigned int u = 0; u < nCombinedUniv; ++u) {
-            universeWeights[band][u] = static_cast<double>(universeWeightsInt[band][u]) * 1.0e-7;
-          }
-        }
-        // else: already read into universeWeights[band] as doubles, no scaling needed
-      }
-
 
       int pdg = nuParentID;
       parent_freq[pdg]++;
@@ -167,11 +145,9 @@ void FluxCalculatorLoop::EventLoop(TChain * chain, const TEventList * evtList, P
   std::cout << "Skipped " << nanCount << " entries where the CV weight was NaN" << std::endl;
   
   // clean up...
-  for (auto& it : universeWeightsInt) {
-    delete [] it.second;
-  }
-  for (auto& it : universeWeights) {
-    delete [] it.second;
-  }
+  for (std::map<std::string, double*>::iterator it_univ = universeWeights.begin();
+       it_univ != universeWeights.end();
+       ++it_univ)
+    delete [] it_univ->second;
   delete [] combinedWeights;
 }
