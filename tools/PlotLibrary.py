@@ -206,6 +206,14 @@ VARIABLE_DICT = {
         "value_getter" : lambda event: .9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6,
         "tags": "mc_only"
     },
+    "ME-LE Weighted Neutrino Length Travelled":
+    {
+        "name" : "weighted_nu_length",
+        "title" : "Length_{#nu} (km)",
+        "binning" : PlotConfig.NEUTRINO4_LENGTH_BINNING,
+        "value_getter" : lambda event: event.New_True_L_Over_E(),
+        "tags": "mc_only"
+    },
     "Visible Energy":
     {
         "name" : "Eavail",
@@ -579,15 +587,53 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
         "tags": truth_tags   
     },
+    "Neutrino Length Travelled":
+    {
+        "name" : "nu_length",
+        "title" : "Length_{#nu} (km)",
+        "binning" : [PlotConfig.NEUTRINO4_LENGTH_BINNING],
+        "value_getter" : [lambda event: .9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6],
+        "tags": truth_tags
+    },
+    "Drawn-L Neutrino Length Travelled":
+    {
+        "name" : "drawnL_nu_length",
+        "title" : "Length_{#nu} (km)",
+        "binning" : [PlotConfig.NEUTRINO4_LENGTH_BINNING],
+        "value_getter" : [lambda event: event.New_True_L_Over_E() * event.mc_incomingE * 1e-3],
+        "tags": truth_tags
+    },
     "True Energy vs Neutrino Length Travelled":
     {
         "name" : "ETrue_Length",
 
         "title": "True E v.s. True Length; Length (km); True E (GeV); NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LENGTH_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING],
+                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
         "value_getter" : [lambda event: .9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6,
                           lambda event: event.mc_incomingE/1000],
+        "tags": truth_tags   
+    },
+    "Reco Lepton Energy vs L/E":
+    {
+        "name" : "ElepReco_LE",
+
+        "title": "Reco Elep v.s. True L/E; True L/E (km/GeV); E_{e} GeV; NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
+                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+        "value_getter" : [lambda event: (.9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6)/(event.mc_incomingE/1000),
+                          lambda event: event.kin_cal.reco_E_lep], 
+        "tags": truth_tags   
+    },
+    "Drawn-L Reco Lepton Energy vs L/E":
+    {
+        "name" : "drawnL_ElepReco_LE",
+
+        "title": "Drawn-L Reco Elep v.s. True L/E; True L/E (km/GeV); E_{e} GeV; NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
+                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+        "value_getter" : [lambda event: event.New_True_L_Over_E(),
+                          lambda event: event.kin_cal.reco_E_lep], 
         "tags": truth_tags   
     },
     "Reco Energy vs L/E":
@@ -596,8 +642,19 @@ PLOT_SETTINGS= {
 
         "title": "Reco E v.s. True L/E; True L/E (km/GeV); E_{e} + E_{avail} GeV; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING],
+                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
         "value_getter" : [lambda event: (.9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6)/(event.mc_incomingE/1000),
+                          lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE], 
+        "tags": truth_tags   
+    },
+    "Drawn-L Reco Energy vs L/E":
+    {
+        "name" : "drawnL_EReco_LE",
+
+        "title": "Drawn-L Reco E v.s. True L/E; True L/E (km/GeV); E_{e} + E_{avail} GeV; NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
+                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+        "value_getter" : [lambda event: event.New_True_L_Over_E(),
                           lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE], 
         "tags": truth_tags   
     },
@@ -607,7 +664,7 @@ PLOT_SETTINGS= {
 
         "title": "True E v.s. True L/E; True L/E (km/GeV); E_{e} + E_{avail} GeV; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING],
+                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
         "value_getter" : [lambda event: (.9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6)/(event.mc_incomingE/1000),
                           lambda event: event.mc_incomingE/1000], 
         "tags": truth_tags   
@@ -829,13 +886,13 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.true_E_lep],
         "tags":reco_tags
     },
-    "flux":
+    "True Neutrino Energy":
     {
         "name" : "Flux",
         "title" : "#nu Flux; True Neutrino Energy; NEvents",
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
         "value_getter" : [lambda event: event.mc_incomingE/1000],
-        "tags":reco_tags
+        "tags":truth_tags
     },
     "Visible Energy":
     {

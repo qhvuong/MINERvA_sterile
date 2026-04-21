@@ -13,7 +13,7 @@ from config import BackgroundFitConfig
 from tools import Utilities,PlotTools
 from config.UnfoldingConfig import HISTOGRAMS_TO_UNFOLD
 from config.DrawingConfig import SignalOnly,Default_Plot_Type,Default_Scale,DefaultPlotters,DefaultSlicer,PLOTS_TO_MAKE,SignalChargedBackground
-from config.SignalDef import SIGNAL_DEFINATION
+from config.SignalDef import SIGNAL_DEFINITION
 mnvplotter = PlotUtils.MnvPlotter()
 
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS 
@@ -27,6 +27,7 @@ for k,v in CONSOLIDATED_ERROR_GROUPS.items():
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
 # Specifically, w/o this, this script seg faults in the case where I try to instantiate FluxReweighterWithWiggleFit w/ nuE constraint set to False for more than one playlist
 ROOT.TH1.AddDirectory(False)
+
 
 def Get1DScaleFactor(variable_hists,scale_hists):
     scale_dict = {}
@@ -97,10 +98,10 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
     for cate in mcsignal_histholders[index].hists:
         if cate == "Total":
             continue
-        if cate not in SIGNAL_DEFINATION and cate != "NuEElastic":
+        if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
             mc_sidebandBKG.Add(mcsideband_histholders[index].hists[cate])
             mc_signalBKG.Add(mcsignal_histholders[index].hists[cate])
-        if cate in SIGNAL_DEFINATION:
+        if cate in SIGNAL_DEFINITION:
             mc_sidebandSIG.Add(mcsideband_histholders[index].hists[cate])
             mc_signalSIG.Add(mcsignal_histholders[index].hists[cate])
 
@@ -178,14 +179,14 @@ def ScaleCategories(hist_holder,scale_hists,prediction=False):
             continue
         try:
             if not prediction:
-                if cate not in SIGNAL_DEFINATION and cate != "NuEElastic":
+                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
                     scale = scale_hists["background"]
                     hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
-                if cate in SIGNAL_DEFINATION:
+                if cate in SIGNAL_DEFINITION:
                     scale = scale_hists["signal"]
                     hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
             else:
-                if cate not in SIGNAL_DEFINATION and cate != "NuEElastic":
+                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
                     scale = scale_hists["background"]
                     hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
 
@@ -212,7 +213,7 @@ def BackgroundSubtraction(data_hists, mc_hists, pred_hists, errs = None):
     for group in mc_hists.hists:
         if group == "Total":
                 continue
-        elif group not in SIGNAL_DEFINATION:
+        elif group not in SIGNAL_DEFINITION:
             SubtractPoissonHistograms(out_data,mc_hists.hists[group]) #data tuned signal
             SubtractPoissonHistograms(out_mc,pred_hists.hists[group]) #no oscillation predicted signal
 
@@ -225,7 +226,7 @@ def GetBackground(mc_hists):
     for group in mc_hists.hists:
         if group == "Total":
                 continue
-        elif group not in SIGNAL_DEFINATION:
+        elif group not in SIGNAL_DEFINITION:
             out_bkg.Add(mc_hists.hists[group])
     return out_bkg
 
@@ -280,7 +281,7 @@ def MakeRatio(signalHist,sidebandHist,normsignalHist,normsidebandHist,config):
     for group in signalHist.hists:
         if group == "Total":
                 continue
-        elif group not in SIGNAL_DEFINATION:
+        elif group not in SIGNAL_DEFINITION:
             sig_bkg.Add(signalHist.hists[group])
             sid_bkg.Add(sidebandHist.hists[group])
             normsig_bkg.Add(normsignalHist.hists[group])
@@ -489,7 +490,7 @@ if __name__ == "__main__":
     mc_prediction = signalHist.GetHist().Clone()
     mc_prediction.Reset()
     for cate in signalHist.hists:
-        if cate in SIGNAL_DEFINATION:
+        if cate in SIGNAL_DEFINITION:
             mc_prediction.Add(signalHist.hists[cate])
 
     RunMinimizer(datasideband_histholders,datasignal_histholders,mcsideband_histholders,mcsignal_histholders,scale_hists)
@@ -545,7 +546,7 @@ if __name__ == "__main__":
 
             if False:
                 for cate in list(signalHist.hists.keys()):
-                    if cate in SIGNAL_DEFINATION:
+                    if cate in SIGNAL_DEFINITION:
                         signalHist.hists[cate].Reset()
                     elif cate != "Total":
                         normsignalHist.hists[cate].Reset()

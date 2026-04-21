@@ -2,7 +2,7 @@
 set -euo pipefail
 
 tag=${1:?You must provide a selection_tag}
-count=${2:-300}
+count=${2:-200}
 sideband=${3:-None}
 
 
@@ -22,16 +22,17 @@ if [[ -n "${sideband}" && "${sideband}" != "None" ]]; then
   USE_SIDEBAND_ARGS=(--use-sideband "${@:3}")
 fi
 
-for name in 1; do
+for name in 13C; do
   cmd=(
     python selection/gridSelection.py
-    --playlist le${name}_p6
+    --playlist le${name}_p6_test
     --ntuple_tag MAD
     "${USE_SIDEBAND_ARGS[@]}"
     --truth
     --cal_POT
     --selection_tag "${tag}"
     --count "${count}"
+    --mc_only
   )
 
   echo "--------------------------------------------------"

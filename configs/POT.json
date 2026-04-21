@@ -819,6 +819,15 @@
             }
         }
     },
+    "me1A_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ap6scattering.txt",
+                "used_POT": 2.8827708398551817e+22
+            }
+        }
+    },
     "me1A_p8_scattering": {
         "mc": {
             "MAD": {
@@ -835,11 +844,27 @@
             }
         }
     },
+    "me1B_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Bp6scattering.txt"
+            }
+        }
+    },
     "me1C_scattering": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Cscattering.txt"
+            }
+        }
+    },
+    "me1C_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Cp6scattering.txt"
             }
         }
     },
@@ -851,11 +876,27 @@
             }
         }
     },
+    "me1D_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Dp6scattering.txt"
+            }
+        }
+    },
     "me1E_scattering": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Escattering.txt"
+            }
+        }
+    },
+    "me1E_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ep6scattering.txt"
             }
         }
     },
@@ -867,11 +908,67 @@
             }
         }
     },
+    "me1F_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Fp6scattering.txt"
+            }
+        }
+    },
     "me1G_scattering": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Gscattering.txt"
+            }
+        }
+    },
+    "me1G_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Gp6scattering.txt"
+            }
+        }
+    },
+    "me1L_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Lp6scattering.txt"
+            }
+        }
+    },
+    "me1M_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Mp6scattering.txt"
+            }
+        }
+    },
+    "me1N_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Np6scattering.txt"
+            }
+        }
+    },
+    "me1O_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Op6scattering.txt"
+            }
+        }
+    },
+    "me1P_p6_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Pp6scattering.txt"
             }
         }
     },
@@ -1000,6 +1097,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datale13Bp6.txt"
+            }
+        }
+    },
+    "le13C_p6_test": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcle13Cp6_test.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datale13Cp6_test.txt"
             }
         }
     },

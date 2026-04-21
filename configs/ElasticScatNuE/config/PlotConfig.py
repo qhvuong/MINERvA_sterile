@@ -118,6 +118,7 @@ NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549
 
 # This is only used for CCnue background fit
 NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
+NEUTRINO4_EE_BINNING_EL_TEMPLATE = [0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.5, 6.0, 6.5, 7.2, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0, 18.0, 20.0]
 
 #E_available binning
 E_AVAILABLE_BINNING = [i*0.05 for i in range(41)]
@@ -313,21 +314,33 @@ HISTS_TO_MAKE = [
 
 ### MY PLOTS ###
 	"Lepton Energy",
-	"E Theta Squared",
+	"Biased Neutrino Energy",
+	"True Neutrino Energy",
+	"Neutrino Length Travelled",
+	"Drawn-L Neutrino Length Travelled",
+
+    "Reco Energy vs L/E",
+	"Drawn-L Reco Energy vs L/E",
+	"True Energy vs L/E",
+
+    "Reco Lepton Energy vs L/E",
+	"Drawn-L Reco Lepton Energy vs L/E",
+
+	"True Energy vs Neutrino Length Travelled",
+
+	# "E Theta Squared",
 	# "True E Theta Squared",
-    # "Reco Energy vs L/E",
-    # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
     # "Estimator vs Front dEdX",
-    # "Biased Neutrino Energy",
-	"Visible Energy",
+
+	# "Visible Energy",
 	# "True Lepton Energy",
-	"Front dEdX",
+	# "Front dEdX",
 	# "Reco Q2",
 	# "Cone Outside Energy",
 	# "Neighborhood Energy",
-	"Neutrino Vertex Z",
-	"Neutrino Vertex Apothem",
+	# "Neutrino Vertex Z",
+	# "Neutrino Vertex Apothem",
 	# "EMLikeTrackScore",
 	# "TransverseGapScore",
 	# "NonMIPClusFrac",

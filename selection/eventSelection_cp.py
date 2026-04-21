@@ -20,6 +20,7 @@ from tools import Utilities
 from config.PlotConfig import HISTS_TO_MAKE
 from config.AnalysisConfig import AnalysisConfig
 from tools.SystematicsUniverse import GetAllSystematicsUniverses
+from tools.SystematicsUniverse import get_flux_ratio_me_to_le
 from tools.EventClassification import EventClassifier
 from tools.KinematicsCalculator import KinematicsCalculator
 from tools.MyHistograms import MakePlotProcessors
@@ -41,6 +42,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
     Plots = preparePlots(universes,mc)
     nEvents = chainwrapper.GetEntries()
+    debug_prints = 0
     print(f"Total number of events RECO: ", {nEvents})
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
@@ -56,6 +58,7 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
         for universe in chain.from_iterable(iter(universes.values())):
             universe.SetEntry(counter)
+            universe.__dict__.pop("_cached_new_true_l_over_e", None)
             universe.ResetWeight()
             if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
                 continue
@@ -64,6 +67,60 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
+
+
+            if (
+                mc
+                and universe.GetSigma() == 0
+                and (eventClassifier.side_band is not None or eventClassifier.is_true_signal)
+                and debug_prints < 100
+            ):
+                enu_gev = universe.mc_incomingE * 1e-3
+                old_L = 0.9825 + universe.mc_vtx[2]/1e6 - universe.mc_fr_nuParentDecVtx[2]/1e6
+                # new_L = universe.New_True_L()
+                old_LOE = old_L / enu_gev if enu_gev > 0 else 0.0
+                new_LOE = universe.New_True_L_Over_E()
+                new_L = new_LOE * enu_gev
+                reco_elep = universe.kin_cal.reco_E_lep
+                flux_ratio = get_flux_ratio_me_to_le(enu_gev, universe.mc_incoming, "1D")
+                total_wgt = universe.GetWeight()
+
+                print(
+                    f"{debug_prints:3d} "
+                    f"pdg={universe.mc_incoming:4d} "
+                    f"Ev={enu_gev:7.3f} "
+                    f"EeReco={reco_elep:7.3f} "
+                    f"oldL={old_L:7.4f} "
+                    f"newL={new_L:7.4f} "
+                    f"oldLOE={old_LOE:7.4f} "
+                    f"newLOE={new_LOE:7.4f} "
+                    f"fluxR={flux_ratio:9.5f} "
+                    f"wgt={total_wgt:11.5g}"
+                )
+
+                debug_prints += 1
+
+            if mc and universe.GetSigma() == 0:
+                w = universe.GetWeight()
+                if abs(w) > 1e6:
+                    enu_gev = universe.mc_incomingE * 1e-3
+                    old_L = 0.9825 + universe.mc_vtx[2]/1e6 - universe.mc_fr_nuParentDecVtx[2]/1e6
+                    print("HUGE WEIGHT")
+                    print("entry", counter)
+                    print("pdg", universe.mc_incoming)
+                    print("Ev", enu_gev)
+                    print("EeReco", universe.kin_cal.reco_E_lep)
+                    print("oldL", old_L)
+                    print("fluxCV", universe.GetFluxAndCVWeight(enu_gev, universe.mc_incoming))
+                    print("fluxR", get_flux_ratio_me_to_le(enu_gev, universe.mc_incoming, "1D"))
+                    print("genie", universe.GetGenieWeight())
+                    print("2p2h", universe.GetLowRecoil2p2hWeight())
+                    print("rpa", universe.GetRPAWeight())
+                    print("lowQ2pi", universe.GetMyLowQ2PiWeight())
+                    print("geant", universe.GetGeantHadronWeight())
+                    print("minos", universe.GetMyMinosEfficiencyWeight())
+                    print("coh", universe.GetCOHPionWeight())
+                    print("total", w)
 
             # # if mc and universe.GetSigma() == 0 and debug_prints < max_debug_prints:
             # if mc and universe.GetSigma() == 0 and eventClassifier.is_reco_signal == True:

@@ -114,7 +114,7 @@ NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7
 NEUTRINO4_EE_BINNING = [0.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
 
 NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
-
+NEUTRINO4_EE_BINNING_EL_TEMPLATE = [0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.5, 6.0, 6.5, 7.2, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0, 18.0, 20.0]
 
 NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 NEUTRINO4_P_BINNING = [i*.05 for i in range(40)]
@@ -302,13 +302,13 @@ def Printvar(event):
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
 	# "Lepton Energy",
-	"E Theta Squared",
+	# "E Theta Squared",
 	# "True E Theta Squared",
     "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
     # "Biased Neutrino Energy Background Fit",
-	"Visible Energy",
+	# "Visible Energy",
 	# "True Lepton Energy",
 	# "Front dEdX",
 	# "Reco Q2",
@@ -328,6 +328,6 @@ HISTS_TO_MAKE = [
 	# "HasNoVertexMismatch",
 	# "HasTracks",
 	# "HasNoBackExitingTracks",
-	"Lepton Angle",
-	"Lepton Pt",
+	# "Lepton Angle",
+	# "Lepton Pt",
 ]

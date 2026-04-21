@@ -36,7 +36,20 @@ class HistWrapper1D(HistWrapper):
         return clone
 
     def Write(self):
+        # print("BEFORE SYNC", self.hist.GetName())
+        # for i in range(0, self.hist.GetNbinsX()+2):
+        #     c = self.hist.GetBinContent(i)
+        #     if c != 0:
+        #         print("  pre", i, c)
+
         self.SyncCVHistos()
+
+        # print("AFTER SYNC", self.hist.GetName())
+        # for i in range(0, self.hist.GetNbinsX()+2):
+        #     c = self.hist.GetBinContent(i)
+        #     if c != 0:
+        #         print("  post", i, c)
+
         self.hist.Write()
         del self.hist
 
@@ -60,7 +73,20 @@ class HistWrapper2D(HistWrapper):
         return clone
 
     def Write(self):
+        # print("BEFORE SYNC", self.hist.GetName())
+        # for i in range(0, self.hist.GetNbinsX()+2):
+        #     c = self.hist.GetBinContent(i)
+        #     if c != 0:
+        #         print("  pre", i, c)
+
         self.SyncCVHistos()
+
+        # print("AFTER SYNC", self.hist.GetName())
+        # for i in range(0, self.hist.GetNbinsX()+2):
+        #     c = self.hist.GetBinContent(i)
+        #     if c != 0:
+        #         print("  post", i, c)
+
         self.hist.Write()
         del self.hist
 
@@ -180,8 +206,17 @@ class PlotProcessor():
         if value.count(None) == 0:
             args = value+[wgt]
             self.histwrapper.FillUniverse(universe, *args)
+            # if self.histwrapper.name in ["nu_length", "drawnL_nu_length", "Eel"]:
+            #     print("FILL", self.histwrapper.name, value, wgt)
 
     def Finalize(self):
+        # if self.histwrapper.name in ["nu_length", "drawnL_nu_length", "Eel"]:
+        #     h = self.histwrapper.hist
+        #     print("HIST", h.GetName(), "nbins=", h.GetNbinsX())
+        #     for i in range(0, h.GetNbinsX()+2):
+        #         c = h.GetBinContent(i)
+        #         if c != 0:
+        #             print(i, c)
         self.histwrapper.Write()
 
     def AddCut(self, func):

@@ -41,6 +41,7 @@ for k, v in CONSOLIDATED_ERROR_GROUPS.items():
 ROOT.TH1.AddDirectory(False)
 
 
+
 # -----------------------------------------------------------------------------
 # Helper: make scale histograms "comparable" to a target hist (useful for 2D axes)
 # -----------------------------------------------------------------------------
@@ -94,11 +95,32 @@ def MakeComparableMnvHXD(target_hist, scale_hists, y_axis=False):
 # -----------------------------------------------------------------------------
 # Helper: write scale histograms into output MnvH1D objects (CV / band / universe)
 # -----------------------------------------------------------------------------
+# def WriteScaleToMnvH1D(out_hists, in_hists, errorband=None, uni_idx=None):
+#     """
+#     Write CV if errorband=None.
+#     Write one universe if errorband!=None and uni_idx is not None.
+#     """
+#     for key, hin in in_hists.items():
+#         if key not in out_hists:
+#             continue
+
+#         hout = out_hists[key]
+
+#         if errorband is None:
+#             target = hout
+#         else:
+#             if uni_idx is None:
+#                 # Don't allow writing into the band container
+#                 raise RuntimeError(
+#                     f"WriteScaleToMnvH1D called with errorband={errorband} but uni_idx=None. "
+#                     "Write universes only: pass uni_idx."
+#                 )
+#             target = hout.GetVertErrorBand(errorband).GetHist(uni_idx)
+
+#         for b in range(0, target.GetNbinsX() + 2):
+#             target.SetBinContent(b, hin.GetBinContent(b))
+#             target.SetBinError(b,   hin.GetBinError(b))
 def WriteScaleToMnvH1D(out_hists, in_hists, errorband=None, uni_idx=None):
-    """
-    Write CV if errorband=None.
-    Write one universe if errorband!=None and uni_idx is not None.
-    """
     for key, hin in in_hists.items():
         if key not in out_hists:
             continue
@@ -108,18 +130,17 @@ def WriteScaleToMnvH1D(out_hists, in_hists, errorband=None, uni_idx=None):
         if errorband is None:
             target = hout
         else:
+            band = hout.GetVertErrorBand(errorband)
+            if not band:
+                continue
             if uni_idx is None:
-                # Don't allow writing into the band container
-                raise RuntimeError(
-                    f"WriteScaleToMnvH1D called with errorband={errorband} but uni_idx=None. "
-                    "Write universes only: pass uni_idx."
-                )
-            target = hout.GetVertErrorBand(errorband).GetHist(uni_idx)
+                target = band
+            else:
+                target = band.GetHist(uni_idx)
 
         for b in range(0, target.GetNbinsX() + 2):
             target.SetBinContent(b, hin.GetBinContent(b))
-            target.SetBinError(b,   hin.GetBinError(b))
-
+            target.SetBinError(b, hin.GetBinError(b))
 
 
 # -----------------------------------------------------------------------------
@@ -154,16 +175,24 @@ def WriteScaleToMnvH1D(out_hists, in_hists, errorband=None, uni_idx=None):
 # NEW: matrix fit per bin (works for any #regions and #components)
 # -------------------------------------------------------------------------
 
-def _get_region_hist(hist_holder, error_band=None, uni_idx=None):
-    """
-    Return the appropriate MnvH1D to use for a region given (CV / errorband / universe).
-    """
+# def _get_region_hist(hist_holder, error_band=None, uni_idx=None):
+#     """
+#     Return the appropriate MnvH1D to use for a region given (CV / errorband / universe).
+#     """
+#     h = hist_holder.GetHist()
+#     if error_band is None:
+#         return h
+#     if uni_idx is None:
+#         return h.GetVertErrorBand(error_band)
+#     return h.GetVertErrorBand(error_band).GetHist(uni_idx)
+def _get_region_hist(hist_holder, error_band=None, uni_idx=None, use_universe=True):
     h = hist_holder.GetHist()
-    if error_band is None:
+    if (not use_universe) or error_band is None:
         return h
-    if uni_idx is None:
-        return h.GetVertErrorBand(error_band)
-    return h.GetVertErrorBand(error_band).GetHist(uni_idx)
+    band = h.GetVertErrorBand(error_band)
+    if not band:
+        return None
+    return band.GetHist(uni_idx) if uni_idx is not None else band
 
 
 def _build_component_sums(recipe, mc_holder, error_band=None, uni_idx=None):
@@ -633,7 +662,8 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
         pass
 
     # Choose a reference hist for binning (use Signal region data)
-    href = _get_region_hist(data_holders[recipe.regions[0]], error_band, uni_idx)
+    # href = _get_region_hist(data_holders[recipe.regions[0]], error_band, uni_idx)
+    href = _get_region_hist(data_holders[recipe.regions[0]], use_universe=False)
     
     # define tag early so diagnostics inside loop can use it
     tag = "CV" if error_band is None else f"{error_band}[{uni_idx}]"
@@ -671,7 +701,8 @@ def RunUniverseMinimizer_MatrixFit(recipe, data_holders, mc_holders, error_band=
     for reg in recipe.regions:
         comp_sums_by_region[reg] = _build_component_sums(recipe, mc_holders[reg], error_band, uni_idx)
         fixed_by_region[reg] = _build_fixed_sum(recipe, mc_holders[reg], error_band, uni_idx)
-        data_by_region[reg] = _get_region_hist(data_holders[reg], error_band, uni_idx)
+        # data_by_region[reg] = _get_region_hist(data_holders[reg], error_band, uni_idx)
+        data_by_region[reg] = _get_region_hist(data_holders[reg], use_universe=False)
 
     # Pseudodata option
     if AnalysisConfig.pseudodata:
@@ -870,7 +901,8 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
     if len(recipe.components) != 2:
         raise RuntimeError("RunUniverseMinimizer_MatrixFit_2CompSmooth requires exactly 2 components")
 
-    href = _get_region_hist(data_holders[recipe.regions[0]], error_band, uni_idx)
+    # href = _get_region_hist(data_holders[recipe.regions[0]], error_band, uni_idx)
+    href = _get_region_hist(data_holders[recipe.regions[0]], use_universe=False)
     tag = "CV" if error_band is None else f"{error_band}[{uni_idx}]"
 
     scales = {comp: href.Clone(f"scale_{comp}") for comp in recipe.components}
@@ -884,7 +916,8 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
     for reg in recipe.regions:
         comp_sums_by_region[reg] = _build_component_sums(recipe, mc_holders[reg], error_band, uni_idx)
         fixed_by_region[reg] = _build_fixed_sum(recipe, mc_holders[reg], error_band, uni_idx)
-        data_by_region[reg] = _get_region_hist(data_holders[reg], error_band, uni_idx)
+        # data_by_region[reg] = _get_region_hist(data_holders[reg], error_band, uni_idx)
+        data_by_region[reg] = _get_region_hist(data_holders[reg], use_universe=False)
 
     if AnalysisConfig.pseudodata:
         for reg in recipe.regions:
@@ -1160,14 +1193,45 @@ def RunUniverseMinimizer_MatrixFit_2CompSmooth(recipe, data_holders, mc_holders,
 
 #         print(f"[MatrixFit] Done with universes for band {error_band} (N={nuni})")
 
+# def RunMinimizer_MatrixFit(recipe, data_holders, mc_holders, scale_hists_out):
+#     """
+#     Fill scale_hists_out (dict[comp] -> MnvH1D with error bands) for:
+#       - CV
+#       - every vertical error-band universe
+#     """
+#     use_smooth_2comp = (len(recipe.components) == 2)
+
+#     if use_smooth_2comp:
+#         cv_scales = RunUniverseMinimizer_MatrixFit_2CompSmooth(
+#             recipe, data_holders, mc_holders, error_band=None, uni_idx=None
+#         )
+#     else:
+#         cv_scales = RunUniverseMinimizer_MatrixFit(
+#             recipe, data_holders, mc_holders, error_band=None, uni_idx=None
+#         )
+
+#     WriteScaleToMnvH1D(scale_hists_out, cv_scales, errorband=None, uni_idx=None)
+#     print("[MatrixFit] Done with CV scales")
+
+#     any_hist = mc_holders[recipe.regions[0]].GetHist()
+#     for error_band in any_hist.GetErrorBandNames():
+#         nuni = any_hist.GetVertErrorBand(error_band).GetNHists()
+#         for i in range(nuni):
+#             if use_smooth_2comp:
+#                 uni_scales = RunUniverseMinimizer_MatrixFit_2CompSmooth(
+#                     recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
+#                 )
+#             else:
+#                 uni_scales = RunUniverseMinimizer_MatrixFit(
+#                     recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
+#                 )
+#             WriteScaleToMnvH1D(scale_hists_out, uni_scales, errorband=error_band, uni_idx=i)
+
+#         print(f"[MatrixFit] Done with universes for band {error_band} (N={nuni})")
 def RunMinimizer_MatrixFit(recipe, data_holders, mc_holders, scale_hists_out):
-    """
-    Fill scale_hists_out (dict[comp] -> MnvH1D with error bands) for:
-      - CV
-      - every vertical error-band universe
-    """
     use_smooth_2comp = (len(recipe.components) == 2)
 
+    # CV
     if use_smooth_2comp:
         cv_scales = RunUniverseMinimizer_MatrixFit_2CompSmooth(
             recipe, data_holders, mc_holders, error_band=None, uni_idx=None
@@ -1177,25 +1241,27 @@ def RunMinimizer_MatrixFit(recipe, data_holders, mc_holders, scale_hists_out):
             recipe, data_holders, mc_holders, error_band=None, uni_idx=None
         )
 
-    WriteScaleToMnvH1D(scale_hists_out, cv_scales, errorband=None, uni_idx=None)
+    WriteScaleToMnvH1D(scale_hists_out, cv_scales)
     print("[MatrixFit] Done with CV scales")
 
     any_hist = mc_holders[recipe.regions[0]].GetHist()
+
     for error_band in any_hist.GetErrorBandNames():
+        # fill band CV first, unsmoothed
+        band_scales = RunUniverseMinimizer_MatrixFit(
+            recipe, data_holders, mc_holders, error_band=error_band, uni_idx=None
+        )
+        WriteScaleToMnvH1D(scale_hists_out, band_scales, errorband=error_band, uni_idx=None)
+
+        # then fill universes, also unsmoothed
         nuni = any_hist.GetVertErrorBand(error_band).GetNHists()
         for i in range(nuni):
-            if use_smooth_2comp:
-                uni_scales = RunUniverseMinimizer_MatrixFit_2CompSmooth(
-                    recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
-                )
-            else:
-                uni_scales = RunUniverseMinimizer_MatrixFit(
-                    recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
-                )
+            uni_scales = RunUniverseMinimizer_MatrixFit(
+                recipe, data_holders, mc_holders, error_band=error_band, uni_idx=i
+            )
             WriteScaleToMnvH1D(scale_hists_out, uni_scales, errorband=error_band, uni_idx=i)
 
         print(f"[MatrixFit] Done with universes for band {error_band} (N={nuni})")
-
 
 
 # -------------------------------------------------------------------------

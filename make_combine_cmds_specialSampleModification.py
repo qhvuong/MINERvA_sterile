@@ -141,7 +141,8 @@ def handle_block(block: dict, dry_run: bool, log_sink: Optional[List[str]] = Non
     in_dir = f"/pnfs/minerva/persistent/users/qvuong/CCNUE_selection_{stamp}_hists/"
     file_counts = count_root_files_for_playlist(in_dir, playlist_raw)
     ok_mc, ok_data = block_ok(block, file_counts)
-    should_run = ok_mc and ok_data
+    # should_run = ok_mc and ok_data
+    should_run = True
 
     # Console output (similar to your old behavior, but richer)
     print("\n".join(format_block_log(block, file_counts)))
@@ -269,39 +270,136 @@ def maybe_hadd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
         log_sink.extend(lines)
         log_sink.append("")
 
-    if missing_mc or missing_data:
-        msg = "[SKIP] Not running hadd because not all expected merged playlist outputs exist"
-        print(msg)
-        if log_sink is not None:
-            log_sink.append(msg)
-            log_sink.append("")
-        return
-
     cmd_mc = ["hadd", "-f", out_mc] + mc_files
     cmd_data = ["hadd", "-f", out_data] + data_files
 
-    print("FHC MC hadd command:")
-    print(" ", " ".join(cmd_mc))
-    print("FHC DATA hadd command:")
-    print(" ", " ".join(cmd_data))
-
-    if log_sink is not None:
-        log_sink.append("FHC MC hadd command:")
-        log_sink.append("  " + " ".join(cmd_mc))
-        log_sink.append("FHC DATA hadd command:")
-        log_sink.append("  " + " ".join(cmd_data))
-        log_sink.append("")
-
-    if dry_run:
-        print("[DRY-RUN] would run FHC MC/DATA hadd")
+    if not missing_mc:
+        print("FHC MC hadd command:")
+        print(" ", " ".join(cmd_mc))
         if log_sink is not None:
-            log_sink.append("[DRY-RUN] would run FHC MC/DATA hadd")
+            log_sink.append("FHC MC hadd command:")
+            log_sink.append("  " + " ".join(cmd_mc))
             log_sink.append("")
+
+        if dry_run:
+            print("[DRY-RUN] would run FHC MC hadd")
+            if log_sink is not None:
+                log_sink.append("[DRY-RUN] would run FHC MC hadd")
+                log_sink.append("")
+        else:
+            print("[RUNNING] hadd for FHC MC")
+            subprocess.run(cmd_mc, check=False)
     else:
-        print("[RUNNING] hadd for FHC MC")
-        subprocess.run(cmd_mc, check=False)
-        print("[RUNNING] hadd for FHC DATA")
-        subprocess.run(cmd_data, check=False)
+        print("[SKIP] Not running MC hadd because some expected MC playlist outputs are missing")
+        if log_sink is not None:
+            log_sink.append("[SKIP] Not running MC hadd because some expected MC playlist outputs are missing")
+            log_sink.append("")
+
+    if not missing_data:
+        print("FHC DATA hadd command:")
+        print(" ", " ".join(cmd_data))
+        if log_sink is not None:
+            log_sink.append("FHC DATA hadd command:")
+            log_sink.append("  " + " ".join(cmd_data))
+            log_sink.append("")
+
+        if dry_run:
+            print("[DRY-RUN] would run FHC DATA hadd")
+            if log_sink is not None:
+                log_sink.append("[DRY-RUN] would run FHC DATA hadd")
+                log_sink.append("")
+        else:
+            print("[RUNNING] hadd for FHC DATA")
+            subprocess.run(cmd_data, check=False)
+    else:
+        print("[SKIP] Not running DATA hadd because some expected DATA playlist outputs are missing")
+        if log_sink is not None:
+            log_sink.append("[SKIP] Not running DATA hadd because some expected DATA playlist outputs are missing")
+            log_sink.append("")
+
+# def maybe_hadd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
+#     mc_files = [
+#         combined_output_path(pl, selection_tag, False)
+#         for pl in EXPECTED_MC_PLAYLISTS
+#     ]
+#     data_files = [
+#         combined_output_path(pl, selection_tag, True)
+#         for pl in EXPECTED_DATA_PLAYLISTS
+#     ]
+
+#     # keep only the standard combined MC outputs
+#     mc_files = [
+#         f for f in mc_files
+#         if "_no2p2h" not in os.path.basename(f) and "_only2p2h" not in os.path.basename(f)
+#     ]
+
+#     mc_dir = os.path.dirname(mc_files[0]) if mc_files else "."
+#     data_dir = os.path.dirname(data_files[0]) if data_files else "."
+
+#     out_mc = os.path.join(mc_dir, f"kin_dist_mcleFHC_{selection_tag}_MAD.root")
+#     out_data = os.path.join(data_dir, f"kin_dist_dataleFHC_{selection_tag}_MAD.root")
+
+#     missing_mc = [f for f in mc_files if not os.path.exists(f)]
+#     missing_data = [f for f in data_files if not os.path.exists(f)]
+
+#     lines = []
+#     lines.append("################ FHC MERGE CHECK ################")
+#     lines.append(f"Selection tag: {selection_tag}")
+#     lines.append(f"MC output dir : {mc_dir}")
+#     lines.append(f"DATA output dir: {data_dir}")
+#     lines.append(f"Found MC      : {len(mc_files) - len(missing_mc)}/{len(mc_files)}")
+#     lines.append(f"Found DATA    : {len(data_files) - len(missing_data)}/{len(data_files)}")
+
+#     if missing_mc:
+#         lines.append("[WARN] Missing MC files:")
+#         lines.extend([f"  {x}" for x in missing_mc])
+#     else:
+#         lines.append("[OK] All MC playlist outputs are present")
+
+#     if missing_data:
+#         lines.append("[WARN] Missing DATA files:")
+#         lines.extend([f"  {x}" for x in missing_data])
+#     else:
+#         lines.append("[OK] All DATA playlist outputs are present")
+
+#     print("\n".join(lines))
+#     if log_sink is not None:
+#         log_sink.extend(lines)
+#         log_sink.append("")
+
+#     if missing_mc or missing_data:
+#         msg = "[SKIP] Not running hadd because not all expected merged playlist outputs exist"
+#         print(msg)
+#         if log_sink is not None:
+#             log_sink.append(msg)
+#             log_sink.append("")
+#         return
+
+#     cmd_mc = ["hadd", "-f", out_mc] + mc_files
+#     cmd_data = ["hadd", "-f", out_data] + data_files
+
+#     print("FHC MC hadd command:")
+#     print(" ", " ".join(cmd_mc))
+#     print("FHC DATA hadd command:")
+#     print(" ", " ".join(cmd_data))
+
+#     if log_sink is not None:
+#         log_sink.append("FHC MC hadd command:")
+#         log_sink.append("  " + " ".join(cmd_mc))
+#         log_sink.append("FHC DATA hadd command:")
+#         log_sink.append("  " + " ".join(cmd_data))
+#         log_sink.append("")
+
+#     if dry_run:
+#         print("[DRY-RUN] would run FHC MC/DATA hadd")
+#         if log_sink is not None:
+#             log_sink.append("[DRY-RUN] would run FHC MC/DATA hadd")
+#             log_sink.append("")
+#     else:
+#         print("[RUNNING] hadd for FHC MC")
+#         subprocess.run(cmd_mc, check=False)
+#         print("[RUNNING] hadd for FHC DATA")
+#         subprocess.run(cmd_data, check=False)
 
 def main():
     parser = argparse.ArgumentParser()

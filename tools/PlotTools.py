@@ -245,19 +245,63 @@ def Prepare2DStack(data_hists,mc_hists,Grouping = None):
     return plotfunction,hists
 
 
+# def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
+#     if not mc_hists.valid:
+#         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
+
+#     # MC: return clones, optionally width-scaled
+#     mc_list, color, title, yields = mc_hists.GetCateList(
+#         Grouping, with_yield=True, width_scale_to=width_scale_to
+#     )
+
+#     if data_hists.valid:
+#         data_hist = data_hists.GetHist()
+
+#         # DATA: match MC width scaling (plot-time only)
+#         if width_scale_to is not None:
+#             data_hist_plot = mc_hists.WidthScaleHist(data_hist, target_width=width_scale_to)
+#         else:
+#             data_hist_plot = data_hist
+
+#         plotfunction = lambda mnvplotter, data_hist_in, *mc_ints: partial(
+#             MakeDataMCStackedPlot,
+#             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
+#         )(data_hist_in, mc_ints)
+
+#         # Use the plot-scaled data hist in the returned list
+#         hists = [data_hist_plot]
+
+#         if "frontdedx" in data_hist_plot.GetName():
+#             data_hist_plot.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
+
+#     else:
+#         plotfunction = lambda mnvplotter, mc_hist, *mc_ints: partial(
+#             MakeDataMCStackedPlot,
+#             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
+#         )(mc_hist, mc_ints)
+
+#     # Axis titles for MC hists
+#     for hist in mc_list:
+#         if hist and "frontdedx" in hist.GetName():
+#             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
+
+#     hists.extend(mc_list)
+#     return plotfunction, hists
+
+
 def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
 
-    # MC: return clones, optionally width-scaled
     mc_list, color, title, yields = mc_hists.GetCateList(
         Grouping, with_yield=True, width_scale_to=width_scale_to
     )
 
+    hists = []
+
     if data_hists.valid:
         data_hist = data_hists.GetHist()
 
-        # DATA: match MC width scaling (plot-time only)
         if width_scale_to is not None:
             data_hist_plot = mc_hists.WidthScaleHist(data_hist, target_width=width_scale_to)
         else:
@@ -268,25 +312,35 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
         )(data_hist_in, mc_ints)
 
-        # Use the plot-scaled data hist in the returned list
         hists = [data_hist_plot]
 
         if "frontdedx" in data_hist_plot.GetName():
             data_hist_plot.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
 
     else:
-        plotfunction = lambda mnvplotter, mc_hist, *mc_ints: partial(
+        # Create a dummy frame hist so all MC components remain in the stack
+        frame_hist = mc_list[0].Clone(f"{mc_list[0].GetName()}_frame")
+        frame_hist.Reset()
+
+        xtitle = mc_list[0].GetXaxis().GetTitle()
+        ytitle = mc_list[0].GetYaxis().GetTitle()
+        frame_hist.SetTitle(f";{xtitle};{ytitle}")
+        frame_hist.SetDirectory(0)
+
+        hists = [frame_hist]
+
+        plotfunction = lambda mnvplotter, frame_hist_in, *mc_ints: partial(
             MakeDataMCStackedPlot,
             color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
-        )(mc_hist, mc_ints)
+        )(frame_hist_in, mc_ints)
 
-    # Axis titles for MC hists
     for hist in mc_list:
         if hist and "frontdedx" in hist.GetName():
             hist.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
 
     hists.extend(mc_list)
     return plotfunction, hists
+
 
 # def PrepareStack(data_hists,mc_hists,Grouping = None):
 #     if not mc_hists.valid:

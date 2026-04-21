@@ -8,7 +8,7 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GR
 
 
 Default_Plot_Type="stacked"
-Default_Scale = lambda histHolder:histHolder.POTScale(True)
+Default_Scale = lambda histHolder:histHolder.POTScale(False)
 # Default_Scale = lambda histHolder: None
 DefaultSlicer = PlotTools.PrepareSlicer
 
@@ -123,32 +123,20 @@ SignalDecomposition = {
 }
 
 SignalOnly = {
-    "CCNuEQE" :
-    {
-        "title" : "CC #nu_{e}-QE",
-        "color": COLORS[5]
+    "NuEElasticE" :{
+        "title": "NuEElasticE",
+        "color": COLORS[0]
     },
-    "CCNuE2p2h" : {
-        "title" : "CC #nu_{e}-2p2h",
-        "color": COLORS[6]
-    },
-    "CCNuEDelta" : {
-        "title" : "CC #nu_{e}-Delta Res",
+    "NuEElasticMu" :{
+        "title": "NuEElasticMu",
         "color": COLORS[1]
     },
-    "CCNuE": {
-        "title" : "CC #nu_{e}-Res", 
-        "color": COLORS[4]
-    },
-    "CCNuEDIS" : {
-        "title" : "CC #nu_{e}-DIS",
+    "NuEElasticOther" :{
+        "title": "NuEElasticOther",
         "color": COLORS[2]
-    },
-    "CCNuEWrongSign": {
-        "title" : "CC #nu_{e} wrong sign", 
-        "color": COLORS[7]
     }
 }
+
 ThesisCategories = {
     "Signal" :
     {
@@ -777,8 +765,10 @@ DefaultPlotters={
             "args":(SignalDecomposition,True,False,CONSOLIDATED_ERROR_GROUPS)},
     # "stacked":{"func":PlotTools.PrepareStack,
     #            "args": (ThesisCategories,)},
+    # "stacked":{"func":PlotTools.PrepareStack,
+    #            "args": (NuEElasticBackgroundDecomposition,)},
     "stacked":{"func":PlotTools.PrepareStack,
-               "args": (NuEElasticBackgroundDecomposition,)},
+               "args": (SignalOnly,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
     #            "args": (SignalDecomposition,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
@@ -1475,16 +1465,53 @@ PLOTS_TO_MAKE = [
 
     {"name":"Lepton Energy",
         "plot_type" : "stacked"},
+    {"name":"Biased Neutrino Energy",
+        "plot_type" : "stacked"},
+    {"name":"True Neutrino Energy",
+        "plot_type" : "stacked"},
+    {"name":"Neutrino Length Travelled",
+        "plot_type" : "stacked"},
+    {"name":"Drawn-L Neutrino Length Travelled",
+        "plot_type" : "stacked"},
     # {"name":"E Theta Squared",
     #     "plot_type" : "stacked"},
     # {"name":"True E Theta Squared",
     #     "plot_type" : "stacked"},
-    # {"name":"Reco Energy vs L/E",
-    #    "plot_type" : "migration"},
+    {"name":"Reco Energy vs L/E",
+       "plot_type" : "migration"},
+    {"name":"Reco Energy vs L/E",
+       "plot_type" : "category_hist"},
+
+    {"name":"True Energy vs L/E",
+       "plot_type" : "migration"},
+    {"name":"True Energy vs L/E",
+       "plot_type" : "category_hist"},
+
+    {"name":"Drawn-L Reco Energy vs L/E",
+       "plot_type" : "migration"},
+    {"name":"Drawn-L Reco Energy vs L/E",
+       "plot_type" : "category_hist"},
+
+
+    {"name":"Reco Lepton Energy vs L/E",
+       "plot_type" : "migration"},
+    {"name":"Reco Lepton Energy vs L/E",
+       "plot_type" : "category_hist"},
+
+    {"name":"Drawn-L Reco Lepton Energy vs L/E",
+       "plot_type" : "migration"},
+    {"name":"Drawn-L Reco Lepton Energy vs L/E",
+       "plot_type" : "category_hist"},
+
+
+    {"name":"True Energy vs Neutrino Length Travelled",
+       "plot_type" : "migration"},
+    {"name":"True Energy vs Neutrino Length Travelled",
+       "plot_type" : "category_hist"},
+
     # {"name":"Estimator vs Front dEdX",
     #     "plot_type" : "stacked"},
-    # {"name":"Biased Neutrino Energy",
-    #     "plot_type" : "stacked"},
+
     # {"name":"Visible Energy",
     #     "plot_type" : "stacked"},
     # {"name":"True Lepton Energy",

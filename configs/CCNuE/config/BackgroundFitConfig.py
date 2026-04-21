@@ -232,6 +232,54 @@ N4_TUNE ={
 #N4_TUNE["SCALE_FACTORS"]["dEdX"]=[0,20]
 N4_TUNE["SCALE_FACTORS"]["dEdX"]=PlotConfig.NEUTRINO4_EE_BINNING
 
+
+
+
+# ------------------------------------------------------------------
+# CCNUE old-style grouping
+# ------------------------------------------------------------------
+CCNUE_MATRIX_OLDSTYLE_TAGS = set([
+    "CCnue_matrix"
+])
+
+CCNUE_SIGNAL_KEYS = set([
+    "CCNuE", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuEWrongSign"
+])
+
+CCNUE_FIXED_KEYS = set([
+    "NuEElastic"
+])
+
+CCNUE_MATRIX_OLDSTYLE = {
+    "HIST_OBSERVABLE": "Biased Neutrino Energy",
+    "HIST_TO_FIT": "Biased Neutrino Energy",
+    "Yaxis": False,
+    "REGULATION_PARAMETER": 0.0,
+    "SCALE_FACTORS": OrderedDict(),
+    "CATEGORY_FACTORS": {
+        "CCPi0Proton": "dEdX",
+        "CCPi0": "dEdX",
+        "NCCohPi0": "dEdX",
+        "NCPi0Proton": "dEdX",
+        "NCPi0": "dEdX",
+        "CCPi": "dEdX",
+        "NCPi": "dEdX",
+        "NCDiff": "dEdX",
+        "Other": "dEdX",
+        "CCNuMu": "dEdX",
+        "CCNuMuQE": "dEdX",
+        "CCNuMuDelta": "dEdX",
+        "CCNuMuDIS": "dEdX",
+        "CCNuMu2p2h": "dEdX",
+        "CCNuMuWrongSign": "dEdX",
+    }
+}
+CCNUE_MATRIX_OLDSTYLE["SCALE_FACTORS"]["dEdX"] = PlotConfig.NEUTRINO4_EE_BINNING
+
+
+
+
+
 Tune_Strategy_map = {
     "pt_tune":PT_TUNE,
     "pi0pt_tune":PI0PT_TUNE,
@@ -239,6 +287,7 @@ Tune_Strategy_map = {
     "Eel_tune":EEL_TUNE,
     "visE_tune":VISE_TUNE,
     "N4_tune":N4_TUNE,
+    "CCnue_matrix": CCNUE_MATRIX_OLDSTYLE,
     "no_tune":NO_TUNE,
     "3factors_tune":ThreeFactorsFit,
     "regpt_tune":REGPT_TUNE,
@@ -284,57 +333,79 @@ def SetGlobalParameter(iput):
         return False
 
 
-# -------------------------
-# NEW: Matrix-fit recipes
-# -------------------------
-
-class MatrixFitRecipe:
-    def __init__(
-        self, name, regions, components, cate_to_comp,
-        fixed_cates=None,
-        kreg=None,
-        hist_to_fit=None,
-        hist_observable=None,
-        smooth_lambda_bkg=1.0,
-        smooth_lambda_sig=1.0,
-        smooth_use_curvature=True,
-    ):
-        self.name = name
-        self.regions = regions
-        self.components = components
-        self.cate_to_comp = cate_to_comp
-        self.fixed_cates = fixed_cates or set()
-        self.kreg = kreg
-        self.hist_to_fit = hist_to_fit
-        self.hist_observable = hist_observable
-        self.smooth_lambda_bkg = smooth_lambda_bkg
-        self.smooth_lambda_sig = smooth_lambda_sig
-        self.smooth_use_curvature = smooth_use_curvature
 
 
 
-# -------- CCnue recipe --------
-# Safer than relying on PlotConfig.SIGNAL_DEFINITION unless you KNOW it matches HistHolder.hists keys.
-# If you do have an authoritative list of category keys, replace CCNUE_SIGNAL_KEYS with that.
-CCNUE_SIGNAL_KEYS = set([
-    "CCNuE", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuEWrongSign"
-    # include other CCnue signal buckets you actually have as HistHolder keys
-])
 
-# If CCnue uses split elastic categories instead of "NuEElastic", add them here too.
-CCNUE_FIXED_KEYS = set([
-    "NuEElastic",  # keep if present
-    # "NuEElasticE","NuEElasticMu","NuEElasticOther",  # uncomment if these are the actual keys
-])
 
-def cate_to_comp_CCNUE(cate):
-    if cate in CCNUE_SIGNAL_KEYS:
-        return "SignalLike"
-    if cate in CCNUE_FIXED_KEYS:
-        return None
-    if cate == "Total":
-        return None
-    return "BkgLike"
+
+
+
+
+
+# # -------------------------
+# # NEW: Matrix-fit recipes
+# # -------------------------
+
+# class MatrixFitRecipe:
+#     def __init__(
+#         self, name, regions, components, cate_to_comp,
+#         fixed_cates=None,
+#         kreg=None,
+#         hist_to_fit=None,
+#         hist_observable=None,
+#         smooth_lambda_bkg=1.0,
+#         smooth_lambda_sig=1.0,
+#         smooth_use_curvature=True,
+#     ):
+#         self.name = name
+#         self.regions = regions
+#         self.components = components
+#         self.cate_to_comp = cate_to_comp
+#         self.fixed_cates = fixed_cates or set()
+#         self.kreg = kreg
+#         self.hist_to_fit = hist_to_fit
+#         self.hist_observable = hist_observable
+#         self.smooth_lambda_bkg = smooth_lambda_bkg
+#         self.smooth_lambda_sig = smooth_lambda_sig
+#         self.smooth_use_curvature = smooth_use_curvature
+
+
+
+# # -------- CCnue recipe --------
+# # Safer than relying on PlotConfig.SIGNAL_DEFINITION unless you KNOW it matches HistHolder.hists keys.
+# # If you do have an authoritative list of category keys, replace CCNUE_SIGNAL_KEYS with that.
+# CCNUE_SIGNAL_KEYS = set([
+#     "CCNuE", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuEWrongSign"
+#     # include other CCnue signal buckets you actually have as HistHolder keys
+# ])
+
+# # If CCnue uses split elastic categories instead of "NuEElastic", add them here too.
+# CCNUE_FIXED_KEYS = set([
+#     "NuEElastic",  # keep if present
+#     # "NuEElasticE","NuEElasticMu","NuEElasticOther",  # uncomment if these are the actual keys
+# ])
+
+# def cate_to_comp_CCNUE(cate):
+#     if cate in CCNUE_SIGNAL_KEYS:
+#         return "SignalLike"
+#     if cate in CCNUE_FIXED_KEYS:
+#         return None
+#     if cate == "Total":
+#         return None
+#     return "BkgLike"
+
+# # CCNUE_MATRIX_RECIPE = MatrixFitRecipe(
+# #     name="CCnue_matrix",
+# #     regions=["Signal", "dEdX"],
+# #     components=["BkgLike", "SignalLike"],
+# #     cate_to_comp=cate_to_comp_CCNUE,
+# #     fixed_cates=set(["NuEElastic"]),
+# #     kreg=2,
+# #     hist_to_fit="Biased Neutrino Energy",                 # EN4 axis
+# #     hist_observable="Biased Neutrino Energy",                 # EN4 axis
+# #     # hist_observable={"name":["Biased Neutrino Energy"]},  # EN4 observable
+# # )
 
 # CCNUE_MATRIX_RECIPE = MatrixFitRecipe(
 #     name="CCnue_matrix",
@@ -343,93 +414,81 @@ def cate_to_comp_CCNUE(cate):
 #     cate_to_comp=cate_to_comp_CCNUE,
 #     fixed_cates=set(["NuEElastic"]),
 #     kreg=2,
-#     hist_to_fit="Biased Neutrino Energy",                 # EN4 axis
-#     hist_observable="Biased Neutrino Energy",                 # EN4 axis
-#     # hist_observable={"name":["Biased Neutrino Energy"]},  # EN4 observable
+#     hist_to_fit="Biased Neutrino Energy",
+#     hist_observable="Biased Neutrino Energy",
+#     smooth_lambda_bkg=0.5,
+#     smooth_lambda_sig=0.5,
+#     smooth_use_curvature=True,
 # )
 
-CCNUE_MATRIX_RECIPE = MatrixFitRecipe(
-    name="CCnue_matrix",
-    regions=["Signal", "dEdX"],
-    components=["BkgLike", "SignalLike"],
-    cate_to_comp=cate_to_comp_CCNUE,
-    fixed_cates=set(["NuEElastic"]),
-    kreg=2,
-    hist_to_fit="Biased Neutrino Energy",
-    hist_observable="Biased Neutrino Energy",
-    smooth_lambda_bkg=0.5,
-    smooth_lambda_sig=0.5,
-    smooth_use_curvature=True,
-)
+# # -------- nu+e recipe --------
+# # FIT_SIGNAL_CATES_NUE = set(["NuEElasticE", "NuEElasticMu", "NuEElasticOther"])
 
-# -------- nu+e recipe --------
-# FIT_SIGNAL_CATES_NUE = set(["NuEElasticE", "NuEElasticMu", "NuEElasticOther"])
+# # FIT_BKG_GROUPS_NUE = {
+# #     "BkgPhoton": set(["NCPi0", "NCCohPi0"]),
+# #     "BkgCC": set([
+# #         "CCNuEWrongSign", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuE",
+# #         "CCPi0", "CCPi", "CCNuMu", "CCOther",
+# #     ]),
+# #     "BkgOther": set(["NCPi", "NCOther"]),
+# # }
 
-# FIT_BKG_GROUPS_NUE = {
-#     "BkgPhoton": set(["NCPi0", "NCCohPi0"]),
-#     "BkgCC": set([
-#         "CCNuEWrongSign", "CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuE",
-#         "CCPi0", "CCPi", "CCNuMu", "CCOther",
-#     ]),
-#     "BkgOther": set(["NCPi", "NCOther"]),
+# def cate_to_comp_NUE(cate: str):
+#     # --- signal ---
+#     if cate.startswith("NuEElastic"):
+#         return "Signal"
+
+#     # # --- CC backgrounds (everything CC) ---
+#     # if cate.startswith("CC"):
+#     #     return "BkgCC"
+
+#     # # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
+#     # if cate in ("NCNuECohPi0", "NCNuMuCohPi0", "NCPi0"):
+#     #     return "BkgPhoton"
+
+#     # # --- everything else (NC non-pi0, unknown/diff, etc.) ---
+#     # if cate in ("NCPi", "NCOther", "NCDiff", "Other"):
+#     #     return "BkgOther"
+
+#     # Etheta2 sideband
+#     # --- CC backgrounds (everything CC) ---
+#     # if cate.startswith("CC"):
+#     if cate in ("CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuE"):
+#         return "BkgCC"
+
+#     # dEdX sideband
+#     # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
+#     if cate in ("CCNuEWrongSignQE", "CCNuEWrongSign", "CCPi", "NCNuECohPi0", "NCNuMuCohPi0"):
+#         return "BkgPhoton"
+
+#     # Eavail sideband
+#     # --- everything else (NC non-pi0, unknown/diff, etc.) ---
+#     if cate in ("CCPi0", "CCNuMuWrongSign", "CCNuMu", "CCOther", "NCPi0", "NCPi", "NCOther", "NCDiff"):
+#         return "BkgOther"
+
+#     # If something new appears, fail loudly (better than silently unmapped)
+#     return None
+
+# NUE_MATRIX_RECIPE = MatrixFitRecipe(
+#     name="nueElastic_matrix",
+#     regions=["Signal", "dEdX", "Eavail", "Etheta"],
+#     components=["BkgPhoton", "BkgCC", "BkgOther", "Signal"],
+#     cate_to_comp=cate_to_comp_NUE,
+#     fixed_cates=set(),
+#     kreg=3,
+#     hist_to_fit="Lepton Energy",                 # Eel axis
+#     hist_observable="Lepton Energy",             # or {"name":["Lepton Energy"]} to match your HistHolder API
+# )
+
+
+# # Helper map so the fitter can select by tag
+# MATRIX_RECIPE_MAP = {
+#     "CCnue_matrix": CCNUE_MATRIX_RECIPE,
+#     "nueElastic_matrix": NUE_MATRIX_RECIPE,
 # }
 
-def cate_to_comp_NUE(cate: str):
-    # --- signal ---
-    if cate.startswith("NuEElastic"):
-        return "Signal"
-
-    # # --- CC backgrounds (everything CC) ---
-    # if cate.startswith("CC"):
-    #     return "BkgCC"
-
-    # # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
-    # if cate in ("NCNuECohPi0", "NCNuMuCohPi0", "NCPi0"):
-    #     return "BkgPhoton"
-
-    # # --- everything else (NC non-pi0, unknown/diff, etc.) ---
-    # if cate in ("NCPi", "NCOther", "NCDiff", "Other"):
-    #     return "BkgOther"
-
-    # Etheta2 sideband
-    # --- CC backgrounds (everything CC) ---
-    # if cate.startswith("CC"):
-    if cate in ("CCNuEQE", "CCNuEDelta", "CCNuEDIS", "CCNuE2p2h", "CCNuE"):
-        return "BkgCC"
-
-    # dEdX sideband
-    # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
-    if cate in ("CCNuEWrongSignQE", "CCNuEWrongSign", "CCPi", "NCNuECohPi0", "NCNuMuCohPi0"):
-        return "BkgPhoton"
-
-    # Eavail sideband
-    # --- everything else (NC non-pi0, unknown/diff, etc.) ---
-    if cate in ("CCPi0", "CCNuMuWrongSign", "CCNuMu", "CCOther", "NCPi0", "NCPi", "NCOther", "NCDiff"):
-        return "BkgOther"
-
-    # If something new appears, fail loudly (better than silently unmapped)
-    return None
-
-NUE_MATRIX_RECIPE = MatrixFitRecipe(
-    name="nueElastic_matrix",
-    regions=["Signal", "dEdX", "Eavail", "Etheta"],
-    components=["BkgPhoton", "BkgCC", "BkgOther", "Signal"],
-    cate_to_comp=cate_to_comp_NUE,
-    fixed_cates=set(),
-    kreg=3,
-    hist_to_fit="Lepton Energy",                 # Eel axis
-    hist_observable="Lepton Energy",             # or {"name":["Lepton Energy"]} to match your HistHolder API
-)
-
-
-# Helper map so the fitter can select by tag
-MATRIX_RECIPE_MAP = {
-    "CCnue_matrix": CCNUE_MATRIX_RECIPE,
-    "nueElastic_matrix": NUE_MATRIX_RECIPE,
-}
-
-def GetMatrixRecipe(tag):
-    return MATRIX_RECIPE_MAP.get(tag, None)
+# def GetMatrixRecipe(tag):
+#     return MATRIX_RECIPE_MAP.get(tag, None)
 
 
 

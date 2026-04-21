@@ -153,8 +153,11 @@ def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
 #             MaddWrapper(AnalysisConfig.playlist+str(special_sample),chain.from_iterable(iter(dict_of_special_mc_samples[special_sample].values())),False)
 #             MergeTuples(AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,False),AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist+str(special_sample),False))
 
+
+
 def MergeHistograms():
     nominal_mc = None
+    has_special_sample = len(dict_of_special_mc_samples) > 0
 
     # First produce the standard merged outputs
     for sample_type in dict_of_files:
@@ -176,15 +179,20 @@ def MergeHistograms():
             )
 
             nominal_mc = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist, False)
-            mc_no2p2h = MakeNo2p2hName(nominal_mc)
 
-            if os.path.exists(nominal_mc):
-                shutil.copy2(nominal_mc, mc_no2p2h)
-                print(f"Saved nominal-only MC as: {mc_no2p2h}")
-            else:
-                raise FileNotFoundError(f"Nominal MC file not found: {nominal_mc}")
+            if has_special_sample:
+                mc_no2p2h = MakeNo2p2hName(nominal_mc)
+
+                if os.path.exists(nominal_mc):
+                    shutil.copy2(nominal_mc, mc_no2p2h)
+                    print(f"Saved nominal-only MC as: {mc_no2p2h}")
+                else:
+                    raise FileNotFoundError(f"Nominal MC file not found: {nominal_mc}")
 
     if nominal_mc is None:
+        return
+
+    if not has_special_sample:
         return
 
     # Then build each special-sample-only file and add it into the usual MC file
@@ -211,6 +219,65 @@ def MergeHistograms():
             MergeTuples(nominal_mc, special_output_file, None, None, True)
         else:
             MergeTuples(nominal_mc, special_output_file)
+
+# def MergeHistograms():
+#     nominal_mc = None
+
+#     # First produce the standard merged outputs
+#     for sample_type in dict_of_files:
+#         if sample_type not in AnalysisConfig.data_types:
+#             continue
+
+#         if sample_type == "data":
+#             MaddWrapper(
+#                 AnalysisConfig.playlist,
+#                 chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),
+#                 True
+#             )
+
+#         elif sample_type == "mc":
+#             MaddWrapper(
+#                 AnalysisConfig.playlist,
+#                 chain.from_iterable(iter(dict_of_files[sample_type]["kin"].values())),
+#                 False
+#             )
+
+#             nominal_mc = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist, False)
+#             mc_no2p2h = MakeNo2p2hName(nominal_mc)
+
+#             if os.path.exists(nominal_mc):
+#                 shutil.copy2(nominal_mc, mc_no2p2h)
+#                 print(f"Saved nominal-only MC as: {mc_no2p2h}")
+#             else:
+#                 raise FileNotFoundError(f"Nominal MC file not found: {nominal_mc}")
+
+#     if nominal_mc is None:
+#         return
+
+#     # Then build each special-sample-only file and add it into the usual MC file
+#     for i, special_sample in enumerate(dict_of_special_mc_samples):
+#         special_files = chain.from_iterable(
+#             iter(dict_of_special_mc_samples[special_sample].values())
+#         )
+
+#         if len(dict_of_special_mc_samples) == 1:
+#             special_output_file = MakeOnly2p2hName(nominal_mc)
+#         else:
+#             base, ext = os.path.splitext(MakeOnly2p2hName(nominal_mc))
+#             special_output_file = f"{base}_{i}{ext}"
+
+#         MaddWrapper(
+#             AnalysisConfig.playlist,
+#             special_files,
+#             False,
+#             output_file=special_output_file
+#         )
+
+#         first_key = list(dict_of_special_mc_samples[special_sample].keys())[0]
+#         if "BigGenie" in first_key:
+#             MergeTuples(nominal_mc, special_output_file, None, None, True)
+#         else:
+#             MergeTuples(nominal_mc, special_output_file)
 
 
 def MergeTuples(tuple1,tuple2,pot1=None,pot2=None,bigGenie=False):

@@ -78,10 +78,10 @@ SAMPLE_CUTS = {
         "ODCalVisE",
         "EMLikeTrackScore",
         "MeanFrontdEdX",
-        # "Etheta",
-        # "Eavail",
-        # "Pt",
-        # "LeptonAngle",
+        "Etheta",
+        "Eavail",
+        "Pt",
+        "LeptonAngle",
 
         ## REMOVED CUTS
         # "NonMIPClusFrac",

@@ -116,6 +116,7 @@ TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuE(event) and 
 TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
+# TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNue(event)
 
 TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
 TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)

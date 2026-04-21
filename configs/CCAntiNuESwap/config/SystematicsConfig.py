@@ -18,12 +18,16 @@ NUM_UNIVERSE = 100
 USE_NUE_CONSTRAINT = False
 AnaNuPDG=-12
 USE_SWAPPED=True
+ELASTIC_MODE = False
 NUM_FLUX_UNIVERSE = 100
 # detector mass uncertainty
 MASS_UNCERTAINTY = 0.014  # = 1.4% (it's fractional).  Laura (Doc7615) says she got this from Ron (Doc6016).
 
 # data EM scale shift in ECAL:
 EM_ENERGY_SCALE_SHIFT_ECAL = -0.058 # downward 5.8%
+
+# mc electrino enery scale shift:
+ELECTRON_ENERGY_SCALE = 0.1 # 1% effect from pi0 mass
 
 # EM scale uncertainty in ECAL,HCAL, quoted from nu+e paper
 EM_ENERGY_SCALE_UNCERTAINTY = {

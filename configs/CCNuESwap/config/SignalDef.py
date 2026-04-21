@@ -131,7 +131,7 @@ TRUTH_CATEGORIES["NCOther"] = lambda event: IsNC(event)
 #TRUTH_CATEGORIES["SinglePion"] = lambda event: IsAaronSignal(event) and IsFiducial(event)
 
 # My signal is one or more of the listed categories.
-SIGNAL_DEFINATION = [
+SIGNAL_DEFINITION = [
     "CCNuEQE",
     "CCNuEDelta",
     "CCNuEDIS",
@@ -139,7 +139,7 @@ SIGNAL_DEFINATION = [
     "CCNuE2p2h",
     "CCNuEWrongSign",
 ]
-SWAP_SIGNAL_DEFINATION = [
+SWAP_SIGNAL_DEFINITION = [
     # "CCNu",
     # "CCNuE",
     "CCNuEQE",
