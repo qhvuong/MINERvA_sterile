@@ -380,7 +380,7 @@ NUE_MATRIX_RECIPE = MatrixFitRecipe(
     components=["BkgPhoton", "BkgCC", "BkgOther", "Signal"],
     cate_to_comp=cate_to_comp_NUE,
     fixed_cates=set(),
-    kreg=3,
+    kreg=None,
     hist_to_fit="Lepton Energy",                 # Eel axis
     hist_observable="Lepton Energy",             # or {"name":["Lepton Energy"]} to match your HistHolder API
 )

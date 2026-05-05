@@ -258,38 +258,6 @@ def get_flux_ratio_me_to_le(enu_gev, pdg, me_flux_tag,
 
     return ratio
 
-# def get_flux_cv_ratio_me_to_le(enu_gev, pdg, me_flux_tag,
-#                                flux_dir="/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/custom_plotutils/data/flux"):
-#     pdg = int(pdg)
-
-#     # LE files
-#     h_le_cv  = _get_flux_hist(f"{flux_dir}/flux-gen2thin-pdg{pdg}-minerva1.root",
-#                               "flux_E_cvweighted")
-#     h_le_gen = _get_flux_hist(f"{flux_dir}/flux-g4numiv5-pdg{pdg}-minerva1.root",
-#                               "flux_E_unweighted")
-
-#     # ME files
-#     h_me_cv  = _get_flux_hist(f"{flux_dir}/flux-gen2thin-pdg{pdg}-minervame{me_flux_tag}.root",
-#                               "flux_E_cvweighted")
-#     h_me_gen = _get_flux_hist(f"{flux_dir}/flux-g4numiv6-pdg{pdg}-minervame{me_flux_tag}.root",
-#                               "flux_E_unweighted")
-
-#     def val(h):
-#         b = max(1, min(h.GetXaxis().FindBin(enu_gev), h.GetNbinsX()))
-#         return h.GetBinContent(b)
-
-#     le_cv  = val(h_le_cv)
-#     le_gen = val(h_le_gen)
-#     me_cv  = val(h_me_cv)
-#     me_gen = val(h_me_gen)
-
-#     if le_gen <= 0.0 or me_cv <= 0.0 or me_gen <= 0.0:
-#         return 0.0
-
-#     w_le = le_cv / le_gen
-#     w_me = me_cv / me_gen
-#     return w_le / w_me
-
 _trueEL_cache = {}
 
 def _get_trueEL_hist(path, hname="ETrue_Length_CCNuE"):
@@ -349,6 +317,47 @@ def GetNeutrinoTravelledLength(enu_gev, pdg,
         raise RuntimeError(f"No valid L distribution found for pdg={pdg}, Enu={enu_gev}")
 
     return hL.GetRandom()
+
+def GetNeutrinoTravelledLengthPDF(enu_gev, pdg,
+                          nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_CV_trueEL_MAD.root",
+                          numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_CV_trueEL_MAD.root",
+                          nue_hname="ETrue_Length_CCNuE",
+                          numu_hname="ETrue_Length_CCNuMu"):
+    """
+    Return a normalized TH1 of P(L | Enu, pdg).
+    X axis = true L (km), bin contents sum to 1.
+    """
+
+    apdg = abs(int(pdg))
+    if apdg == 12:
+        h2 = _get_trueEL_hist(nue_file, nue_hname)
+    elif apdg == 14:
+        h2 = _get_trueEL_hist(numu_file, numu_hname)
+    else:
+        raise ValueError(f"Unsupported PDG for GetNeutrinoTravelledLengthPDF: {pdg}")
+
+    by = h2.GetYaxis().FindBin(enu_gev)
+    by = max(1, min(by, h2.GetNbinsY()))
+
+    hL = h2.ProjectionX(f"hL_pdf_{apdg}_{by}_{ROOT.TUUID().AsString()}", by, by)
+    hL.SetDirectory(0)
+
+    if hL.Integral() <= 0:
+        by1 = max(1, by - 1)
+        by2 = min(h2.GetNbinsY(), by + 1)
+        hL = h2.ProjectionX(f"hL_pdf_wide_{apdg}_{by1}_{by2}_{ROOT.TUUID().AsString()}", by1, by2)
+        hL.SetDirectory(0)
+
+    if hL.Integral() <= 0:
+        hL = h2.ProjectionX(f"hL_pdf_all_{apdg}_{ROOT.TUUID().AsString()}", 1, h2.GetNbinsY())
+        hL.SetDirectory(0)
+
+    integ = hL.Integral()
+    if integ <= 0:
+        raise RuntimeError(f"No valid L PDF found for pdg={pdg}, Enu={enu_gev}")
+
+    hL.Scale(1.0 / integ)
+    return hL
 
 
 
@@ -502,7 +511,7 @@ class CVPythonUniverse():
         pdg = newpdg
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
         # weight *= get_flux_cv_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
-        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
+        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
 
         weight *= self.GetLowRecoil2p2hWeight()
         weight *= self.GetRPAWeight()
@@ -517,6 +526,79 @@ class CVPythonUniverse():
             weight *= 1.4368 # diffractive coherent reweight from Aaron Mislivec
 
         return weight
+
+
+    def DebugStandardWeightPieces(self, label=""):
+        pdg0 = self.mc_incoming
+        pdg = pdg0
+
+        if SystematicsConfig.USE_SWAPPED:
+            if pdg == 12:
+                pdg = 14
+            elif pdg == -12:
+                pdg = -14
+            elif pdg == 14:
+                pdg = 12
+            elif pdg == -14:
+                pdg = -12
+
+        enu = self.mc_incomingE * 1e-3
+
+        genie = self.GetGenieWeight()
+        flux = self.GetFluxAndCVWeight(enu, pdg)
+        lowrec2p2h = self.GetLowRecoil2p2hWeight()
+        rpa = self.GetRPAWeight()
+        lowq2pi = self.GetMyLowQ2PiWeight()
+        geant = self.GetGeantHadronWeight()
+        minos = self.GetMyMinosEfficiencyWeight()
+        coh = self.GetCOHPionWeight()
+        diffcoh = 1.4368 if self.mc_intType == 4 else 1.0
+
+        total_manual = (
+            genie
+            * flux
+            * lowrec2p2h
+            * rpa
+            * lowq2pi
+            * geant
+            * minos
+            * coh
+            * diffcoh
+        )
+
+        total_getweight = self.GetWeight()
+
+        print(
+            "[WGTPIECES] {} class={} short={} sigma={} "
+            "pdg0={} pdgUsed={} Ev={:.6g} intType={} "
+            "genie={:.8g} flux={:.8g} 2p2h={:.8g} rpa={:.8g} "
+            "lowq2pi={:.8g} geant={:.8g} minos={:.8g} coh={:.8g} diffcoh={:.8g} "
+            "manual={:.8g} getWeight={:.8g}".format(
+                label,
+                type(self).__name__,
+                self.ShortName(),
+                self.GetSigma(),
+                pdg0,
+                pdg,
+                enu,
+                self.mc_intType,
+                genie,
+                flux,
+                lowrec2p2h,
+                rpa,
+                lowq2pi,
+                geant,
+                minos,
+                coh,
+                diffcoh,
+                total_manual,
+                total_getweight,
+            )
+        )
+
+
+
+
 
     def GetMyMinosEfficiencyWeight(self):
          if self.HasNoBackExitingTracks:

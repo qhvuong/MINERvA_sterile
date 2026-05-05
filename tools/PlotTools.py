@@ -14,7 +14,7 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS
 
 MNVPLOTTER = PlotUtils.MnvPlotter()
 #config MNVPLOTTER:
-MNVPLOTTER.draw_normalized_to_bin_width=False
+MNVPLOTTER.draw_normalized_to_bin_width=True
 MNVPLOTTER.legend_text_size = 0.02
 MNVPLOTTER.extra_top_margin = -0.035# go slightly closer to top of pad
 MNVPLOTTER.mc_bkgd_color = 46 
@@ -293,8 +293,10 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
 
+    # Always get un-width-scaled MC histograms.
+    # MnvPlotter will handle bin-width normalization internally.
     mc_list, color, title, yields = mc_hists.GetCateList(
-        Grouping, with_yield=True, width_scale_to=width_scale_to
+        Grouping, with_yield=True, width_scale_to=None
     )
 
     hists = []
@@ -302,14 +304,16 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
     if data_hists.valid:
         data_hist = data_hists.GetHist()
 
-        if width_scale_to is not None:
-            data_hist_plot = mc_hists.WidthScaleHist(data_hist, target_width=width_scale_to)
-        else:
-            data_hist_plot = data_hist
+        # Do NOT manually width-scale data
+        data_hist_plot = data_hist
 
         plotfunction = lambda mnvplotter, data_hist_in, *mc_ints: partial(
             MakeDataMCStackedPlot,
-            color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
+            color=color,
+            title=title,
+            pot_scale=1.0,
+            raw_counts=yields,
+            legend="TR"
         )(data_hist_in, mc_ints)
 
         hists = [data_hist_plot]
@@ -318,7 +322,6 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
             data_hist_plot.GetYaxis().SetTitle("dNEvents/d(dE/dx)")
 
     else:
-        # Create a dummy frame hist so all MC components remain in the stack
         frame_hist = mc_list[0].Clone(f"{mc_list[0].GetName()}_frame")
         frame_hist.Reset()
 
@@ -331,7 +334,11 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
 
         plotfunction = lambda mnvplotter, frame_hist_in, *mc_ints: partial(
             MakeDataMCStackedPlot,
-            color=color, title=title, pot_scale=1.0, raw_counts=yields, legend="TR"
+            color=color,
+            title=title,
+            pot_scale=1.0,
+            raw_counts=yields,
+            legend="TR"
         )(frame_hist_in, mc_ints)
 
     for hist in mc_list:

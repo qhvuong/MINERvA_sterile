@@ -19,6 +19,42 @@ SELECTED_SIDEBANDS = AnalysisConfig.sidebands
 mnvplotter = PlotUtils.MnvPlotter()
 mnvplotter.axis_maximum = 1
 
+def FillVertBandCVsFromParent(h):
+    """
+    For an MnvH1D/MnvH2D, copy the parent CV contents into the
+    internal CV histogram of each vertical error band.
+
+    This avoids ErrBandEmptyCVError in PlotUtils covariance/error calculations.
+    Universe histograms are not changed.
+    """
+    if h is None:
+        return
+
+    try:
+        band_names = h.GetErrorBandNames()
+    except Exception:
+        return
+
+    for bandname in band_names:
+        band = h.GetVertErrorBand(bandname)
+        if not band:
+            continue
+
+        for i in range(h.GetSize()):
+            band.SetBinContent(i, h.GetBinContent(i))
+            band.SetBinError(i, h.GetBinError(i))
+
+
+def FixHistHolderVertBandCVs(holder):
+    """
+    Apply FillVertBandCVsFromParent to every histogram inside a HistHolder.
+    """
+    if holder is None:
+        return
+
+    for name, h in holder.hists.items():
+        FillVertBandCVsFromParent(h)
+
 def MakePlot(data_hists,mc_hists,config,true_mc=False):
     #scale
     if "scale" in config:
@@ -35,6 +71,12 @@ def MakePlot(data_hists,mc_hists,config,true_mc=False):
         if data_signal: 
             for q in range(0,data_signal.GetNbinsX()+1):
                 data_signal.SetBinContent(q,mc_hists.hists["Total"].GetBinContent(q))
+
+    # IMPORTANT:
+    # Some sideband/category histograms have empty vertical-band CV histos.
+    # Fill them from the parent CV before PlotUtils tries to calculate covariances.
+    FixHistHolderVertBandCVs(data_hists)
+    FixHistHolderVertBandCVs(mc_hists)
 
     PlotType = config.setdefault("plot_type",Default_Plot_Type)
     # typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"

@@ -20,6 +20,28 @@ ROOT.gSystem.Load("libFluxLoop.so")
 # import PyCintex
 import PlotUtils.LoadPlotUtilsLib
 # import PlotUtils.MinervaStyle
+
+def SyncMnvH1D(h):
+    if h is None:
+        return
+
+    if hasattr(h, "SyncCVHistos"):
+        h.SyncCVHistos()
+        return
+
+    # In many PlotUtils builds, this computes/synchronizes the CV-with-error view.
+    if hasattr(h, "GetCVHistoWithError"):
+        tmp = h.GetCVHistoWithError()
+        ROOT.SetOwnership(tmp, False)
+        return
+
+    if hasattr(h, "GetCVHistoWithStatError"):
+        tmp = h.GetCVHistoWithStatError()
+        ROOT.SetOwnership(tmp, False)
+        return
+
+    print("[WARNING] No known CV-sync method for", h.GetName(), type(h))
+
 class EnumeratorType(object):
         """ A helper class that makes closed enumerations easy """
         def __init__(self, enumeration={}, capitalization="standard"):
@@ -257,10 +279,12 @@ class FluxCalculator(object):
                         # (assume CV weighted unless specifically told otherwise?)
                         cvweighted = not("unweighted" in cut_name)
                         self._loop_obj.EventLoop(self._ntuple_chain, evt_list, histogram, "mc_incomingE", 0.001, cvweighted,)
+                        SyncMnvH1D(histogram)
                         # ... we'd like the event rate to be a true histogram,
                         # in which the bin size is irrelevant.
                         # to do that, we divide out the bin size.
                         histogram.Scale(1./self._params["E_bin_width"])
+                        SyncMnvH1D(histogram)
                                                 
                         # ... then clone the event count histograms and scale them to get event rate
                         rate_histo_name = event_histo_name.replace("eventcount", "rate")
@@ -270,6 +294,7 @@ class FluxCalculator(object):
                         # the scale factor is (n_planes x targets per plane = # of target nuclei in fiducial volume) x (P.O.T.) x 1/1e4 (we store flux in units of m^2)
                         scale_factor = self._params["n_planes"] * self._params["n_scattering_centers"] * self._params["total_POT"] * 1e-4
                         self.histos[rate_histo_name].Scale( 1./(scale_factor) )
+                        SyncMnvH1D(self.histos[rate_histo_name])
                 
                         # step 3: divide the event rate by the cross-section to get the flux.
                         flux_histo_name = rate_histo_name.replace("rate", "flux")
@@ -279,6 +304,7 @@ class FluxCalculator(object):
                                 flux_histo.DivideSingle(self.histos[rate_histo_name], self.histos["x_sect_E"])
                         else:
                                 flux_histo.Divide(self.histos["x_sect_E"])
+                        SyncMnvH1D(flux_histo)
                         
                         nu_text = "#nu_{%s}" % NeutrinoFlavor[self._nu_flavor]
                         if self._nu_helicity == NeutrinoHelicity.ANTIPARTICLE:

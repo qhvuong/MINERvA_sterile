@@ -2,7 +2,7 @@
 set -euo pipefail
 
 tag=${1:?You must provide a selection_tag}
-count=${2:-50}
+count=${2:-40}
 sideband=${3:-None}
 
 logfile="runningNotes/${tag}_$(date +%Y-%m-%d_%H%M%S).txt"
@@ -14,7 +14,8 @@ if [[ -n "${sideband}" && "${sideband}" != "None" ]]; then
   USE_SIDEBAND_ARGS=(--use-sideband "${@:3}")
 fi
 
-for name in 1 7 9 13C 13C_2p2h; do
+# for name in 1 7 9 13C 13C_2p2h; do
+for name in 7 9 13C 13C_2p2h; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6
@@ -36,7 +37,8 @@ for name in 1 7 9 13C 13C_2p2h; do
   "${cmd[@]}"
 done
 
-for name in 1 7 9 13A 13B 13C 13D 13E; do
+# for name in 1 7 9 13A 13B 13C 13D 13E; do
+for name in 7 9 13A 13B 13C 13D 13E; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6

@@ -181,6 +181,15 @@ def CalcApothem(x,y):
 def CalTheta2Hybrid(x,y):
     return x*x+y*y
 
+def is_pion_parent(event):
+    return abs(event.mc_fr_nuParentID) == 211
+
+def is_kaon_parent(event):
+    return abs(event.mc_fr_nuParentID) in [321, 130, 310]
+
+def is_muon_parent(event):
+    return abs(event.mc_fr_nuParentID) == 13
+
 VARIABLE_DICT = {
     "Biased Neutrino Energy":
     {
@@ -636,6 +645,45 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.reco_E_lep], 
         "tags": truth_tags   
     },
+
+    "Drawn-L Reco Lepton Energy vs L/E from pion parent": {
+        "name" : "drawnL_ElepReco_LE_pionParent",
+        "title": "Drawn-L Reco Elep vs True L/E (pion parent); True L/E (km/GeV); E_{e} (GeV); NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
+                    PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+        "value_getter" : [
+            lambda event: event.New_True_L_Over_E() if is_pion_parent(event) else None,
+            lambda event: event.kin_cal.reco_E_lep if is_pion_parent(event) else None,
+        ],
+        "tags": truth_tags
+    },
+
+    "Drawn-L Reco Lepton Energy vs L/E from muon parent": {
+        "name" : "drawnL_ElepReco_LE_muonParent",
+        "title": "Drawn-L Reco Elep vs True L/E (muon parent); True L/E (km/GeV); E_{e} (GeV); NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
+                    PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+        "value_getter" : [
+            lambda event: event.New_True_L_Over_E() if is_muon_parent(event) else None,
+            lambda event: event.kin_cal.reco_E_lep if is_muon_parent(event) else None,
+        ],
+        "tags": truth_tags
+    },
+
+    "Drawn-L Reco Lepton Energy vs L/E from kaon parent": {
+        "name" : "drawnL_ElepReco_LE_kaonParent",
+        "title": "Drawn-L Reco Elep vs True L/E (kaon parent); True L/E (km/GeV); E_{e} (GeV); NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
+                    PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+        "value_getter" : [
+            lambda event: event.New_True_L_Over_E() if is_kaon_parent(event) else None,
+            lambda event: event.kin_cal.reco_E_lep if is_kaon_parent(event) else None,
+        ],
+        "tags": truth_tags
+    },
+
+
+
     "Reco Energy vs L/E":
     {
         "name" : "EReco_LE",

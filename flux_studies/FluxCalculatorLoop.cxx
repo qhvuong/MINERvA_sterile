@@ -127,7 +127,8 @@ void FluxCalculatorLoop::EventLoop(TChain * chain, const TEventList * evtList, P
 //      std::cout << "cvweight for flux       : " << cvWeight << std::endl;
 //      std::cout << "-------------------------------------------" << std::endl;
       if (cvWeighted)
-        histogram->FillVertErrorBand( "Flux", cv, combinedWeights, 1.0, 1.0);
+        // histogram->FillVertErrorBand( "Flux", cv, combinedWeights, 1.0, 1.0);
+        histogram->FillVertErrorBand("Flux", cv, combinedWeights, cvWeight, 1.0);
       else
         histogram->FillVertErrorBand( "Flux", cv, combinedWeights );
     }        

@@ -4,6 +4,7 @@ import re
 import sys
 import argparse
 import subprocess
+import ROOT
 
 argv_backup = sys.argv[:]
 sys.argv = [sys.argv[0]]
@@ -220,6 +221,61 @@ def combined_output_path(playlist: str, selection_tag: str, is_data: bool, ntupl
         AnalysisConfig.ntuple_tag = old_ntuple_tag
 
 
+# def sync_mnv_band_cvs_in_file(path):
+#     """
+#     After hadd/madd/Add operations, force every MnvH1D/MnvH2D vertical-band CV
+#     to match the parent/main CV. This does not change universe histograms.
+#     """
+#     ROOT.TH1.AddDirectory(False)
+
+#     f = ROOT.TFile.Open(path, "UPDATE")
+#     if not f or f.IsZombie():
+#         raise RuntimeError(f"Could not open for sync: {path}")
+
+#     keys = f.GetListOfKeys().Clone()
+
+#     n_synced = 0
+#     n_skipped = 0
+
+#     for key in keys:
+#         name = key.GetName()
+#         obj = key.ReadObj()
+
+#         try:
+#             if obj.InheritsFrom("PlotUtils::MnvH1D"):
+#                 cv = ROOT.TH1D(obj)
+#                 cv.SetDirectory(0)
+
+#                 for bandname in obj.GetVertErrorBandNames():
+#                     band = obj.GetVertErrorBand(str(bandname))
+#                     if band:
+#                         cv.Copy(band)
+
+#                 obj.Write(name, ROOT.TObject.kOverwrite)
+#                 n_synced += 1
+
+#             elif obj.InheritsFrom("PlotUtils::MnvH2D"):
+#                 cv = ROOT.TH2D(obj)
+#                 cv.SetDirectory(0)
+
+#                 for bandname in obj.GetVertErrorBandNames():
+#                     band = obj.GetVertErrorBand(str(bandname))
+#                     if band:
+#                         cv.Copy(band)
+
+#                 obj.Write(name, ROOT.TObject.kOverwrite)
+#                 n_synced += 1
+
+#             else:
+#                 n_skipped += 1
+
+#         except Exception as e:
+#             print(f"[WARN] Could not sync {name}: {e}")
+#             n_skipped += 1
+
+#     f.Close()
+#     print(f"[SYNC] Synced {n_synced} MnvH* objects in {path}; skipped {n_skipped}")
+
 def maybe_hadd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
     mc_files = [
         combined_output_path(pl, selection_tag, False)
@@ -289,6 +345,14 @@ def maybe_hadd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
         else:
             print("[RUNNING] hadd for FHC MC")
             subprocess.run(cmd_mc, check=False)
+            # print("[RUNNING] hadd for FHC MC")
+            # ret = subprocess.run(cmd_mc, check=False)
+
+            # if ret.returncode == 0:
+            #     print("[RUNNING] sync band CVs for FHC MC")
+            #     sync_mnv_band_cvs_in_file(out_mc)
+            # else:
+            #     print(f"[WARN] FHC MC hadd failed with return code {ret.returncode}; not syncing")
     else:
         print("[SKIP] Not running MC hadd because some expected MC playlist outputs are missing")
         if log_sink is not None:

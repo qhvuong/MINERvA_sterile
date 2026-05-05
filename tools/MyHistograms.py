@@ -10,6 +10,160 @@ from tools.PlotLibrary import TranslateSettings,VariantPlotsNamingScheme
 from config.SignalDef import TRUTH_CATEGORIES,EXTRA_OTHER
 from config.CutConfig import SAMPLE_CUTS,KINEMATICS_CUTS
 from tools.CutLibrary import CUTS
+from tools.SystematicsUniverse import GetNeutrinoTravelledLengthPDF
+from tools.PlotLibrary import is_pion_parent, is_muon_parent, is_kaon_parent
+
+def DebugFluxBandCV(hist, label="", max_bins=20, max_univ=5):
+    if hist is None:
+        return
+
+    if not hist.HasVertErrorBand("Flux"):
+        return
+
+    band = hist.GetVertErrorBand("Flux")
+
+    print("\n[{}] {}".format(label, hist.GetName()))
+    print("  title =", hist.GetTitle())
+    print("  MAIN CV integral =", hist.Integral())
+    print("  FLUX BAND CV integral =", band.Integral())
+    print("  bandCV/main integral ratio =", band.Integral() / hist.Integral() if hist.Integral() else "NA")
+
+    print("  bin-by-bin main CV vs Flux band CV:")
+    nprinted = 0
+    for b in range(0, hist.GetNbinsX() + 2):
+        main = hist.GetBinContent(b)
+        bcv = band.GetBinContent(b)
+
+        if main != 0 or bcv != 0:
+            ratio = bcv / main if main != 0 else "NA"
+            print(
+                "    bin {:2d} main={:.12g} fluxBandCV={:.12g} ratio={}".format(
+                    b, main, bcv, ratio
+                )
+            )
+            nprinted += 1
+            if nprinted >= max_bins:
+                break
+
+    print("  first few Flux universes:")
+    for i in range(min(max_univ, band.GetNHists())):
+        hu = band.GetHist(i)
+        print(
+            "    universe {:3d} integral={:.12g} univ/main={}".format(
+                i,
+                hu.Integral(),
+                hu.Integral() / hist.Integral() if hist.Integral() else "NA"
+            )
+        )
+
+        nprinted = 0
+        for b in range(0, hist.GetNbinsX() + 2):
+            uval = hu.GetBinContent(b)
+            main = hist.GetBinContent(b)
+            if uval != 0 or main != 0:
+                print(
+                    "      bin {:2d} main={:.12g} univ={:.12g} univ/main={}".format(
+                        b,
+                        main,
+                        uval,
+                        uval / main if main != 0 else "NA",
+                    )
+                )
+                nprinted += 1
+                if nprinted >= max_bins:
+                    break
+
+def PlotBandCVAndUniverses(hist, bandname="Flux", tag="", sync_first=False):
+    """
+    Plot parent/main CV, band CV, and all universes for one vertical error band.
+    If sync_first=True, copy the parent CV into the band CV before plotting.
+    """
+    if hist is None:
+        return
+
+    if not hist.HasVertErrorBand(bandname):
+        print(f"[PlotBandCVAndUniverses] {hist.GetName()} has no band {bandname}")
+        return
+
+    if sync_first:
+        # sync copied band CV to parent CV
+        for bname in hist.GetVertErrorBandNames():
+            band = hist.GetVertErrorBand(bname)
+            if not band:
+                continue
+            for ibin in range(0, hist.GetNbinsX() + 2):
+                band.SetBinContent(ibin, hist.GetBinContent(ibin))
+                band.SetBinError(ibin, hist.GetBinError(ibin))
+
+    band = hist.GetVertErrorBand(bandname)
+
+    c = ROOT.TCanvas(f"c_{hist.GetName()}_{bandname}_{tag}", "", 1200, 900)
+
+    # parent/main CV
+    h_main = ROOT.TH1D(hist)
+    h_main.SetDirectory(0)
+    h_main.SetName(f"{hist.GetName()}_{bandname}_mainCV_{tag}")
+    h_main.SetStats(0)
+    h_main.SetLineColor(ROOT.kBlack)
+    h_main.SetLineWidth(4)
+    h_main.SetLineStyle(2)   # dashed
+
+    # band CV
+    h_bandcv = ROOT.TH1D(band)
+    h_bandcv.SetDirectory(0)
+    h_bandcv.SetName(f"{hist.GetName()}_{bandname}_bandCV_{tag}")
+    h_bandcv.SetStats(0)
+    h_bandcv.SetLineColor(ROOT.kBlue)
+    h_bandcv.SetLineWidth(2)
+    h_bandcv.SetMarkerColor(ROOT.kBlue)
+    h_bandcv.SetMarkerStyle(20)
+    h_bandcv.SetMarkerSize(1.1)
+
+    # universes
+    univs = []
+    ymax = max(h_main.GetMaximum(), h_bandcv.GetMaximum())
+
+    for i in range(band.GetNHists()):
+        hu = ROOT.TH1D(band.GetHist(i))
+        hu.SetDirectory(0)
+        hu.SetName(f"{hist.GetName()}_{bandname}_univ_{i}_{tag}")
+        hu.SetStats(0)
+        hu.SetLineColor(ROOT.kGray + 1)
+        hu.SetLineWidth(1)
+        univs.append(hu)
+        ymax = max(ymax, hu.GetMaximum())
+
+    h_main.SetMaximum(1.25 * ymax if ymax > 0 else 1.0)
+    h_main.Draw("HIST")
+
+    for hu in univs:
+        hu.Draw("HIST SAME")
+
+    h_bandcv.Draw("HIST SAME")
+    h_bandcv.Draw("P SAME")
+    h_main.Draw("HIST SAME")  # redraw on top
+
+    leg = ROOT.TLegend(0.55, 0.68, 0.88, 0.88)
+    leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
+    leg.AddEntry(h_main, "Main CV (dashed)", "l")
+    leg.AddEntry(h_bandcv, "Band CV (blue markers)", "lp")
+    if univs:
+        leg.AddEntry(univs[0], "Universes", "l")
+    leg.Draw()
+
+    c.Modified()
+    c.Update()
+
+    # keep refs alive in PyROOT
+    c._h_main = h_main
+    c._h_bandcv = h_bandcv
+    c._univs = univs
+    c._leg = leg
+
+    outname = f"{hist.GetName()}_{bandname}_{tag}.png"
+    print("[PlotBandCVAndUniverses] saving", outname)
+    c.SaveAs(outname)
 
 class HistWrapper1D(HistWrapper):
     def __init__(self,title,bins):
@@ -36,22 +190,35 @@ class HistWrapper1D(HistWrapper):
         return clone
 
     def Write(self):
-        # print("BEFORE SYNC", self.hist.GetName())
-        # for i in range(0, self.hist.GetNbinsX()+2):
-        #     c = self.hist.GetBinContent(i)
-        #     if c != 0:
-        #         print("  pre", i, c)
+        if not hasattr(self, "hist") or self.hist is None:
+            print("[WARNING] HistWrapper1D.Write called but self.hist is missing")
+            return
+
+        # Limit to the key histogram first, otherwise output will be huge.
+        # if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
+        if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
+            DebugFluxBandCV(self.hist, "BEFORE SyncCVHistos")
+            # # plot BEFORE sync: band CV will likely be zero/stale
+            # PlotBandCVAndUniverses(self.hist, "Flux", "beforeSync", sync_first=False)
 
         self.SyncCVHistos()
 
-        # print("AFTER SYNC", self.hist.GetName())
-        # for i in range(0, self.hist.GetNbinsX()+2):
-        #     c = self.hist.GetBinContent(i)
-        #     if c != 0:
-        #         print("  post", i, c)
+        # if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
+        if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
+            DebugFluxBandCV(self.hist, "AFTER SyncCVHistos")
+            # # plot AFTER sync: band CV should match parent/main CV
+            # PlotBandCVAndUniverses(self.hist, "Flux", "afterSync", sync_first=False)
 
         self.hist.Write()
         del self.hist
+
+    # def Write(self):
+    #     if not hasattr(self, "hist") or self.hist is None:
+    #         print("[WARNING] HistWrapper1D.Write called but self.hist is missing")
+    #         return
+    #     self.SyncCVHistos()
+    #     self.hist.Write()
+    #     del self.hist   # keep disabled for diagnostic
 
 class HistWrapper2D(HistWrapper):
     def __init__(self,title,Xbins,Ybins):
@@ -177,7 +344,58 @@ class PlotProcessor():
     def AddErrorBands(self,universes):
         self.histwrapper.AddUniverses(universes)
 
-    def Process(self,universe):
+    def FillHistWithLPDF(self, universe):
+        name = self.histwrapper.name
+
+        if "pionParent" in name and not is_pion_parent(universe):
+            return
+        if "muonParent" in name and not is_muon_parent(universe):
+            return
+        if "kaonParent" in name and not is_kaon_parent(universe):
+            return
+
+        enu_gev = universe.mc_incomingE * 1e-3
+        if enu_gev <= 0:
+            return
+
+        w_base = self.weight_function(universe) if self.weight_function else universe.GetWeight()
+        hL = GetNeutrinoTravelledLengthPDF(enu_gev, universe.mc_incoming)
+
+        if name.startswith("drawnL_EReco_LE"):
+            yval = universe.kin_cal.reco_E_lep + universe.kin_cal.reco_visE
+            if yval is None:
+                return
+
+            for i in range(1, hL.GetNbinsX() + 1):
+                pk = hL.GetBinContent(i)
+                if pk <= 0:
+                    continue
+                Lk = hL.GetXaxis().GetBinCenter(i)
+                loe = Lk / enu_gev
+                self.histwrapper.FillUniverse(universe, loe, yval, w_base * pk)
+
+        elif name.startswith("drawnL_ElepReco_LE"):
+            yval = universe.kin_cal.reco_E_lep
+            if yval is None:
+                return
+
+            for i in range(1, hL.GetNbinsX() + 1):
+                pk = hL.GetBinContent(i)
+                if pk <= 0:
+                    continue
+                Lk = hL.GetXaxis().GetBinCenter(i)
+                loe = Lk / enu_gev
+                self.histwrapper.FillUniverse(universe, loe, yval, w_base * pk)
+
+        elif name.startswith("drawnL_nu_length"):
+            for i in range(1, hL.GetNbinsX() + 1):
+                pk = hL.GetBinContent(i)
+                if pk <= 0:
+                    continue
+                Lk = hL.GetXaxis().GetBinCenter(i)
+                self.histwrapper.FillUniverse(universe, Lk, w_base * pk)
+
+    def Process(self, universe):
 
         if all(cut(universe) for cut in self.cuts[::-1]):
             try:
@@ -186,21 +404,53 @@ class PlotProcessor():
                 print(self.histwrapper.name)
                 print(("Error", e))
                 return None
-        else :
+        else:
             return None
 
+        # Special handling for template-weighted drawn-L plots
+        name = self.histwrapper.name
+        if (
+            name.startswith("drawnL_EReco_LE")
+            or name.startswith("drawnL_ElepReco_LE")
+            or name.startswith("drawnL_nu_length")
+        ):
+            self.FillHistWithLPDF(universe)
+            return
+
         wgt = self.weight_function(universe) if self.weight_function else universe.GetWeight()
-        # base = universe.GetWeight()
-        # extra = self.weight_function(universe) if self.weight_function else 1.0
-        # wgt = base * extra
-        if isinstance(value[0],list):
-            if not isinstance(wgt,list):
-                wgt = len(value[0])*[wgt]
-            #filling the multiple entries per event.
+
+        if isinstance(value[0], list):
+            if not isinstance(wgt, list):
+                wgt = len(value[0]) * [wgt]
             for v in map(lambda wgt,*args: (list(args),wgt), wgt, *value):
-                self.FillHist(universe,*v)
+                self.FillHist(universe, *v)
         else:
-            self.FillHist(universe,value,wgt)
+            self.FillHist(universe, value, wgt)
+
+    # def Process(self,universe):
+
+    #     if all(cut(universe) for cut in self.cuts[::-1]):
+    #         try:
+    #             value = [_(universe) for _ in self.value_getter]
+    #         except Exception as e:
+    #             print(self.histwrapper.name)
+    #             print(("Error", e))
+    #             return None
+    #     else :
+    #         return None
+
+    #     wgt = self.weight_function(universe) if self.weight_function else universe.GetWeight()
+    #     # base = universe.GetWeight()
+    #     # extra = self.weight_function(universe) if self.weight_function else 1.0
+    #     # wgt = base * extra
+    #     if isinstance(value[0],list):
+    #         if not isinstance(wgt,list):
+    #             wgt = len(value[0])*[wgt]
+    #         #filling the multiple entries per event.
+    #         for v in map(lambda wgt,*args: (list(args),wgt), wgt, *value):
+    #             self.FillHist(universe,*v)
+    #     else:
+    #         self.FillHist(universe,value,wgt)
 
     def FillHist(self,universe,value,wgt):
         if value.count(None) == 0:

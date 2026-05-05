@@ -2,9 +2,9 @@
   TH1::AddDirectory(kFALSE);
 
   int playlist = 13;
-  int pdg = 12;
+  int pdg = -12;
 
-  TFile* fin = TFile::Open(Form("flux_le%d_nueFHC.root", playlist), "READ");
+  TFile* fin = TFile::Open(Form("LE%d_nuebar.root", playlist), "READ");
   if (!fin || fin->IsZombie()) {
     std::cout << "Could not open input file\n";
     return;

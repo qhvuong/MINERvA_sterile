@@ -765,10 +765,10 @@ DefaultPlotters={
             "args":(SignalDecomposition,True,False,CONSOLIDATED_ERROR_GROUPS)},
     # "stacked":{"func":PlotTools.PrepareStack,
     #            "args": (ThesisCategories,)},
-    # "stacked":{"func":PlotTools.PrepareStack,
-    #            "args": (NuEElasticBackgroundDecomposition,)},
     "stacked":{"func":PlotTools.PrepareStack,
-               "args": (SignalOnly,)},
+               "args": (NuEElasticBackgroundDecomposition,)},
+    # "stacked":{"func":PlotTools.PrepareStack,
+    #            "args": (SignalOnly,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
     #            "args": (SignalDecomposition,)},
     # "2Dstacked":{"func":PlotTools.Prepare2DStack,
@@ -1503,11 +1503,31 @@ PLOTS_TO_MAKE = [
     {"name":"Drawn-L Reco Lepton Energy vs L/E",
        "plot_type" : "category_hist"},
 
+    {"name":"Drawn-L Reco Lepton Energy vs L/E from pion parent",
+       "plot_type" : "migration"},
+    {"name":"Drawn-L Reco Lepton Energy vs L/E from pion parent",
+       "plot_type" : "category_hist"},
+
+    {"name":"Drawn-L Reco Lepton Energy vs L/E from muon parent",
+       "plot_type" : "migration"},
+    {"name":"Drawn-L Reco Lepton Energy vs L/E from muon parent",
+       "plot_type" : "category_hist"},
+
+    {"name":"Drawn-L Reco Lepton Energy vs L/E from kaon parent",
+       "plot_type" : "migration"},
+    {"name":"Drawn-L Reco Lepton Energy vs L/E from kaon parent",
+       "plot_type" : "category_hist"},
 
     {"name":"True Energy vs Neutrino Length Travelled",
        "plot_type" : "migration"},
     {"name":"True Energy vs Neutrino Length Travelled",
        "plot_type" : "category_hist"},
+
+
+
+
+
+
 
     # {"name":"Estimator vs Front dEdX",
     #     "plot_type" : "stacked"},
