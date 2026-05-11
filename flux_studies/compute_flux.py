@@ -12,12 +12,10 @@
 """
 import sys
 import array
-from array import array
 import numbers
 import os.path
 import optparse
 import ROOT
-from ROOT import std
 ROOT.gSystem.Load("libFluxLoop.so")
 # import PyCintex
 import PlotUtils.LoadPlotUtilsLib
@@ -122,16 +120,19 @@ DefaultFileList = { \
     'RHC' : "/minerva/data/users/minervapro/New_CCInclusiveReco_POTbugFixed/playlist_summary/MC_minerva5_CCInclusiveReco.txt" \
     }
 DefaultMeanPOTPerFile = { "FHC" : 2.192000E+20 / 440 , "RHC" : 8.975000E+20 / 1800 }
+
+STANDARD_FLUX_BINNING = [
+    0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+    5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5,
+    10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,
+    20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0,
+]
+
 class FluxCalculator(object):
-        E_MIN = 0   # in GeV
-        E_MAX = 100 # in GeV
-        E_BINS = [
-                0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8,
-                8.5, 9, 9.5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                30, 40, 50, 60, 70, 80, 90, 100
-        ]
-        # N_E_BINS = 1000
-        N_E_BINS = len(E_BINS) - 1
+        E_BINNING = array.array("d", STANDARD_FLUX_BINNING)
+        N_E_BINS = len(STANDARD_FLUX_BINNING) - 1
+        E_MIN = STANDARD_FLUX_BINNING[0]   # in GeV
+        E_MAX = STANDARD_FLUX_BINNING[-1]  # in GeV
         
         def __init__(self,
                 hc=HornCurrent.FHC,
@@ -176,7 +177,7 @@ class FluxCalculator(object):
                 self._calc_errors = calc_errors
                 self._n_universes = n_universes
                 if self._calc_errors and self._n_universes is None:
-                        self._n_universes = 500
+                        self._n_universes = 1000
                 self._use_ppfx = use_ppfx
                 
                 self._params = {}
@@ -212,33 +213,32 @@ class FluxCalculator(object):
                         return
                         
                 self.CalculateParameters()
+                print("Using flux binning:")
+                print("  n_E_bins =", self._params["n_E_bins"])
+                print("  E_min    =", self._params["E_min"])
+                print("  E_max    =", self._params["E_max"])
+                print("  first edges =", list(self._params["E_bin_edges"][:10]))
+                print("  last edges  =", list(self._params["E_bin_edges"][-10:]))
+
                 # step 1: convert the relevant GENIE TGraph
                 # to a histogram with the correct binning.
                 # (this is just for the convenience of division
                 # later on.)
-                edges = self._params["E_bins"]
-                n_bins = len(edges) - 1
                 self.histos["x_sect_E"] = ROOT.TH1D(
                         "x_sect_E",
-                        self.histos["xsec"].GetTitle().split(";")[0] + ";E_{#nu} (GeV);#frac{d#sigma}{dE} (cm^{2} / %s)" % TargetNucleus[self._target_nucleus],
-                        n_bins,
-                        array('d', edges)  # pass the bin edges directly
+                        self.histos["xsec"].GetTitle().split(";")[0]
+                        + ";E_{#nu} (GeV);#frac{d#sigma}{dE} (cm^{2} / %s)" % TargetNucleus[self._target_nucleus],
+                        self._params["n_E_bins"],
+                        self._params["E_bin_edges"]
                 )
 
-                for i in range(1, n_bins + 1):
-                        center = 0.5 * (edges[i] + edges[i - 1])
-                        self.histos["x_sect_E"].SetBinContent(i, self.histos["xsec"].Eval(center))
+                for i in range(1, self._params["n_E_bins"] + 1):
+                        # get the value of the cross-section graph at the actual variable-bin center
+                        ecenter = self.histos["x_sect_E"].GetXaxis().GetBinCenter(i)
+                        self.histos["x_sect_E"].SetBinContent(i, self.histos["xsec"].Eval(ecenter))
 
-                        
                         # note that the cross-section graph contains no errors.
-                        # rather than letting ROOT compute default (Gaussian) errors
-                        # (which will be crazy, since these values are so small),
-                        # we just don't allow errors on the cross-section to
-                        # contribute to the flux error budget via this graph.
-                        # we're dividing out exactly the same flux that was used
-                        # to do the generation of these events anyway, so
-                        # any uncertainties here are irrelevant.
-                        self.histos["x_sect_E"].SetBinError( i, 0 )
+                        self.histos["x_sect_E"].SetBinError(i, 0)
                         
                 # GENIE reports cross-sections in units of (x10^{-38})
                 # which means we need to add the 10^{-38} here manually.
@@ -254,94 +254,73 @@ class FluxCalculator(object):
                 error_bands = set([ "ppfx1_Total", "Flux_BeamFocus"]) if self._use_ppfx else set([ "Flux_Tertiary", "Flux_BeamFocus", "Flux_NA49", ])
 #                for err in error_bands:
 #                        self._ntuple_chain.SetBranchStatus("mc_wgt_%s" % err, 1)
-                parent_pdgs = [130, 311, 13, -13, 321, -321, 211, -211]  
-                OTHER_PDG = 999999
+                        
                 for cut_name, cut in selection_cuts.items():
-                        event_histo_name = f"eventcount_E_{cut_name}"
-                        self.histos[event_histo_name] = {}
-
-                        for pdg in parent_pdgs + [OTHER_PDG]:
-                                name = f"{event_histo_name}_parent{pdg}"
-                                hist = PlotUtils.MnvH1D(
-                                name,
-                                f"Event count ({cut_name}), parent {pdg};E_{{#nu}} (GeV);Events / GeV",
+                        event_histo_name = "eventcount_E_%s" % cut_name
+                        # histogram = PlotUtils.MnvH1D(event_histo_name, "Event count (%s);E_{#nu} (GeV);Events / GeV" % cut_name, self._params["n_E_bins"], self._params["E_min"], self._params["E_max"])
+                        histogram = PlotUtils.MnvH1D(
+                                event_histo_name,
+                                "Event count (%s);E_{#nu} (GeV);Events / GeV" % cut_name,
                                 self._params["n_E_bins"],
-                                array('d', self._params["E_bins"])
-                                )
-                                self.histos[event_histo_name][pdg] = hist
-
-                        # Add vertical error bands to all histograms
-                        for hist in self.histos[event_histo_name].values():
-                                hist_error_bands = set(hist.GetErrorBandNames())
-                                for band in error_bands - hist_error_bands:
-                                        hist.AddVertErrorBand(band, self._n_universes)
-
-                        print(f"Calculating the flux for selection '{cut_name}'...")
-                        print(f" using selection cut: {cut}")
-
-                        self._ntuple_chain.Draw(f">>evt_list_{cut_name}", cut)
-                        evt_list = ROOT.gDirectory.Get(f"evt_list_{cut_name}")
+                                self._params["E_bin_edges"]
+                        )
+                        self.histos[event_histo_name] = histogram
+                        
+                        hist_error_bands = set(histogram.GetErrorBandNames())
+                        for band in error_bands - hist_error_bands:
+                                histogram.AddVertErrorBand(band, self._n_universes)
+                        # now, count the raw number of true events
+                        # that are found within the fiducial volume...
+                        print(("Calculating the flux for selection '%s'..." % cut_name))
+                        print((" using selection cut:", cut))
+                        self._ntuple_chain.Draw(">>evt_list_%s" % cut_name, cut)
+                        evt_list = ROOT.gDirectory.Get("evt_list_%s" % cut_name)
                         evt_list.SetReapplyCut(True)
-
-                        # Convert histogram dict to C++ std::vector<PlotUtils::MnvH1D*>
-                        cpp_hist_vector = std.vector('PlotUtils::MnvH1D*')()
-                        for pdg in parent_pdgs + [OTHER_PDG]:
-                                cpp_hist_vector.push_back(self.histos[event_histo_name][pdg])
-
-                        cvweighted = "unweighted" not in cut_name
-                        self._loop_obj.EventLoop(self._ntuple_chain, evt_list, cpp_hist_vector, "mc_incomingE", 0.001, cvweighted)
+                        # call the event loop function from the C++ library
+                        # (assume CV weighted unless specifically told otherwise?)
+                        cvweighted = not("unweighted" in cut_name)
+                        self._loop_obj.EventLoop(self._ntuple_chain, evt_list, histogram, "mc_incomingE", 0.001, cvweighted,)
                         # ... we'd like the event rate to be a true histogram,
                         # in which the bin size is irrelevant.
                         # to do that, we divide out the bin size.
-                        for hist in self.histos[event_histo_name].values():
-                                for i in range(1, hist.GetNbinsX() + 1):
-                                        width = self._params["E_bin_widths"][i - 1]  # bin index in ROOT starts from 1
-                                        content = hist.GetBinContent(i)
-                                        error = hist.GetBinError(i)
-                                        hist.SetBinContent(i, content / width)
-                                        hist.SetBinError(i, error / width)
-
+                        # histogram.Scale(1./self._params["E_bin_width"])
+                        histogram.Scale(1.0, "width")
                                                 
+                        # ... then clone the event count histograms and scale them to get event rate
                         rate_histo_name = event_histo_name.replace("eventcount", "rate")
-                        self.histos[rate_histo_name] = {}
-
-                        for pdg, hist in self.histos[event_histo_name].items():
-                                # Step 1: Clone for rate histograms
-                                clone = hist.Clone(f"{rate_histo_name}_parent{pdg}")
-                                clone.SetTitle("Event rate (%s), parent %s;E_{#nu} (GeV);Events / %s / P.O.T. / GeV" %
-                                                (cut_name, pdg, TargetNucleus[self._target_nucleus]))
-                                
-                                # Step 2: Apply scale factor
-                                scale_factor = self._params["n_planes"] * self._params["n_scattering_centers"] * self._params["total_POT"] * 1e-4
-                                clone.Scale(1. / scale_factor)
-                                self.histos[rate_histo_name][pdg] = clone
-
-                        # Step 3: Divide by cross-section histogram to get flux histograms
+                        self.histos[rate_histo_name] = self.histos[event_histo_name].Clone(rate_histo_name)
+                        self.histos[rate_histo_name].SetTitle("Event rate (%s);E_{#nu} (GeV);Events / %s / P.O.T. / GeV" % (cut_name,TargetNucleus[self._target_nucleus]))
+                        
+                        # the scale factor is (n_planes x targets per plane = # of target nuclei in fiducial volume) x (P.O.T.) x 1/1e4 (we store flux in units of m^2)
+                        scale_factor = self._params["n_planes"] * self._params["n_scattering_centers"] * self._params["total_POT"] * 1e-4
+                        self.histos[rate_histo_name].Scale( 1./(scale_factor) )
+                
+                        # step 3: divide the event rate by the cross-section to get the flux.
                         flux_histo_name = rate_histo_name.replace("rate", "flux")
-                        self.histos[flux_histo_name] = {}
-
-                        for pdg, rate_hist in self.histos[rate_histo_name].items():
-                                flux_hist = rate_hist.Clone(f"{flux_histo_name}_parent{pdg}")
-                                if hasattr(flux_hist, "DivideSingle"):
-                                        flux_hist.DivideSingle(rate_hist, self.histos["x_sect_E"])
-                                else:
-                                        flux_hist.Divide(self.histos["x_sect_E"])
-
-                                nu_text = "#nu_{%s}" % NeutrinoFlavor[self._nu_flavor]
-                                if self._nu_helicity == NeutrinoHelicity.ANTIPARTICLE:
-                                        nu_text = "#overbar{%s}" % nu_text
-                                flux_hist.SetTitle("Flux (%s), parent %s;Energy (GeV);%ss / m^{2} / P.O.T. / GeV" %
-                                                (cut_name, pdg, nu_text))
-
-                                self.histos[flux_histo_name][pdg] = flux_hist
-
-                        # Step 4: Book and fill CV weights histogram (unchanged)
-                        cv_weight_name = f"cv_weights_{cut_name}"
-                        self.histos[cv_weight_name] = ROOT.TH1D(cv_weight_name, "CV weights", 40, 0.8, 1.2)
-                        self.histos[cv_weight_name].SetDirectory(ROOT.gDirectory)
-                        self._ntuple_chain.Draw(f"mc_cvweight_total>>{cv_weight_name}")
-                        self.histos[cv_weight_name].SetDirectory(ROOT.nullptr)
-
+                        flux_histo = self.histos[rate_histo_name].Clone(flux_histo_name)
+                        if hasattr(flux_histo, "DivideSingle"):
+#                                print "calling 'DivideSingle' on histogram", flux_histo.GetName()
+                                flux_histo.DivideSingle(self.histos[rate_histo_name], self.histos["x_sect_E"])
+                        else:
+                                flux_histo.Divide(self.histos["x_sect_E"])
+                        
+                        nu_text = "#nu_{%s}" % NeutrinoFlavor[self._nu_flavor]
+                        if self._nu_helicity == NeutrinoHelicity.ANTIPARTICLE:
+                                nu_text = "#overbar{%s}" % nu_text
+                        # note that the answer is ALWAYS in "/ GeV",
+                        # no matter what the bin size is,
+                        # because we already divided it out when creating
+                        # the event rate histogram.
+                        # (of course, if you rebin the result histogram, you'll still have to
+                        #  scale it by whatever factor you changed the bins by.)
+                        flux_histo.SetTitle("Flux (%s);Energy (GeV);%ss / m^{2} / P.O.T. / GeV" % (cut_name, nu_text))
+                        
+                        self.histos["flux_E_%s" % cut_name] = flux_histo
+                        
+#                        self.histos["cv_weights_%s" % cut_name] = ROOT.TH1D("cv_weights_%s" % cut_name, "CV weights", 40, 0.8, 1.2)
+#                        self.histos["cv_weights_%s" % cut_name].SetDirectory(ROOT.gDirectory)
+#                        self._ntuple_chain.Draw("mc_cvweight_total>>cv_weights_%s" % cut_name)
+#                        self.histos["cv_weights_%s" % cut_name].SetDirectory(None)
         def FillErrorBands(self, histogram):
                 """ Computes the flux/GENIE error bands on histogram 'histogram'. 
                 
@@ -421,21 +400,31 @@ class FluxCalculator(object):
                 """ Calculate some parameters needed in the plotting. """
                 
                 # note that self._params["total_POT"] is calculated in LoadChain()...
-                
-                self._params["n_E_bins"] = FluxCalculator.N_E_BINS # number of bins in plots vs. energy
-                self._params["E_min"] = FluxCalculator.E_MIN # minimum energy in plots vs. energy
-                self._params["E_max"] = FluxCalculator.E_MAX # maximum energy in plots vs. energy
-    #these parameters must match the fiducial region used in GetFiducialCut
+
+                # Use the standard 1D flux binning.
+                # This should match flux-gen2thin-pdg12-minervame1D.root
+                # and flux-gen2thin-pdg14-minervame1D.root.
+                self._params["n_E_bins"] = FluxCalculator.N_E_BINS
+                self._params["E_min"] = FluxCalculator.E_MIN
+                self._params["E_max"] = FluxCalculator.E_MAX
+                self._params["E_bin_edges"] = FluxCalculator.E_BINNING
+
+                # These parameters must match the fiducial region used in GetFiducialCut.
 #                self._params["area"] = 2.503   # area (in m^2) of hexagon apothem 0.85 m
                 self._params["area"] = 2.562   # area (in m^2) of hexagon apothem 0.86 m
-                self._params["n_scattering_centers"] = 2.20722e+27  # this is only for Carbon, I'm afraid.  (it's scattering centers/(cm^2) for 1 plane)
-                self._params["n_planes"] = (75-30+1)*2  # number of planes of interest (module 30-75 inclusive)
-                # self._params["E_bin_width"] = (self._params["E_max"]-self._params["E_min"]) / float(self._params["n_E_bins"])
-                self._params["E_bins"] = FluxCalculator.E_BINS 
+                self._params["n_scattering_centers"] = 2.20722e+27  # scattering centers/(cm^2) for 1 plane, Carbon only
+                self._params["n_planes"] = (75-30+1)*2  # module 30-75 inclusive
+
+                # Variable-width binning: do NOT use one global bin width.
+                # Keep this only as a sentinel/debug value.
+                self._params["E_bin_width"] = -1.0
+
+                # Optional but useful for debugging/printing.
                 self._params["E_bin_widths"] = [
-                        self._params["E_bins"][i+1] - self._params["E_bins"][i]
-                        for i in range(len(self._params["E_bins"]) - 1)
+                        self._params["E_bin_edges"][i+1] - self._params["E_bin_edges"][i]
+                        for i in range(self._params["n_E_bins"])
                 ]
+                
                         
         def LoadChain(self, filelist=None, testing=None):
                 """ Loads the ntuples to be used for calculating the flux
@@ -448,6 +437,7 @@ class FluxCalculator(object):
                 testing = testing if testing is not None else self._testing
                 
                 self._ntuple_chain.Reset()
+                # self._meta_chain.Reset()
                 
                 # by default (if nothing else is specified),
                 # we attempt to find the appropriate file list
@@ -555,8 +545,55 @@ class FluxCalculator(object):
         def GetPOTFromMetaTree(self):
                 total_pot = 0.0
                 for oneFile in self._meta_chain:
-                        total_pot += oneFile.POT_Total
+                        # total_pot += oneFile.POT_Total
+                        total_pot += oneFile.POT_Used
                 return total_pot
+        # def GetPOTFromMetaTree(self):
+        #         total_pot = 0.0
+        #         nfiles = 0
+
+        #         filelist = os.path.expandvars(self._ntuple_filelist)
+        #         with open(filelist) as f:
+        #                 for line in f:
+        #                         line = line.strip()
+        #                         if len(line) == 0 or line[0] == '#':
+        #                                 continue
+
+        #                         tf = ROOT.TFile.Open(line)
+        #                         if not tf or tf.IsZombie():
+        #                                 print("WARNING: couldn't open file for POT:", line)
+        #                                 continue
+
+        #                         meta = tf.Get("Meta")
+        #                         if not meta:
+        #                                 print("WARNING: no Meta tree in file:", line)
+        #                                 tf.Close()
+        #                                 continue
+
+        #                         # Re-get the leaf from this tree/file only
+        #                         nentries = meta.GetEntries()
+        #                         file_pot = 0.0
+
+        #                         for i in range(nentries):
+        #                                 got = meta.GetEntry(i)
+        #                                 if got <= 0:
+        #                                         continue
+
+        #                                 leaf = meta.GetLeaf("POT_Total")
+        #                                 if not leaf:
+        #                                         raise RuntimeError("Meta tree in file '%s' has no leaf 'POT_Total'" % line)
+
+        #                                 file_pot += leaf.GetValue()
+
+        #                         total_pot += file_pot
+        #                         nfiles += 1
+        #                         tf.Close()
+
+        #         if nfiles == 0:
+        #                 raise RuntimeError("No valid files with Meta tree/POT_Total were found")
+
+        #         print("Summed POT from %d files" % nfiles)
+        #         return total_pot
         def PrintConfig(self):
                 print(("  Horn current mode:", HornCurrent[self._horn_current]))
                 print(("  Interaction current:", InteractionCurrent[self._int_current]))
@@ -574,75 +611,43 @@ class FluxCalculator(object):
                         print(("  Number of universes for 'many universes' flux errors calculation:", self._n_universes))
                 print()
         def SaveHistosToDisk(self, filename, save_mnvh1ds=False):
-                """Saves the output flux histograms to the specified file.
-
+                """ Saves the output flux histograms to the specified file.
+                
                 Be sure to call CalculateFlux() (or put something else in
                 the 'histos' attribute of the FluxCalculator) before calling this
-                or you'll wind up with an empty ROOT file...
-                """
+                or you'll wind up with an empty ROOT file..."""
                 outfile = ROOT.TFile(filename, "RECREATE")
                 if not outfile.IsOpen():
                         print("ERROR: couldn't open the output file ('%s').  Histograms won't be saved..." % filename, file=sys.stderr)
                         return
-
-                print("Saving plots...")
-
-                outer_keys = list(self.histos.keys())
-                # total = sum(len(inner) for inner in self.histos.values())
-
-                # Only count entries that are dicts (the per-parent histogram collections)
-                total = sum(len(inner) for inner in self.histos.values() if isinstance(inner, dict))
-
-                counter = 0
-                for outer_key, parent_dict in self.histos.items():
-                        if not isinstance(parent_dict, dict):
-                                continue  # skip TGraph or other single non-histogram objects
-
-                        for pdg, histo in parent_dict.items():
-                                counter += 1
-                                print(f"  saving histogram {counter}/{total} with name: {histo.GetName()}")
-
-                                # Skip empty histograms
-                                if histo.Integral() == 0:
-                                        print(f"   -> Skipping empty histogram: {histo.GetName()}")
-                                        continue
-                                
-                                if hasattr(histo, "GetCVHistoWithError"):
-                                        if save_mnvh1ds:
-                                                histo.Write()
-
+                print ("Saving plots...")
+                for i, histo in enumerate(self.histos.values()):
+                        print(("  saving histogram %d/%d with name:" % (i+1, len(self.histos)), histo.GetName()))
+                        if hasattr(histo, "GetCVHistoWithError"):
+                                if save_mnvh1ds:
+                                        histo.Write()
+                        
                                 have_bands = len(histo.GetErrorBandNames()) > 0
                                 if have_bands:
-                                        print("   (computing the errors... ", end=' ')
+                                        print(("   (computing the errors... "), end=' ')
                                         sys.stdout.flush()
-
-                                histo_cv = histo.GetCVHistoWithError()
-                                ROOT.SetOwnership(histo_cv, False)
-
-                                # Check CV histogram as well
-                                if histo_cv.Integral() == 0:
-                                        print(f"   -> Skipping empty CV histogram: {histo_cv.GetName()}")
-                                        continue
-
+                                histo = histo.GetCVHistoWithError()
+                                ROOT.SetOwnership(histo, False)        # the MnvH1D puts this into ROOT's garbage collector.  don't let it get deleted when my reference to it expires or we'll get double deletes.
                                 if have_bands:
-                                        print("... done.)")
-
-                                histo_cv.Write()
-
-
+                                        print (" ... done.)")
+                        histo.Write()
+                
                 for p, val in self._params.items():
                         if isinstance(val, numbers.Number):
                                 param = ROOT.TParameter("double")(p, val)
                         else:
                                 param = ROOT.TObjString(str(val))
                         param.Write()
-
+                
                 outfile.Write()
                 outfile.Close()
-
-                print("... saving done.")
-
-
+                
+                print ("... saving done.")
         def Validate(self):
                 self._FillDefaultOptions()
         
@@ -790,7 +795,7 @@ def Bootstrap():
                 dest="n_universes",
                 help="Number of universes to use in flux error calculation (see '--calc_errors').  Default: %default.",
                 type=int,
-                default=100,
+                default=1000,
         )
         parser.add_option(
                 "--use_ppfx",
@@ -854,7 +859,7 @@ def Bootstrap():
         return calculator, options.output_file
                 
 if __name__ == "__main__":
-        # print("test")
+        print("test")
         calculator, output_file = Bootstrap()
         ROOT.gROOT.SetBatch(True)
         print ("\nCalculating the flux with the following options:")

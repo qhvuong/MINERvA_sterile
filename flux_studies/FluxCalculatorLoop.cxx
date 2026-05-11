@@ -111,7 +111,8 @@ void FluxCalculatorLoop::EventLoop(TChain * chain, const TEventList * evtList, P
           //abc = mc_lebrun_cv_wgt*mc_horntilt_cv_wgt*mc_beamspot_cv_wgt;
           if (cvWeighted)
             //histogram->FillVertErrorBand( *it_band, cv, universeWeights[*it_band], abc , 1.0);
-            histogram->FillVertErrorBand( *it_band, cv, universeWeights[*it_band], 1.0, 1.0);
+            // histogram->FillVertErrorBand( *it_band, cv, universeWeights[*it_band], 1.0, 1.0);
+            histogram->FillVertErrorBand( *it_band, cv, universeWeights[*it_band], cvWeight, 1.0);
           else
             histogram->FillVertErrorBand( *it_band, cv, universeWeights[*it_band] );
           

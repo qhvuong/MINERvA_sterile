@@ -56,32 +56,47 @@ ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 if __name__ == "__main__":
     filename = "rootfiles/NuE_stitched_hists.root"
-    
-    file_path = "{}/oscillations/{}".format(ccnueroot,filename)
+    file_path = "{}/oscillations/{}".format(ccnueroot, filename)
+
+    lambda_value = getattr(AnalysisConfig, "lambdaValue", 1)
+    exclude_samples = getattr(AnalysisConfig, "exclude", [])
 
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
     invCov = sample_histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
-    chi2_null,penalty = Chi2DataMC(sample_histogram,invCov=invCov,marginalize=True,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
+    chi2_null, penalty = Chi2DataMC(
+        sample_histogram,
+        invCov=invCov,
+        # marginalize=True,
+        marginalize=False,
+        lam=lambda_value,
+        exclude=exclude_samples
+    )
     print("null chi2: {:.3f}".format(chi2_null))
 
-    fitter = Fitter(sample_histogram,invCov=invCov,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
-    chi2_fit,res = fitter.DoFit()
+    fitter = Fitter(
+        sample_histogram,
+        invCov=invCov,
+        lam=lambda_value,
+        exclude=exclude_samples
+    )
+    chi2_fit, res = fitter.DoFit()
 
-    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null-chi2_fit,chi2_null,chi2_fit))
+    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null - chi2_fit, chi2_null, chi2_fit))
     print("Best fit params:")
-    print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res['m'],0))
-    print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res['ue4'],0))
-    print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res['umu4'],0))
-    print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res['utau4'],0))
+    print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res["m"], 0))
+    print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res["ue4"], 0))
+    print("   U_mu4^2   = {:.5f}    +- {:.4f}".format(res["umu4"], 0))
+    print("   U_tau4^2  = {:.3f}      +- {:.4f}".format(res["utau4"], 0))
+
     sample_histogram.SetPlottingStyle()
 
-    plotter = PlottingContainer("fitted_histogram",sample_histogram)
-    plotter.SetExclude(AnalysisConfig.exclude)
+    plotter = PlottingContainer("fitted_histogram", sample_histogram)
+    plotter.SetExclude(exclude_samples)
     plotter.SetInverseCovariance(invCov)
-    plotter.SetLambda(AnalysisConfig.lambdaValue)
+    plotter.SetLambda(lambda_value)
 
-    plotter.PlotOscillationEffects(res,AnalysisConfig.ntuple_tag,plotSamples=True)
+    plotter.PlotOscillationEffects(res, AnalysisConfig.ntuple_tag, plotSamples=False)
     #plotter.PlotFluxMarginalizationEffects(res,"bestfit")

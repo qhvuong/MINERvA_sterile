@@ -606,11 +606,30 @@ class CVPythonUniverse():
          else:
              return self.GetMinosEfficiencyWeight()
 
-    def GetMyLowQ2PiWeight(self, channel = SystematicsConfig.LowQ2PiWeightChannel):
+    # def GetMyLowQ2PiWeight(self, channel = SystematicsConfig.LowQ2PiWeightChannel):
+    #     if channel is None:
+    #         return 1
+    #     else:
+    #         return self.GetLowQ2PiWeight(channel.upper())
+    def GetMyLowQ2PiWeight(self):
+        channel = SystematicsConfig.LowQ2PiWeightChannel
         if channel is None:
-            return 1
-        else:
-            return self.GetLowQ2PiWeight(channel.upper())
+            return 1.0
+
+        # Match the LowQ2Pi applicability: only CC resonance.
+        # From the debug, LowQ2Pi applies to CCNuEDelta:
+        #   current=1, intType=2
+        # and does not apply to QE, DIS, or NC.
+        if self.mc_current != 1:
+            return 1.0
+        if self.mc_intType != 2:
+            return 1.0
+
+        return ROOT.PlotUtils.weight_lowq2pi().getWeight(
+            self.mc_Q2 * 1e-6,
+            channel.upper(),
+            0
+        )
 
     def GetModelWeight(self):
         w = GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0) 
@@ -1305,6 +1324,52 @@ class Universe2p2h(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse), CVPy
     def __init__(self,chain,universe_number):
         super(Universe2p2h,self).__init__(chain,1,universe_number)
         super(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
+        self.universe_number = universe_number
+
+    def DebugExtraWeight(self, label=""):
+        pdg0 = self.mc_incoming
+        pdg = pdg0
+
+        enu = self.mc_incomingE * 1e-3
+
+        genie = self.GetGenieWeight()
+        flux = self.GetFluxAndCVWeight(enu, pdg)
+        lowrec2p2h = self.GetLowRecoil2p2hWeight()
+        rpa = self.GetRPAWeight()
+        lowq2pi = self.GetMyLowQ2PiWeight()
+        geant = self.GetGeantHadronWeight()
+        minos = self.GetMyMinosEfficiencyWeight()
+        coh = self.GetCOHPionWeight()
+        diffcoh = 1.4368 if self.mc_intType == 4 else 1.0
+
+        # "base_without_2p2h" is the event weight if the 2p2h factor were removed.
+        total = self.GetStandardWeight()
+        base_without_2p2h = total / lowrec2p2h if lowrec2p2h else -999
+
+        print(
+            "[2P2H_EXTRA] {} universe_number={} "
+            "intType={} current={} Ev={:.6g} Q2={:.6g} W={:.6g} "
+            "genie={:.8g} flux={:.8g} 2p2h={:.8g} rpa={:.8g} lowq2pi={:.8g} "
+            "coh={:.8g} diffcoh={:.8g} "
+            "base_without_2p2h={:.8g} total={:.8g}".format(
+                label,
+                self.__dict__.get("universe_number", "NA"),
+                self.mc_intType,
+                self.mc_current,
+                enu,
+                self.mc_Q2 / 1e6,
+                self.mc_w / 1e3,
+                genie,
+                flux,
+                lowrec2p2h,
+                rpa,
+                lowq2pi,
+                coh,
+                diffcoh,
+                base_without_2p2h,
+                total,
+            )
+        )
 
     @staticmethod
     def GetSystematicsUniverses(chain ):
@@ -1347,10 +1412,61 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
         self.channel = channel.upper() if channel is not None else None
 
     def GetMyLowQ2PiWeight(self):
-        if self.nsigma == 0 or self.channel is None:
-            return 1
-        else :
-            return super(LowQ2PionUniverse,self).GetLowQ2PiWeight(self.channel)
+        if self.channel is None:
+            return 1.0
+
+        return super(LowQ2PionUniverse, self).GetLowQ2PiWeight(self.channel)
+
+    # def GetMyLowQ2PiWeight(self):
+    #     if self.nsigma == 0 or self.channel is None:
+    #         return 1
+    #     else :
+    #         return super(LowQ2PionUniverse,self).GetLowQ2PiWeight(self.channel)
+
+    def DebugExtraWeight(self, label=""):
+        q2 = self.mc_Q2 * 1e-6
+        channel = SystematicsConfig.LowQ2PiWeightChannel
+
+        # Directly query the same low-Q2-pi weight object.
+        w_m1_default = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, -1)
+        w_cv_default = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 0)
+        w_p1_default = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 1)
+
+        w_m1_target = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, -1, self.mc_targetNucleon)
+        w_cv_target = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 0, self.mc_targetNucleon)
+        w_p1_target = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 1, self.mc_targetNucleon)
+
+        w_used = self.GetMyLowQ2PiWeight()
+
+        total = self.GetStandardWeight()
+        base_without = total / w_used if w_used else -999
+
+        print(
+            "[LOWQ2PI_EXTRA] {} sigma={} channel={} "
+            "intType={} current={} resID={} targetNucleon={} Ev={:.6g} Q2={:.6g} W={:.6g} "
+            "default: w(-1)={:.8g} wCV={:.8g} w(+1)={:.8g} "
+            "targetArg: w(-1)={:.8g} wCV={:.8g} w(+1)={:.8g} "
+            "wUsed={:.8g} total={:.8g}".format(
+                label,
+                self.GetSigma(),
+                channel,
+                self.mc_intType,
+                self.mc_current,
+                self.mc_resID,
+                self.mc_targetNucleon,
+                self.mc_incomingE * 1e-3,
+                q2,
+                self.mc_w * 1e-3,
+                w_m1_default,
+                w_cv_default,
+                w_p1_default,
+                w_m1_target,
+                w_cv_target,
+                w_p1_target,
+                w_used,
+                total,
+            )
+        )
 
     @staticmethod
     def GetSystematicsUniverses(chain):
@@ -1465,12 +1581,47 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
         return [ElectronEnergyShiftUniverse(chain, i,region) for region in SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY for i in OneSigmaShift]
 
 ###########################################################################
-class ElectronEnergyScaleUniverse(CVSystematicUniverse):
-    def __init__(self,chain, nsigma):
-        super(ElectronEnergyScaleUniverse,self).__init__(chain, nsigma)
+# class ElectronEnergyScaleUniverse(CVSystematicUniverse):
+#     def __init__(self,chain, nsigma):
+#         super(ElectronEnergyScaleUniverse,self).__init__(chain, nsigma)
 
-    def ElectronEnergyRaw(self):
-        return self.nsigma*SystematicsConfig.ELECTRON_ENERGY_SCALE* super(ElectronEnergyScaleUniverse,self).ElectronEnergyRaw()
+#     def ElectronEnergyRaw(self):
+#         return self.nsigma*SystematicsConfig.ELECTRON_ENERGY_SCALE* super(ElectronEnergyScaleUniverse,self).ElectronEnergyRaw()
+
+#     def ShortName(self):
+#         return "electron_scale"
+
+#     def LatexName(self):
+#         return "Electron Energy Scale"
+
+#     @staticmethod
+#     def GetSystematicsUniverses(chain):
+#         return [ElectronEnergyScaleUniverse(chain, i)  for i in OneSigmaShift]
+class ElectronEnergyScaleUniverse(CVSystematicUniverse):
+    def __init__(self, chain, nsigma):
+        super(ElectronEnergyScaleUniverse, self).__init__(chain, nsigma)
+
+    def _scale_factor(self):
+        return 1.0 + self.nsigma * SystematicsConfig.ELECTRON_ENERGY_SCALE
+
+    def ElectronP3D_det(self):
+        """
+        Apply a global ±1σ electron energy/momentum scale shift
+        to the corrected detector-coordinate electron momentum.
+
+        This makes ElectronEnergy(), ElectronP3D(), and EN4 all see
+        the same shifted reconstructed lepton energy.
+        """
+        p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det()
+        return p * self._scale_factor()
+
+    def ElectronP3D_det_noEMshift(self):
+        """
+        Apply the same global scale to the no-EM-shift momentum used by
+        ElectronEnergyRaw() and leakage-related correction paths.
+        """
+        p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det_noEMshift()
+        return p * self._scale_factor()
 
     def ShortName(self):
         return "electron_scale"
@@ -1480,7 +1631,8 @@ class ElectronEnergyScaleUniverse(CVSystematicUniverse):
 
     @staticmethod
     def GetSystematicsUniverses(chain):
-        return [ElectronEnergyScaleUniverse(chain, i)  for i in OneSigmaShift]
+        return [ElectronEnergyScaleUniverse(chain, i) for i in OneSigmaShift]
+
 
 ###########################################################################
 class ElectronAngleShiftUniverse(CVSystematicUniverse):
@@ -1614,6 +1766,7 @@ class MKModelUniverse(CVSystematicUniverse):
 class FSIWeightUniverse(CVSystematicUniverse):
     def __init__(self,chain,nsigma,iweight):
         super(FSIWeightUniverse,self).__init__(chain,nsigma)
+        self.iweight = iweight
         self.reweighter = ROOT.PlotUtils.FSIReweighter(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)((iweight+1)//2,(iweight+1)%2)
 
     def IsVerticalOnly(self):
@@ -1623,6 +1776,29 @@ class FSIWeightUniverse(CVSystematicUniverse):
         weight = super(FSIWeightUniverse,self).GetStandardWeight()
         weight*= self.reweighter.GetWeight(self,ROOT.PlotUtils.detail.empty())
         return weight
+
+    def DebugExtraWeight(self, label=""):
+        base = super(FSIWeightUniverse, self).GetStandardWeight()
+        extra = self.reweighter.GetWeight(self, ROOT.PlotUtils.detail.empty())
+        total = self.GetStandardWeight()
+
+        print(
+            "[FSI_EXTRA] {} iweight={} "
+            "intType={} current={} Ev={:.6g} Q2={:.6g} W={:.6g} "
+            "base={:.8g} extra={:.8g} total={:.8g} total/base={:.8g}".format(
+                label,
+                self.__dict__.get("iweight", "NA"),
+                self.mc_intType,
+                self.mc_current,
+                self.mc_incomingE * 1e-3,
+                self.mc_Q2 / 1e6,
+                self.mc_w / 1e3,
+                base,
+                extra,
+                total,
+                total / base if base else -999,
+            )
+        )
 
     def ShortName(self):
         return "fsi_weight"

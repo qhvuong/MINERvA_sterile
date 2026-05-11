@@ -37,12 +37,144 @@ def plotRecoKin(mc, chainwrapper, outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
     eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
     universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+
+    cv_universe = universes.get("cv", [None])[0]
+    flux_universes = universes.get("Flux", [])
+
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
 
     Plots = preparePlots(universes,mc)
     nEvents = chainwrapper.GetEntries()
     debug_prints = 0
+    
+    def get_reco_en4_gev(u):
+        """
+        Reconstruct the EN4 variable used in the histogram:
+        EN4 = E_e + E_avail
+        assuming ElectronEnergy() and AvailableEnergy() return MeV.
+        """
+        return (u.ElectronEnergy() + u.AvailableEnergy()) * 1e-3
+
+
+    def get_en4_debug_bin(en4):
+        bins = [0.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]
+        for i in range(len(bins) - 1):
+            if bins[i] <= en4 < bins[i + 1]:
+                return i + 1
+        return None
+
+
+    def debug_flux_cv_vs_universe(counter, cv_universe, flux_universe, label=""):
+        pdg0 = cv_universe.mc_incoming
+        pdg = pdg0
+
+        true_enu = cv_universe.mc_incomingE * 1e-3
+        reco_en4 = get_reco_en4_gev(cv_universe)
+        en4_bin = get_en4_debug_bin(reco_en4)
+
+        cv_flux = cv_universe.GetFluxAndCVWeight(true_enu, pdg)
+        univ_flux = flux_universe.GetFluxAndCVWeight(true_enu, pdg)
+
+        flux_ratio = univ_flux / cv_flux if cv_flux != 0 else -999
+
+        cv_total = cv_universe.GetWeight(False)
+        univ_total = flux_universe.GetWeight(False)
+        total_ratio = univ_total / cv_total if cv_total != 0 else -999
+
+        print(
+            "[FLUX_LAST2BIN_CHECK] {} counter={} "
+            "EN4={:.6g} EN4bin={} trueEv={:.6g} "
+            "pdg0={} pdgUsed={} intType={} current={} "
+            "cvFlux={:.8g} univFlux={:.8g} fluxRatio={:.8g} "
+            "cvTotalWeight={:.8g} univTotalWeight={:.8g} totalRatio={:.8g} "
+            "cvShort={} univShort={} univSigma={}".format(
+                label,
+                counter,
+                reco_en4,
+                en4_bin,
+                true_enu,
+                pdg0,
+                pdg,
+                cv_universe.mc_intType,
+                cv_universe.mc_current,
+                cv_flux,
+                univ_flux,
+                flux_ratio,
+                cv_total,
+                univ_total,
+                total_ratio,
+                cv_universe.ShortName(),
+                flux_universe.ShortName(),
+                flux_universe.GetSigma(),
+            )
+        )
+
+    def debug_mnvtune_universe(counter, cv_universe, universe, label=""):
+        true_enu = cv_universe.mc_incomingE * 1e-3
+        reco_en4 = get_reco_en4_gev(cv_universe)
+        en4_bin = get_en4_debug_bin(reco_en4)
+
+        cv_total = cv_universe.GetWeight(False)
+        univ_total = universe.GetWeight(False)
+        total_ratio = univ_total / cv_total if cv_total != 0 else -999
+
+        # IMPORTANT:
+        # Do not use hasattr/getattr here because CVPythonUniverse.__getattr__
+        # will try to read missing names as TTree branches.
+        if "iweight" in universe.__dict__:
+            extra_id = "iweight={}".format(universe.__dict__["iweight"])
+        elif "universe_number" in universe.__dict__:
+            extra_id = "universe_number={}".format(universe.__dict__["universe_number"])
+        else:
+            extra_id = "extraID=NA"
+
+        print(
+            "[MNVTUNE_EVT] {} counter={} "
+            "histEN4={:.6g} EN4bin={} trueEv={:.6g} "
+            "truth_class={} sideband={} intType={} current={} Q2={:.6g} W={:.6g} "
+            "cvTotal={:.8g} univTotal={:.8g} totalRatio={:.8g} "
+            "short={} class={} sigma={} {}".format(
+                label,
+                counter,
+                reco_en4,
+                en4_bin,
+                true_enu,
+                cv_universe.classifier.truth_class,
+                cv_universe.classifier.side_band,
+                cv_universe.mc_intType,
+                cv_universe.mc_current,
+                cv_universe.mc_Q2 / 1e6 if "mc_Q2" in cv_universe.LeafGetters else cv_universe.mc_Q2 / 1e6,
+                cv_universe.mc_w / 1e3 if "mc_w" in cv_universe.LeafGetters else cv_universe.mc_w / 1e3,
+                cv_total,
+                univ_total,
+                total_ratio,
+                universe.ShortName(),
+                type(universe).__name__,
+                universe.GetSigma(),
+                extra_id,
+            )
+        )
+
+    debug_bands = {
+        "LowQ2Pi",
+        "fsi_weight",
+        "Low_Recoil_2p2h_Tune",
+        "SuSA_Valencia_Weight",
+        "MK_model",
+    }
+
+    debug_categories = {
+        "CCNuEDelta",
+        "CCNuEDIS",
+        "CCNuEQE",
+        "NCPi0",
+        "CCPi0",
+    }
+
+    mnvtune_debug_prints = 0
+    max_mnvtune_debug_prints = 300
+
     print(f"Total number of events RECO: ", {nEvents})
     if AnalysisConfig.testing and nEvents > 1000:
         nEvents = 1000
@@ -69,21 +201,17 @@ def plotRecoKin(mc, chainwrapper, outfile):
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-            # if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
-            #     if universe.ShortName() == "cv":
-            #         print("\n[DEBUG first selected event] counter =", counter)
-            #         universe.DebugStandardWeightPieces(
-            #             label="counter={} short=cv".format(counter)
-            #         )
-            #         selected_event_for_debug = True
-
-            #     elif universe.ShortName() == "Flux" and flux_debug_this_event < 5:
-            #         universe.DebugStandardWeightPieces(
-            #             label="counter={} short=Flux i={}".format(counter, flux_debug_this_event)
-            #         )
-            #         flux_debug_this_event += 1
-
             if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+                # if (
+                #     mc
+                #     and mnvtune_debug_prints < max_mnvtune_debug_prints
+                #     and universe.ShortName() in debug_bands
+                #     and eventClassifier.truth_class in debug_categories
+                # ):
+                #     debug_mnvtune_universe(counter, cv_universe, universe, "before_fill")
+                #     if "DebugExtraWeight" in universe.__class__.__dict__:
+                #         universe.DebugExtraWeight("before_fill")
+                #     mnvtune_debug_prints += 1
                 for entry in Plots:
                     entry.Process(universe)
 
@@ -171,49 +299,6 @@ def CopyMetaTreeToOutPutFile(outfile):
     copiedtree = raw_metatree.CopyTree("")
     del metatree
     copiedtree.Write()
-
-
-# def CopyMetaTreeToOutPutFile(outfile, st):
-#     print("[DEBUG CopyMeta] start")
-#     print("[DEBUG CopyMeta] playlist =", AnalysisConfig.playlist)
-#     print("[DEBUG CopyMeta] st =", st)
-#     print("[DEBUG CopyMeta] ntuple_tag =", AnalysisConfig.ntuple_tag)
-#     print("[DEBUG CopyMeta] count =", AnalysisConfig.count)
-
-#     print("[DEBUG CopyMeta] about to call fileChain")
-#     metatree = Utilities.fileChain(
-#         AnalysisConfig.playlist,
-#         st,
-#         AnalysisConfig.ntuple_tag,
-#         "Meta",
-#         AnalysisConfig.count[0],
-#         AnalysisConfig.count[1]
-#     )
-#     print("[DEBUG CopyMeta] returned from fileChain")
-
-#     if AnalysisConfig.is_pc:
-#         print("[DEBUG CopyMeta] is_pc return")
-#         return None
-
-#     print("[DEBUG CopyMeta] about to GetChain")
-#     raw_metatree = metatree.GetChain()
-#     print("[DEBUG CopyMeta] returned from GetChain")
-
-#     print("[DEBUG CopyMeta] about to SetBranchStatus")
-#     raw_metatree.SetBranchStatus("*", 0)
-#     raw_metatree.SetBranchStatus("POT_Used", 1)
-#     print("[DEBUG CopyMeta] finished SetBranchStatus")
-
-#     outfile.cd()
-#     print("[DEBUG CopyMeta] about to CopyTree")
-#     copiedtree = raw_metatree.CopyTree("")
-#     print("[DEBUG CopyMeta] returned from CopyTree")
-
-#     del metatree
-
-#     print("[DEBUG CopyMeta] about to Write")
-#     copiedtree.Write()
-#     print("[DEBUG CopyMeta] done")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 tag=${1:?You must provide a selection_tag}
-count=${2:-50}
+count=${2:-30}
 sideband=${3:-None}
 
 logfile="runningNotes/${tag}_$(date +%Y-%m-%d_%H%M%S).txt"

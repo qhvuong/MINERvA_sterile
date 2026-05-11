@@ -588,19 +588,41 @@ class StitchedHistogram:
         self.numu_template  = f.Get(name+"_numu_template")
         self.swap_template  = f.Get(name+"_swap_template")
 
-        for h in self.keys:
-            self.data_hists[h] = f.Get("data_"+h)
-            self.mc_hists[h] = f.Get("mc_"+h)
-            if type(self.data_hists[h]) != PlotUtils.MnvH1D:
-                del self.data_hists[h]
-                del self.mc_hists[h]
+        # for h in self.keys:
+        #     self.data_hists[h] = f.Get("data_"+h)
+        #     self.mc_hists[h] = f.Get("mc_"+h)
+        #     if type(self.data_hists[h]) != PlotUtils.MnvH1D:
+        #         del self.data_hists[h]
+        #         del self.mc_hists[h]
 
-            self.nue_hists[h] = f.Get("nue_"+h)
-            self.numu_hists[h] = f.Get("numu_"+h)
-            self.swap_hists[h] = f.Get("swap_"+h)
-            self.nue_templates[h] = f.Get("nue_temp_"+h)
-            self.numu_templates[h] = f.Get("numu_temp_"+h)
-            self.swap_templates[h] = f.Get("swap_temp_"+h)
+        #     self.nue_hists[h] = f.Get("nue_"+h)
+        #     self.numu_hists[h] = f.Get("numu_"+h)
+        #     self.swap_hists[h] = f.Get("swap_"+h)
+        #     self.nue_templates[h] = f.Get("nue_temp_"+h)
+        #     self.numu_templates[h] = f.Get("numu_temp_"+h)
+        #     self.swap_templates[h] = f.Get("swap_temp_"+h)
+
+        loaded_keys = []
+
+        for h in self.keys:
+            data_obj = f.Get("data_" + h)
+            mc_obj   = f.Get("mc_" + h)
+
+            if type(data_obj) == PlotUtils.MnvH1D and type(mc_obj) == PlotUtils.MnvH1D:
+                self.data_hists[h] = data_obj
+                self.mc_hists[h] = mc_obj
+
+                self.nue_hists[h] = f.Get("nue_" + h)
+                self.numu_hists[h] = f.Get("numu_" + h)
+                self.swap_hists[h] = f.Get("swap_" + h)
+                self.nue_templates[h] = f.Get("nue_temp_" + h)
+                self.numu_templates[h] = f.Get("numu_temp_" + h)
+                self.swap_templates[h] = f.Get("swap_temp_" + h)
+
+                loaded_keys.append(h)
+
+        self.keys = loaded_keys
+        self.stitchKeys = self.keys.copy()
 
         test_hist = f.Get("mc_fhc_ratio")
         if type(test_hist) == PlotUtils.MnvH1D:

@@ -84,7 +84,7 @@ class Fitter():
         else:
             self.invCov = self.hist.GetInverseCovarianceMatrix(sansFlux=True)
 
-        chi2,penalty = Chi2DataMC(self.hist,invCov=self.invCov,marginalize=True,useOsc=True,remakeCov=self.remakeCov,useNewUniverses=self.useNewUniverses,exclude=self.exclude,lam=self.lam)
+        chi2,penalty = Chi2DataMC(self.hist,invCov=self.invCov,marginalize=False,useOsc=True,remakeCov=self.remakeCov,useNewUniverses=self.useNewUniverses,exclude=self.exclude,lam=self.lam)
         return(chi2)
 
 

@@ -195,16 +195,16 @@ class HistWrapper1D(HistWrapper):
             return
 
         # Limit to the key histogram first, otherwise output will be huge.
-        # if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
-        if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
+        if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
+        # if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
             DebugFluxBandCV(self.hist, "BEFORE SyncCVHistos")
             # # plot BEFORE sync: band CV will likely be zero/stale
             # PlotBandCVAndUniverses(self.hist, "Flux", "beforeSync", sync_first=False)
 
         self.SyncCVHistos()
 
-        # if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
-        if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
+        if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
+        # if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
             DebugFluxBandCV(self.hist, "AFTER SyncCVHistos")
             # # plot AFTER sync: band CV should match parent/main CV
             # PlotBandCVAndUniverses(self.hist, "Flux", "afterSync", sync_first=False)

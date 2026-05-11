@@ -898,106 +898,106 @@ def GetSignalCompName(recipe):
     raise RuntimeError(f"Cannot determine signal component name from {recipe.components}")
 
 
-def MakeRatio_Recipe(
-    recipe,
-    signalHist, sidebandHist,
-    normsignalHist, normsidebandHist,
-    config,
-    signal_comp_name="Signal",
-    include_fixed_in_bkg=True,
-    flux_band_name="Flux",
-):
-    # scale
-    if "scale" in config:
-        config["scale"](signalHist)
-        config["scale"](sidebandHist)
-        config["scale"](normsignalHist)
-        config["scale"](normsidebandHist)
-    else:
-        Default_Scale(signalHist)
-        Default_Scale(sidebandHist)
-        Default_Scale(normsignalHist)
-        Default_Scale(normsidebandHist)
+# def MakeRatio_Recipe(
+#     recipe,
+#     signalHist, sidebandHist,
+#     normsignalHist, normsidebandHist,
+#     config,
+#     signal_comp_name="Signal",
+#     include_fixed_in_bkg=True,
+#     flux_band_name="Flux",
+# ):
+#     # scale
+#     if "scale" in config:
+#         config["scale"](signalHist)
+#         config["scale"](sidebandHist)
+#         config["scale"](normsignalHist)
+#         config["scale"](normsidebandHist)
+#     else:
+#         Default_Scale(signalHist)
+#         Default_Scale(sidebandHist)
+#         Default_Scale(normsignalHist)
+#         Default_Scale(normsidebandHist)
 
-    def _sum_background(holder, name):
-        out = holder.hists["Total"].Clone(name)
-        out.Reset()
+#     def _sum_background(holder, name):
+#         out = holder.hists["Total"].Clone(name)
+#         out.Reset()
 
-        for cate, h in holder.hists.items():
-            if h is None or cate == "Total":
-                continue
+#         for cate, h in holder.hists.items():
+#             if h is None or cate == "Total":
+#                 continue
 
-            if cate in recipe.fixed_cates:
-                if include_fixed_in_bkg:
-                    out.Add(h)
-                continue
+#             if cate in recipe.fixed_cates:
+#                 if include_fixed_in_bkg:
+#                     out.Add(h)
+#                 continue
 
-            comp = recipe.cate_to_comp(cate)
-            if comp is None:
-                continue
+#             comp = recipe.cate_to_comp(cate)
+#             if comp is None:
+#                 continue
 
-            if comp != signal_comp_name:
-                out.Add(h)
+#             if comp != signal_comp_name:
+#                 out.Add(h)
 
-        return out
+#         return out
 
-    sig_bkg     = _sum_background(signalHist,     "sig_bkg")
-    sid_bkg     = _sum_background(sidebandHist,   "sid_bkg")
-    normsig_bkg = _sum_background(normsignalHist, "normsig_bkg")
-    normsid_bkg = _sum_background(normsidebandHist,"normsid_bkg")
+#     sig_bkg     = _sum_background(signalHist,     "sig_bkg")
+#     sid_bkg     = _sum_background(sidebandHist,   "sid_bkg")
+#     normsig_bkg = _sum_background(normsignalHist, "normsig_bkg")
+#     normsid_bkg = _sum_background(normsidebandHist,"normsid_bkg")
 
-    # Optional debug: Flux band checks
-    def _has_band(h, band):
-        try:
-            return band in list(h.GetErrorBandNames())
-        except Exception:
-            return False
+#     # Optional debug: Flux band checks
+#     def _has_band(h, band):
+#         try:
+#             return band in list(h.GetErrorBandNames())
+#         except Exception:
+#             return False
 
-    if _has_band(sig_bkg, flux_band_name) and _has_band(sid_bkg, flux_band_name):
-        c1 = ROOT.TCanvas()
-        sig_bkg.GetVertErrorBand(flux_band_name).DrawAll("hist", True)
-        c1.Print(f"{signalHist.plot_name}_post_tuneSigBkg{flux_band_name}.png")
+#     if _has_band(sig_bkg, flux_band_name) and _has_band(sid_bkg, flux_band_name):
+#         c1 = ROOT.TCanvas()
+#         sig_bkg.GetVertErrorBand(flux_band_name).DrawAll("hist", True)
+#         c1.Print(f"{signalHist.plot_name}_post_tuneSigBkg{flux_band_name}.png")
 
-        c1 = ROOT.TCanvas()
-        sid_bkg.GetVertErrorBand(flux_band_name).DrawAll("hist", True)
-        c1.Print(f"{signalHist.plot_name}_post_tuneSidBkg{flux_band_name}.png")
+#         c1 = ROOT.TCanvas()
+#         sid_bkg.GetVertErrorBand(flux_band_name).DrawAll("hist", True)
+#         c1.Print(f"{signalHist.plot_name}_post_tuneSidBkg{flux_band_name}.png")
 
-        # Compare flux error bands pre/post tune (normalized ratio)
-        c1 = ROOT.TCanvas()
-        fluxerr = sig_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
-        normfluxerr = normsig_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
-        normfluxerr.Divide(normfluxerr, fluxerr)
-        normfluxerr.Draw()
-        c1.Print(f"{signalHist.plot_name}_sig_bkgPostTune_{flux_band_name}errband.png")
+#         # Compare flux error bands pre/post tune (normalized ratio)
+#         c1 = ROOT.TCanvas()
+#         fluxerr = sig_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
+#         normfluxerr = normsig_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
+#         normfluxerr.Divide(normfluxerr, fluxerr)
+#         normfluxerr.Draw()
+#         c1.Print(f"{signalHist.plot_name}_sig_bkgPostTune_{flux_band_name}errband.png")
 
-        c1 = ROOT.TCanvas()
-        fluxerr = sid_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
-        normfluxerr = normsid_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
-        normfluxerr.Divide(normfluxerr, fluxerr)
-        normfluxerr.Draw()
-        c1.Print(f"{signalHist.plot_name}_sid_bkgPostTune_{flux_band_name}errband.png")
+#         c1 = ROOT.TCanvas()
+#         fluxerr = sid_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
+#         normfluxerr = normsid_bkg.GetVertErrorBand(flux_band_name).GetErrorBand(True, False).Clone()
+#         normfluxerr.Divide(normfluxerr, fluxerr)
+#         normfluxerr.Draw()
+#         c1.Print(f"{signalHist.plot_name}_sid_bkgPostTune_{flux_band_name}errband.png")
 
-    # Ratio of normalized background shapes: Signal-region-bkg / Sideband-region-bkg
-    isig = sig_bkg.Integral()
-    isd  = sid_bkg.Integral()
-    if isig <= 0 or isd <= 0:
-        print(f"[MakeRatio_Recipe] Skip ratio: zero integral (sig={isig}, sid={isd})")
-        return
+#     # Ratio of normalized background shapes: Signal-region-bkg / Sideband-region-bkg
+#     isig = sig_bkg.Integral()
+#     isd  = sid_bkg.Integral()
+#     if isig <= 0 or isd <= 0:
+#         print(f"[MakeRatio_Recipe] Skip ratio: zero integral (sig={isig}, sid={isd})")
+#         return
 
-    sig_bkg.Scale(1.0 / isig)
-    sid_bkg.Scale(1.0 / isd)
+#     sig_bkg.Scale(1.0 / isig)
+#     sid_bkg.Scale(1.0 / isd)
 
-    sig_bkg.Divide(sig_bkg, sid_bkg)
-    sig_bkg.GetXaxis().SetTitle("E_{available} + E_{lepton}")
-    sig_bkg.GetYaxis().SetTitle("Ratio")
-    sig_bkg.SetTitle("Signal/Sideband Background Ratio")
+#     sig_bkg.Divide(sig_bkg, sid_bkg)
+#     sig_bkg.GetXaxis().SetTitle("E_{available} + E_{lepton}")
+#     sig_bkg.GetYaxis().SetTitle("Ratio")
+#     sig_bkg.SetTitle("Signal/Sideband Background Ratio")
 
-    mnvplotter.DrawMCWithErrorBand(sig_bkg)
-    PlotTools.Print(AnalysisConfig.PlotPath("EN4_ratio", "Combined", "bkgratio_matrixfit"))
+#     mnvplotter.DrawMCWithErrorBand(sig_bkg)
+#     PlotTools.Print(AnalysisConfig.PlotPath("EN4_ratio", "Combined", "bkgratio_matrixfit"))
 
-    c1 = ROOT.TCanvas()
-    mnvplotter.DrawErrorSummary(sig_bkg, "TR", True, True, 0)
-    c1.Print(f"{signalHist.plot_name}_post_tuneSigBkgErrSummary.png")
+#     c1 = ROOT.TCanvas()
+#     mnvplotter.DrawErrorSummary(sig_bkg, "TR", True, True, 0)
+#     c1.Print(f"{signalHist.plot_name}_post_tuneSigBkgErrSummary.png")
 
 
 def MakePlot(data_hists, mc_hists, config):
@@ -1201,7 +1201,7 @@ if __name__ == "__main__":
     for comp, h in scale_hists.items():
         PrintGroupedErrorsForBin(
             h,
-            group_map,
+            CONSOLIDATED_ERROR_GROUPS,
             bins_to_check=[2, 3, 4, 5, 6],
             label=f"scale {comp}",
         )
@@ -1210,7 +1210,7 @@ if __name__ == "__main__":
     # -------------------- WRITE / PLOT SCALE HISTOGRAMS --------------------
     scalefile.cd()
 
-    axis_tag = "EN4" if ("Neutrino" in fit_axis or "EN4" in fit_axis) else "Eel"
+    axis_tag = "Eel"
 
     for comp, hist in scale_hists.items():
         # Optional: keep a real physics axis label

@@ -14,8 +14,9 @@ if [[ -n "${sideband}" && "${sideband}" != "None" ]]; then
   USE_SIDEBAND_ARGS=(--use-sideband "${@:3}")
 fi
 
+for name in 1; do
 # for name in 1 7 9 13C 13C_2p2h; do
-for name in 7 9 13C 13C_2p2h; do
+# for name in 7 9 13C 13C_2p2h; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6
@@ -37,8 +38,9 @@ for name in 7 9 13C 13C_2p2h; do
   "${cmd[@]}"
 done
 
+for name in 1; do
 # for name in 1 7 9 13A 13B 13C 13D 13E; do
-for name in 7 9 13A 13B 13C 13D 13E; do
+# for name in 7 9 13A 13B 13C 13D 13E; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6

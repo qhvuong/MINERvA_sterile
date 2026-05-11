@@ -1,34 +1,18 @@
 {
-    "fhc_elastic": {
-        "start": 0,
-        "end": 5
-    },
-    "fhc_imd": {
-        "start": 6,
-        "end": 6
-    },
-    "fhc_numu_selection": {
-        "start": 7,
-        "end": 31
-    },
     "fhc_nue_selection": {
-        "start": 32,
-        "end": 57
-    },
-    "rhc_elastic": {
-        "start": 58,
-        "end": 63
-    },
-    "rhc_imd": {
-        "start": 64,
-        "end": 64
-    },
-    "rhc_numu_selection": {
-        "start": 65,
-        "end": 89
+        "start": 0,
+        "end": 11
     },
     "rhc_nue_selection": {
-        "start": 90,
-        "end": 115
+        "start": 12,
+        "end": 23
+    },
+    "fhc_numu_selection": {
+        "start": 24,
+        "end": 35
+    },
+    "rhc_numu_selection": {
+        "start": 36,
+        "end": 46
     }
 }

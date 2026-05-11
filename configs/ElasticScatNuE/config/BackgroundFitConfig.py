@@ -360,15 +360,16 @@ def cate_to_comp_NUE(cate: str):
         return "Signal"
 
     # --- CC backgrounds (everything CC) ---
-    if cate.startswith("CC"):
+    # if cate.startswith("CC"):
+    if cate in ("CCNuEQE", "CCNuEWrongSign", "CCNuEWrongSignQE", "CCNuE2p2h", "CCNuEDelta", "CCNuEDIS", "CCNuE", "CCNuMu", "CCNuMuWrongSign"):
         return "BkgCC"
 
     # --- photon-like backgrounds (pi0 / coherent pi0 / photon misID if you have it) ---
-    if cate in ("NCNuECohPi0", "NCNuMuCohPi0", "NCPi0"):
+    if cate in ("NCNuECohPi0", "NCNuMuCohPi0"):
         return "BkgPhoton"
 
     # --- everything else (NC non-pi0, unknown/diff, etc.) ---
-    if cate in ("NCPi", "NCOther", "NCDiff", "Other"):
+    if cate in ("NCPi", "NCOther", "NCDiff", "Other", "CCPi0", "CCPi", "CCOther", "NCPi0"):
         return "BkgOther"
 
     # If something new appears, fail loudly (better than silently unmapped)

@@ -27,7 +27,7 @@ MASS_UNCERTAINTY = 0.014  # = 1.4% (it's fractional).  Laura (Doc7615) says she 
 EM_ENERGY_SCALE_SHIFT_ECAL = -0.058 # downward 5.8%
 
 # mc electrino enery scale shift:
-ELECTRON_ENERGY_SCALE = 0.1 # 1% effect from pi0 mass
+ELECTRON_ENERGY_SCALE = 0.01 # 1% effect from pi0 mass
 
 # EM scale uncertainty in ECAL,HCAL, quoted from nu+e paper
 EM_ENERGY_SCALE_UNCERTAINTY = {
@@ -364,3 +364,4 @@ DETAILED_ERROR_GROUPS.update(GEANT_ERROR_GROUPS)
 # for err_name, strategy in ERROR_CONSTRAINT_STRATEGIES.iteritems():
 # 	constrainer.SetSpectatorCorrectionStrategy(err_name, strategy)
 
+ERROR_GROUPS_CONFIG = CONSOLIDATED_ERROR_GROUPS

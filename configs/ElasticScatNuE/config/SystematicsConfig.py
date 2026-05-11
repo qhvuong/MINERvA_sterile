@@ -187,26 +187,76 @@ GEANT_PARTICLES = []
 
 ################################# Error summary plot config ############################
 
+# DETECTOR_RESPONSE_ERROR_GROUPS = {
+#     "Angular resolution": ["eltheta",],
+#     "Beam Angle": ["beam_angle",],
+#     "EM energy scale": ["elE_ECAL","elE_HCAL"],
+#     "Leakage Estimation" : ["Leakage_Uncertainty"],
+#     "Target Mass" : ["Target_Mass_CH"]
+# }
+
+# # All GENIE/FSI/MINERvA tune groups OFF for signal
+# MINERVA_TUNNING_ERROR_GROUPS = {}
+# MINERVA_TUNNING_ERROR_GROUPS2 = {}
+# GENIE_ERROR_GROUPS = {}
+# FSI_ERROR_GROUPS = {}
+
+# # GEANT hadron response off for signal
+# GEANT_ERROR_GROUPS = {}
+
+# BKG_TUNNING_ERROR_GROUPS = {
+#     "BKG_TUNNING" : ["bkg_tune"]
+# }
+
+
+
+
 DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Angular resolution": ["eltheta",],
     "Beam Angle": ["beam_angle",],
     "EM energy scale": ["elE_ECAL","elE_HCAL"],
+    "Birk's Constant" : ["birks"],
+    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
     "Leakage Estimation" : ["Leakage_Uncertainty"],
     "Target Mass" : ["Target_Mass_CH"]
 }
 
-# All GENIE/FSI/MINERvA tune groups OFF for signal
-MINERVA_TUNNING_ERROR_GROUPS = {}
-MINERVA_TUNNING_ERROR_GROUPS2 = {}
-GENIE_ERROR_GROUPS = {}
-FSI_ERROR_GROUPS = {}
+MINERVA_TUNNING_ERROR_GROUPS = {
+    "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
+    "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
+    "Low Q2 Pion": ["LowQ2Pi"],
+    "FSI bugfix" : ["fsi_weight"],
+    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
+    "MK model" : ["MK_model"],
+}
 
-# GEANT hadron response off for signal
-GEANT_ERROR_GROUPS = {}
+MINERVA_TUNNING_ERROR_GROUPS2 = {
+    "MK model" : ["MK_model"],
+    "FSI bugfix" : ["fsi_weight"],
+    "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
+}
+
+
+GENIE_ERROR_GROUPS = {
+    "GENIE" : ["GENIE_"+ i for i in (GENIE_UNIVERSES+["EP_MvRES","MaRES","NormCCRES","D2_MaRES","D2_NormCCRES","MaZExpCCQE","MaCCQE", "Rvn1pi", "Rvp1pi"] ) if not (i.startswith("Fr") or i.startswith("MFP")) ]
+}
+
+FSI_ERROR_GROUPS = {
+    "GENIE-FSI" : ["GENIE_"+ i for i in GENIE_UNIVERSES  if (i.startswith("Fr") or i.startswith("MFP")) ]
+}
+
+GEANT_ERROR_GROUPS = {
+    "GEANT" : ["GEANT_" +i for i in ("Neutron","Pion","Proton")]
+}
 
 BKG_TUNNING_ERROR_GROUPS = {
     "BKG_TUNNING" : ["bkg_tune"]
 }
+
+
+
+
+
 
 
 CONSOLIDATED_ERROR_GROUPS_CONFIG = {
@@ -293,3 +343,4 @@ DETAILED_ERROR_GROUPS.update(GEANT_ERROR_GROUPS)
 # for err_name, strategy in ERROR_CONSTRAINT_STRATEGIES.iteritems():
 # 	constrainer.SetSpectatorCorrectionStrategy(err_name, strategy)
 
+ERROR_GROUPS_CONFIG = CONSOLIDATED_ERROR_GROUPS
