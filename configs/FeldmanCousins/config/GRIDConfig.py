@@ -139,13 +139,6 @@ parser.add_argument("--tarball",
                     help = "reuse tarball in given path",
                     default=None)
 
-parser.add_argument("-excludeSys", "--exclude_systematic",
-                    dest = "exclude_systematic",
-                    help="Systematic category to exclude",
-                    type=str,
-                    default=""
-)
-
 gridargs, anaargs = parser.parse_known_args()
 
 if gridargs.playlists is None:

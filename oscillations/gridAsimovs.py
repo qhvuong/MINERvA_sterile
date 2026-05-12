@@ -93,7 +93,7 @@ if __name__ == '__main__':
   if os.path.exists("grid_asimov.sh"):
     os.system( "rm grid_asimov.sh")
 
-  for i in range(4,6):
+  for i in range(5,6):
     argstring=" ".join(anaargs)
     outdir_hists = "/pnfs/minerva/scratch/users/%s/%s_%s_Asimov_dchi2s_texts" % (os.environ["USER"],str(i),processingID)
     os.system( "mkdir -p %s" % outdir_hists )

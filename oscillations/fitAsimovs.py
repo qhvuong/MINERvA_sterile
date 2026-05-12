@@ -17,8 +17,8 @@ from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from Tools.FitTools import *
-from Tools.Histogram import *
+from tools.Fitters import *
+from tools.StitchedHistogram import *
 
 from config.AnalysisConfig import AnalysisConfig
 
@@ -93,11 +93,12 @@ def FitToyExperiments(histogram,experiments):
         data_histogram = stitched_data.Clone()
         data_histogram.DivideSingle(data_histogram,weights)
         histogram.SetDataHistogram(data_histogram)
+        
+        stat = Statistics(sample_histogram,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
 
-        invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
-        chi2_null,penalty = Chi2DataMC(histogram,invCov=invCov,marginalize=True,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
+        chi2_null,penalty = stat.Chi2DataMC(marginalize=True)
 
-        fitter = Fitter(histogram,invCov=invCov,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
+        fitter = OscillationFitter(sample_histogram,lam=AnalysisConfig.lambdaValue,exclude=AnalysisConfig.exclude)
         chi2_fit,res = fitter.DoFit()
 
         dchi2 = chi2_null - chi2_fit

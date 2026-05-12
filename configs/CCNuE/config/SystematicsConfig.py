@@ -237,23 +237,43 @@ GEANT_PARTICLES = [
 
 ################################# Error summary plot config ############################
 
+# DETECTOR_RESPONSE_ERROR_GROUPS = {
+#     "Angular resolution": ["eltheta",],
+#     "Beam Angle": ["beam_angle",],
+#     "EM energy scale": ["elE_ECAL","elE_HCAL"],
+#     "Birk's Constant" : ["birks"],
+#     "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
+#     "Leakage Estimation" : ["Leakage_Uncertainty"],
+#     "Target Mass" : ["Target_Mass_CH"]
+# }
+
 DETECTOR_RESPONSE_ERROR_GROUPS = {
-    "Angular resolution": ["eltheta",],
-    "Beam Angle": ["beam_angle",],
-    "EM energy scale": ["elE_ECAL","elE_HCAL"],
-    "Birk's Constant" : ["birks"],
-    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
-    "Leakage Estimation" : ["Leakage_Uncertainty"],
-    "Target Mass" : ["Target_Mass_CH"]
+    "Angular resolution": ["eltheta"],
+    "Beam Angle": ["beam_angle"],
+
+    # EM calorimetric energy scale pieces
+    "EM energy scale": ["elE_ECAL", "elE_HCAL", "elE_Tracker"],
+
+    # Global electron reconstructed energy/momentum scale
+    "Electron energy scale": ["electron_scale"],
+
+    "Birk's Constant": ["birks"],
+    "Particle Response": ["response_" + i for i in RESPONSE_BRANCHES],
+    "Leakage Estimation": ["Leakage_Uncertainty"],
+    "Target Mass": ["Target_Mass_CH"],
 }
 
 MINERVA_TUNNING_ERROR_GROUPS = {
     "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
     "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
-    "Low Q2 Pion": ["LowQ2Pi"],
+    # "Low Q2 Pion": ["LowQ2Pi"],
     "FSI bugfix" : ["fsi_weight"],
     "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
     "MK model" : ["MK_model"],
+}
+
+LOWQ2PI_ERROR_GROUP = {
+    "Low Q2 Pion": ["LowQ2Pi"],
 }
 
 MINERVA_TUNNING_ERROR_GROUPS2 = {

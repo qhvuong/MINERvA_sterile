@@ -629,7 +629,8 @@ PLOT_SETTINGS= {
 
         "title": "Reco Elep v.s. True L/E; True L/E (km/GeV); E_{e} GeV; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+                    #  PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+                     PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: (.9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6)/(event.mc_incomingE/1000),
                           lambda event: event.kin_cal.reco_E_lep], 
         "tags": truth_tags   
@@ -690,7 +691,8 @@ PLOT_SETTINGS= {
 
         "title": "Reco E v.s. True L/E; True L/E (km/GeV); E_{e} + E_{avail} GeV; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+                    #  PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+                     PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: (.9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6)/(event.mc_incomingE/1000),
                           lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE], 
         "tags": truth_tags   

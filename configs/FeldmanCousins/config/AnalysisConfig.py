@@ -190,7 +190,7 @@ class _AnalysisConfig(object):
     def BackgroundFitPath(self, playlist, tag, is_output = True):
         return self.FilePath(self.output_dir if is_output else self.input_dir,
                              "bkgfit", playlist, "" , tag+"_"+self.selection_tag+"_"+self.ntuple_tag+".root")
-    
+
     def PlotPath(self, plot_name, sideband,tag=""):
         return self.FilePath(self.output_dir,"plot/"+plot_name, sideband, "" , self.selection_tag+"_"+tag)
 
@@ -273,7 +273,7 @@ parser.add_argument("-i", "--input",
 
 parser.add_argument("--ntuple_tag", "--ntuple-tag",
                     help="Use ntuple playlist tagged by given tag.",
-                    default="LLR"
+                    default="MAD"
 )
 
 parser.add_argument("--selection_tag","--selection-tag",
@@ -291,6 +291,11 @@ parser.add_argument("--count",
                     type = int,
                     nargs = 2,
                     default = [None,None])
+
+parser.add_argument("--debug",
+                    help="print debug plots to check that histogram stitching works.",
+                    action="store_true",
+                    default=False)
 
 parser.add_argument("--cal_POT","--cal-POT",
                     help="recount POT even if POT info is available",
@@ -403,6 +408,47 @@ parser.add_argument("-excludeSys", "--exclude_systematic",
                     type=str,
                     default=""
 )
+parser.add_argument("--single-point",
+                    dest="single_point",
+                    action="store_true",
+                    default=False,
+                    help="Evaluate chi2 at one oscillation point instead of scanning a surface.")
+
+parser.add_argument("--dm2",
+                    dest="single_dm2",
+                    type=float,
+                    default=None,
+                    help="Physical Delta m^2 value for single-point mode.")
+
+parser.add_argument("--ue4",
+                    dest="single_ue4",
+                    type=float,
+                    default=0.0,
+                    help="|U_e4|^2 value for single-point mode.")
+
+parser.add_argument("--umu4",
+                    dest="single_umu4",
+                    type=float,
+                    default=0.0,
+                    help="|U_mu4|^2 value for single-point mode.")
+
+parser.add_argument("--utau4",
+                    dest="single_utau4",
+                    type=float,
+                    default=0.0,
+                    help="|U_tau4|^2 value for single-point mode.")
+
+parser.add_argument("--profile-flux",
+                    dest="profileFlux",
+                    action="store_true",
+                    default=False,
+                    help="Enable flux profiling in chi2 calculation.")
+
+parser.add_argument("--no-profile-flux",
+                    dest="profileFlux",
+                    action="store_false",
+                    help="Disable flux profiling in chi2 calculation.")
+
 
 options = parser.parse_args()
 

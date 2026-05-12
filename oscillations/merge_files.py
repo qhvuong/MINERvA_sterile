@@ -13,6 +13,7 @@ def MergeAsimovs():
             results = []
             for f in os.listdir(path):
                 f_path = path+'/'+f
+                print(f_path)
                 if os.path.isdir(f_path):
                     for f_ in os.listdir(f_path):
                         file = f_path+'/'+f_

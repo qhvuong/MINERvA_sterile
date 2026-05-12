@@ -109,14 +109,38 @@ def IsInKinematicPhaseSpace(event):
 TRUTH_CATEGORIES = OrderedDict()
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and (IsNuE(event) or IsNue(event)) and not IsInKinematicPhaseSpace(event)
+# TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and (IsNuE(event) or IsNue(event)) and not IsInKinematicPhaseSpace(event)
 
-TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNue(event)
+# TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNue(event)
+# TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
+# TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
+# TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
+# TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
+# TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
+
+# TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
+# TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)
+# TRUTH_CATEGORIES["NCPi0"] = lambda event: IsNC(event) and IsPi0InFinalState(event)
+# TRUTH_CATEGORIES["CCPi"] = lambda event: IsCC(event) and IsChargedPionInFinalState(event)
+# TRUTH_CATEGORIES["NCPi"] = lambda event: IsNC(event) and IsChargedPionInFinalState(event)
+# TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
+# TRUTH_CATEGORIES["NCOther"] = lambda event: IsNC(event)
+
+# TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
+# TRUTH_CATEGORIES["CCWrongSign"] = lambda event: IsCC(event) and IsNu(event)
+# #TRUTH_CATEGORIES["NonFiducial"] = lambda event: not IsFiducial(event)
+# TRUTH_CATEGORIES["CCQE"] = lambda event: IsQE(event)
+# TRUTH_CATEGORIES["CCDelta"] = lambda event: IsDelta(event)
+# TRUTH_CATEGORIES["CC2p2h"] = lambda event: Is2p2h(event)
+# TRUTH_CATEGORIES["CCDIS"] = lambda event: IsDIS(event)
+
+TRUTH_CATEGORIES["CCNuEWrongSign"] = lambda event: IsCC(event) and IsNuE(event) and IsAntiNu(event)
 TRUTH_CATEGORIES["CCNuEQE"] = lambda event: IsCC(event) and IsNuE(event) and IsQE(event)
 TRUTH_CATEGORIES["CCNuEDelta"] = lambda event: IsCC(event) and IsNuE(event) and IsDelta(event)
 TRUTH_CATEGORIES["CCNuEDIS"] = lambda event: IsCC(event) and IsNuE(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuE2p2h"] = lambda event: IsCC(event) and IsNuE(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNuE(event)
+# TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNue(event)
 
 TRUTH_CATEGORIES["CCPi0"] = lambda event: IsCC(event) and IsPi0InFinalState(event) and IsNotNue(event)
 TRUTH_CATEGORIES["NCCohPi0"] = lambda event: IsCoherent(event) and IsNC(event) and IsPi0InFinalState(event)
@@ -126,13 +150,7 @@ TRUTH_CATEGORIES["NCPi"] = lambda event: IsNC(event) and IsChargedPionInFinalSta
 TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
 TRUTH_CATEGORIES["NCOther"] = lambda event: IsNC(event)
 
-TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
-TRUTH_CATEGORIES["CCWrongSign"] = lambda event: IsCC(event) and IsNu(event)
-#TRUTH_CATEGORIES["NonFiducial"] = lambda event: not IsFiducial(event)
-TRUTH_CATEGORIES["CCQE"] = lambda event: IsQE(event)
-TRUTH_CATEGORIES["CCDelta"] = lambda event: IsDelta(event)
-TRUTH_CATEGORIES["CC2p2h"] = lambda event: Is2p2h(event)
-TRUTH_CATEGORIES["CCDIS"] = lambda event: IsDIS(event)
+
 
 SIGNAL_DEFINITION = [
     "CCNuEQE",
@@ -143,25 +161,33 @@ SIGNAL_DEFINITION = [
     "CCNuEWrongSign"
 ]
 SWAP_SIGNAL_DEFINITION = [
-    "CCNu",
     "CCNuEQE",
     "CCNuEDelta",
     "CCNuEDIS",
     "CCNuE",
     "CCNuE2p2h",
-    "CCNuEAntiNu",
-]
-SWAP_SIGNAL_DEFINITION = [
-    "CCNu",
-    "CCNuE",
-    "CCNuEQE",
-    "CCNuEDelta",
-    "CCNuEDIS",
-    "CCNuE",
-    "CCNuE2p2h",
-    "CCNuEAntiNu",
     "CCNuEWrongSign",
 ]
+# SWAP_SIGNAL_DEFINITION = [
+#     "CCNu",
+#     "CCNuEQE",
+#     "CCNuEDelta",
+#     "CCNuEDIS",
+#     "CCNuE",
+#     "CCNuE2p2h",
+#     "CCNuEAntiNu",
+# ]
+# SWAP_SIGNAL_DEFINITION = [
+#     "CCNu",
+#     "CCNuE",
+#     "CCNuEQE",
+#     "CCNuEDelta",
+#     "CCNuEDIS",
+#     "CCNuE",
+#     "CCNuE2p2h",
+#     "CCNuEAntiNu",
+#     "CCNuEWrongSign",
+# ]
 
 #SIGNAL_DEFINITION = [
 #    "CCQE",

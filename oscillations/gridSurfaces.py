@@ -60,11 +60,13 @@ def submitJob(tupleName,tag):
   my_wrapper.write( "cd $CCNUEROOT/oscillations\n")
   my_wrapper.write( "export USER=$(whoami)\n")
   my_wrapper.write( "source py3env/bin/activate\n")
-  my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid --exclude_systematic %s --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (gridargs.exclude_systematic,tupleName,tag,tupleName,tag,argstring) )
+
+  # Wrapper command doesn't like when exclude_systematic is empty
+  my_wrapper.write( "py3env/bin/python3 makeSurface.py --grid --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (tupleName,tag,tupleName,tag,argstring) )
 
   my_wrapper.write("exit $?\n")
   my_wrapper.close()
-  print( "py3env/bin/python3 makeSurface.py --grid --exclude_systematic %s --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (gridargs.exclude_systematic,tupleName,tag,tupleName,tag,argstring) )
+  print( "py3env/bin/python3 makeSurface.py --grid --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (tupleName,tag,tupleName,tag,argstring) )
   os.system( "chmod 777 %s" % wrapper_name )
   
   cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --append_condor_requirements='CpuFamily != 6' --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 2, os.environ["PWD"] , wrapper_name ) 

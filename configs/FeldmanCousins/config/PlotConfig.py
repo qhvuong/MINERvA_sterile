@@ -9,6 +9,7 @@
 
 import math
 import ROOT
+import numpy as np
 #from collections import OrderedDict
 
 #from AnalysisConfig import AnalysisConfig
@@ -128,13 +129,9 @@ A_LABELS = {
 	207: "Pb", 
 }
 
-#ELECTRON_ANGLE_BINNING =  range(10) + [10, 12, 15, 20, 27, 35]
 LEPTON_ANGLE_BINNING =  [1 * i for i in range(41)]
-ELECTRON_ANGLE_BINNING =  [1 * i for i in range(41)]
-ELECTRON_ANGLE_RESIDUAL_BINNING =  [-1.+0.1* i for i in range(0,21)]
+LEPTON_ANGLE_RESIDUAL_BINNING =  [-1.+0.1* i for i in range(0,21)]
 PROTON_ANGLE_RESIDUAL_BINNING = [-20 +i for i in range(41)]
-#ELECTRON_ANGLE_2D_BINNING = [-x for x in reversed(ELECTRON_ANGLE_BINNING)] + ELECTRON_ANGLE_BINNING[1:]
-#EXCESS_ANGLE_BINNING = range(0, 15, 3) + [15, 20, 27, 35]
 EXCESS_ANGLE_BINNING = list(range(0, 15, 3)) + [20]
 LOW_RECOIL_BIN_HIGH_Q0 = [0.2, 0.25, 0.30, 0.35, 0.40,
                      0.50, 0.60, 0.80, 1.00, 1.5]
@@ -142,31 +139,88 @@ LOW_RECOIL_BIN_LOW_Q0 = [0.0, 0.02, 0.04, 0.06, 0.08, 0.1,
                      0.12, 0.14, 0.16, 0.2]
 PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 
-NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
-NEUTRINO4_P_BINNING = [i*.025 for i in range(40)]
+# NEUTRINO4_ENU_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
+# NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
+# NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
+NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]		## THIS IS NU+E BINNING THAT MATCHES JAEWON'S
+# NEUTRINO4_EE_BINNING = [0.0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 16.0, 20.0]
+
+
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.1, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning4
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.5, 16.0, 20.0]  # ==> newBinning3
+# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning2
+# NEUTRINO4_EE_BINNING = [0.0, 1.2, 1.6, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.5, 9.5, 12.0, 16.0, 20.0] # ==> newBinning
+NEUTRINO4_EE_BINNING = [0.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
+NEUTRINO4_EE_BINNING_EL_TEMPLATE = [0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.5, 6.0, 6.5, 7.2, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0, 18.0, 20.0]
+NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
+
+
+NEUTRINO4_ELEP_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+NEUTRINO4_P_BINNING = [i*.05 for i in range(40)]
 NEUTRINO4_LE_BINNING = [i*.015 for i in range(34)]
-NEUTRINO4_EE_THETA_BINNING = [.003 * i for i in range(len(NEUTRINO4_EE_BINNING))]
+# NEUTRINO4_EE_THETA_BINNING = [.001 * i for i in range(len(NEUTRINO4_EE_BINNING))]
+# NEUTRINO4_EE_THETA_BINNING = [0., 0.0008, 0.0016, 0.0032, 0.01, 0.025, 0.04]
+NEUTRINO4_EE_THETA_BINNING = [i*0.0008 for i in range(51)]
+# NEUTRINO4_THETA_BINNING = [0.01 * i for i in range(158)]
 NEUTRINO4_LENGTH_BINNING = [.309, .339, .369, .399, .429, .459, .489, .519, .549, .579, .609, .639, .670, .700, .730, .760, .790, .820, .850, .880, .910, .940, .970, 1.000]
 
+#E_available binning
+E_AVAILABLE_BINNING = [i*0.05 for i in range(41)]
+
+EMLIKETRACKSCORE_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
+# EMLIKETRACKSCORE_BINNING = [-0.01, 0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.01]
+TRANSVERSEGAPSCORE_BINNING = [3* i for i in range(51)]
+NONMIPCLUSFRAC_BINNING = [0.1*i for i in range(11)]
+ODCALVISE_BINNING = [0.005* i for i in range(11)]
+DSCALVISE_BINNING = [0.05* i for i in range(11)]
+AFTERPULSING_BINNING = [-0.1] + [0.1*i for i in range(11)] + [1.1]
+ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
+ELECTRON_ANGLE_BINNING_DET = list(np.linspace(-0.1, 0., 51))
+# ELECTRON_ANGLE_BINNING = list(np.linspace(-0.05, 0.05, 51))
+ELECTRON_PHI_BINNING = list(np.linspace(-1., 1., 51))
+
+TRUE_THETA_BINS = [i*(0.1/10) for i in range(11)]  # 0 → 0.05 rad
+
+# Vertex X and Y in mm
+ELECTRON_VERTEX_BINNING_DET = [200*i for i in range(-6, 7)]   # -1000 → +1000 mm
+ELECTRON_VERTEX_BINNING = [20*i for i in range(-40, 81)]   # -800 → +1600 mm
+ELECTRON_VTXRES_BINNING_DET = [-100 + i*(200/10) for i in range(11)]
+
+VERTEX_R_BINNING_DET = [200*i for i in range(0, 10)]  # 0 → 1800 mm
+HEX_EDGE_DIST_BINNING = [i for i in range(-50, 401, 10)]  # -50..400 mm, 10 mm steps
+ELECTRON_PX_BINNING = [i for i in range(-300, 301, 10)]
+ELECTRON_PY_BINNING = [i for i in range(-300, 301, 10)]
+ELECTRON_PZ_BINNING = [i for i in range(0, 9001, 250)]
+ELECTRON_PT_BINNING = [i for i in range(0, 401, 10)]
+
+TANTHETA_BINNING = [i * 0.001 for i in range(-50, 51)]
+PX_RESID_BINNING = [i for i in range(-200, 201, 5)]
+PY_RESID_BINNING = [i for i in range(-200, 201, 5)]
+PY_RESID_BINNING_DET = [i for i in range(-350, 51, 5)]
+PZ_RESID_BINNING = [i for i in range(-3000, 3001, 50)]
+PZ_FRAC_RESID_BINNING = [i * 0.002 for i in range(-100, 101)]  # -0.2 → +0.2
+PHAT_RESID_BINNING = [i * 0.001 for i in range(-100, 101)]  # -0.1 → +0.1
+PMAG_RESID_BINNING = [i for i in range(-3000, 3001, 50)]
+PMAG_FRAC_RESID_BINNING = [i * 0.002 for i in range(-100, 101)]  # -0.2 → +0.2
+PHAT_BINNING = [i * 0.002 for i in range(-100, 101)]  # -0.2 → +0.2
+PHATZ_BINNING = [0.97 + 0.003*i for i in range(0, 11)]  # 0.90, 0.91, ..., 1.00
+
+
+CONE_OUTSIDE_ENERGY_BINNING = [10*i for i in range(0,51)] 	# 0 to 500 MeV
+NEIGHBORHOOD_ENERGY_BINNING = [5*i for i in range(0,21)] 	# 0 to 150 MeV
+TRUE_ELECTRON_ENERGY_BINNING = [5*i for i in range(0,11)]	# 0 to 50 GeV
 NEUTRINO4_EE_BINNING_INV = [0.0,1/20,1/15,1/12.5,1/10,1/8,1/7.5,1/7,1/6.5,1/6,1/5.5,1/5,1/4.5,1/4,1/3.75,1/3.5,1/3.25,1/3,1/2.75,1/2.5,1/2,1/1.75,1/1.5]
 NEUTRINO4_L_OVER_E_BINNING = [0.0, 2., 5., 10., 17., 23., 29., 37., 46., 56., 69., 85., 104., 120., 139., 160., 185., 215., 250., 293., 347., 417., 510.,600]
 NEUTRINO4_L_OVER_E_BINNING = [i/1000 for i in NEUTRINO4_L_OVER_E_BINNING]
 ELECTRON_ENERGY_BINNING = [0.0,2.5,5,7.5,10,12.5,15,20]
-#ELECTRON_ENERGY_BINNING = [0.5 * i for i in range(31)]+[20]
 SUM_VISIBLE_ENERGY_BINNING = [1 * i for i in range(1,11)]
 VISIBLE_ENERGY_RESIDUAL_BINNING = [-1+0.04* i for i in range(0,51)]
 ELECTRON_ENERGY_RESIDUAL_BINNING = [-1+0.05* i for i in range(0,41)]
-#EXCESS_ENERGY_BINNING = [0, 3, 6, 9, 12, 15, 20]  # ELECTRON_ENERGY_BINNING + [12, 15, 20]
-#ELECTRON_ENERGY_BINNING = [0.75, 2, 3, 5, 7, 9, 20]  # Jaewon's bins
-#NEUTRINO_ENERGY_BINNING = [i for i in range(6)] + [7, 10] # , 13, 18, 25]
 NEUTRINO_ENERGY_BINNING = [10,11,12,13,14,15,17,19,21,23,25,30,35,40,45,50]
-#NEUTRINO_ENERGY_BINNING_BIGGER = [i for i in range(6)] + [7, 10, 13, 18, 25]
-#OD_ENERGY_BINNING = [0, 0.5, 1, 2, 3, 4, 5] 
-#VISIBLE_ENERGY_BINNING = [ 0.1*i for i in range(20) ] + [0.2*i for i in range(10, 20)] + [0.5*i for i in range(8, 14)] + range(7, 10)
 VISIBLE_ENERGY_BINNING = [ 0.02*i for i in range(9) ] + [0.05*i for i in range(4,9)]+ [0.1*i for i in range(5, 7)] + [0.2*i for i in range(4, 8)] 
 APOTHEM_BINNING = [50*i for i in range(17)]
 VERTEX_Y_BINNING = [100*i -1000 for i in range(21)]
-#ETH2_BINNING = [0, 0.001, 0.002, 0.003, 0.005, 0.01, 0.02, 0.05]
 ETH2_BINNING = [0, 0.01, 0.025, 0.05, 0.075, 0.1, 0.2, 0.5]
 
 QSQUARED_BINNING_CCQE_LIKE = [0, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 1.0, 1.25, 2.0]
@@ -522,10 +576,10 @@ HISTS_TO_MAKE = [
     #"electron_energy",
     "Reco Energy vs L/E",
     "Biased Neutrino Energy",
-    "Delta Phi",
-    "Q2",
-    "Front dEdX",
-    "True Energy vs Biased Neutrino Energy",
+   #  "Delta Phi",
+   #  "Q2",
+   #  "Front dEdX",
+   #  "True Energy vs Biased Neutrino Energy",
     #"True Signal Lepton Pt CCQE",
     #"True Signal Lepton Pt Aaron",
 ]

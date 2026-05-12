@@ -8,8 +8,8 @@ import math
 from array import array
 
 from tools.PlotLibrary import HistHolder
-from Tools.Histogram import *
-from Tools.FitTools import *
+from tools.StitchedHistogram import *
+from tools.Fitters import *
 from config.AnalysisConfig import AnalysisConfig
 ccnueroot = os.environ.get('CCNUEROOT')
 
@@ -430,7 +430,7 @@ class PanelPlot:
             for j in range(len(colors)):
                 self.sens = ax.contour(X,Y,FC_sens[j][i],levels=limits,colors=colors[j],origin="lower",linestyles='dashed')
                 self.excl = ax.contour(X,Y,FC_excl[j][i],levels=limits,colors=colors[j],origin="lower")
-                self.excl.set(path_effects=[patheffects.withTickedStroke()])
+                #self.excl.set(path_effects=[patheffects.withTickedStroke()])
 
     def PlotExclusions(self):
         for i,ax in enumerate(self.axes.flatten()):
@@ -536,7 +536,7 @@ class PanelPlot:
         self.Save()
 
     def MakeCompPlot(self,excls,sens,titles,limits):
-        colors = ["red","blue","green"]
+        colors = ["red","blue"]
         self.CreateAxis()
         self.PlotFeldmanCousinsLists(excls,sens,colors,limits)
         self.PlotExclusions()
@@ -681,21 +681,21 @@ if __name__ == "__main__":
             pplot.Animate(excl,sens,limits,i)
             '''
     elif AnalysisConfig.compare_profiles:
-        lam = 1
-        best_fit = 101.24
-        exclude = "none"
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+        #lam = 1
+        #best_fit = 101.24
+        #exclude = "none"
+        #data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        #asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        #results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        #sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
 
-        lam = 12
-        best_fit = 152.65
-        exclude = "none"
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+        #lam = 12
+        #best_fit = 152.65
+        #exclude = "none"
+        #data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
+        #asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
+        #results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        #sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
 
         lam = 1
         exclude = "ratio"
@@ -703,7 +703,13 @@ if __name__ == "__main__":
         data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
         asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
         results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list3,excl_list3 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+
+        best_fit =  134.126
+        data_chi2s = np.load("chi2s/data_chi2s.npy") - best_fit
+        asimov_chi2s = np.load("chi2s/asimov_chi2s.npy")
+        results = np.load("chi2s/asimov_deltachi2s.npy")
+        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
 
         pplot.SetTitle("MINERvA Sterile Neutrino Search\nFlux Profiling Comparison")
         pplot.SetXaxis("ue4")
@@ -711,24 +717,8 @@ if __name__ == "__main__":
         pplot.SetPanel("umu4")
         name = "plots/FC_ue4_vs_dm2_profiling.png"
         pplot.SetName(name)
-        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits)
+        pplot.MakeCompPlot([excl_list1,excl_list2],[sens_list1,sens_list2],["Old","New"],limits)
         pplot.Zoom()
-
-        lam = 1
-        best_fit = 101.24
-        exclude = "none"
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
-
-        lam = 12
-        best_fit = 152.65
-        exclude = "none"
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
 
         lam = 1
         exclude = "ratio"
@@ -736,31 +726,21 @@ if __name__ == "__main__":
         data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
         asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
         results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list3,excl_list3 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+
+        best_fit =  134.126
+        data_chi2s = np.load("chi2s/data_chi2s.npy") - best_fit
+        asimov_chi2s = np.load("chi2s/asimov_chi2s.npy")
+        results = np.load("chi2s/asimov_deltachi2s.npy")
+        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
 
         pplot.SetXaxis("umu4")
         pplot.SetYaxis("dm2")
         pplot.SetPanel("ue4")
         name = "plots/FC_umu4_vs_dm2_profiling.png"
         pplot.SetName(name)
-        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits)        
+        pplot.MakeCompPlot([excl_list1,excl_list2],[sens_list1,sens_list2],["Old","New"],limits)        
         pplot.Zoom()
-
-        lam = 1
-        best_fit = 101.24
-        exclude = "none"
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
-
-        lam = 12
-        best_fit = 152.65
-        exclude = "none"
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
 
         lam = 1
         exclude = "ratio"
@@ -768,14 +748,20 @@ if __name__ == "__main__":
         data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
         asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
         results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list3,excl_list3 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+
+        best_fit =  134.126
+        data_chi2s = np.load("chi2s/data_chi2s.npy") - best_fit
+        asimov_chi2s = np.load("chi2s/asimov_chi2s.npy")
+        results = np.load("chi2s/asimov_deltachi2s.npy")
+        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
 
         pplot.SetXaxis("ue4")
         pplot.SetYaxis("umu4")
         pplot.SetPanel("dm2")
         name = "plots/FC_ue4_vs_umu4_profiling.png"
         pplot.SetName(name)
-        pplot.MakeCompPlot([excl_list1,excl_list2,excl_list3],[sens_list1,sens_list2,sens_list3],["$\lambda=1$","$\lambda=12$","$\lambda=1$ Sans\nFlavor Ratio"],limits)
+        pplot.MakeCompPlot([excl_list1,excl_list2],[sens_list1,sens_list2],["Old","New"],limits)
         pplot.Zoom()
 
     else:

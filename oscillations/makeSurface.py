@@ -14,8 +14,8 @@ from array import array
 
 #insert path for modules of this package.
 from tools.PlotLibrary import HistHolder
-from Tools.FitTools import *
-from Tools.PlotTools import *
+from tools.Fitters import *
+from tools.OscillationPlotTools import *
 from config.AnalysisConfig import AnalysisConfig
 
 # Get This from Rob. Thanks Rob.
@@ -39,26 +39,32 @@ def MakeSurface(histogram,outdir,deltam=1,U_tau4=0,makePlot=False,exclude="",lam
     fits              = np.zeros(arrShape,dtype='f')
     count = 0
 
+    statistic = Statistics(histogram,exclude,lam)
     for i in range(U_mu4s.shape[0]):
         count+=1
         for j in range(U_e4s.shape[0]):
             U_mu4 = U_mu4s[i]
             U_e4  = U_e4s[j]
 
-            OscillateHistogram(histogram, deltam, U_e4, U_mu4, U_tau4)
+            histogram.OscillateHistogram(deltam, U_e4, U_mu4, U_tau4)
 
-            chi2_data,data_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True),marginalize=True,useOsc=True,exclude=exclude,lam=lam)
-            chi2_asimov,asimov_penalty = Chi2DataMC(histogram,invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True),marginalize=True,useOsc=True,usePseudo=True,exclude=exclude,lam=lam)
+            chi2_data,data_penalty = statistic.Chi2DataMC(marginalize=True,useOsc=True)
+            chi2_asimov,asimov_penalty = statistic.Chi2DataMC(marginalize=True,useOsc=True,usePseudo=True)
 
             if makePlot:
                 res={"m":deltam,"ue4":U_e4,"umu4":U_mu4,"utau4":0}
-                PlotOscillationEffects(histogram,res,"asimov",False,useMarg=False,usePseudo=True,exclue=exclude,lam=lam)
-                PlotOscillationEffects(histogram,res,"asimov_marg",True,useMarg=True,usePseudo=True,exclude=exclude,lam=lam)
+                plotter = PlottingContainer("fitted_histogram",histogram)
+                plotter.SetExclude(AnalysisConfig.exclude)
+                plotter.SetLambda(AnalysisConfig.lambdaValue)
+
+                plotter.PlotOscillationEffects(res,"asimov",useMarg=False,plotSamples=False,usePseudo=True)
+                plotter.PlotOscillationEffects(res,"asimov_marg",useMarg=True,plotSamples=False,usePseudo=True)
 
             data_surface[i,j] = chi2_data
             data_penalties[i,j] = data_penalty
             asimov_surface[i,j] = chi2_asimov
             asimov_penalties[i,j] = asimov_penalty
+            
         logging.info("{:.2f}% done with chi2s. Current data, asimov chi2s = {:.4f}, {:.4f}".format(100*count/(U_mu4s.shape[0]),data_surface[i,-1],asimov_surface[i,-1]))
 
     np.save('{}/chi2_surface_data_m_{}_Ue4_{}.dat'.format(outdir,deltam,U_e4),data_surface)
@@ -77,7 +83,8 @@ if __name__ == "__main__":
     delta_m = delta_ms[AnalysisConfig.delta_m]
 
     cat_to_exclude = AnalysisConfig.exclude_systematic
-    sample_histogram.RemoveSystematics(cat_to_exclude)
+    if len(cat_to_exclude) > 0:
+        sample_histogram.RemoveSystematics(cat_to_exclude)
 
     if not AnalysisConfig.grid: # surface plot
         m_toloop = np.logspace(-1,2,100)

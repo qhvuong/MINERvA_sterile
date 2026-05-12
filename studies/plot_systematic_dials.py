@@ -489,19 +489,19 @@ def main():
     f.Close()
 
 if __name__ == "__main__":
-    # main()
-    f = ROOT.TFile.Open("/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcle1_p6_test_MAD_0.root")
-    h = f.Get("EN4")
-    b = h.GetVertErrorBand("electron_scale")
+    main()
+    # f = ROOT.TFile.Open("/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcle1_p6_test_MAD_0.root")
+    # h = f.Get("EN4")
+    # b = h.GetVertErrorBand("electron_scale")
 
-    print("CV integral:", h.Integral(0, h.GetNbinsX()+1))
-    print("band CV integral:", b.Integral(0, h.GetNbinsX()+1))
+    # print("CV integral:", h.Integral(0, h.GetNbinsX()+1))
+    # print("band CV integral:", b.Integral(0, h.GetNbinsX()+1))
 
-    for i in range(b.GetNHists()):
-        hu = b.GetHist(i)
-        print(i, hu.GetName(), hu.Integral(0, hu.GetNbinsX()+1))
-        print(
-            "univ", i,
-            "integral:", hu.Integral(0, hu.GetNbinsX()+1),
-            "ratio:", hu.Integral(0, hu.GetNbinsX()+1) / h.Integral(0, h.GetNbinsX()+1)
-        )
+    # for i in range(b.GetNHists()):
+    #     hu = b.GetHist(i)
+    #     print(i, hu.GetName(), hu.Integral(0, hu.GetNbinsX()+1))
+    #     print(
+    #         "univ", i,
+    #         "integral:", hu.Integral(0, hu.GetNbinsX()+1),
+    #         "ratio:", hu.Integral(0, hu.GetNbinsX()+1) / h.Integral(0, h.GetNbinsX()+1)
+    #     )

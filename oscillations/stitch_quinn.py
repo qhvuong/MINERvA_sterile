@@ -4,8 +4,8 @@ import ROOT
 import PlotUtils
 import numpy as np
 
-from Tools.Histogram import *
-from Tools.Helper import *
+from tools.StitchedHistogram import *
+from tools.Helper import *
 
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS
 from config.AnalysisConfig import AnalysisConfig
@@ -31,6 +31,65 @@ def clone_total(holder, name):
     h.SetDirectory(0)
     return h
 
+def load_nue_elastic_fhc():
+    type_path_map = {
+        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_allSystematics_newFlux_MAD.root",
+        "mc":   "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_allSystematics_newFlux_MAD.root",
+    }
+
+    data_file, mc_file, pot_scale, data_pot, mc_pot = Utilities.getFilesAndPOTScale(
+        "NuEElastic", type_path_map, "MAD", True
+    )
+
+    standPOT = data_pot if data_pot is not None else mc_pot
+
+    # Main 1D observable for the stitched elastic sample.
+    # Change "Electron Energy" if your elastic sample uses a different PlotLibrary name.
+    mc_holder = HistHolder("Electron Energy", mc_file, "Signal", True, mc_pot, standPOT)
+    data_holder = HistHolder("Electron Energy", data_file, "Signal", False, data_pot, standPOT)
+
+    # L/E templates.
+    template_holder = HistHolder("Reco Energy vs L/E", mc_file, "Signal", True, mc_pot, standPOT)
+
+    binwidthScale = getattr(AnalysisConfig, "binwidth", False)
+
+    mc_holder.POTScale(binwidthScale)
+    data_holder.POTScale(binwidthScale)
+    template_holder.POTScale(binwidthScale)
+
+    h_mc = clone_total(mc_holder, "fhc_elastic_mc")
+    h_data = data_holder.GetHist().Clone("fhc_elastic_data")
+    h_template = clone_total(template_holder, "fhc_elastic_template")
+
+    # Flavor pieces for oscillation bookkeeping.
+    # These category names may need to match your actual elastic file.
+    h_electron = mc_file.Get("Electron_Scattering")
+    h_muon     = mc_file.Get("Muon_Scattering")
+
+    if not h_electron:
+        h_electron = mc_file.Get("ENueElastic")
+    if not h_muon:
+        h_muon = mc_file.Get("ENumuElastic")
+
+    if not h_electron or not h_muon:
+        raise RuntimeError("Could not find electron/muon flavor components for FHC elastic sample")
+
+    h_electron = h_electron.Clone("electron_fhc_elastic")
+    h_muon = h_muon.Clone("muon_fhc_elastic")
+
+    h_data.SetDirectory(0)
+    h_template.SetDirectory(0)
+    h_electron.SetDirectory(0)
+    h_muon.SetDirectory(0)
+
+    return {
+        "mc": h_mc,
+        "data": h_data,
+        "electron": h_electron,
+        "muon": h_muon,
+        "template_electron": h_template,
+        "template_muon": h_template.Clone("fhc_elastic_template_muon"),
+    }
 
 def load_ccnue_fhc():
     type_path_map = {
@@ -39,7 +98,7 @@ def load_ccnue_fhc():
     }
 
     data_file, mc_file, pot_scale, data_pot, mc_pot = Utilities.getFilesAndPOTScale(
-        "CCnue_allSystematics_testCVs", type_path_map, "MAD", True
+        "CCnue_allSystematics_newFlux", type_path_map, "MAD", True
     )
     standPOT = data_pot if data_pot is not None else mc_pot
 
@@ -89,6 +148,7 @@ def load_ccnue_fhc():
         "template_nue": h_template,
         "template_swap": h_swap_template,
     }
+
 
 def load_ccnuebar_rhc():
     type_path_map = {
@@ -183,6 +243,40 @@ def load_ccnumu_fhc():
         "template_numu": h_template,
     }
 
+def sum_hists_from_file(root_file, hist_names, out_name):
+    hsum = None
+
+    for hist_name in hist_names:
+        h = root_file.Get(hist_name)
+        if not h:
+            print("WARNING: missing", hist_name)
+            continue
+
+        h = h.Clone(out_name + "_" + hist_name)
+        h.SetDirectory(0)
+
+        if hsum is None:
+            hsum = h.Clone(out_name)
+            hsum.SetDirectory(0)
+            hsum.Reset()
+
+        hsum.Add(h)
+
+    if hsum is None:
+        raise RuntimeError("Could not build {}".format(out_name))
+
+    return hsum
+
+
+def check_bad_bins(h, label):
+    print("\nChecking", label)
+    print("Integral:", h.Integral())
+    for i in range(0, h.GetNbinsX() + 2):
+        v = h.GetBinContent(i)
+        e = h.GetBinError(i)
+        if not np.isfinite(v) or not np.isfinite(e):
+            print("  BAD bin", i, "content =", v, "error =", e)
+
 def load_ccnumubar_rhc():
     type_path_map = {
         "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_allSystematics_newFlux_MAD.root",
@@ -192,29 +286,79 @@ def load_ccnumubar_rhc():
     data_file, mc_file, pot_scale, data_pot, mc_pot = Utilities.getFilesAndPOTScale(
         "CCnumubar_allSystematics", type_path_map, "MAD", True
     )
+
     standPOT = data_pot if data_pot is not None else mc_pot
 
-    mc_holder = HistHolder("Biased Neutrino Energy", mc_file, "Signal", True, mc_pot, standPOT)
-    data_holder = HistHolder("Biased Neutrino Energy", data_file, "Signal", False, data_pot, standPOT)
-    template_holder = HistHolder("Reco Energy vs L/E", mc_file, "Signal", True, mc_pot, standPOT)
+    if mc_pot is None or mc_pot == 0:
+        raise RuntimeError("Bad mc_pot for RHC CCnumubar: {}".format(mc_pot))
 
-    binwidthScale = getattr(AnalysisConfig, "binwidth", False)
-    mc_holder.POTScale(binwidthScale)
-    data_holder.POTScale(binwidthScale)
-    template_holder.POTScale(binwidthScale)
+    scale = standPOT / mc_pot
 
-    h_mc = clone_total(mc_holder, "rhc_ccnumubar_mc")
-    h_data = data_holder.GetHist().Clone("rhc_ccnumubar_data")
-    h_template = clone_total(template_holder, "rhc_ccnumubar_template")
+    print("\nPOT DEBUG: rhc_ccnumubar")
+    print("  data_pot =", data_pot)
+    print("  mc_pot   =", mc_pot)
+    print("  standPOT =", standPOT)
+    print("  scale    =", scale)
 
+    # Use CCnumu-style exclusive categories.
+    # Do NOT include EN4_CC or EN4_NC here unless you verify they are exclusive.
+    ccnumu_1d_components = [
+        "EN4_CCNuMuWrongSign",
+        "EN4_CCNuMuQE",
+        "EN4_CCNuMuDelta",
+        "EN4_CCNuMuDIS",
+        "EN4_CCNuMu2p2h",
+        "EN4_CCNuMu",
+        "EN4_NCDiff",
+        "EN4_NuEElastic",
+        "EN4_Other",
+    ]
+
+    ccnumu_2d_components = [
+        "EReco_LE_CCNuMuWrongSign",
+        "EReco_LE_CCNuMuQE",
+        "EReco_LE_CCNuMuDelta",
+        "EReco_LE_CCNuMuDIS",
+        "EReco_LE_CCNuMu2p2h",
+        "EReco_LE_CCNuMu",
+        "EReco_LE_NCDiff",
+        "EReco_LE_NuEElastic",
+        "EReco_LE_Other",
+    ]
+
+    # Build MC total manually from CCnumu categories.
+    h_mc = sum_hists_from_file(
+        mc_file,
+        ccnumu_1d_components,
+        "rhc_ccnumubar_mc"
+    )
+    h_mc.Scale(scale)
+
+    # Data likely only has inclusive EN4, so use it directly.
+    h_data = data_file.Get("EN4")
+    if not h_data:
+        raise RuntimeError("Could not find EN4 in RHC CCnumubar data file.")
+
+    h_data = h_data.Clone("rhc_ccnumubar_data")
     h_data.SetDirectory(0)
-    h_template.SetDirectory(0)
+
+    # Build L/E template manually too, avoiding CCnue HistHolder categories.
+    h_template = sum_hists_from_file(
+        mc_file,
+        ccnumu_2d_components,
+        "rhc_ccnumubar_template"
+    )
+    h_template.Scale(scale)
+
+    check_bad_bins(h_mc, "rhc_ccnumubar mc FINAL")
+    check_bad_bins(h_data, "rhc_ccnumubar data FINAL")
 
     return {
         "mc": h_mc,
         "data": h_data,
         "template_numu": h_template,
     }
+
 
 if __name__ == "__main__":
     binwidthScale = getattr(AnalysisConfig, "binwidth", False)
@@ -245,17 +389,18 @@ if __name__ == "__main__":
     print("rhc_ccnumubar mc integral  :", rhc_ccnumubar["mc"].Integral())
     print("rhc_ccnumubar data integral:", rhc_ccnumubar["data"].Integral())
 
-
     sample_histogram = StitchedHistogram("sample")
 
-    sample_histogram.AddSwappedSample("fhc_nue_selection", fhc_ccnue["swap"])
-    sample_histogram.AddSwappedSample("rhc_nue_selection", rhc_ccnuebar["swap"])
-
+    # Add regular samples first, especially numu samples
     sample_histogram.AddHistograms("fhc_nue_selection", fhc_ccnue["mc"], fhc_ccnue["data"])
     sample_histogram.AddHistograms("rhc_nue_selection", rhc_ccnuebar["mc"], rhc_ccnuebar["data"])
 
     sample_histogram.AddHistograms("fhc_numu_selection", fhc_ccnumu["mc"], fhc_ccnumu["data"])
     sample_histogram.AddHistograms("rhc_numu_selection", rhc_ccnumubar["mc"], rhc_ccnumubar["data"])
+
+    # Now swapped samples can safely look up fhc/rhc numu integrals
+    sample_histogram.AddSwappedSample("fhc_nue_selection", fhc_ccnue["swap"])
+    sample_histogram.AddSwappedSample("rhc_nue_selection", rhc_ccnuebar["swap"])
 
     sample_histogram.AddTemplates(
         "fhc_nue_selection",
@@ -285,6 +430,18 @@ if __name__ == "__main__":
 
     stitched.ApplyExclusion(exclude_samples)
 
+    def check_bad_bins(h, label):
+        print("\nChecking", label)
+        print("Integral:", h.Integral())
+        for i in range(0, h.GetNbinsX() + 2):
+            v = h.GetBinContent(i)
+            e = h.GetBinError(i)
+            if not np.isfinite(v) or not np.isfinite(e):
+                print("  BAD bin", i, "content =", v, "error =", e)
+
+    check_bad_bins(rhc_ccnumubar["mc"], "rhc_ccnumubar mc")
+    check_bad_bins(rhc_ccnumubar["data"], "rhc_ccnumubar data")
+
     print("About to stitch...")
     stitched.Stitch()
     print("Finished stitch.")
@@ -308,10 +465,3 @@ if __name__ == "__main__":
     stitched.mc_hist.Draw("HIST")
     stitched.data_hist.Draw("E1 SAME")
     c.Print("stitched_test.png")
-
-    # c2 = ROOT.TCanvas("c2", "c2", 900, 700)
-    # stitched.swap_hist.SetLineWidth(2)
-    # stitched.swap_hist.Draw("HIST")
-    # c2.Print("fhc_ccnue_swap_stitched_test.png")
-
-    # print(f"Wrote {outroot}, fhc_ccnue_ccnumu_stitched_test.png, and fhc_ccnue_swap_stitched_test.png")

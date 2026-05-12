@@ -194,7 +194,7 @@ class HistWrapper1D(HistWrapper):
             print("[WARNING] HistWrapper1D.Write called but self.hist is missing")
             return
 
-        # Limit to the key histogram first, otherwise output will be huge.
+        # # Limit to the key histogram first, otherwise output will be huge.
         if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
         # if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
             DebugFluxBandCV(self.hist, "BEFORE SyncCVHistos")
