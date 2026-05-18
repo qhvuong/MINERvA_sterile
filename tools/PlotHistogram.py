@@ -352,37 +352,96 @@ class PlottingContainer:
         exclude = self.exclude
         lam = self.lam
 
+
         statistic = Statistics(histogram, exclude=exclude, lam=lam)
 
-        chi2_model, model_pen = statistic.Chi2DataMC(
-            marginalize=useMarg,
+        # Raw/unprofiled chi2 values.
+        # These correspond to the unprofiled red null curve and raw oscillated model.
+        chi2_null_raw, null_pen_raw = statistic.Chi2DataMC(
+            marginalize=False,
+            usePseudo=usePseudo
+        )
+        chi2_model_raw, model_pen_raw = statistic.Chi2DataMC(
+            marginalize=False,
             useOsc=True,
             usePseudo=usePseudo
         )
-        chi2_null, null_pen = statistic.Chi2DataMC(
-            marginalize=useMarg,
-            usePseudo=usePseudo
-        )
 
+        # Profiled chi2 values.
+        # These correspond to the green profiled null curve and profiled oscillated model.
         if useMarg:
-            null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f} + {:.2f}".format(
-                chi2_null - null_pen, null_pen
+            chi2_null, null_pen = statistic.Chi2DataMC(
+                marginalize=True,
+                usePseudo=usePseudo
             )
-            osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f} + {:.2f}".format(
-                chi2_model - model_pen, model_pen
+            chi2_model, model_pen = statistic.Chi2DataMC(
+                marginalize=True,
+                useOsc=True,
+                usePseudo=usePseudo
             )
         else:
-            null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f}".format(chi2_null)
-            osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f}".format(chi2_model)
+            chi2_null, null_pen = chi2_null_raw, null_pen_raw
+            chi2_model, model_pen = chi2_model_raw, model_pen_raw
 
-        plot_texts = [
-            null_chi2_text,
-            osc_chi2_text,
-            "#Delta m^{2} = " + "{}".format(parameters["m"]) + " eV^{2}",
-            "|U_{e4}|^{2} = " + "{}".format(parameters["ue4"]),
-            "|U_{#mu4}|^{2} = " + "{:.6f}".format(parameters["umu4"]),
-            "|U_{#tau4}|^{2} = " + "{}".format(parameters["utau4"]),
-        ]
+        if useMarg:
+            null_chi2_text = "Raw Null #chi^{{2}} = {:.2f}".format(chi2_null_raw)
+            prof_null_chi2_text = "Profiled Null #chi^{{2}} = {:.2f} + {:.2f}".format(
+                chi2_null - null_pen, null_pen
+            )
+            osc_chi2_text = "Profiled Osc. #chi^{{2}} = {:.2f} + {:.2f}".format(
+                chi2_model - model_pen, model_pen
+            )
+            plot_texts = [
+                null_chi2_text,
+                prof_null_chi2_text,
+                osc_chi2_text,
+                "#Delta m^{2} = " + "{}".format(parameters["m"]) + " eV^{2}",
+                "|U_{e4}|^{2} = " + "{}".format(parameters["ue4"]),
+                "|U_{#mu4}|^{2} = " + "{:.6f}".format(parameters["umu4"]),
+                "|U_{#tau4}|^{2} = " + "{}".format(parameters["utau4"]),
+            ]
+        else:
+            null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f}".format(chi2_null_raw)
+            osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f}".format(chi2_model_raw)
+            plot_texts = [
+                null_chi2_text,
+                osc_chi2_text,
+                "#Delta m^{2} = " + "{}".format(parameters["m"]) + " eV^{2}",
+                "|U_{e4}|^{2} = " + "{}".format(parameters["ue4"]),
+                "|U_{#mu4}|^{2} = " + "{:.6f}".format(parameters["umu4"]),
+                "|U_{#tau4}|^{2} = " + "{}".format(parameters["utau4"]),
+            ]
+        # statistic = Statistics(histogram, exclude=exclude, lam=lam)
+
+        # chi2_model, model_pen = statistic.Chi2DataMC(
+        #     marginalize=useMarg,
+        #     useOsc=True,
+        #     usePseudo=usePseudo
+        # )
+        # chi2_null, null_pen = statistic.Chi2DataMC(
+        #     marginalize=useMarg,
+        #     usePseudo=usePseudo
+        # )
+
+        # if useMarg:
+        #     null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f} + {:.2f}".format(
+        #         chi2_null - null_pen, null_pen
+        #     )
+        #     osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f} + {:.2f}".format(
+        #         chi2_model - model_pen, model_pen
+        #     )
+        # else:
+        #     null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f}".format(chi2_null)
+        #     osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f}".format(chi2_model)
+
+        # plot_texts = [
+        #     null_chi2_text,
+        #     osc_chi2_text,
+        #     "#Delta m^{2} = " + "{}".format(parameters["m"]) + " eV^{2}",
+        #     "|U_{e4}|^{2} = " + "{}".format(parameters["ue4"]),
+        #     "|U_{#mu4}|^{2} = " + "{:.6f}".format(parameters["umu4"]),
+        #     "|U_{#tau4}|^{2} = " + "{}".format(parameters["utau4"]),
+        # ]
 
         h_null = histogram.GetMCHistogram()
         h_osc = histogram.GetOscillatedHistogram()
@@ -440,19 +499,24 @@ class PlottingContainer:
         header = "#splitline{%s}{%s}" % (top_text, bot_text)
         MNVPLOTTER.AddPlotLabel(header, .35, .25)
 
+
+        # # Legend in top-right corner of the top pad.
+        # # Coordinates are x1, y1, x2, y2 in normalized pad coordinates.
+        # leg = ROOT.TLegend(0.55, 0.55, 0.90, 0.90)
+        # leg.SetBorderSize(0)
+        # leg.SetFillStyle(0)
+        # leg.SetTextSize(0.022)
         leg = ROOT.TLegend(.28, .35)
+
         leg.AddEntry(h_data, "Data", "p")
 
+        # Red curve: raw/unprofiled null hypothesis.
         top_text = "Null Hypothesis"
-        if useMarg:
-            bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
-                chi2_null - null_pen, null_pen
-            )
-        else:
-            bot_text = "#chi^{{2}}={:.2f}".format(chi2_null)
+        bot_text = "#chi^{{2}}={:.2f}".format(chi2_null_raw)
         leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
         leg.AddEntry(h_null, leg_text, "l")
 
+        # Green curve: profiled null hypothesis.
         if useMarg and h_prof is not None:
             top_text = "Null Hypothesis Profiled"
             bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
@@ -461,18 +525,57 @@ class PlottingContainer:
             leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
             leg.AddEntry(h_prof, leg_text, "l")
 
+        # Blue curve: oscillated model.
         top_text = "Best Osc. Fit"
         if useMarg:
             bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
                 chi2_model - model_pen, model_pen
             )
         else:
-            bot_text = "#chi^{{2}}={:.2f}".format(chi2_model)
+            bot_text = "#chi^{{2}}={:.2f}".format(chi2_model_raw)
 
         leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
         leg.AddEntry(h_osc, leg_text, "l")
 
         leg.Draw()
+        # leg = ROOT.TLegend(.28, .35)
+        # # # Legend in top-right corner of the top pad
+        # # leg = ROOT.TLegend(0.55, 0.6, 0.9, 0.9)
+        # # leg.SetBorderSize(0)
+        # # leg.SetFillStyle(0)
+        # # leg.SetTextSize(0.028)
+        # leg.AddEntry(h_data, "Data", "p")
+
+        # top_text = "Null Hypothesis"
+        # if useMarg:
+        #     bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
+        #         chi2_null - null_pen, null_pen
+        #     )
+        # else:
+        #     bot_text = "#chi^{{2}}={:.2f}".format(chi2_null)
+        # leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
+        # leg.AddEntry(h_null, leg_text, "l")
+
+        # if useMarg and h_prof is not None:
+        #     top_text = "Null Hypothesis Profiled"
+        #     bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
+        #         chi2_null - null_pen, null_pen
+        #     )
+        #     leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
+        #     leg.AddEntry(h_prof, leg_text, "l")
+
+        # top_text = "Best Osc. Fit"
+        # if useMarg:
+        #     bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
+        #         chi2_model - model_pen, model_pen
+        #     )
+        # else:
+        #     bot_text = "#chi^{{2}}={:.2f}".format(chi2_model)
+
+        # leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
+        # leg.AddEntry(h_osc, leg_text, "l")
+
+        # leg.Draw()
 
         nullRatio = h_data.Clone()
         oscRatio = h_osc.Clone()

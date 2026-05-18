@@ -14,7 +14,7 @@ import argparse
 ccnueroot = os.environ.get('CCNUEROOT')
 
 import math
-import psutil
+# import psutil
 import time
 from array import array
 
@@ -45,29 +45,45 @@ ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 if __name__ == "__main__":
 
-    filename = "rootfiles/NuE_stitched_hists.root"
+    # filename = "rootfiles/NuE_stitched_hists.root"
+    filename = "rootfiles/NuE_stitched_hists_yesCCnue_noRatio.root"
+    # filename = "/exp/minerva/data/users/qvuong/surfaces/NuE_stitched_hists.root"
     file_path = "{}/oscillations/{}".format(ccnueroot, filename)
 
     lambda_value = getattr(AnalysisConfig, "lambdaValue", 1)
     exclude_samples = getattr(AnalysisConfig, "exclude", [])
+    profileFlux = getattr(AnalysisConfig, "profileFlux", False)
+
+    print("\n===== fitData setup =====")
+    print("profileFlux =", profileFlux)
+    print("lambda      =", lambda_value)
+    print("exclude     =", exclude_samples)
 
     sample_histogram = StitchedHistogram("sample")
     sample_histogram.Load(file_path)
 
-    stat = Statistics(sample_histogram, lam=lambda_value, exclude=exclude_samples)
-    chi2_null, penalty = stat.Chi2DataMC(marginalize=False)
-    print("null chi2: {:.3f}".format(chi2_null))
+    print("Loaded sample_mc nbins =", sample_histogram.GetMCHistogram().GetNbinsX())
+    print("Loaded sample_data nbins =", sample_histogram.GetDataHistogram().GetNbinsX())
+    print("Loaded sample_mc integral =", sample_histogram.GetMCHistogram().Integral())
+    print("Loaded sample_data integral =", sample_histogram.GetDataHistogram().Integral())
 
-    # fitter = OscillationFitter(sample_histogram, lam=lambda_value, exclude=exclude_samples)
+    stat = Statistics(sample_histogram, lam=lambda_value, exclude=exclude_samples)
+
+    chi2_null, penalty = stat.Chi2DataMC(marginalize=profileFlux)
+    print("null chi2: {:.3f}  penalty: {:.3f}".format(chi2_null, penalty))
+
     fitter = OscillationFitter(
         sample_histogram,
         lam=lambda_value,
         exclude=exclude_samples,
-        marginalize_flux=False,
+        marginalize_flux=profileFlux,
     )
+
     chi2_fit, res = fitter.DoFit()
 
-    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(chi2_null - chi2_fit, chi2_null, chi2_fit))
+    print("Data fit: delta chi2 = {:.3f} = {:.3f} - {:.3f}".format(
+        chi2_null - chi2_fit, chi2_null, chi2_fit
+    ))
     print("Best fit params:")
     print("   delta m^2 = {:.3f} eV^2 +- {:.4f}".format(res["m"], 0))
     print("   U_e4^2    = {:.3f}      +- {:.4f}".format(res["ue4"], 0))
@@ -81,10 +97,9 @@ if __name__ == "__main__":
     plotter.SetExclude(exclude_samples)
     plotter.SetLambda(lambda_value)
 
-    # plotter.PlotOscillationEffects(res, AnalysisConfig.ntuple_tag, plotSamples=False)
     plotter.PlotOscillationEffects(
         res,
         AnalysisConfig.ntuple_tag,
-        useMarg=False,
+        useMarg=profileFlux,
         plotSamples=False
     )

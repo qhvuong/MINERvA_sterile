@@ -128,10 +128,49 @@ class FluxFitter():
 
         sliceInds = GetSliceIndices("HIST_CONFIG.json",self.exclude,self.hist.keys)
 
+        # print("\n===== FluxFitter profiling diagnostic =====")
+        # print("  exclude passed to FluxFitter =", self.exclude)
+        # print("  total stitched bins          =", self.hist.GetMCHistogram().GetNbinsX())
+        # print("  bins used for flux solve     =", len(sliceInds))
+
+        # try:
+        #     import json
+        #     with open("HIST_CONFIG.json", "r") as f:
+        #         hist_config = json.load(f)
+
+        #     print("  samples available in HIST_CONFIG:")
+        #     for key in self.hist.keys:
+        #         if key not in hist_config:
+        #             print("    {:25s}  not in HIST_CONFIG".format(key))
+        #             continue
+
+        #         # Handle a few likely config formats.
+        #         cfg = hist_config[key]
+        #         if isinstance(cfg, dict):
+        #             start = cfg.get("start", cfg.get("bin_start", cfg.get("first", None)))
+        #             end   = cfg.get("end",   cfg.get("bin_end",   cfg.get("last", None)))
+        #         else:
+        #             start, end = None, None
+
+        #         print("    {:25s}  config = {}".format(key, cfg))
+
+        #     print("  selected global bin indices for profiling:")
+        #     print("   ", sliceInds)
+
+        # except Exception as e:
+        #     print("  Could not print HIST_CONFIG details:", e)
+
         data = slicer(data,sliceInds)
         mc   = slicer(mc,sliceInds)
         A    = slicer(A,sliceInds,axis=1)
         V    = slicer(invCov,sliceInds)
+
+        # print("\n===== FluxFitter sliced arrays =====")
+        # print("  sliced data bins =", len(data))
+        # print("  sliced mc bins   =", len(mc))
+        # print("  sliced A shape   =", A.shape)
+        # print("  sliced V shape   =", V.shape)
+
         C = data - mc
         I = np.identity(len(universes))
 
@@ -212,12 +251,29 @@ class Statistics():
         invCov = self.hist.GetInverseCovarianceMatrix(sansFlux=False)
         penalty = 0
 
+        # print("\n===== Chi2DataMC diagnostic =====")
+        # print("  marginalize =", marginalize)
+        # print("  useOsc      =", useOsc)
+        # print("  usePseudo   =", usePseudo)
+        # print("  exclude     =", self.exclude)
+        # print("  full data bins used in final chi2 =", len(data))
+        # print("  full mc bins used in final chi2   =", len(mc))
+        # print("  invCov shape before profiling     =", invCov.shape)
+
         # Do we want to marginalize over the flux systematic before calculating chi2
         if marginalize:
             fluxFitter = FluxFitter(self.hist,self.exclude,self.lam,usePseudo,useOsc)
             oldMc = mc
             mc,penalty = fluxFitter.MarginalizeFlux()
             invCov = self.hist.GetInverseCovarianceMatrix(sansFlux=True)
+
+            # print("\n===== Chi2DataMC after flux profiling =====")
+            # print("  final chi2 still uses bins =", len(data))
+            # print("  profiled mc bins           =", len(mc))
+            # print("  sans-flux invCov shape     =", invCov.shape)
+            # print("  flux penalty               =", penalty)
+            # print("  total MC shift             =", np.sum(mc - oldMc))
+            # print("  max abs MC shift           =", np.max(np.abs(mc - oldMc)))
 
             if useOsc:
                 self.oscFluxFitter = fluxFitter
@@ -227,6 +283,11 @@ class Statistics():
         # ----- Calculate chi2 value ----= #
         diff = data - mc
         chi2 = diff.T @ invCov @ diff + penalty # @ is numpy efficient matrix multiplication
+
+        # print("\n===== Final chi2 diagnostic =====")
+        # print("  diff bins used in final chi2 =", len(diff))
+        # print("  chi2 without/with penalty    =", chi2 - penalty, "+", penalty)
+        # print("  final chi2                  =", chi2)
 
         if abs(chi2) > 1e30:
             logging.error("chi2 has invalid value: {}".format(chi2))

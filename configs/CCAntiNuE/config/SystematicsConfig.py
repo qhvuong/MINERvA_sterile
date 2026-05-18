@@ -27,13 +27,12 @@ MASS_UNCERTAINTY = 0.014  # = 1.4% (it's fractional).  Laura (Doc7615) says she 
 EM_ENERGY_SCALE_SHIFT_ECAL = -0.058 # downward 5.8%
 
 # mc electrino enery scale shift:
-ELECTRON_ENERGY_SCALE = 0.1 # 1% effect from pi0 mass
+ELECTRON_ENERGY_SCALE = 0.01 # 1% effect from pi0 mass
 
 # EM scale uncertainty in ECAL,HCAL, quoted from nu+e paper
 EM_ENERGY_SCALE_UNCERTAINTY = {
     "ECAL": 0.015,
-    "HCAL"   : 0.05,
-    "Tracker": 0.02
+    "HCAL"   : 0.05
 }
 
 BEAM_ANGLE = math.radians(-3.3)
@@ -237,25 +236,56 @@ GEANT_PARTICLES = [
 
 ################################# Error summary plot config ############################
 
+# DETECTOR_RESPONSE_ERROR_GROUPS = {
+#     "Angular resolution": ["eltheta",],
+#     "Beam Angle": ["beam_angle","BeamAngleX","BeamAngleY","BeamAngleY"],
+#     "EM energy scale": ["elE_ECAL","elE_HCAL",""],
+#     "Birk's Constant" : ["birks"],
+#     "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
+#     "Tracking Efficiency":["Proton_TrackEff"],
+#     "Leakage Estimation" : ["Leakage_Uncertainty"],
+#     "Target Mass" : ["Target_Mass","Target_Mass_CH"]
+# }
+
+# MINERVA_TUNNING_ERROR_GROUPS = {
+#     "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
+#     "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
+#     "Low Q2 Pion": ["LowQ2Pi"],
+#     "FSI bugfix" : ["fsi_weight"],
+#     "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
+#     "MK model" : ["MK_model"],
+# }
+
 DETECTOR_RESPONSE_ERROR_GROUPS = {
-    "Angular resolution": ["eltheta",],
-    "Beam Angle": ["beam_angle","BeamAngleX","BeamAngleY","BeamAngleY"],
-    "EM energy scale": ["elE_ECAL","elE_HCAL",""],
-    "Birk's Constant" : ["birks"],
-    "Particle Response":["response_"+i for i in RESPONSE_BRANCHES],
+    "Angular resolution": ["eltheta"],
+    "Beam Angle": ["beam_angle"],
+
+    # EM calorimetric energy scale pieces
+    "EM energy scale": ["elE_ECAL", "elE_HCAL"],
+
+    # Global electron reconstructed energy/momentum scale
+    "Electron energy scale": ["electron_scale"],
+
+    "Birk's Constant": ["birks"],
+    "Particle Response": ["response_" + i for i in RESPONSE_BRANCHES],
     "Tracking Efficiency":["Proton_TrackEff"],
-    "Leakage Estimation" : ["Leakage_Uncertainty"],
-    "Target Mass" : ["Target_Mass","Target_Mass_CH"]
+    "Leakage Estimation": ["Leakage_Uncertainty"],
+    "Target Mass": ["Target_Mass_CH"],
 }
 
 MINERVA_TUNNING_ERROR_GROUPS = {
     "RPA" : ["RPA_"+i for i in RPA_UNIVERSES],
     "Low Recoil 2p2h Tune" : ["Low_Recoil_2p2h_Tune"],
-    "Low Q2 Pion": ["LowQ2Pi"],
+    # "Low Q2 Pion": ["LowQ2Pi"],
     "FSI bugfix" : ["fsi_weight"],
     "SuSA 2p2h" : ["SuSA_Valencia_Weight"],
     "MK model" : ["MK_model"],
 }
+
+LOWQ2PI_ERROR_GROUP = {
+    "Low Q2 Pion": ["LowQ2Pi"],
+}
+
 
 MINERVA_TUNNING_ERROR_GROUPS2 = {
     "MK model" : ["MK_model"],

@@ -28,8 +28,7 @@ EM_ENERGY_SCALE_SHIFT_ECAL = -0.058 # downward 5.8%
 # EM scale uncertainty in ECAL,HCAL, quoted from nu+e paper
 EM_ENERGY_SCALE_UNCERTAINTY = {
     "ECAL"   : 0.015,
-    "HCAL"   : 0.05,
-    "Tracker": 0.02
+    "HCAL"   : 0.05
 }
 
 BEAM_ANGLE = math.radians(-3.3)

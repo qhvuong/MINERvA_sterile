@@ -89,6 +89,7 @@ def submitJob(tupleName):
   cmd = "jobsub_submit -c has_avx2==True --group=minerva --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % (
       memory, outdir_tarball, outdir_hists, outdir_logs, njobs, expected_lifetime, os.environ["PWD"], wrapper_name
   )
+  print("[GRID_JOBSUB_CMD] %s" % cmd)
   os.system(cmd)
 
 # def submitJob( tupleName):
@@ -144,12 +145,29 @@ def submitJob(tupleName):
 if __name__ == '__main__':
   PNFS_switch = gridargs.PNFS_switch
   processingID = '%s_%s-%s' % ("CCNUE_selection", dt.date.today() , dt.datetime.today().strftime("%H%M%S") )
-  outdir_hists = "/pnfs/minerva/%s/users/%s/%s_hists" % (PNFS_switch,os.environ["USER"],processingID)
-  os.system( "mkdir -p %s" % outdir_hists )
-  outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (PNFS_switch,os.environ["USER"],processingID)
-  os.system( "mkdir -p %s" % outdir_logs )
-  os.system( "mkdir -p grid_wrappers/%s" % processingID )
-  outdir_tarball=gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/%s-%s.tar.gz" % (os.environ["USER"],processingID)
+  outdir_hists = "/pnfs/minerva/%s/users/%s/%s_hists" % (
+      PNFS_switch, os.environ["USER"], processingID
+  )
+  os.system("mkdir -p %s" % outdir_hists)
+
+  outdir_logs = "/pnfs/minerva/%s/users/%s/%s_logs" % (
+      PNFS_switch, os.environ["USER"], processingID
+  )
+  os.system("mkdir -p %s" % outdir_logs)
+
+  os.system("mkdir -p grid_wrappers/%s" % processingID)
+
+  outdir_tarball = gridargs.tarball if gridargs.tarball else "/pnfs/minerva/resilient/tarballs/%s-%s.tar.gz" % (
+      os.environ["USER"], processingID
+  )
+
+  print("==================================================")
+  print("[GRID_PROCESSING_ID] %s" % processingID)
+  print("[GRID_OUTPUT_HISTS] %s" % outdir_hists)
+  print("[GRID_OUTPUT_LOGS] %s" % outdir_logs)
+  print("[GRID_TARBALL] %s" % outdir_tarball)
+  print("==================================================")
+
   # tarball_dir = "/pnfs/minerva/scratch/users/%s/tarballs" % os.environ["USER"]
   # os.system("mkdir -p %s" % tarball_dir)
   # outdir_tarball = gridargs.tarball if gridargs.tarball else "%s/%s-%s.tar.gz" % (tarball_dir, os.environ["USER"], processingID)

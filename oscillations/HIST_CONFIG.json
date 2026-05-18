@@ -1,18 +1,22 @@
 {
-    "fhc_nue_selection": {
+    "fhc_elastic": {
         "start": 0,
-        "end": 11
+        "end": 3
+    },
+    "fhc_nue_selection": {
+        "start": 4,
+        "end": 15
     },
     "rhc_nue_selection": {
-        "start": 12,
-        "end": 23
+        "start": 16,
+        "end": 27
     },
     "fhc_numu_selection": {
-        "start": 24,
-        "end": 35
+        "start": 28,
+        "end": 39
     },
     "rhc_numu_selection": {
-        "start": 36,
-        "end": 47
+        "start": 40,
+        "end": 51
     }
 }

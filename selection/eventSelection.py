@@ -142,7 +142,9 @@ def prepareTruthPlots(universes):
     for entry in HISTS_TO_MAKE:
         if not (isinstance(entry,str) and entry.startswith("True Signal")):
             continue
-        settings = {"key":entry,"region":"Signal","mc":True}
+        # settings = {"key":entry,"region":"Signal","mc":True}
+        # This is for producing inclusive true E vs true L. Use the previous one for original flow
+        settings = {"key":entry,"region":["Signal"],"mc":True}
         plots.extend(MakePlotProcessors(**settings))
 
     for entry in plots:
@@ -187,9 +189,9 @@ if __name__ == "__main__":
             print("selecting truth")
             plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
             # print("DEBUG: finished truth loop")
-        if Reco :
-            print("selecting reco")
-            plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
-            # print("DEBUG: finished reco loop")
+        # if Reco :
+        #     print("selecting reco")
+        #     plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
+        #     # print("DEBUG: finished reco loop")
         output_file.Close()
         print("selection is done for ", st, AnalysisConfig.playlist)

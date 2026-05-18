@@ -612,7 +612,7 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.New_True_L_Over_E() * event.mc_incomingE * 1e-3],
         "tags": truth_tags
     },
-    "True Energy vs Neutrino Length Travelled":
+    "True Signal True Energy vs Neutrino Length Travelled":
     {
         "name" : "ETrue_Length",
 

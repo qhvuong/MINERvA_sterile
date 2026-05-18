@@ -33,7 +33,6 @@ ELECTRON_ENERGY_SCALE = 0.01 # 1% effect from pi0 mass
 EM_ENERGY_SCALE_UNCERTAINTY = {
     "ECAL": 0.015,
     "HCAL"   : 0.05,
-    "Tracker": 0.02
 }
 
 BEAM_ANGLE = math.radians(-3.3)
@@ -252,7 +251,7 @@ DETECTOR_RESPONSE_ERROR_GROUPS = {
     "Beam Angle": ["beam_angle"],
 
     # EM calorimetric energy scale pieces
-    "EM energy scale": ["elE_ECAL", "elE_HCAL", "elE_Tracker"],
+    "EM energy scale": ["elE_ECAL", "elE_HCAL"],
 
     # Global electron reconstructed energy/momentum scale
     "Electron energy scale": ["electron_scale"],

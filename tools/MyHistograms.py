@@ -165,6 +165,88 @@ def PlotBandCVAndUniverses(hist, bandname="Flux", tag="", sync_first=False):
     print("[PlotBandCVAndUniverses] saving", outname)
     c.SaveAs(outname)
 
+def CheckBadBins1D(hist, label="", check_all_universes=True, max_bad=100):
+    if hist is None:
+        return False
+
+    found_bad = False
+    nbad = 0
+
+    def bad(x):
+        try:
+            return not math.isfinite(float(x))
+        except Exception:
+            return True
+
+    def print_bad(where, b, c, e):
+        nonlocal nbad
+
+        lo = hist.GetXaxis().GetBinLowEdge(b) if 1 <= b <= hist.GetNbinsX() else "UF/OF"
+        hi = hist.GetXaxis().GetBinUpEdge(b) if 1 <= b <= hist.GetNbinsX() else "UF/OF"
+
+        print(
+            "[EN4_BAD_BIN] "
+            "label={} hist={} where={} bin={} range=[{},{}] content={} error={}".format(
+                label, hist.GetName(), where, b, lo, hi, c, e
+            ),
+            flush=True,
+        )
+
+        nbad += 1
+
+    # Main CV
+    for b in range(0, hist.GetNbinsX() + 2):
+        c = hist.GetBinContent(b)
+        e = hist.GetBinError(b)
+
+        if bad(c) or bad(e):
+            found_bad = True
+            print_bad("MAIN_CV", b, c, e)
+
+            if nbad >= max_bad:
+                return found_bad
+
+    # Error bands
+    try:
+        band_names = list(hist.GetVertErrorBandNames())
+    except Exception:
+        band_names = []
+
+    for band_name in band_names:
+        band = hist.GetVertErrorBand(str(band_name))
+        if not band:
+            continue
+
+        # Band CV
+        for b in range(0, hist.GetNbinsX() + 2):
+            c = band.GetBinContent(b)
+            e = band.GetBinError(b)
+
+            if bad(c) or bad(e):
+                found_bad = True
+                print_bad("{}_BAND_CV".format(band_name), b, c, e)
+
+                if nbad >= max_bad:
+                    return found_bad
+
+        # Universes
+        if check_all_universes:
+            for iu in range(band.GetNHists()):
+                hu = band.GetHist(iu)
+
+                for b in range(0, hu.GetNbinsX() + 2):
+                    c = hu.GetBinContent(b)
+                    e = hu.GetBinError(b)
+
+                    if bad(c) or bad(e):
+                        found_bad = True
+                        print_bad("{}_UNIV_{}".format(band_name, iu), b, c, e)
+
+                        if nbad >= max_bad:
+                            return found_bad
+
+    return found_bad
+
 class HistWrapper1D(HistWrapper):
     def __init__(self,title,bins):
         # Note: bins is an array of lower edges of each bin
@@ -189,36 +271,28 @@ class HistWrapper1D(HistWrapper):
         clone.eventToUnivMap = {}
         return clone
 
+    # def Write(self):
+    #     if not hasattr(self, "hist") or self.hist is None:
+    #         print("[WARNING] HistWrapper1D.Write called but self.hist is missing", flush=True)
+    #         return
+
+    #     if self.hist.GetName() == "EN4":
+    #         CheckBadBins1D(self.hist, "BEFORE_SYNC", check_all_universes=True, max_bad=20)
+
+    #     self.SyncCVHistos()
+
+    #     if self.hist.GetName() == "EN4":
+    #         CheckBadBins1D(self.hist, "AFTER_SYNC", check_all_universes=True, max_bad=20)
+
+    #     self.hist.Write()
+    #     del self.hist
     def Write(self):
         if not hasattr(self, "hist") or self.hist is None:
             print("[WARNING] HistWrapper1D.Write called but self.hist is missing")
             return
-
-        # # Limit to the key histogram first, otherwise output will be huge.
-        if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
-        # if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
-            DebugFluxBandCV(self.hist, "BEFORE SyncCVHistos")
-            # # plot BEFORE sync: band CV will likely be zero/stale
-            # PlotBandCVAndUniverses(self.hist, "Flux", "beforeSync", sync_first=False)
-
         self.SyncCVHistos()
-
-        if self.hist.GetName() in ["EN4", "EN4_CCNuEQE", "EN4_CCNuEDelta", "EN4_NCPi0"]:
-        # if self.hist.GetName() in ["Eel", "Eel_NuEElasticMu", "Eel_NuEElasticE", "Eel_NuEElasticOther"]:
-            DebugFluxBandCV(self.hist, "AFTER SyncCVHistos")
-            # # plot AFTER sync: band CV should match parent/main CV
-            # PlotBandCVAndUniverses(self.hist, "Flux", "afterSync", sync_first=False)
-
         self.hist.Write()
-        del self.hist
-
-    # def Write(self):
-    #     if not hasattr(self, "hist") or self.hist is None:
-    #         print("[WARNING] HistWrapper1D.Write called but self.hist is missing")
-    #         return
-    #     self.SyncCVHistos()
-    #     self.hist.Write()
-    #     del self.hist   # keep disabled for diagnostic
+        del self.hist   # keep disabled for diagnostic
 
 class HistWrapper2D(HistWrapper):
     def __init__(self,title,Xbins,Ybins):
@@ -297,6 +371,48 @@ class MnvResponseWrapper(object):
         self.truth_hist.Write()
         self.migration_hist.Write()
 
+
+
+def _is_bad_number(x):
+    try:
+        return not math.isfinite(float(x))
+    except Exception:
+        return True
+
+
+def _safe_existing_attr(obj, attr, default="NA"):
+    """
+    Only read Python attributes already stored on the object.
+    This avoids triggering CVUniverse dynamic branch lookup.
+    """
+    try:
+        return object.__getattribute__(obj, "__dict__").get(attr, default)
+    except BaseException:
+        return default
+
+
+def _debug_universe_context(universe):
+    print("  universe type =", type(universe))
+    print("  universe str  =", str(universe))
+
+    # This requires adding: universe._debug_entry = counter
+    # right after universe.SetEntry(counter) in eventSelection.py.
+    print("  debug entry   =", _safe_existing_attr(universe, "_debug_entry"))
+
+    clf = _safe_existing_attr(universe, "classifier", None)
+    if clf is not None and clf != "NA":
+        print("  side_band     =", _safe_existing_attr(clf, "side_band"))
+        print("  truth_class   =", _safe_existing_attr(clf, "truth_class"))
+        print("  is_signal     =", _safe_existing_attr(clf, "is_true_signal"))
+
+    kc = _safe_existing_attr(universe, "kin_cal", None)
+    if kc is not None and kc != "NA":
+        print("  reco_E_lep    =", _safe_existing_attr(kc, "reco_E_lep"))
+        print("  reco_visE     =", _safe_existing_attr(kc, "reco_visE"))
+        print("  reco_E_nu_cal =", _safe_existing_attr(kc, "reco_E_nu_cal"))
+
+EN4_BAD_FILL_PRINT_LIMIT = 20
+EN4_BAD_FILL_PRINT_COUNT = 0
 
 class PlotProcessor():
     def __init__(self,name,title,binning,value_getter = None, cuts = None, weight_function = None,**kwargs):
@@ -452,6 +568,147 @@ class PlotProcessor():
     #     else:
     #         self.FillHist(universe,value,wgt)
 
+
+    # def FillHist(self, universe, value, wgt):
+    #     global EN4_BAD_FILL_PRINT_COUNT
+
+    #     if value.count(None) != 0:
+    #         return
+
+    #     name = self.histwrapper.name
+    #     args = value + [wgt]
+
+    #     # Only debug inclusive EN4.
+    #     debug_en4 = (name == "EN4")
+
+    #     if not debug_en4:
+    #         self.histwrapper.FillUniverse(universe, *args)
+    #         return
+
+    #     h = self.histwrapper.hist
+
+    #     try:
+    #         x = float(value[0])
+    #         b = h.FindBin(x)
+    #     except Exception:
+    #         b = None
+
+    #     bad_input = any(_is_bad_number(v) for v in value) or _is_bad_number(wgt)
+
+    #     before_c = h.GetBinContent(b) if b is not None else "NA"
+    #     before_e = h.GetBinError(b) if b is not None else "NA"
+
+    #     # Fill exactly once.
+    #     self.histwrapper.FillUniverse(universe, *args)
+
+    #     after_c = h.GetBinContent(b) if b is not None else "NA"
+    #     after_e = h.GetBinError(b) if b is not None else "NA"
+
+    #     made_main_bad = (
+    #         b is not None
+    #         and (
+    #             not math.isfinite(after_c)
+    #             or not math.isfinite(after_e)
+    #         )
+    #     )
+
+    #     bad_band_entries = []
+
+    #     if b is not None:
+    #         for bandname in h.GetVertErrorBandNames():
+    #             band = h.GetVertErrorBand(str(bandname))
+    #             if not band:
+    #                 continue
+
+    #             # Band CV at touched bin.
+    #             bc = band.GetBinContent(b)
+    #             be = band.GetBinError(b)
+
+    #             if not math.isfinite(bc) or not math.isfinite(be):
+    #                 bad_band_entries.append(
+    #                     ("BAND_CV", str(bandname), None, b, bc, be)
+    #                 )
+
+    #             # Universes at touched bin.
+    #             for iu in range(band.GetNHists()):
+    #                 hu = band.GetHist(iu)
+    #                 uc = hu.GetBinContent(b)
+    #                 ue = hu.GetBinError(b)
+
+    #                 if not math.isfinite(uc) or not math.isfinite(ue):
+    #                     bad_band_entries.append(
+    #                         ("UNIVERSE", str(bandname), iu, b, uc, ue)
+    #                     )
+
+    #     if not (bad_input or made_main_bad or bad_band_entries):
+    #         return
+
+    #     # Print detailed standard-weight breakdown only once, for the first bad input weight.
+    #     # This should tell us whether genie/flux/2p2h/rpa/lowq2pi/geant/minos/coh is nan.
+    #     if bad_input and EN4_BAD_FILL_PRINT_COUNT == 0:
+    #         try:
+    #             universe.DebugStandardWeightPieces("EN4_BAD_WEIGHT")
+    #         except Exception as e:
+    #             print("[EN4_BAD_WEIGHT_PIECES_ERROR] {}".format(e), flush=True)
+
+    #     # Stop flooding after N bad-fill reports.
+    #     if EN4_BAD_FILL_PRINT_COUNT >= EN4_BAD_FILL_PRINT_LIMIT:
+    #         return
+
+    #     EN4_BAD_FILL_PRINT_COUNT += 1
+
+    #     dbg_entry = _safe_existing_attr(universe, "_debug_entry")
+    #     univ_name = str(universe)
+
+    #     base = (
+    #         "[EN4_BAD_FILL] "
+    #         "n={n}/{limit} entry={entry} bin={bin} value={value} weight={weight} "
+    #         "before=({bc},{be}) after=({ac},{ae}) bad_input={bad_input} "
+    #         "universe='{univ}'"
+    #     ).format(
+    #         n=EN4_BAD_FILL_PRINT_COUNT,
+    #         limit=EN4_BAD_FILL_PRINT_LIMIT,
+    #         entry=dbg_entry,
+    #         bin=b,
+    #         value=value,
+    #         weight=wgt,
+    #         bc=before_c,
+    #         be=before_e,
+    #         ac=after_c,
+    #         ae=after_e,
+    #         bad_input=bad_input,
+    #         univ=univ_name,
+    #     )
+
+    #     if made_main_bad:
+    #         print(base + " where=MAIN_CV", flush=True)
+
+    #     # Print only first few bad band entries for this fill.
+    #     for kind, bandname, iu, ibin, c, e in bad_band_entries[:10]:
+    #         if kind == "BAND_CV":
+    #             print(
+    #                 base
+    #                 + " where=BAND_CV band={} content={} error={}".format(
+    #                     bandname, c, e
+    #                 ),
+    #                 flush=True,
+    #             )
+    #         else:
+    #             print(
+    #                 base
+    #                 + " where=UNIVERSE band={} univ={} content={} error={}".format(
+    #                     bandname, iu, c, e
+    #                 ),
+    #                 flush=True,
+    #             )
+
+    #     if len(bad_band_entries) > 10:
+    #         print(
+    #             "[EN4_BAD_FILL_MORE] entry={} bin={} suppressed_extra_bad_entries={}".format(
+    #                 dbg_entry, b, len(bad_band_entries) - 10
+    #             ),
+    #             flush=True,
+    #         )
     def FillHist(self,universe,value,wgt):
         if value.count(None) == 0:
             args = value+[wgt]

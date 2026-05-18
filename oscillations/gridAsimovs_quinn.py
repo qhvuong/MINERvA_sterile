@@ -120,10 +120,10 @@ if __name__ == '__main__':
     profile_tag = "defaultFluxMode"
 
   # Start with 1 for smoke test. Change to 400 for production.
-  njobs = 1
+  njobs = 500
   # njobs = 400
 
-  expected_lifetime = 2
+  expected_lifetime = 3
 
   processingID = '%s_%s_%s-%s' % (
     "Asimovs_sansNuE",

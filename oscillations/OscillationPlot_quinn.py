@@ -664,11 +664,11 @@ def LoadMergedSurfaces(input_dir, mode, use_fc=True):
 
     results = None
     if use_fc:
-        fc_file = os.path.join(input_dir, "asimov_deltachi2s.npy")
+        fc_file = os.path.join(input_dir, "asimov_deltachi2s_{}.npy".format(mode))
         if not os.path.isfile(fc_file):
             raise IOError(
                 "Missing FC toy file: {}. "
-                "Run MergeAsimovs first, or use --no-fc for fixed chi2 contours.".format(fc_file)
+                "Run MergeAsimovs first, or use --plot-no-fc for fixed chi2/surface plots.".format(fc_file)
             )
         results = np.load(fc_file)
         print("  FC results shape       =", results.shape)
@@ -739,21 +739,84 @@ def PlotOneSurface(surface3d, panel="dm2", index=0, name="surface.png",
     cbar.set_label(r"$\Delta\chi^2$", fontsize=14)
 
     # Contour lines
-    good_levels = [lev for lev in levels if lev > np.nanmin(z) and lev < np.nanmax(z)]
-    if len(good_levels) > 0:
-        cs = ax.contour(X, Y, z, levels=good_levels)
-        ax.clabel(cs, inline=True, fontsize=9, fmt="%.2g")
-    else:
-        print("  No contour levels inside z range.")
+    if levels is not None:
+        good_levels = [lev for lev in levels if lev > np.nanmin(z) and lev < np.nanmax(z)]
+        if len(good_levels) > 0:
+            print("  Drawing contour levels:", good_levels)
+            cs = ax.contour(X, Y, z, levels=good_levels, colors="white", linewidths=1.2)
+            ax.clabel(cs, fmt="%.2f", fontsize=8)
+        else:
+            print("  No contour levels inside z range.")
 
     os.makedirs(os.path.dirname(name), exist_ok=True)
     fig.tight_layout()
     fig.savefig(name)
     plt.close(fig)
 
+def PlotFCContours(data_chi2s, asimov_chi2s, results, mode, title):
+    """
+    Make the original-style FC contour panel plots.
+
+    data_chi2s should already be data chi2 - best_fit.
+    asimov_chi2s is the null/Asimov chi2 surface.
+    results is the FC toy dchi2 distribution.
+    """
+
+    limits = [95]
+
+    pplot = PanelPlot(title, "ue4", "dm2", "umu4")
+
+    stereo = ExperimentContour("STEREO 95% Excl.", "exp_results/stereo_2Dexcl.csv", False, "black", h_index=0)
+    minos = ExperimentContour("MINOS 90% Excl.", "exp_results/MINOS.csv", False, "black", h_index=1)
+    prospect = ExperimentContour("PROSPECT 95% Excl.", "exp_results/prospect.csv", False, "blue", h_index=2)
+    katrin = ExperimentContour("KATRIN 95% Excl.", "exp_results/katrin_noMass.csv", False, "purple", h_index=3)
+    microboone = ExperimentContour("MicroBooNE 95% Excl.", "exp_results/microboone.csv", False, "teal", h_index=4)
+    neutrino4 = ExperimentContour(
+        "Neutrino-4 $2\sigma$ Conf.",
+        ["exp_results/n4_c1.csv", "exp_results/n4_c2.csv", "exp_results/n4_c3.csv", "exp_results/n4_c4.csv"],
+        True,
+        "pink",
+        h_index=2
+    )
+    raa = ExperimentContour("RAA 90% Allowed", "exp_results/RAA.csv", True, "gray", h_index=3)
+
+    neutrino4.SetPatch("Patch")
+    raa.SetPatch("Patch")
+
+    pplot.AddExclusions([stereo, minos, prospect, katrin, microboone])
+
+    if not fill_exclusions:
+        pplot.AddAlloweds([neutrino4, raa])
+
+    # os.makedirs("plots", exist_ok=True)
+
+    pplot.SetXaxis("ue4")
+    pplot.SetYaxis("umu4")
+    pplot.SetPanel("dm2")
+    sens_list, excl_list = GetFCSlices(data_chi2s, asimov_chi2s, results, "dm2")
+    pplot.SetName("/exp/minerva/data/users/qvuong/surfaces/plots/FC_ue4_vs_umu4_{}.png".format(mode))
+    pplot.MakePlot(excl_list, sens_list, limits)
+    pplot.Zoom()
+
+    pplot.SetXaxis("ue4")
+    pplot.SetYaxis("dm2")
+    pplot.SetPanel("umu4")
+    sens_list, excl_list = GetFCSlices(data_chi2s, asimov_chi2s, results, "umu4")
+    pplot.SetName("/exp/minerva/data/users/qvuong/surfaces/plots/FC_ue4_vs_dm2_{}.png".format(mode))
+    pplot.MakePlot(excl_list, sens_list, limits)
+    pplot.Zoom()
+
+    pplot.SetXaxis("umu4")
+    pplot.SetYaxis("dm2")
+    pplot.SetPanel("ue4")
+    sens_list, excl_list = GetFCSlices(data_chi2s, asimov_chi2s, results, "ue4")
+    pplot.SetName("/exp/minerva/data/users/qvuong/surfaces/plots/FC_umu4_vs_dm2_{}.png".format(mode))
+    pplot.MakePlot(excl_list, sens_list, limits)
+    pplot.Zoom()
+
 if __name__ == "__main__":
 
-    title = 'MINERvA Sterile Neutrino Search'
+    title = "MINERvA Sterile Neutrino Search"
     if _plot_args.plot_mode == "noFluxProfile":
         title += "\nNo flux profiling"
     elif _plot_args.plot_mode == "profiledFlux":
@@ -765,7 +828,25 @@ if __name__ == "__main__":
         use_fc=_plot_args.plot_use_fc
     )
 
-    outdir = "plots/surfaces_{}".format(_plot_args.plot_mode)
+    fc_levels = None
+    if _plot_args.plot_use_fc and results is not None:
+        fc68 = np.percentile(results, 68)
+        fc90 = np.percentile(results, 90)
+        fc95 = np.percentile(results, 95)
+        fc99 = np.percentile(results, 99)
+
+        fc_levels = [fc68, fc90, fc95, fc99]
+
+        print("\nFC critical dchi2 levels:")
+        print("  68% =", fc68)
+        print("  90% =", fc90)
+        print("  95% =", fc95)
+        print("  99% =", fc99)
+
+    # --------------------------------------------------
+    # 1. Raw surface plots
+    # --------------------------------------------------
+    outdir = "/exp/minerva/data/users/qvuong/surfaces/plots/surfaces_{}".format(_plot_args.plot_mode)
     os.makedirs(outdir, exist_ok=True)
 
     for i in range(data_chi2s.shape[0]):
@@ -776,7 +857,8 @@ if __name__ == "__main__":
             panel="dm2",
             index=i,
             name="{}/data_surface_ue4_vs_umu4_dm2idx{:03d}.png".format(outdir, i),
-            title="Data surface, {}: dm2 = {:.4g}".format(_plot_args.plot_mode, dm2_val)
+            title="Data surface, {}: dm2 = {:.4g}".format(_plot_args.plot_mode, dm2_val),
+            levels=fc_levels
         )
 
         PlotOneSurface(
@@ -785,7 +867,21 @@ if __name__ == "__main__":
             index=i,
             name="{}/asimov_surface_ue4_vs_umu4_dm2idx{:03d}.png".format(outdir, i),
             title="Asimov surface, {}: dm2 = {:.4g}".format(_plot_args.plot_mode, dm2_val),
-            levels=[0.01, 0.05, 0.1, 0.15, 0.5, 1.0, 2.71, 3.84]
+            # levels=[0.01, 0.05, 0.1, 0.15, 0.5, 1.0, 2.71, 3.84]
+            # levels=[4.44, 7.92, 9.42, 14.04]
+            levels=fc_levels
+        )
+
+    # --------------------------------------------------
+    # 2. FC contour plots
+    # --------------------------------------------------
+    if _plot_args.plot_use_fc:
+        PlotFCContours(
+            data_chi2s,
+            asimov_chi2s,
+            results,
+            _plot_args.plot_mode,
+            title
         )
 
 # if __name__ == "__main__":

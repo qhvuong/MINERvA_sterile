@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     # Number of toys per grid job.
     # Keep 50 as old default unless you add a config option later.
-    n_samples = 50
+    n_samples = 2
 
     # PROCESS can be None for local tests.
     process_tag = process if process is not None else "local"
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     sys_throws = ThrowSystematics(
         sample_histogram,
         throwFlux=profileFlux,
-        n_samples=1
+        n_samples=n_samples
     )
 
     experiments = ThrowPoissons(sys_throws, sample_histogram)
