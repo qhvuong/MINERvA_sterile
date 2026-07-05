@@ -1,0 +1,14 @@
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003527_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003528_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003529_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003530_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003531_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003532_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003535_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003536_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003537_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003538_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003539_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003540_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003541_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/Data/Playlist_minerva13A/MasterAnaDev_data_AnaTuple_run00003542_Playlist.root

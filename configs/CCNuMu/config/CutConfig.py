@@ -61,13 +61,13 @@ Ethetasquared_CUT = .0032
 
 SAMPLE_CUTS = {
     "Signal" : [
-        "InverseHasNoBackExitingTracks",
+        # "InverseHasNoBackExitingTracks",
         "Vertex_Z",
         "Vertex_Apothem",
-        "Etheta",
-        "Eavail",
-        "LeptonAngle",
-        "Pt",
+        # "Etheta",
+        # "Eavail",
+        # "LeptonAngle",
+        # "Pt",
 
         # Removed Cuts
         #"ZDifference",

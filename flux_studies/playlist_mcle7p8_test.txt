@@ -1,0 +1,1 @@
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/StandardMC/Playlist_minerva7/MasterAnaDev_mc_AnaTuple_run00010250_Playlist.root

@@ -512,18 +512,9 @@ class PlotProcessor():
                 self.histwrapper.FillUniverse(universe, Lk, w_base * pk)
 
     def Process(self, universe):
-
-        if all(cut(universe) for cut in self.cuts[::-1]):
-            try:
-                value = [_(universe) for _ in self.value_getter]
-            except Exception as e:
-                print(self.histwrapper.name)
-                print(("Error", e))
-                return None
-        else:
+        if not all(cut(universe) for cut in self.cuts[::-1]):
             return None
 
-        # Special handling for template-weighted drawn-L plots
         name = self.histwrapper.name
         if (
             name.startswith("drawnL_EReco_LE")
@@ -532,6 +523,13 @@ class PlotProcessor():
         ):
             self.FillHistWithLPDF(universe)
             return
+
+        try:
+            value = [_(universe) for _ in self.value_getter]
+        except Exception as e:
+            print(self.histwrapper.name)
+            print(("Error", e))
+            return None
 
         wgt = self.weight_function(universe) if self.weight_function else universe.GetWeight()
 

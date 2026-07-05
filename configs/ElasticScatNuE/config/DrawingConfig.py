@@ -1465,7 +1465,20 @@ PLOTS_TO_MAKE = [
 
     {"name":"Lepton Energy",
         "plot_type" : "stacked"},
+
     # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
+    # # {"name":"E Theta Squared",
+    # #     "plot_type" : "stacked"},
+    # # {"name":"True E Theta Squared",
+    # #     "plot_type" : "stacked"},
+
+
+
+
+
+
+    # {"name":"True Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"True Neutrino Energy",
     #     "plot_type" : "stacked"},
@@ -1473,10 +1486,7 @@ PLOTS_TO_MAKE = [
     #     "plot_type" : "stacked"},
     # {"name":"Drawn-L Neutrino Length Travelled",
     #     "plot_type" : "stacked"},
-    # # {"name":"E Theta Squared",
-    # #     "plot_type" : "stacked"},
-    # # {"name":"True E Theta Squared",
-    # #     "plot_type" : "stacked"},
+
     # {"name":"Reco Energy vs L/E",
     #    "plot_type" : "migration"},
     # {"name":"Reco Energy vs L/E",
@@ -1518,23 +1528,25 @@ PLOTS_TO_MAKE = [
     # {"name":"Drawn-L Reco Lepton Energy vs L/E from kaon parent",
     #    "plot_type" : "category_hist"},
 
+
+
+
+
+
+
+
+
+
     # {"name":"True Energy vs Neutrino Length Travelled",
     #    "plot_type" : "migration"},
     # {"name":"True Energy vs Neutrino Length Travelled",
     #    "plot_type" : "category_hist"},
-
-
-
-
-
 
 
     # {"name":"Estimator vs Front dEdX",
     #     "plot_type" : "stacked"},
 
     # {"name":"Visible Energy",
-    #     "plot_type" : "stacked"},
-    # {"name":"True Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"Front dEdX",
     #     "plot_type" : "stacked"},

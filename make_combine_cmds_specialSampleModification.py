@@ -40,7 +40,7 @@ RE_MC_TOKEN = re.compile(r'(^|[._-])mc([._-]|$)', re.IGNORECASE)
 RE_DATA_TOKEN = re.compile(r'(^|[._-])data([._-]|$)', re.IGNORECASE)
 
 def strip_p6(s: str) -> str:
-    return s[:-3] if s.endswith("_p6") else s
+    return s[:-3] if s.endswith(("_p6", "_p8")) else s
 
 def hist_dir_from_stamp(stamp: str) -> str:
     return f"/pnfs/minerva/persistent/users/qvuong/CCNUE_selection_{stamp}_hists/"

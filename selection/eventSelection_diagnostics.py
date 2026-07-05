@@ -14,7 +14,7 @@ import signal
 import sys
 from itertools import chain
 import math
-
+from collections import defaultdict
 #start loading my modules
 from tools import Utilities
 from config.PlotConfig import HISTS_TO_MAKE
@@ -32,11 +32,115 @@ from tools import TruthTools
 
 ROOT.TH1.AddDirectory(False)
 
+def _new_wstat():
+    return defaultdict(lambda: {
+        "n": 0,
+        "sumw": 0.0,
+        "sumw2": 0.0,
+        "maxw": 0.0,
+        "max_entry": -1,
+    })
+
+
+def _fill_wstat(stats, energy_gev, weight, entry, bin_width=0.5):
+    if energy_gev is None:
+        return
+
+    if not math.isfinite(energy_gev):
+        return
+
+    if not math.isfinite(weight):
+        print("[WSTAT_BAD_WEIGHT] entry={} E={} weight={}".format(entry, energy_gev, weight))
+        return
+
+    ibin = int(energy_gev / bin_width)
+
+    s = stats[ibin]
+    s["n"] += 1
+    s["sumw"] += weight
+    s["sumw2"] += weight * weight
+
+    if abs(weight) > abs(s["maxw"]):
+        s["maxw"] = weight
+        s["max_entry"] = entry
+
+
+def _print_wstat(stats, label, bin_width=0.5):
+    print("[WSTAT] ===== {} =====".format(label))
+
+    for ibin, s in sorted(stats.items()):
+        lo = ibin * bin_width
+        hi = lo + bin_width
+
+        sumw = s["sumw"]
+        sumw2 = s["sumw2"]
+        err = math.sqrt(sumw2) if sumw2 >= 0.0 else float("nan")
+        relerr = err / sumw if sumw != 0.0 else 0.0
+        neff = sumw * sumw / sumw2 if sumw2 > 0.0 else 0.0
+
+        print(
+            "[WSTAT] {} E=[{:.1f},{:.1f}) n={} sumw={:.8g} err={:.8g} "
+            "relerr={:.4g} neff={:.4g} maxw={:.8g} max_entry={}".format(
+                label,
+                lo,
+                hi,
+                s["n"],
+                sumw,
+                err,
+                relerr,
+                neff,
+                s["maxw"],
+                s["max_entry"],
+            )
+        )
+
+
+def _is_cv_universe(universe):
+    try:
+        return universe.ShortName() == "cv"
+    except Exception:
+        return False
+
+
+def _safe_reco_lepton_energy_gev(universe):
+    try:
+        return universe.LeptonEnergy() * 1e-3
+    except Exception:
+        return None
+
+
+def _safe_true_energy_gev(universe):
+    try:
+        return universe.mc_incomingE * 1e-3
+    except Exception:
+        return None
+
+
+def _diagnose_weight_pieces(universe, label, entry, energy_gev, weight, threshold=5.0):
+    if 5.5 <= energy_gev < 6.5:
+        if abs(weight) > threshold:
+            print(
+                "[HIGH_WEIGHT_6GEV] label={} entry={} E={:.6g} weight={:.8g}".format(
+                    label, entry, energy_gev, weight
+                )
+            )
+            try:
+                universe.DebugStandardWeightPieces(label)
+            except Exception as e:
+                print("[HIGH_WEIGHT_6GEV] DebugStandardWeightPieces failed:", e)
+
 def plotRecoKin(mc, chainwrapper, outfile):
     """ The main code of event selection """
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
     eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
     universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+    # universes = GetAllSystematicsUniverses(
+    #     chainwrapper,
+    #     not mc,
+    #     AnalysisConfig.is_pc,
+    #     AnalysisConfig.exclude_universes,
+    #     AnalysisConfig.playlist,
+    # )
 
     # cv_universe = universes.get("cv", [None])[0]
     # flux_universes = universes.get("Flux", [])
@@ -47,10 +151,11 @@ def plotRecoKin(mc, chainwrapper, outfile):
     Plots = preparePlots(universes,mc)
     nEvents = chainwrapper.GetEntries()
     debug_prints = 0
-
+    reco_trueE_wstats = _new_wstat()
+    reco_recoLepE_wstats = _new_wstat()
     print(f"Total number of events RECO: ", {nEvents})
-    if AnalysisConfig.testing and nEvents > 1000:
-        nEvents = 1000
+    if AnalysisConfig.testing and nEvents > 10000:
+        nEvents = 10000
     print("plotRecoKin, mc ",mc)
     setAlarm = AnalysisConfig.grid
     for counter in range(nEvents):
@@ -75,10 +180,45 @@ def plotRecoKin(mc, chainwrapper, outfile):
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
+            # if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+            #     for entry in Plots:
+            #         entry.Process(universe)
             if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+
+                if mc and _is_cv_universe(universe):
+                    w = universe.GetWeight()
+                    trueE = _safe_true_energy_gev(universe)
+                    recoLepE = _safe_reco_lepton_energy_gev(universe)
+
+                    _fill_wstat(reco_trueE_wstats, trueE, w, counter)
+                    _fill_wstat(reco_recoLepE_wstats, recoLepE, w, counter)
+
+                    if trueE is not None:
+                        _diagnose_weight_pieces(
+                            universe,
+                            "RECOCUT_TRUEE_6GEV",
+                            counter,
+                            trueE,
+                            w,
+                            threshold=5.0,
+                        )
+
+                    if recoLepE is not None:
+                        _diagnose_weight_pieces(
+                            universe,
+                            "RECOCUT_RECOLEPE_6GEV",
+                            counter,
+                            recoLepE,
+                            w,
+                            threshold=5.0,
+                        )
+
                 for entry in Plots:
                     entry.Process(universe)
 
+    if mc:
+        _print_wstat(reco_trueE_wstats, "RECO_SELECTED_CV_TRUE_E")
+        _print_wstat(reco_recoLepE_wstats, "RECO_SELECTED_CV_RECO_LEPTON_E")
     signal.alarm(0)
     outfile.cd()
     for entry in Plots:
@@ -89,14 +229,23 @@ def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)
     eventClassifier = EventClassifier(classifiers=["Truth"],use_kin_cuts=True, use_sideband=[])
     universes = GetAllSystematicsUniverses(chainwrapper, False)
+    # universes = GetAllSystematicsUniverses(
+    #     chainwrapper,
+    #     False,
+    #     AnalysisConfig.is_pc,
+    #     AnalysisConfig.exclude_universes,
+    #     AnalysisConfig.playlist,
+    # )
+
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
     nEvents = chainwrapper.GetEntries()
     print(f"Total number of events TRUTH: ", {nEvents})
     Plots = prepareTruthPlots(universes)
     print("plotTruthKin")
-    if AnalysisConfig.testing and nEvents > 1000:
-        nEvents = 1000
+    truth_trueE_wstats = _new_wstat()
+    if AnalysisConfig.testing and nEvents > 10000:
+        nEvents = 10000
     for counter in range(nEvents):
         #half an hour for a event, should be much more than needed unless stuck in I/O
         if counter %100000 == 0:
@@ -114,14 +263,34 @@ def plotTruthKin(chainwrapper,outfile):
                 true_before = eventClassifier.counter[1]
                 eventClassifier.Classify(universe)
 
+            # if eventClassifier.is_true_signal:
+            #     for entry in Plots:
+            #         entry.Process(universe)
             if eventClassifier.is_true_signal:
+
+                if _is_cv_universe(universe):
+                    w = universe.GetWeight()
+                    trueE = _safe_true_energy_gev(universe)
+
+                    _fill_wstat(truth_trueE_wstats, trueE, w, counter)
+
+                    if trueE is not None:
+                        _diagnose_weight_pieces(
+                            universe,
+                            "TRUTH_SIGNAL_TRUEE_6GEV",
+                            counter,
+                            trueE,
+                            w,
+                            threshold=5.0,
+                        )
+
                 for entry in Plots:
                     entry.Process(universe)
 
+    _print_wstat(truth_trueE_wstats, "TRUTH_SIGNAL_CV_TRUE_E")
     outfile.cd()
     for entry in Plots:
         entry.Finalize()
-
 def preparePlots(universes,mc):
     # make a bunch of Plot Processor, grouped by signal/sideband
     plots=set([])
@@ -138,18 +307,33 @@ def preparePlots(universes,mc):
 
     return plots
 
+
 def prepareTruthPlots(universes):
-    plots=[]
+    plots = []
     for entry in HISTS_TO_MAKE:
-        if not (isinstance(entry,str) and entry.startswith("True Signal")):
+        if not (isinstance(entry, str) and entry.startswith("True Signal")):
             continue
-        settings = {"key":entry,"region":"Signal","mc":True}
+        # Pass plot name string only: MakePlotProcessors calls TranslateSettings internally.
+        # True Signal plots must use truth_signal_tags (includes ignore_selection) in PlotLibrary.
+        settings = {"key": entry, "region": ["Signal"], "mc": True}
         plots.extend(MakePlotProcessors(**settings))
 
     for entry in plots:
         entry.AddErrorBands(universes)
 
     return plots
+# def prepareTruthPlots(universes):
+#     plots=[]
+#     for entry in HISTS_TO_MAKE:
+#         if not (isinstance(entry,str) and entry.startswith("True Signal")):
+#             continue
+#         settings = {"key":entry,"region":"Signal","mc":True}
+#         plots.extend(MakePlotProcessors(**settings))
+
+#     for entry in plots:
+#         entry.AddErrorBands(universes)
+
+#     return plots
 
 def CopyMetaTreeToOutPutFile(outfile):
     metatree = Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,"Meta",AnalysisConfig.count[0],AnalysisConfig.count[1])

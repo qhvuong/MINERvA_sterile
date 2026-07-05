@@ -621,7 +621,7 @@ PLOT_SETTINGS= {
                      PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
         "value_getter" : [lambda event: .9825+event.mc_vtx[2]/1e6 - event.mc_fr_nuParentDecVtx[2]/1e6,
                           lambda event: event.mc_incomingE/1000],
-        "tags": truth_tags   
+        "tags": truth_signal_tags
     },
     "Reco Lepton Energy vs L/E":
     {
@@ -641,7 +641,8 @@ PLOT_SETTINGS= {
 
         "title": "Drawn-L Reco Elep v.s. True L/E; True L/E (km/GeV); E_{e} GeV; NEvents",
         "binning" : [PlotConfig.NEUTRINO4_LE_BINNING,
-                     PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
+                     PlotConfig.NEUTRINO4_EE_BINNING],
+                    #  PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE],
         "value_getter" : [lambda event: event.New_True_L_Over_E(),
                           lambda event: event.kin_cal.reco_E_lep], 
         "tags": truth_tags   

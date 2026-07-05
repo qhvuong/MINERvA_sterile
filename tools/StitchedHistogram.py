@@ -76,6 +76,7 @@ class StitchedHistogram:
         self.inv_covariance_sans_flux = None
         self.covariance = None
         self.covariance_sans_flux = None
+        self.external_covariances = {}
 
         self.mc_hist = None
         self.data_hist = None
@@ -219,14 +220,149 @@ class StitchedHistogram:
             cv = np.array(self.mc_hist)[1:-1]
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
 
+    def LoadExternalCovariances(self, root_file):
+        """
+        Load any external covariance matrices stored in the stitched ROOT file.
+
+        For now this is used for the published MINERvA nu+e elastic table.
+        """
+        cov = root_file.Get("fhc_elastic_paper_covariance_matrix")
+
+        if cov:
+            cov = cov.Clone("fhc_elastic_paper_covariance_matrix_loaded")
+            self.external_covariances["fhc_elastic"] = cov
+
+            print("Loaded external covariance: fhc_elastic")
+            print("  Nrows =", cov.GetNrows())
+            print("  Ncols =", cov.GetNcols())
+        else:
+            print("No external covariance matrix found for fhc_elastic.")
+
+    def GetExternalCovarianceBinIndices(self, sample_name):
+        """
+        Return numpy indices for the bins of a sample inside the stitched histogram.
+
+        Uses HIST_CONFIG.json, which is written by TranslateBins().
+        The JSON stores zero-based start/end indices, matching numpy indexing.
+        """
+        try:
+            inds = GetSliceIndices("HIST_CONFIG.json", "", [sample_name])
+        except Exception as e:
+            print("WARNING: could not read HIST_CONFIG.json for external covariance:", e)
+            inds = []
+
+        return inds
+
+    def ApplyExternalCovariances(self, covariance, label="covariance"):
+        """
+        Replace selected blocks of the stitched covariance matrix with
+        externally supplied covariance matrices.
+
+        Important: this REPLACES the existing block, not adds to it,
+        to avoid double-counting the paper uncertainties.
+        """
+        cov_out = np.array(covariance, copy=True)
+
+        for sample_name, root_cov in self.external_covariances.items():
+            inds = self.GetExternalCovarianceBinIndices(sample_name)
+
+            if len(inds) == 0:
+                print("WARNING: no stitched bins found for external covariance sample:", sample_name)
+                continue
+
+            ext_cov = TMatrix_to_Numpy(root_cov)
+
+            if ext_cov.shape[0] != len(inds) or ext_cov.shape[1] != len(inds):
+                raise RuntimeError(
+                    "External covariance shape {} does not match stitched bins {} for sample {}".format(
+                        ext_cov.shape, len(inds), sample_name
+                    )
+                )
+
+            print("\nApplying external covariance to", label)
+            print("  sample      =", sample_name)
+            print("  global bins =", [i + 1 for i in inds])
+            print("  shape       =", ext_cov.shape)
+
+            for a, ia in enumerate(inds):
+                for b, ib in enumerate(inds):
+                    cov_out[ia, ib] = ext_cov[a, b]
+
+            print("  external covariance block:")
+            print(ext_cov)
+
+        return cov_out
+
+    def ApplyExternalCovarianceErrorsToHist(self, hist, fractional=False):
+        """
+        For plotting only.
+
+        Overwrite the displayed bin errors for bins covered by external
+        covariance matrices using sqrt(diag(cov)).
+
+        If fractional=True, set bin errors to sqrt(cov_ii)/CV_i and
+        bin contents to 1, suitable for Data/MC ratio error bands.
+        """
+        h_out = hist.Clone(hist.GetName() + "_external_cov_errors")
+        h_out.SetDirectory(0)
+
+        for sample_name, root_cov in self.external_covariances.items():
+            inds = self.GetExternalCovarianceBinIndices(sample_name)
+            if len(inds) == 0:
+                continue
+
+            cov = TMatrix_to_Numpy(root_cov)
+
+            if cov.shape[0] != len(inds):
+                raise RuntimeError(
+                    "External covariance shape {} does not match {} bins for {}".format(
+                        cov.shape, len(inds), sample_name
+                    )
+                )
+
+            for a, idx0 in enumerate(inds):
+                # numpy idx0 is zero-based, ROOT bin is one-based
+                ibin = idx0 + 1
+                sigma = np.sqrt(max(cov[a, a], 0.0))
+
+                if fractional:
+                    cv = self.mc_hist.GetBinContent(ibin)
+                    frac = sigma / cv if cv != 0 else 0.0
+                    h_out.SetBinContent(ibin, 1.0)
+                    h_out.SetBinError(ibin, frac)
+                else:
+                    h_out.SetBinError(ibin, sigma)
+
+        return h_out
+
+
     def SetCovarianceMatrices(self):
         if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
             h_test = self.data_hist.Clone()
-            h_test.Add(self.mc_hist,-1)
+            h_test.Add(self.mc_hist, -1)
 
-            covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
-            flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
+            covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True, False, False))[1:-1, 1:-1]
+            flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1, 1:-1]
             cov_sans_flux = covariance - flux_covariance
+
+            # Diagnostic: check stat/sys decomposition before external replacement
+            stat = TMatrix_to_Numpy(h_test.GetStatErrorMatrix())[1:-1, 1:-1]
+
+            stat = TMatrix_to_Numpy(h_test.GetStatErrorMatrix())[1:-1, 1:-1]
+
+            # print("\n===== covariance stat check before external replacement =====")
+            # print("trace stat      =", np.trace(stat))
+            # print("trace total     =", np.trace(covariance))
+            # print("trace sansFlux  =", np.trace(cov_sans_flux))
+            # print("trace flux      =", np.trace(flux_covariance))
+            # print("trace total-stat =", np.trace(covariance - stat))
+            # print("trace sans-stat  =", np.trace(cov_sans_flux - stat))
+            # print("trace full - sans - flux =", np.trace(covariance - cov_sans_flux - flux_covariance))
+            # print("max |full-sans-flux| =", np.max(np.abs(covariance - cov_sans_flux - flux_covariance)))
+
+            # Replace external covariance blocks, e.g. published FHC nu+e table covariance.
+            covariance = self.ApplyExternalCovariances(covariance, label="full covariance")
+            cov_sans_flux = self.ApplyExternalCovariances(cov_sans_flux, label="sans-flux covariance")
 
             self.covariance = covariance
             self.covariance_sans_flux = cov_sans_flux
@@ -235,6 +371,31 @@ class StitchedHistogram:
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
         else:
             raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
+    # def SetCovarianceMatrices(self):
+    #     if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
+    #         h_test = self.data_hist.Clone()
+    #         h_test.Add(self.mc_hist,-1)
+
+    #         covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
+    #         flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
+    #         cov_sans_flux = covariance - flux_covariance
+
+    #         # Replace external covariance blocks, e.g. published FHC nu+e table covariance.
+    #         covariance = self.ApplyExternalCovariances(covariance, label="full covariance")
+    #         cov_sans_flux = self.ApplyExternalCovariances(cov_sans_flux, label="sans-flux covariance")
+
+    #         self.covariance = covariance
+    #         self.covariance_sans_flux = cov_sans_flux
+
+    #         self.inv_covariance = np.linalg.inv(covariance)
+    #         self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
+    #         # self.covariance = covariance
+    #         # self.covariance_sans_flux = cov_sans_flux
+
+    #         # self.inv_covariance = np.linalg.inv(covariance)
+    #         # self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
+    #     else:
+    #         raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
 
     def GetInverseCovarianceMatrix(self,sansFlux=False):
         if sansFlux:
@@ -391,25 +552,96 @@ class StitchedHistogram:
             if self.keys != list(self.numu_hists.keys()):
                 raise ValueError("MC dictionary incompatable with numu hists")
 
-    def MakeRatio(self,beam):
+    def CheckRatioFluxUniverses(self, beam, ratio_hist, numu_hist, nue_hist, bins_to_check=[1, 9, 10], universes_to_check=[0, 1, 2, 10]):
+        print("\n===== CHECK RATIO FLUX UNIVERSES: {} =====".format(beam))
+
+        if not ratio_hist.HasVertErrorBand("Flux"):
+            print("ratio_hist has no Flux band")
+            return
+        if not numu_hist.HasVertErrorBand("Flux"):
+            print("numu_hist has no Flux band")
+            return
+        if not nue_hist.HasVertErrorBand("Flux"):
+            print("nue_hist has no Flux band")
+            return
+
+        ratio_band = ratio_hist.GetVertErrorBand("Flux")
+        numu_band = numu_hist.GetVertErrorBand("Flux")
+        nue_band = nue_hist.GetVertErrorBand("Flux")
+
+        print("NHists ratio =", ratio_band.GetNHists())
+        print("NHists numu  =", numu_band.GetNHists())
+        print("NHists nue   =", nue_band.GetNHists())
+
+        for b in bins_to_check:
+            cv_ratio_hist = ratio_hist.GetBinContent(b)
+            cv_numu = numu_hist.GetBinContent(b)
+            cv_nue = nue_hist.GetBinContent(b)
+            cv_ratio_manual = cv_numu / cv_nue if cv_nue != 0 else 0.0
+
+            print("\nBin", b)
+            print("  CV ratio hist   =", cv_ratio_hist)
+            print("  CV numu/nue     =", cv_ratio_manual)
+            print("  CV diff         =", cv_ratio_hist - cv_ratio_manual)
+
+            for u in universes_to_check:
+                if u >= ratio_band.GetNHists():
+                    continue
+
+                ru = ratio_band.GetHist(u).GetBinContent(b)
+                mu = numu_band.GetHist(u).GetBinContent(b)
+                eu = nue_band.GetHist(u).GetBinContent(b)
+                manual = mu / eu if eu != 0 else 0.0
+
+                print(
+                    "  univ {:3d}: ratio_hist={:12.6g}  manual={:12.6g}  diff={:12.6g}  A={:12.6g}".format(
+                        u,
+                        ru,
+                        manual,
+                        ru - manual,
+                        ru - cv_ratio_hist
+                    )
+                )
+
+    def MakeRatio(self, beam):
         beam = beam.lower()
-        numuname = beam+"_numu_selection"
-        elecname = beam+"_nue_selection"
+        numuname = beam + "_numu_selection"
+        elecname = beam + "_nue_selection"
 
         if numuname in self.keys and elecname in self.keys:
             mc_clone = self.mc_hists[numuname].Clone()
-            mc_clone.Divide(mc_clone,self.mc_hists[elecname])
+            mc_clone.Divide(mc_clone, self.mc_hists[elecname])
+
             data_clone = self.data_hists[numuname].Clone()
-            data_clone.Divide(data_clone,self.data_hists[elecname])
+            data_clone.Divide(data_clone, self.data_hists[elecname])
 
-            self.AddHistograms('{}_ratio'.format(beam),mc_clone,data_clone)
+            self.CheckRatioFluxUniverses(
+                beam,
+                mc_clone,
+                self.mc_hists[numuname],
+                self.mc_hists[elecname],
+                bins_to_check=[1, 9, 10],
+                universes_to_check=[0, 1, 2, 10]
+            )
 
-            if beam+"_numu_selection" in self.numu_templates:
-                self.AddTemplates("{}_ratio".format(beam),
-                        numu=self.numu_templates[beam+"_numu_selection"].Clone(),
-                        nue=self.nue_templates[beam+"_nue_selection"].Clone(),
-                        swap=self.swap_templates[beam+"_nue_selection"].Clone())
-                self.titles['{}_ratio'.format(beam)] = "%s CC #nu_{#mu}/#nu_{e} Ratio" % (beam.upper())
+            self.AddHistograms("{}_ratio".format(beam), mc_clone, data_clone)
+
+            if beam + "_numu_selection" in self.numu_templates:
+                self.AddTemplates(
+                    "{}_ratio".format(beam),
+                    numu=self.numu_templates[beam + "_numu_selection"].Clone(),
+                    nue=self.nue_templates[beam + "_nue_selection"].Clone(),
+                    swap=self.swap_templates[beam + "_nue_selection"].Clone()
+                )
+
+                self.titles["{}_ratio".format(beam)] = "%s CC #nu_{#mu}/#nu_{e} Ratio" % (
+                    beam.upper()
+                )
+
+        else:
+            print("WARNING: cannot make {} ratio.".format(beam))
+            print("  missing numu sample?", numuname not in self.keys)
+            print("  missing nue sample? ", elecname not in self.keys)
 
         self.CleanErrorBands()
 
@@ -653,6 +885,9 @@ class StitchedHistogram:
             self.numu_templates[h].Write()
             self.swap_templates[h].Write()
 
+        for name, cov in self.external_covariances.items():
+            cov.Write("{}_paper_covariance_matrix".format(name), ROOT.TObject.kOverwrite)
+
         f.Close()
 
     # def Load(self,filename):
@@ -810,6 +1045,7 @@ class StitchedHistogram:
         for h in self.keys:
             print("  ", h)
 
+        self.LoadExternalCovariances(f)
         # Do not close f before cloning if ROOT owns the objects.
         # Better: clone everything loaded from file before closing.
         # But if your old code worked with f.Close(), leave this for now.
@@ -1038,12 +1274,12 @@ class StitchedHistogram:
             self.mc_hist.SetBinError(i,err_mc)
             self.pseudo_hist.SetBinError(i,err_mc)
 
-            # no statistical error on elastic scattering special production
-            if 'elastic' in h or 'imd' in h:# or "nue" in h:
-                self.mc_hists[h].SetBinError(sample_i,0)
-                self.mc_hist.SetBinError(i,0)
-                self.nue_hist.SetBinError(i,0)
-                self.numu_hist.SetBinError(i,0)
+            # # no statistical error on elastic scattering special production
+            # if 'elastic' in h or 'imd' in h:# or "nue" in h:
+            #     self.mc_hists[h].SetBinError(sample_i,0)
+            #     self.mc_hist.SetBinError(i,0)
+            #     self.nue_hist.SetBinError(i,0)
+            #     self.numu_hist.SetBinError(i,0)
 
             # ----- do data stitching ----- #
             bin_data = h_data.GetBinContent(sample_i)

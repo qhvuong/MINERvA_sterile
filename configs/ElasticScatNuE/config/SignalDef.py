@@ -145,6 +145,12 @@ TRUTH_CATEGORIES = OrderedDict()
 # EXTRA_OTHER = [
 # ]
 
+
+
+
+
+
+
 TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
 
 # ν + e elastic scattering (in phase space only)
@@ -190,7 +196,11 @@ TRUTH_CATEGORIES["NCPi"]     = lambda event: IsNC(event) and IsChargedPionInFina
 TRUTH_CATEGORIES["NCOther"]  = lambda event: IsNC(event)
 
 
-
+# # These are categories for weighting ME to LE
+# TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNue(event) 
+# TRUTH_CATEGORIES["NuEElasticEBar"]  = lambda event: IsElastic(event) and IsNueBar(event) 
+# TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNumu(event)
+# TRUTH_CATEGORIES["NuEElasticMuBar"] = lambda event: IsElastic(event) and IsNumuBar(event)
 
 # My signal is one or more of the listed categories.
 SIGNAL_DEFINITION = [

@@ -259,6 +259,7 @@ def get_flux_ratio_me_to_le(enu_gev, pdg, me_flux_tag,
     return ratio
 
 _trueEL_cache = {}
+_trueEL_pdf_cache = {}
 
 def _get_trueEL_hist(path, hname="ETrue_Length_CCNuE"):
     key = (path, hname)
@@ -275,8 +276,8 @@ def _get_trueEL_hist(path, hname="ETrue_Length_CCNuE"):
     return _trueEL_cache[key][1]
 
 def GetNeutrinoTravelledLength(enu_gev, pdg,
-                          nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_CV_trueEL_MAD.root",
-                          numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_CV_trueEL_MAD.root",
+                          nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_fullStatsFluxes_MAD.root",
+                          numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_fullStatsFluxes_MAD.root",
                           nue_hname="ETrue_Length_CCNuE",
                           numu_hname="ETrue_Length_CCNuMu"):
     """
@@ -318,45 +319,149 @@ def GetNeutrinoTravelledLength(enu_gev, pdg,
 
     return hL.GetRandom()
 
-def GetNeutrinoTravelledLengthPDF(enu_gev, pdg,
-                          nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_CV_trueEL_MAD.root",
-                          numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_CV_trueEL_MAD.root",
-                          nue_hname="ETrue_Length_CCNuE",
-                          numu_hname="ETrue_Length_CCNuMu"):
+# def GetNeutrinoTravelledLengthPDF(enu_gev, pdg,
+#                             nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_fullStatsFluxes_MAD.root",
+#                             numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_fullStatsFluxes_MAD.root",
+#                             nue_hname="ETrue_Length_CCNuE",
+#                             numu_hname="ETrue_Length_CCNuMu"):
+#     """
+#     Return a normalized TH1 of P(L | Enu, pdg).
+#     X axis = true L (km), bin contents sum to 1.
+#     """
+
+#     apdg = abs(int(pdg))
+#     if apdg == 12:
+#         h2 = _get_trueEL_hist(nue_file, nue_hname)
+#     elif apdg == 14:
+#         h2 = _get_trueEL_hist(numu_file, numu_hname)
+#     else:
+#         raise ValueError(f"Unsupported PDG for GetNeutrinoTravelledLengthPDF: {pdg}")
+
+#     by = h2.GetYaxis().FindBin(enu_gev)
+#     by = max(1, min(by, h2.GetNbinsY()))
+
+#     hL = h2.ProjectionX(f"hL_pdf_{apdg}_{by}_{ROOT.TUUID().AsString()}", by, by)
+#     hL.SetDirectory(0)
+
+#     if hL.Integral() <= 0:
+#         by1 = max(1, by - 1)
+#         by2 = min(h2.GetNbinsY(), by + 1)
+#         hL = h2.ProjectionX(f"hL_pdf_wide_{apdg}_{by1}_{by2}_{ROOT.TUUID().AsString()}", by1, by2)
+#         hL.SetDirectory(0)
+
+#     if hL.Integral() <= 0:
+#         hL = h2.ProjectionX(f"hL_pdf_all_{apdg}_{ROOT.TUUID().AsString()}", 1, h2.GetNbinsY())
+#         hL.SetDirectory(0)
+
+#     integ = hL.Integral()
+#     if integ <= 0:
+#         raise RuntimeError(f"No valid L PDF found for pdg={pdg}, Enu={enu_gev}")
+
+#     hL.Scale(1.0 / integ)
+#     return hL
+
+def GetNeutrinoTravelledLengthPDF(
+    enu_gev,
+    pdg,
+    nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_fullStatsFluxes_MAD.root",
+    numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_fullStatsFluxes_MAD.root",
+    nuebar_file="/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_trueEL_fullStatsFluxes_MAD.root",
+    numubar_file="/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_trueEL_fullStatsFluxes_MAD.root",
+    nue_hname="ETrue_Length_CCNuE",
+    numu_hname="ETrue_Length_CCNuMu",
+):
     """
     Return a normalized TH1 of P(L | Enu, pdg).
-    X axis = true L (km), bin contents sum to 1.
+
+    Uses separate files for particles and antiparticles:
+      pdg =  12  -> nue_file,     nue_hname
+      pdg = -12  -> nuebar_file,  nue_hname
+      pdg =  14  -> numu_file,    numu_hname
+      pdg = -14  -> numubar_file, numu_hname
+
+    The returned histogram is cached by file, hist name, signed PDG, and E bin.
+    Treat the returned histogram as read-only.
     """
 
-    apdg = abs(int(pdg))
-    if apdg == 12:
-        h2 = _get_trueEL_hist(nue_file, nue_hname)
-    elif apdg == 14:
-        h2 = _get_trueEL_hist(numu_file, numu_hname)
+    pdg = int(pdg)
+
+    if pdg == 12:
+        this_file = nue_file
+        this_hname = nue_hname
+    elif pdg == -12:
+        this_file = nuebar_file
+        this_hname = nue_hname
+    elif pdg == 14:
+        this_file = numu_file
+        this_hname = numu_hname
+    elif pdg == -14:
+        this_file = numubar_file
+        this_hname = numu_hname
     else:
-        raise ValueError(f"Unsupported PDG for GetNeutrinoTravelledLengthPDF: {pdg}")
+        raise ValueError(
+            "Unsupported PDG for GetNeutrinoTravelledLengthPDF: {}".format(pdg)
+        )
+
+    h2 = _get_trueEL_hist(this_file, this_hname)
 
     by = h2.GetYaxis().FindBin(enu_gev)
     by = max(1, min(by, h2.GetNbinsY()))
 
-    hL = h2.ProjectionX(f"hL_pdf_{apdg}_{by}_{ROOT.TUUID().AsString()}", by, by)
+    cache_key = (this_file, this_hname, pdg, by)
+
+    if cache_key in _trueEL_pdf_cache:
+        return _trueEL_pdf_cache[cache_key]
+
+    hL = h2.ProjectionX(
+        "hL_pdf_{}_{}_{}".format(pdg, by, ROOT.TUUID().AsString()),
+        by,
+        by,
+    )
     hL.SetDirectory(0)
 
     if hL.Integral() <= 0:
+        hL.Delete()
+
         by1 = max(1, by - 1)
         by2 = min(h2.GetNbinsY(), by + 1)
-        hL = h2.ProjectionX(f"hL_pdf_wide_{apdg}_{by1}_{by2}_{ROOT.TUUID().AsString()}", by1, by2)
+
+        hL = h2.ProjectionX(
+            "hL_pdf_wide_{}_{}_{}_{}".format(
+                pdg,
+                by1,
+                by2,
+                ROOT.TUUID().AsString(),
+            ),
+            by1,
+            by2,
+        )
         hL.SetDirectory(0)
 
     if hL.Integral() <= 0:
-        hL = h2.ProjectionX(f"hL_pdf_all_{apdg}_{ROOT.TUUID().AsString()}", 1, h2.GetNbinsY())
+        hL.Delete()
+
+        hL = h2.ProjectionX(
+            "hL_pdf_all_{}_{}".format(pdg, ROOT.TUUID().AsString()),
+            1,
+            h2.GetNbinsY(),
+        )
         hL.SetDirectory(0)
 
     integ = hL.Integral()
     if integ <= 0:
-        raise RuntimeError(f"No valid L PDF found for pdg={pdg}, Enu={enu_gev}")
+        hL.Delete()
+        raise RuntimeError(
+            "No valid L PDF found for pdg={}, Enu={}, file={}, hist={}".format(
+                pdg,
+                enu_gev,
+                this_file,
+                this_hname,
+            )
+        )
 
     hL.Scale(1.0 / integ)
+    _trueEL_pdf_cache[cache_key] = hL
+
     return hL
 
 
@@ -379,6 +484,19 @@ class CVPythonUniverse():
 
     def ResetWeight(self):
         self.weight = None
+
+    def _is_truth_mode(self):
+        """Truth ntuples lack reco branches (e.g. HasNoBackExitingTracks)."""
+        try:
+            if self.IsTruth():
+                return True
+        except Exception:
+            pass
+        try:
+            tree = self.chain.GetTree()
+            return tree is not None and tree.GetName() == "Truth"
+        except Exception:
+            return False
 
     # magic function that allow direct access to TBranch by Universe.TBranch, but prohibit any python magic variable being generated.
     def __getattr__(self,attrName):
@@ -509,6 +627,50 @@ class CVPythonUniverse():
             else:
                 print("Not neutrino PDG? {}".format(pdg))
         pdg = newpdg
+
+
+        # enu = self.mc_incomingE * 1e-3
+        # flux_cv = self.GetFluxAndCVWeight(enu, pdg)
+
+        # # ---- DEBUG: true-E binned flux CV summary ----
+        # if self.ShortName() == "cv":
+        #     if not hasattr(CVPythonUniverse, "_trueE_flux_summary"):
+        #         CVPythonUniverse._trueE_flux_summary = {}
+
+        #     ebin = math.floor(enu / 0.5) * 0.5
+        #     key = (pdg, ebin)
+
+        #     if key not in CVPythonUniverse._trueE_flux_summary:
+        #         CVPythonUniverse._trueE_flux_summary[key] = [0, 0.0, 0.0]
+
+        #     # [N, sum fluxCV, sum weight before flux]
+        #     CVPythonUniverse._trueE_flux_summary[key][0] += 1
+        #     CVPythonUniverse._trueE_flux_summary[key][1] += flux_cv
+        #     CVPythonUniverse._trueE_flux_summary[key][2] += weight
+
+        #     if not hasattr(CVPythonUniverse, "_trueE_flux_print_counter"):
+        #         CVPythonUniverse._trueE_flux_print_counter = 0
+
+        #     if CVPythonUniverse._trueE_flux_print_counter < 10:
+        #         CVPythonUniverse._trueE_flux_print_counter += 1
+        #         print("[TRUEE_FLUX_BIN_SUMMARY]")
+        #         for k, v in sorted(CVPythonUniverse._trueE_flux_summary.items()):
+        #             pdg_bin, ebin_print = k
+        #             n, sum_flux, sum_w_before = v
+        #             if n < 20:
+        #                 continue
+        #             print(
+        #                 "pdg=", pdg_bin,
+        #                 "Ebin=", ebin_print, "-", ebin_print + 0.5,
+        #                 "n=", n,
+        #                 "avg_fluxCV=", sum_flux / n,
+        #                 "sum_fluxCV=", sum_flux,
+        #                 "avg_weight_before_flux=", sum_w_before / n,
+        #             )
+
+        # weight *= flux_cv
+        # # ---- END DEBUG ----
+
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
         # weight *= get_flux_cv_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
         # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
@@ -627,6 +789,8 @@ class CVPythonUniverse():
 
 
     def GetMyMinosEfficiencyWeight(self):
+         if self._is_truth_mode():
+             return 1.0
          if self.HasNoBackExitingTracks:
              return 1
          else:
@@ -759,7 +923,7 @@ class CVPythonUniverse():
     #     return s
 
 
-    #### Yes correction
+    #### Yes correction: angle only, no momentum-magnitude correction
     def ElectronP3D_det(self):
         # ---- 0) build uncorrected p(det) from branches + existing EM energy shift ----
         electronp = self.GetVecOfVecDouble("prong_part_E")
@@ -767,59 +931,35 @@ class CVPythonUniverse():
         p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3])) * (1.0 + scale)
 
         # ---- 1) get vertex (mm) ----
-        # If you already have self.vtx like event.vtx, use it:
         vx = float(self.vtx[0])
         vy = float(self.vtx[1])
 
-        # If you *don’t* have self.vtx, replace the two lines above with however you access vtx:
-        # vtx = self.GetVecDouble("vtx")  # example
-        # vx, vy = float(vtx[0]), float(vtx[1])
-
         make_vec = ROOT.Math.XYZVector
 
-        # ---- 2) apply direction correction (keep |p|) ----
+        # ---- 2) apply direction correction only; keep |p| unchanged ----
         p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
             p_det,
             vx, vy,
             # This is nu+e fit parameters
             # We use nu+e angle correction coefficients for both nu+e and CCnue
-            t0x=0.0001289, t1x=1.402e-05,
-            t0y=0.001007,  t1y=1.87e-05,
+            # OLD p6 coefficients
+            # t0x=0.0001289, t1x=1.402e-05,
+            # t0y=0.001007,  t1y=1.87e-05,
+            # NEW p8 coefficients
+            t0x=0.000486, t1x=1.392e-05,
+            t0y=0.0008169,  t1y=1.969e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
             keep_pmag=True,
             make_vec=make_vec,
         )
-        
-        # print("SystematicsConfig.ELASTIC_MODE: ", SystematicsConfig.ELASTIC_MODE)
-        # ---- 3) choose magnitude correction by analysis mode ----
-        if SystematicsConfig.ELASTIC_MODE:
-            # nu+e coefficients
-            a0 = -0.01189
-            a1 = 1.06e-04
-        else:
-            # CCnue coefficients
-            a0 = 0.01914
-            a1 = 6.03e-05
-
-
-        # a0 = -0.01189
-        # a1 = 1.06e-04
-        # ---- 4) apply magnitude correction ----
-        p_det_corr = apply_pmag_frac_correction_det(
-            p_det_corr,
-            vy,
-            a0=a0,
-            a1=a1,
-            make_vec=make_vec
-        )
 
         return p_det_corr
 
 
     def ElectronP3D_det_noEMshift(self):
-        # Build unshifted p(det) from branches (NO EM energy shift scaling here)
+        # Build unshifted p(det) from branches, with NO EM energy shift scaling
         electronp = self.GetVecOfVecDouble("prong_part_E")
         p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))
 
@@ -828,14 +968,18 @@ class CVPythonUniverse():
 
         make_vec = ROOT.Math.XYZVector
 
-        # direction correction (keep |p|)
+        # Direction correction only; keep |p| unchanged
         p_det_corr, _, _, _ = apply_theta_bias_correction_det(
             p_det,
             vx, vy,
             # This is nu+e fit parameters
             # We use nu+e angle correction coefficients for both nu+e and CCnue
-            t0x=0.0001289, t1x=1.402e-05,
-            t0y=0.001007,  t1y=1.87e-05,
+            # OLD p6 coefficients
+            # t0x=0.0001289, t1x=1.402e-05,
+            # t0y=0.001007,  t1y=1.87e-05,
+            # NEW p8 coefficients
+            t0x=0.000486, t1x=1.392e-05,
+            t0y=0.0008169,  t1y=1.969e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
@@ -843,32 +987,13 @@ class CVPythonUniverse():
             make_vec=make_vec,
         )
 
-        # choose magnitude correction by analysis mode ----
-        if SystematicsConfig.ELASTIC_MODE:
-            # nu+e coefficients
-            a0 = -0.01189
-            a1 = 1.06e-04
-        else:
-            # CCnue coefficients
-            a0 = 0.01914
-            a1 = 6.03e-05
-
-        # magnitude correction
-        p_det_corr = apply_pmag_frac_correction_det(
-            p_det_corr,
-            vy,
-            a0=a0,
-            a1=a1,
-            make_vec=make_vec
-        )
-
         return p_det_corr
 
+
     ## Electron momentum in BEAM coord:
-    ## - get corrected momentum in DET coord
+    ## - get angle-corrected momentum in DET coord
     ## - rotate into beam coord
     def ElectronP3D(self):
-        # corrected det-coordinate momentum (XYZqVector)
         p_det_corr = self.ElectronP3D_det()
 
         r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
@@ -879,15 +1004,147 @@ class CVPythonUniverse():
 
         return p_beam
 
-    # Recalculate electron energy using corrected momentum
-    def ElectronEnergy(self):
-        # Use corrected det momentum (or beam — magnitude is the same either way)
-        p = self.ElectronP3D_det().R()   # |p| from corrected momentum
-        return math.sqrt(p*p + M_e_sqr)
 
+    # Keep electron energy branch-based, since we are NOT applying
+    # a momentum-magnitude correction anymore.
     def ElectronEnergyRaw(self):
-        p = self.ElectronP3D_det_noEMshift().R()   # |p| from corrected momentum
-        return math.sqrt(p*p + M_e_sqr)
+        return self.GetVecElem("prong_part_E", 0, 3)
+
+
+    @Utilities.decorator_ReLU
+    def ElectronEnergy(self):
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
+
+
+
+    # #### Yes correction both angle and magnitude
+    # def ElectronP3D_det(self):
+    #     # ---- 0) build uncorrected p(det) from branches + existing EM energy shift ----
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3] > 0) else 0.0
+    #     p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3])) * (1.0 + scale)
+
+    #     # ---- 1) get vertex (mm) ----
+    #     # If you already have self.vtx like event.vtx, use it:
+    #     vx = float(self.vtx[0])
+    #     vy = float(self.vtx[1])
+
+    #     # If you *don’t* have self.vtx, replace the two lines above with however you access vtx:
+    #     # vtx = self.GetVecDouble("vtx")  # example
+    #     # vx, vy = float(vtx[0]), float(vtx[1])
+
+    #     make_vec = ROOT.Math.XYZVector
+
+    #     # ---- 2) apply direction correction (keep |p|) ----
+    #     p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
+    #         p_det,
+    #         vx, vy,
+    #         # This is nu+e fit parameters
+    #         # We use nu+e angle correction coefficients for both nu+e and CCnue
+    #         t0x=0.0001289, t1x=1.402e-05,
+    #         t0y=0.001007,  t1y=1.87e-05,
+    #         clamp_vtx=True,
+    #         vtx_min_mm=-1200.0,
+    #         vtx_max_mm=1200.0,
+    #         keep_pmag=True,
+    #         make_vec=make_vec,
+    #     )
+        
+    #     # print("SystematicsConfig.ELASTIC_MODE: ", SystematicsConfig.ELASTIC_MODE)
+    #     # ---- 3) choose magnitude correction by analysis mode ----
+    #     if SystematicsConfig.ELASTIC_MODE:
+    #         # nu+e coefficients
+    #         a0 = -0.01189
+    #         a1 = 1.06e-04
+    #     else:
+    #         # CCnue coefficients
+    #         a0 = 0.01914
+    #         a1 = 6.03e-05
+
+
+    #     # a0 = -0.01189
+    #     # a1 = 1.06e-04
+    #     # ---- 4) apply magnitude correction ----
+    #     p_det_corr = apply_pmag_frac_correction_det(
+    #         p_det_corr,
+    #         vy,
+    #         a0=a0,
+    #         a1=a1,
+    #         make_vec=make_vec
+    #     )
+
+    #     return p_det_corr
+
+    # def ElectronP3D_det_noEMshift(self):
+    #     # Build unshifted p(det) from branches (NO EM energy shift scaling here)
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))
+
+    #     vx = float(self.vtx[0])
+    #     vy = float(self.vtx[1])
+
+    #     make_vec = ROOT.Math.XYZVector
+
+    #     # direction correction (keep |p|)
+    #     p_det_corr, _, _, _ = apply_theta_bias_correction_det(
+    #         p_det,
+    #         vx, vy,
+    #         # This is nu+e fit parameters
+    #         # We use nu+e angle correction coefficients for both nu+e and CCnue
+    #         t0x=0.0001289, t1x=1.402e-05,
+    #         t0y=0.001007,  t1y=1.87e-05,
+    #         clamp_vtx=True,
+    #         vtx_min_mm=-1200.0,
+    #         vtx_max_mm=1200.0,
+    #         keep_pmag=True,
+    #         make_vec=make_vec,
+    #     )
+
+    #     # choose magnitude correction by analysis mode ----
+    #     if SystematicsConfig.ELASTIC_MODE:
+    #         # nu+e coefficients
+    #         a0 = -0.01189
+    #         a1 = 1.06e-04
+    #     else:
+    #         # CCnue coefficients
+    #         a0 = 0.01914
+    #         a1 = 6.03e-05
+
+    #     # magnitude correction
+    #     p_det_corr = apply_pmag_frac_correction_det(
+    #         p_det_corr,
+    #         vy,
+    #         a0=a0,
+    #         a1=a1,
+    #         make_vec=make_vec
+    #     )
+
+    #     return p_det_corr
+
+    # ## Electron momentum in BEAM coord:
+    # ## - get corrected momentum in DET coord
+    # ## - rotate into beam coord
+    # def ElectronP3D(self):
+    #     # corrected det-coordinate momentum (XYZqVector)
+    #     p_det_corr = self.ElectronP3D_det()
+
+    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     p_beam = r(p_det_corr)
+
+    #     if p_beam is None:
+    #         print(p_det_corr, r)
+
+    #     return p_beam
+
+    # # Recalculate electron energy using corrected momentum
+    # def ElectronEnergy(self):
+    #     # Use corrected det momentum (or beam — magnitude is the same either way)
+    #     p = self.ElectronP3D_det().R()   # |p| from corrected momentum
+    #     return math.sqrt(p*p + M_e_sqr)
+
+    # def ElectronEnergyRaw(self):
+    #     p = self.ElectronP3D_det_noEMshift().R()   # |p| from corrected momentum
+    #     return math.sqrt(p*p + M_e_sqr)
 
 
 
@@ -1577,6 +1834,8 @@ class MinosEfficiencyUniverse(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.Python
         super(ROOT.PlotUtils.MinosEfficiencyUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
 
     def GetMyMinosEfficiencyWeight(self):
+         if self._is_truth_mode():
+             return 1.0
          if self.HasNoBackExitingTracks:
              return 1
          else:
@@ -1921,81 +2180,81 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #append cv universe
         universes.append(CVSystematicUniverse(chain,0))
 
-        # if exclude is None or "all" not in exclude:
-        #     # Vertical shift first to skip some cut calculation
+        if exclude is None or "all" not in exclude:
+            # Vertical shift first to skip some cut calculation
 
-        #     # #Electron momentum universe
-        #     if abs(SystematicsConfig.AnaNuPDG)==12:
-        #         universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
-        #     elif abs(SystematicsConfig.AnaNuPDG)==14:
-        #         universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain ))
-        #         universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain ))
-        #         universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain ))
-        #     else:
-        #         raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
+            # #Electron momentum universe
+            if abs(SystematicsConfig.AnaNuPDG)==12:
+                universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+            elif abs(SystematicsConfig.AnaNuPDG)==14:
+                universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
+                universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
+                universes.extend(MuonResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MuonAngleXResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MuonAngleYResolutionUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(MinosEfficiencyUniverse.GetSystematicsUniverses(chain ))
+            else:
+                raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-        #     #Electron angle universe
-        #     universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
+            #Electron angle universe
+            universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Electron momentum universe
-        #     #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+            #Electron momentum universe
+            #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Electron energy scale universe
-        #     universes.extend(ElectronEnergyScaleUniverse.GetSystematicsUniverses(chain))
+            #Electron energy scale universe
+            universes.extend(ElectronEnergyScaleUniverse.GetSystematicsUniverses(chain))
 
-        #     #beam angle shift universe
-        #     universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
+            #beam angle shift universe
+            universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #particle response shift universe
-        #     universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
+            #particle response shift universe
+            universes.extend(ResponseUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Flux universe
-        #     universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
+            #Flux universe
+            universes.extend(FluxUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Genie universe
-        #     universes.extend(GenieUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain ))
-        #     universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain ))
+            #Genie universe
+            universes.extend(GenieUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieRvx1piUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieFaCCQEUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieMaResUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieMvResUniverse.GetSystematicsUniverses(chain ))
+            universes.extend(GenieNormCCResUniverse.GetSystematicsUniverses(chain ))
 
-        #     #2p2h universes
-        #     universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
+            #2p2h universes
+            universes.extend(Universe2p2h.GetSystematicsUniverses(chain ))
 
-        #     #RPA universe:
-        #     universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
+            #RPA universe:
+            universes.extend(RPAUniverse.GetSystematicsUniverses(chain ))
 
-        #     #Non resonant pion universe
-        #     # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
+            #Non resonant pion universe
+            # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
-        #     #LowQ2PionUniverse
-        #     universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
-        #     #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
+            #LowQ2PionUniverse
+            universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
-        #     # #birk shift universe
-        #     ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
+            # #birk shift universe
+            ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
 
-        #     #MKModelUniverse
-        #     universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
+            #MKModelUniverse
+            universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
 
-        #     #FSIWeighUniverse
-        #     universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
+            #FSIWeighUniverse
+            universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
 
-        #     #SuSAValenciaUniverse
-        #     universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
+            #SuSAValenciaUniverse
+            universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
 
-        #     # #hadron reweight shifting universe
-        #     # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+            # #hadron reweight shifting universe
+            # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
-        #     #leakage universe
-        #     universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
+            #leakage universe
+            universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))
 
-        #     #target mass universe
-        #     universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
+            #target mass universe
+            universes.extend(TargetMassUniverse.GetSystematicsUniverses(chain ))
 
 
     # Group universes in dict.

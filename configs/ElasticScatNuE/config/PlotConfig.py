@@ -103,13 +103,13 @@ PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 # NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
 # NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
-# NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
+# NEUTRINO4_EE_BINNING = 		[0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]		# Jaewon's binning
 # NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 9.0, 20.0]		# testBinning
 # NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 1.5, 3.0, 6.0, 10.0, 20.0]		# testBinning2
 # NEUTRINO4_EE_BINNING = 	[0.0, 0.8, 1.8, 3.0, 5.0, 9.0, 20.0]		# allSystematics
 # NEUTRINO4_EE_BINNING = [0.0, 1.8, 3.0, 5.0, 9.0, 20.0]				#testBinning_5bins
 # NEUTRINO4_EE_BINNING = [0.0, 1.8, 3.0, 6.0, 20.0]				#testBinning_4bins
-NEUTRINO4_EE_BINNING = [0.0, 2.0, 4.0, 8.0, 20.0]				#testBinning_4bins_NEW
+NEUTRINO4_EE_BINNING = [0.8, 2.0, 4.0, 8.0, 20.0]				#testBinning_4bins_NEW
 # NEUTRINO4_EE_BINNING = [0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.5, 6.0, 6.5, 7.2, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0, 18.0, 20.0]				#standardME
 # NEUTRINO4_EE_BINNING = [0.0, 1.8, 5.0, 20.0]				#testBinning_3bins
 NEUTRINO4_EE_BINNING_DIAGNOSTICS = 	[i*0.5 for i in range(41)]
@@ -320,7 +320,13 @@ HISTS_TO_MAKE = [
 ### MY PLOTS ###
 	"Lepton Energy",
     "Reco Lepton Energy vs L/E",
+	# "True Lepton Energy",
 	# "Biased Neutrino Energy",
+
+
+
+
+
 	# "True Neutrino Energy",
 	# "Neutrino Length Travelled",
 	# "Drawn-L Neutrino Length Travelled",
@@ -335,6 +341,9 @@ HISTS_TO_MAKE = [
 	# "Drawn-L Reco Lepton Energy vs L/E from kaon parent",
 	
 
+
+
+
 	# "True Energy vs Neutrino Length Travelled",
 
 	# "E Theta Squared",
@@ -343,7 +352,6 @@ HISTS_TO_MAKE = [
     # "Estimator vs Front dEdX",
 
 	# "Visible Energy",
-	# "True Lepton Energy",
 	# "Front dEdX",
 	# "Reco Q2",
 	# "Cone Outside Energy",

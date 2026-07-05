@@ -118,10 +118,12 @@ TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) an
 TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)
 TRUTH_CATEGORIES["CCNuMu2p2h"] = lambda event: IsCC(event) and IsNuMu(event) and Is2p2h(event)
 TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNuMu(event)
-# TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNumu(event)
-
 
 TRUTH_CATEGORIES["CC"] = lambda event: IsCC(event)
+
+# # This one is for inclusive numu true E vs true L template
+# TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNumu(event) and IsFiducial(event)
+
 
 # My signal is one or more of the listed categories.
 SIGNAL_DEFINITION = [

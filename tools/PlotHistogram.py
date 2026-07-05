@@ -51,6 +51,11 @@ class PlottingContainer:
         self.titles = ["#nu+e, IMD, CC #nu_{#mu}, CC #nu_{#mu}/#nu_{e} #lambda = 1","#nu+e, IMD, CC #nu_{#mu}, CC #nu_{#mu}/#nu_{e} #lambda = 12", "#nu+e, IMD, CC #nu_{#mu} #lambda = 1"]
         self.colors = [ROOT.kRed,ROOT.kBlue,ROOT.kGreen]
         self.lams = [1,12,1]
+        self.mask_spec = None
+        self.mask_bins = []
+        self.profile_only = None
+        self.profile_n_universes = None
+
 
     def SetExclude(self,exclude):
         self.exclude = exclude
@@ -70,6 +75,111 @@ class PlottingContainer:
 
     def SetInverseCovariance(self,inv):
         self.invCov = inv
+
+    def SetMaskSpec(self, mask_spec):
+        self.mask_spec = mask_spec
+        self.mask_bins = self.GetMaskedBinIndicesForPlot(mask_spec)
+
+    def SetProfileOnly(self, profile_only):
+        self.profile_only = profile_only
+
+    def SetProfileNUniverses(self, profile_n_universes):
+        self.profile_n_universes = profile_n_universes
+
+    def GetMaskedBinIndicesForPlot(self, mask_spec):
+        if mask_spec is None:
+            return []
+
+        import json
+
+        with open("HIST_CONFIG.json", "r") as f:
+            cfg = json.load(f)
+
+        masked = []
+
+        for sample, local_bins in mask_spec.items():
+            if sample not in cfg:
+                print("WARNING: mask sample {} not found in HIST_CONFIG.json".format(sample))
+                continue
+
+            start = cfg[sample]["start"]  # zero-based
+
+            for local_bin in local_bins:
+                masked.append(start + local_bin - 1)
+
+        masked = sorted(set(masked))
+
+        print("\n===== Plot mask bins =====")
+        print("mask_spec =", mask_spec)
+        print("masked zero-based bins =", masked)
+        print("masked ROOT bins       =", [x + 1 for x in masked])
+
+        return masked
+
+    def ApplyExternalCovarianceErrorsForPlot(
+        self,
+        hist,
+        reference_hist=None,
+        ratio_mode=False,
+        set_content_to_one=False,
+    ):
+        """
+        Plotting-only helper.
+
+        For top panel:
+            ratio_mode=False
+            error = sqrt(cov_ii)
+
+        For ratio panel:
+            ratio_mode=True
+            error = sqrt(cov_ii) / reference_hist bin content
+
+        This only uses the diagonal of the covariance for drawing.
+        The chi2 still uses the full covariance matrix.
+        """
+        h_out = hist.Clone(hist.GetName() + "_with_external_cov_errors")
+        h_out.SetDirectory(0)
+
+        if not hasattr(self.histogram, "external_covariances"):
+            return h_out
+
+        for sample_name, root_cov in self.histogram.external_covariances.items():
+            if root_cov is None:
+                continue
+
+            inds = self.histogram.GetExternalCovarianceBinIndices(sample_name)
+            if len(inds) == 0:
+                continue
+
+            cov = TMatrix_to_Numpy(root_cov)
+
+            if cov.shape[0] != len(inds) or cov.shape[1] != len(inds):
+                raise RuntimeError(
+                    "External covariance shape {} does not match {} bins for {}".format(
+                        cov.shape, len(inds), sample_name
+                    )
+                )
+
+            for a, idx0 in enumerate(inds):
+                ibin = idx0 + 1
+                sigma = math.sqrt(max(cov[a, a], 0.0))
+
+                if ratio_mode:
+                    if reference_hist is None:
+                        raise RuntimeError("ratio_mode=True requires reference_hist")
+
+                    denom = reference_hist.GetBinContent(ibin)
+                    err = sigma / denom if denom != 0 else 0.0
+
+                    h_out.SetBinError(ibin, err)
+
+                    if set_content_to_one:
+                        h_out.SetBinContent(ibin, 1.0)
+
+                else:
+                    h_out.SetBinError(ibin, sigma)
+
+        return h_out
 
     def PlotScatteringIntegrals(self):
         subSample = self.histogram.mc_hists["fhc_elastic"].Clone()
@@ -124,7 +234,15 @@ class PlottingContainer:
         mg.Add(g4)
 
         histogram = copy.deepcopy(self.histogram)
-        statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
+        # statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
+        statistic = Statistics(
+            histogram,
+            exclude=self.exclude,
+            lam=self.lam,
+            mask_spec=self.mask_spec,
+            profile_only=self.profile_only,
+            profile_n_universes=self.profile_n_universes,
+        )        
         statistic.Chi2DataMC(marginalize=True)
 
         #for i,exclude in enumerate(self.exclude_samples):
@@ -204,7 +322,15 @@ class PlottingContainer:
         nue_fluxes = []
 
         histogram = copy.deepcopy(self.histogram)
-        statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
+        # statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
+        statistic = Statistics(
+            histogram,
+            exclude=self.exclude,
+            lam=self.lam,
+            mask_spec=self.mask_spec,
+            profile_only=self.profile_only,
+            profile_n_universes=self.profile_n_universes,
+        )        
         statistic.Chi2DataMC(marginalize=True)
 
         #for i,exclude in enumerate(self.exclude_samples):
@@ -347,13 +473,136 @@ class PlottingContainer:
 
         c1.Print("plots/stitched_flux_marg_effects.png")
 
-    def PlotOscillationEffects(self, parameters, name="", useMarg=True, plotSamples=False, usePseudo=False):
+    def PlotOscillationEffects(
+        self,
+        res,
+        ntuple_tag,
+        useMarg=False,
+        plotSamples=False,
+        plot_tag="",
+        usePseudo=False,
+    ):
         histogram = copy.deepcopy(self.histogram)
         exclude = self.exclude
         lam = self.lam
 
 
-        statistic = Statistics(histogram, exclude=exclude, lam=lam)
+        def make_mask_tag(mask_spec):
+            if mask_spec is None:
+                return ""
+
+            parts = []
+            for sample, bins in sorted(mask_spec.items()):
+                bin_str = "-".join([str(b) for b in bins])
+                parts.append("{}_bins{}".format(sample, bin_str))
+
+            return "_mask_" + "__".join(parts)
+
+        def make_profile_tag(exclude):
+            if exclude is None or exclude == "" or exclude == "none":
+                return "_profiledFlux_includeAll"
+
+            safe = str(exclude).replace(",", "-").replace(" ", "")
+            return "_profiledFlux_exclude{}".format(safe)
+
+
+        import json
+
+        def print_sample_ratio(label, h_ref, h_test):
+            print("\n===== {} =====".format(label))
+
+            with open("HIST_CONFIG.json", "r") as f:
+                cfg = json.load(f)
+
+            for sample, info in cfg.items():
+                start = info["start"] + 1  # ROOT bin index
+                end   = info["end"] + 1
+
+                ref_sum = 0.0
+                test_sum = 0.0
+
+                for ibin in range(start, end + 1):
+                    ref_sum  += h_ref.GetBinContent(ibin)
+                    test_sum += h_test.GetBinContent(ibin)
+
+                ratio = test_sum / ref_sum if ref_sum != 0 else 0.0
+
+                print("{:25s} ref={:14.6g} test={:14.6g} test/ref={:12.6f}".format(
+                    sample, ref_sum, test_sum, ratio
+                ))
+
+        def print_flux_shift_by_sample(label, h_before, h_after):
+            print("\n===== {} =====".format(label))
+
+            with open("HIST_CONFIG.json", "r") as f:
+                cfg = json.load(f)
+
+            for sample, info in cfg.items():
+                start = info["start"] + 1  # ROOT bin index
+                end   = info["end"] + 1
+
+                before_sum = 0.0
+                after_sum = 0.0
+
+                for ibin in range(start, end + 1):
+                    before_sum += h_before.GetBinContent(ibin)
+                    after_sum  += h_after.GetBinContent(ibin)
+
+                shift = after_sum - before_sum
+                frac = shift / before_sum if before_sum != 0 else 0.0
+
+                print("{:25s} before={:14.6g} after={:14.6g} shift={:14.6g} frac={:12.6f}".format(
+                    sample, before_sum, after_sum, shift, frac
+                ))
+
+        def draw_masked_bin_lines(mask_bins, ymin=0.5, ymax=1.5):
+            lines = []
+            for idx0 in mask_bins:
+                x = idx0 + 1
+                line = ROOT.TLine(x, ymin, x, ymax)
+                line.SetLineColor(ROOT.kGray + 2)
+                line.SetLineStyle(2)
+                line.SetLineWidth(2)
+                line.Draw("SAME")
+                lines.append(line)
+            return lines
+
+        def draw_masked_bin_boxes(mask_bins, axis_hist, ymin=0.5, ymax=1.5):
+            boxes = []
+
+            for idx0 in mask_bins:
+                ibin = idx0 + 1  # ROOT bin index
+
+                x1 = axis_hist.GetXaxis().GetBinLowEdge(ibin)
+                x2 = axis_hist.GetXaxis().GetBinUpEdge(ibin)
+
+                box = ROOT.TBox(x1, ymin, x2, ymax)
+                box.SetFillColorAlpha(ROOT.kGray + 3, 0.25)
+                box.SetLineColor(ROOT.kGray + 4)
+                box.SetLineStyle(2)
+                box.SetLineWidth(1)
+                box.Draw("SAME")
+
+                boxes.append(box)
+
+            return boxes
+
+
+
+        parameters = res
+        name = ntuple_tag
+
+
+        # statistic = Statistics(histogram, exclude=exclude, lam=lam)
+        statistic = Statistics(
+            histogram,
+            exclude=exclude,
+            lam=lam,
+            mask_spec=self.mask_spec,
+            profile_only=self.profile_only,
+            profile_n_universes=self.profile_n_universes,
+        )
+
 
         # Raw/unprofiled chi2 values.
         # These correspond to the unprofiled red null curve and raw oscillated model.
@@ -411,6 +660,13 @@ class PlottingContainer:
                 "|U_{#mu4}|^{2} = " + "{:.6f}".format(parameters["umu4"]),
                 "|U_{#tau4}|^{2} = " + "{}".format(parameters["utau4"]),
             ]
+
+        if self.mask_spec is not None:
+            mask_label = "Masked: " + ", ".join(
+                ["{} {}".format(k, v) for k, v in self.mask_spec.items()]
+            )
+            plot_texts.append(mask_label)
+
         # statistic = Statistics(histogram, exclude=exclude, lam=lam)
 
         # chi2_model, model_pen = statistic.Chi2DataMC(
@@ -447,13 +703,579 @@ class PlottingContainer:
         h_osc = histogram.GetOscillatedHistogram()
         h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
 
+
+        h_osc_raw = h_osc.Clone("h_osc_raw_before_flux_profile")
+        h_osc_raw.SetLineColor(ROOT.kOrange + 7)
+        h_osc_raw.SetLineStyle(2)
+        h_osc_raw.SetLineWidth(3)
+
+
+        # print_sample_ratio(
+        #     "RAW BF oscillated / RAW null",
+        #     h_null,
+        #     h_osc_raw
+        # )
+
+
+        def build_A_from_hist_flux_band(hist, band_name="Flux"):
+            if not hist.HasVertErrorBand(band_name):
+                raise RuntimeError("hist has no {} band: {}".format(band_name, hist.GetName()))
+
+            band = hist.GetVertErrorBand(band_name)
+            nhists = band.GetNHists()
+
+            cv = np.array(hist)[1:-1]
+            universes = np.array([
+                np.array(band.GetHist(i))[1:-1]
+                for i in range(nhists)
+            ])
+
+            return universes - cv[None, :]
+
+        def print_direct_Aa_bins(label, Aa_null, Aa_bf, sliceInds, bins_to_print):
+            print("\n===== {} =====".format(label))
+            print("{:>20s} {:>6s} {:>6s} {:>12s} {:>12s} {:>12s}".format(
+                "sample", "gbin", "lbin", "Aa_null", "Aa_BF", "diff"
+            ))
+
+            import json
+            with open("HIST_CONFIG.json", "r") as f:
+                cfg = json.load(f)
+
+            # Map global zero-based bin -> position inside sliced A
+            pos = {idx0: j for j, idx0 in enumerate(sliceInds)}
+
+            for sample, local_bins in bins_to_print.items():
+                if sample not in cfg:
+                    continue
+
+                start = cfg[sample]["start"]  # zero-based global start
+
+                for lbin in local_bins:
+                    idx0 = start + lbin - 1
+
+                    if idx0 not in pos:
+                        print("{:>20s} {:6d} {:6d} {:>12s} {:>12s} {:>12s}".format(
+                            sample, idx0 + 1, lbin, "excluded", "excluded", "excluded"
+                        ))
+                        continue
+
+                    j = pos[idx0]
+
+                    print("{:>20s} {:6d} {:6d} {:12.6g} {:12.6g} {:12.6g}".format(
+                        sample,
+                        idx0 + 1,
+                        lbin,
+                        Aa_null[j],
+                        Aa_bf[j],
+                        Aa_bf[j] - Aa_null[j]
+                    ))
+
+
         h_prof = None
         if useMarg:
             h_prof = h_null.Clone()
             h_prof.SetLineColor(ROOT.kGreen)
 
-            statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(h_prof)
-            statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(h_osc)
+            # statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(h_prof)
+            # statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(h_osc)
+            # Use the same stored A matrix as the chi2 calculation.
+            statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolutionStoredA(h_prof)
+            statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolutionStoredA(h_osc)
+
+
+            null_fitter = statistic.GetFluxFitter(useOsc=False)
+            bf_fitter   = statistic.GetFluxFitter(useOsc=True)
+
+            a_null = null_fitter.GetFluxSolution()
+            a_bf   = bf_fitter.GetFluxSolution()
+
+
+            # Need same bin selection used inside the flux solve.
+            # If your FluxFitter has a getter for sliceInds, use that.
+            # Otherwise reconstruct it exactly the same way as FluxFitter.
+            sliceInds = GetSliceIndices("HIST_CONFIG.json", exclude, histogram.keys)
+
+            # If you have masking implemented in Statistics/FluxFitter, apply the same mask here.
+            if self.mask_spec is not None:
+                masked = set(self.mask_bins)
+                sliceInds = [i for i in sliceInds if i not in masked]
+
+            A_stored = histogram.GetAMatrix()
+
+            if self.profile_n_universes is not None:
+                A_stored = A_stored[:self.profile_n_universes, :]
+
+            A_slice = A_stored[:, sliceInds]
+
+            Aa_null = A_slice.T @ a_null
+            Aa_bf   = A_slice.T @ a_bf
+            dAa     = Aa_bf - Aa_null
+
+            print("\n===== A source comparison =====")
+            print("Using stored A matrix for both null and BF plotting.")
+            print("A_stored shape =", A_stored.shape)
+            print("A_stored norm  =", np.linalg.norm(A_stored[:, sliceInds]))
+
+            print("\n===== direct flux-vector check =====")
+            print("lambda =", lam)
+            print("|a_null|        =", np.linalg.norm(a_null))
+            print("|a_BF|          =", np.linalg.norm(a_bf))
+            print("|a_BF-a_null|   =", np.linalg.norm(a_bf - a_null))
+            print("max |a_BF-a_null| =", np.max(np.abs(a_bf - a_null)))
+            print("penalty_null =", lam * np.dot(a_null, a_null))
+            print("penalty_BF   =", lam * np.dot(a_bf, a_bf))
+
+            print("\nA@a comparison on fitted bins:")
+            print("|A a_null|      =", np.linalg.norm(Aa_null))
+            print("|A a_BF|        =", np.linalg.norm(Aa_bf))
+            print("|A(a_BF-a_null)|=", np.linalg.norm(dAa))
+            print("max |A(a_BF-a_null)| =", np.max(np.abs(dAa)))
+
+            raw_null_arr  = np.array(h_null)[1:-1]
+            prof_null_arr = np.array(h_prof)[1:-1]
+
+            raw_bf_arr  = np.array(h_osc_raw)[1:-1]
+            prof_bf_arr = np.array(h_osc)[1:-1]
+
+            hist_Aa_null = prof_null_arr[sliceInds] - raw_null_arr[sliceInds]
+            hist_Aa_bf   = prof_bf_arr[sliceInds] - raw_bf_arr[sliceInds]
+
+            print("\n===== A@a vs histogram shift sanity check =====")
+            print("max diff null =", np.max(np.abs(Aa_null - hist_Aa_null)))
+            print("max diff BF   =", np.max(np.abs(Aa_bf - hist_Aa_bf)))
+
+            print_direct_Aa_bins(
+                "direct A@a bin shifts, independent of plotted histograms",
+                Aa_null,
+                Aa_bf,
+                sliceInds,
+                {
+                    "fhc_numu_selection": [9, 10],
+                    "rhc_numu_selection": [9, 10],
+                    "fhc_ratio": [9, 10],
+                    "rhc_ratio": [9, 10],
+                }
+            )
+
+
+
+
+        # data = np.array(h_data)[1:-1]
+        # mc_null = np.array(h_prof)[1:-1]
+        # mc_bf = np.array(h_osc)[1:-1]
+
+        # invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
+
+        # diff_null = data - mc_null
+        # diff_bf = data - mc_bf
+
+        # q_null = diff_null * (invCov @ diff_null)
+        # q_bf = diff_bf * (invCov @ diff_bf)
+
+        # dq = q_null - q_bf
+
+        def print_bf_pull_bins(label, h_data, h_null_model, h_bf_model, invCov, max_bins=20):
+            data = np.array(h_data)[1:-1]
+            mc_null = np.array(h_null_model)[1:-1]
+            mc_bf = np.array(h_bf_model)[1:-1]
+
+            diff_null = data - mc_null
+            diff_bf = data - mc_bf
+
+            q_null = diff_null * (invCov @ diff_null)
+            q_bf = diff_bf * (invCov @ diff_bf)
+            dq = q_null - q_bf
+
+            import json
+            sample_ranges = []
+            try:
+                with open("HIST_CONFIG.json", "r") as f:
+                    cfg = json.load(f)
+                for sample, info in cfg.items():
+                    sample_ranges.append((sample, info["start"], info["end"]))
+            except Exception:
+                sample_ranges = []
+
+            def sample_name(idx0):
+                for sample, start, end in sample_ranges:
+                    if start <= idx0 <= end:
+                        return sample
+                return "unknown"
+
+            print("\n===== BF pull bin diagnostics: {} =====".format(label))
+            print("sum q_null =", np.sum(q_null))
+            print("sum q_bf   =", np.sum(q_bf))
+            print("sum dq     =", np.sum(dq))
+
+            order = np.argsort(dq)[::-1]
+
+            print("\nTop bins where BF improves over null:")
+            print("{:>5s} {:>25s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}".format(
+                "bin", "sample", "data", "null", "BF", "dq", "q_null", "q_BF"
+            ))
+
+            for idx0 in order[:max_bins]:
+                print("{:5d} {:>25s} {:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6g}".format(
+                    idx0 + 1,
+                    sample_name(idx0),
+                    data[idx0],
+                    mc_null[idx0],
+                    mc_bf[idx0],
+                    dq[idx0],
+                    q_null[idx0],
+                    q_bf[idx0],
+                ))
+
+            print("\nTop bins where BF worsens relative to null:")
+            order_bad = np.argsort(dq)
+
+            for idx0 in order_bad[:max_bins]:
+                print("{:5d} {:>25s} {:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6g}".format(
+                    idx0 + 1,
+                    sample_name(idx0),
+                    data[idx0],
+                    mc_null[idx0],
+                    mc_bf[idx0],
+                    dq[idx0],
+                    q_null[idx0],
+                    q_bf[idx0],
+                ))
+
+        def print_ratio_bins_table(label, h_data, h_raw_null, h_prof_null, h_raw_bf, h_prof_bf):
+            print("\n===== {} =====".format(label))
+
+            with open("HIST_CONFIG.json", "r") as f:
+                cfg = json.load(f)
+
+            ratio_samples = [s for s in cfg.keys() if "ratio" in s]
+
+            print(
+                "{:>12s} {:>6s} {:>6s} "
+                "{:>12s} {:>12s} {:>12s} {:>12s} {:>12s} "
+                "{:>12s} {:>12s} {:>12s}".format(
+                    "sample", "gbin", "lbin",
+                    "data", "rawNull", "green", "rawBF", "blue",
+                    "data/green", "blue/green", "rawBF/rawNull"
+                )
+            )
+
+            for sample in ratio_samples:
+                start = cfg[sample]["start"] + 1  # ROOT bin index
+                end   = cfg[sample]["end"] + 1
+
+                for ibin in range(start, end + 1):
+                    local_bin = ibin - start + 1
+
+                    data = h_data.GetBinContent(ibin)
+                    raw_null = h_raw_null.GetBinContent(ibin)
+                    green = h_prof_null.GetBinContent(ibin)
+                    raw_bf = h_raw_bf.GetBinContent(ibin)
+                    blue = h_prof_bf.GetBinContent(ibin)
+
+                    data_over_green = data / green if green != 0 else 0.0
+                    blue_over_green = blue / green if green != 0 else 0.0
+                    rawbf_over_rawnull = raw_bf / raw_null if raw_null != 0 else 0.0
+
+                    print(
+                        "{:>12s} {:6d} {:6d} "
+                        "{:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6g} "
+                        "{:12.6f} {:12.6f} {:12.6f}".format(
+                            sample,
+                            ibin,
+                            local_bin,
+                            data,
+                            raw_null,
+                            green,
+                            raw_bf,
+                            blue,
+                            data_over_green,
+                            blue_over_green,
+                            rawbf_over_rawnull,
+                        )
+                    )
+
+        def print_ratio_num_den_bins(label, histogram, parameters, ratio_bins_to_check):
+            print("\n===== {} =====".format(label))
+
+            for sample, local_bins in ratio_bins_to_check.items():
+                beam = sample[:3]
+                numu_name = beam + "_numu_selection"
+                nue_name  = beam + "_nue_selection"
+
+                print("\n--- {} from {} / {} ---".format(sample, numu_name, nue_name))
+
+                # Raw null numerator/denominator
+                raw_numu_null = histogram.mc_hists[numu_name].Clone()
+                raw_nue_null  = histogram.mc_hists[nue_name].Clone()
+
+                # Data numerator/denominator
+                data_numu = histogram.data_hists[numu_name].Clone()
+                data_nue  = histogram.data_hists[nue_name].Clone()
+
+                # Raw BF numerator/denominator from subhist oscillation
+                _, raw_numu_bf = histogram.OscillateSubHistogram(
+                    numu_name,
+                    parameters["m"],
+                    parameters["ue4"],
+                    parameters["umu4"],
+                    parameters["utau4"]
+                )
+
+                _, raw_nue_bf = histogram.OscillateSubHistogram(
+                    nue_name,
+                    parameters["m"],
+                    parameters["ue4"],
+                    parameters["umu4"],
+                    parameters["utau4"]
+                )
+
+                print(
+                    "{:>6s} "
+                    "{:>12s} {:>12s} {:>12s} "
+                    "{:>12s} {:>12s} {:>12s} "
+                    "{:>12s} {:>12s} {:>12s}".format(
+                        "lbin",
+                        "dataNmu", "dataNe", "dataR",
+                        "nullNmu", "nullNe", "nullR",
+                        "bfNmu", "bfNe", "bfR"
+                    )
+                )
+
+                for ibin in local_bins:
+                    d_numu = data_numu.GetBinContent(ibin)
+                    d_nue  = data_nue.GetBinContent(ibin)
+                    d_ratio = d_numu / d_nue if d_nue != 0 else 0.0
+
+                    n_numu = raw_numu_null.GetBinContent(ibin)
+                    n_nue  = raw_nue_null.GetBinContent(ibin)
+                    n_ratio = n_numu / n_nue if n_nue != 0 else 0.0
+
+                    b_numu = raw_numu_bf.GetBinContent(ibin)
+                    b_nue  = raw_nue_bf.GetBinContent(ibin)
+                    b_ratio = b_numu / b_nue if b_nue != 0 else 0.0
+
+                    print(
+                        "{:6d} "
+                        "{:12.6g} {:12.6g} {:12.6g} "
+                        "{:12.6g} {:12.6g} {:12.6g} "
+                        "{:12.6g} {:12.6g} {:12.6g}".format(
+                            ibin,
+                            d_numu, d_nue, d_ratio,
+                            n_numu, n_nue, n_ratio,
+                            b_numu, b_nue, b_ratio,
+                        )
+                    )
+
+        def print_ratio_bin_errors(label, h_data, h_green, h_blue, invCov):
+            print("\n===== {} =====".format(label))
+
+            cov = np.linalg.pinv(invCov)
+            sigma = np.sqrt(np.maximum(np.diag(cov), 0.0))
+
+            with open("HIST_CONFIG.json", "r") as f:
+                cfg = json.load(f)
+
+            for sample in ["fhc_ratio", "rhc_ratio"]:
+                if sample not in cfg:
+                    continue
+
+                start = cfg[sample]["start"] + 1
+                end = cfg[sample]["end"] + 1
+
+                print("\n--- {} ---".format(sample))
+                print("{:>6s} {:>6s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}".format(
+                    "gbin", "lbin", "data", "green", "blue", "sigma", "pull_g", "pull_b"
+                ))
+
+                for ibin in range(start, end + 1):
+                    idx0 = ibin - 1
+                    local = ibin - start + 1
+
+                    data = h_data.GetBinContent(ibin)
+                    green = h_green.GetBinContent(ibin)
+                    blue = h_blue.GetBinContent(ibin)
+                    sig = sigma[idx0]
+
+                    pull_g = (data - green) / sig if sig != 0 else 0.0
+                    pull_b = (data - blue) / sig if sig != 0 else 0.0
+
+                    print("{:6d} {:6d} {:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6f} {:12.6f}".format(
+                        ibin, local, data, green, blue, sig, pull_g, pull_b
+                    ))
+
+        def print_direct_sample_bins_table(label, h_data, h_raw_null, h_prof_null, h_raw_bf, h_prof_bf, invCov, samples_to_print):
+            print("\n===== {} =====".format(label))
+
+            import json
+            import numpy as np
+
+            with open("HIST_CONFIG.json", "r") as f:
+                cfg = json.load(f)
+
+            # Use diagonal errors from the covariance being used for the plotted/profiled comparison.
+            cov = np.linalg.pinv(invCov)
+            sigma = np.sqrt(np.maximum(np.diag(cov), 0.0))
+
+            print(
+                "{:>20s} {:>6s} {:>6s} "
+                "{:>12s} {:>12s} {:>12s} {:>12s} {:>12s} "
+                "{:>12s} {:>12s} {:>12s} "
+                "{:>12s} {:>12s}".format(
+                    "sample", "gbin", "lbin",
+                    "data", "rawNull", "green", "rawBF", "blue",
+                    "data/green", "blue/green", "rawBF/rawNull",
+                    "pull_g", "pull_b"
+                )
+            )
+
+            for sample in samples_to_print:
+                if sample not in cfg:
+                    print("WARNING: sample {} not found in HIST_CONFIG.json".format(sample))
+                    continue
+
+                start = cfg[sample]["start"] + 1  # ROOT bin index
+                end   = cfg[sample]["end"] + 1
+
+                for ibin in range(start, end + 1):
+                    idx0 = ibin - 1
+                    local_bin = ibin - start + 1
+
+                    data = h_data.GetBinContent(ibin)
+                    raw_null = h_raw_null.GetBinContent(ibin)
+                    green = h_prof_null.GetBinContent(ibin)
+                    raw_bf = h_raw_bf.GetBinContent(ibin)
+                    blue = h_prof_bf.GetBinContent(ibin)
+
+                    data_over_green = data / green if green != 0 else 0.0
+                    blue_over_green = blue / green if green != 0 else 0.0
+                    rawbf_over_rawnull = raw_bf / raw_null if raw_null != 0 else 0.0
+
+                    sig = sigma[idx0]
+                    pull_g = (data - green) / sig if sig != 0 else 0.0
+                    pull_b = (data - blue) / sig if sig != 0 else 0.0
+
+                    print(
+                        "{:>20s} {:6d} {:6d} "
+                        "{:12.6g} {:12.6g} {:12.6g} {:12.6g} {:12.6g} "
+                        "{:12.6f} {:12.6f} {:12.6f} "
+                        "{:12.6f} {:12.6f}".format(
+                            sample,
+                            ibin,
+                            local_bin,
+                            data,
+                            raw_null,
+                            green,
+                            raw_bf,
+                            blue,
+                            data_over_green,
+                            blue_over_green,
+                            rawbf_over_rawnull,
+                            pull_g,
+                            pull_b,
+                        )
+                    )
+
+
+
+        # print_bf_pull_bins(
+        #     "raw BF vs raw null",
+        #     h_data,
+        #     h_null,
+        #     h_osc_raw,
+        #     histogram.GetInverseCovarianceMatrix(sansFlux=False),
+        #     max_bins=20
+        # )
+
+        # if useMarg and h_prof is not None:
+        #     print_sample_ratio(
+        #         "PROFILED null / RAW null",
+        #         h_null,
+        #         h_prof
+        #     )
+
+        #     print_sample_ratio(
+        #         "PROFILED BF / RAW null",
+        #         h_null,
+        #         h_osc
+        #     )
+
+        #     print_sample_ratio(
+        #         "PROFILED BF / PROFILED null",
+        #         h_prof,
+        #         h_osc
+        #     )
+
+        #     print_flux_shift_by_sample(
+        #         "NULL flux shift: profiled null - raw null",
+        #         h_null,
+        #         h_prof
+        #     )
+
+        #     print_flux_shift_by_sample(
+        #         "BF flux shift: profiled BF - raw BF",
+        #         h_osc_raw,
+        #         h_osc
+        #     )
+
+        #     null_a = statistic.GetFluxFitter(useOsc=False).GetFluxSolution()
+        #     osc_a  = statistic.GetFluxFitter(useOsc=True).GetFluxSolution()
+
+        #     print("\n===== flux solution comparison =====")
+        #     print("lambda          =", lam)
+        #     print("null penalty    =", np.dot(null_a, null_a) * lam)
+        #     print("BF penalty      =", np.dot(osc_a, osc_a) * lam)
+        #     print("|null a|        =", np.linalg.norm(null_a))
+        #     print("|BF a|          =", np.linalg.norm(osc_a))
+        #     print("|BF-null a|     =", np.linalg.norm(osc_a - null_a))
+        #     print("max |BF-null a| =", np.max(np.abs(osc_a - null_a)))
+
+
+        #     print_bf_pull_bins(
+        #         "profiled BF vs profiled null",
+        #         h_data,
+        #         h_prof,
+        #         h_osc,
+        #         histogram.GetInverseCovarianceMatrix(sansFlux=True),
+        #         max_bins=20
+        #     )
+        if useMarg and h_prof is not None:
+            print_ratio_bins_table(
+                "all ratio bins: data, raw null, green profiled null, raw BF, blue profiled BF",
+                h_data,
+                h_null,
+                h_prof,
+                h_osc_raw,
+                h_osc
+            )
+            print_ratio_num_den_bins(
+                "ratio numerator/denominator check for high-pull bins",
+                histogram,
+                parameters,
+                {
+                    "fhc_ratio": [1, 5, 6, 7, 8, 9, 10],
+                    "rhc_ratio": [1, 4, 11, 12],
+                }
+            )
+            print_ratio_bin_errors(
+                "ratio bin diagonal pulls using sansFlux covariance",
+                h_data,
+                h_prof,
+                h_osc,
+                histogram.GetInverseCovarianceMatrix(sansFlux=True)
+            )
+            print_direct_sample_bins_table(
+                "direct CCnue samples: data, raw null, green profiled null, raw BF, blue profiled BF",
+                h_data,
+                h_null,
+                h_prof,
+                h_osc_raw,
+                h_osc,
+                histogram.GetInverseCovarianceMatrix(sansFlux=True),
+                ["fhc_nue_selection", "rhc_nue_selection"]
+            )
+
+
 
         c1 = ROOT.TCanvas()
         margin = .12
@@ -473,12 +1295,18 @@ class PlottingContainer:
         h_null.Draw("hist")
         if useMarg and h_prof is not None:
             h_prof.Draw("hist same")
+        # Raw BF before flux profiling, for visualization only.
+        h_osc_raw.Draw("hist same")
         h_osc.Draw("hist same")
         h_data.Draw("same")
 
         if useMarg and h_null.HasVertErrorBand("Flux"):
             h_null.PopVertErrorBand("Flux")
         null = h_null.GetCVHistoWithError()
+        null = self.ApplyExternalCovarianceErrorsForPlot(
+            null,
+            ratio_mode=False,
+        )
         null.SetLineColor(ROOT.kRed)
         null.SetLineWidth(2)
         null.SetMarkerStyle(0)
@@ -488,16 +1316,69 @@ class PlottingContainer:
         if useMarg and h_osc.HasVertErrorBand("Flux"):
             h_osc.PopVertErrorBand("Flux")
         osc = h_osc.GetCVHistoWithError()
+        osc = self.ApplyExternalCovarianceErrorsForPlot(
+            osc,
+            ratio_mode=False,
+        )
         osc.SetLineColor(ROOT.kBlue)
         osc.SetLineWidth(2)
         osc.SetMarkerStyle(0)
         osc.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
         osc.Draw("E2 SAME")
+        # if useMarg and h_null.HasVertErrorBand("Flux"):
+        #     h_null.PopVertErrorBand("Flux")
+        # null = h_null.GetCVHistoWithError()
+        # null.SetLineColor(ROOT.kRed)
+        # null.SetLineWidth(2)
+        # null.SetMarkerStyle(0)
+        # null.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
+        # null.Draw("E2 SAME")
 
-        top_text = "#Delta m^{2}=" + "{:.1f}".format(parameters["m"]) + " |U_{e4}|^{2}=" + "{:.4f}".format(parameters["ue4"])
-        bot_text = "|U_{#mu4}|^{2}=" + "{:.5f}".format(parameters["umu4"]) + " |U_{#tau4}|^{2}=" + "{:.1f}".format(parameters["utau4"])
-        header = "#splitline{%s}{%s}" % (top_text, bot_text)
-        MNVPLOTTER.AddPlotLabel(header, .35, .25)
+        # if useMarg and h_osc.HasVertErrorBand("Flux"):
+        #     h_osc.PopVertErrorBand("Flux")
+        # osc = h_osc.GetCVHistoWithError()
+        # osc.SetLineColor(ROOT.kBlue)
+        # osc.SetLineWidth(2)
+        # osc.SetMarkerStyle(0)
+        # osc.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
+        # osc.Draw("E2 SAME")
+
+        # Redraw line curves on top of uncertainty bands
+        h_null.Draw("hist same")
+        if useMarg and h_prof is not None:
+            h_prof.Draw("hist same")
+        h_osc_raw.Draw("hist same")
+        h_osc.Draw("hist same")
+        h_data.Draw("same")
+
+
+
+        # top_text = "#Delta m^{2}=" + "{:.1f}".format(parameters["m"]) + " |U_{e4}|^{2}=" + "{:.4f}".format(parameters["ue4"])
+        # bot_text = "|U_{#mu4}|^{2}=" + "{:.5f}".format(parameters["umu4"]) + " |U_{#tau4}|^{2}=" + "{:.1f}".format(parameters["utau4"])
+        # header = "#splitline{%s}{%s}" % (top_text, bot_text)
+        # MNVPLOTTER.AddPlotLabel(header, .35, .25)
+
+        # profile_label = "Flux profile: include ratio" if exclude in [None, "", "none"] else "Flux profile: exclude {}".format(exclude)
+        # MNVPLOTTER.AddPlotLabel(profile_label, .68, .30, 0.03)
+        # if self.mask_spec is not None:
+        #     mask_label = "Masked bins: " + ", ".join(
+        #         ["{} {}".format(k, v) for k, v in self.mask_spec.items()]
+        #     )
+        #     MNVPLOTTER.AddPlotLabel(mask_label, .68, .25, 0.03)
+        bf_label = (
+            "#Delta m^{{2}} = {:.1f} eV^{{2}}, "
+            "|U_{{e4}}|^{{2}} = {:.3f}, "
+            "|U_{{#mu4}}|^{{2}} = {:.3f}, "
+            "|U_{{#tau4}}|^{{2}} = {:.3f}"
+        ).format(
+            parameters["m"],
+            parameters["ue4"],
+            parameters["umu4"],
+            parameters["utau4"],
+        )
+
+        MNVPLOTTER.AddPlotLabel(bf_label, .53, .18, 0.04)
+
 
 
         # # Legend in top-right corner of the top pad.
@@ -524,6 +1405,11 @@ class PlottingContainer:
             )
             leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
             leg.AddEntry(h_prof, leg_text, "l")
+
+        top_text = "Best Osc. Fit Raw"
+        bot_text = "#chi^{{2}}={:.2f}".format(chi2_model_raw)
+        leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
+        leg.AddEntry(h_osc_raw, leg_text, "l")
 
         # Blue curve: oscillated model.
         top_text = "Best Osc. Fit"
@@ -583,6 +1469,13 @@ class PlottingContainer:
         nullRatio.Divide(nullRatio, h_null)
         oscRatio.Divide(oscRatio, h_null)
 
+        oscRawRatio = h_osc_raw.Clone()
+        oscRawRatio.Divide(oscRawRatio, h_null)
+        oscRawRatio.SetLineColor(ROOT.kOrange + 7)
+        oscRawRatio.SetLineStyle(2)
+        oscRawRatio.SetLineWidth(3)
+
+
         profRatio = None
         if useMarg and h_prof is not None:
             profRatio = h_prof.Clone()
@@ -592,10 +1485,22 @@ class PlottingContainer:
         bottom.SetTopMargin(0)
         bottom.SetBottomMargin(0.3)
 
+
         nullErrors = h_null.GetTotalError(False, True, False)
         for whichBin in range(0, nullErrors.GetXaxis().GetNbins() + 1):
             nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
             nullErrors.SetBinContent(whichBin, 1)
+
+        nullErrors = self.ApplyExternalCovarianceErrorsForPlot(
+            nullErrors,
+            reference_hist=h_null,
+            ratio_mode=True,
+            set_content_to_one=True,
+        )
+        # nullErrors = h_null.GetTotalError(False, True, False)
+        # for whichBin in range(0, nullErrors.GetXaxis().GetNbins() + 1):
+        #     nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
+        #     nullErrors.SetBinContent(whichBin, 1)
 
         nullRatio.SetLineColor(ROOT.kBlack)
         nullRatio.SetLineWidth(3)
@@ -613,26 +1518,62 @@ class PlottingContainer:
         nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
         RatioAxis(nullErrors, MNVPLOTTER)
         nullErrors.GetXaxis().SetTitle("Bin Number")
-        nullErrors.SetMinimum(.7)
-        nullErrors.SetMaximum(1.3)
+        nullErrors.SetMinimum(.5)
+        nullErrors.SetMaximum(1.5)
         nullErrors.Draw("E2")
 
+        mask_boxes = []
+        if len(self.mask_bins) > 0:
+            mask_boxes = draw_masked_bin_boxes(self.mask_bins, nullErrors, 0.5, 1.5)
+
         nullRatio.Draw("same")
-        oscRatio.Draw("same hist l")
         if profRatio is not None:
             profRatio.Draw("same hist l")
+        oscRawRatio.Draw("same hist l")
+        oscRatio.Draw("same hist l")
 
         straightLine = nullErrors.Clone()
         straightLine.SetLineColor(ROOT.kRed)
         straightLine.SetLineWidth(2)
         straightLine.SetFillColor(0)
         straightLine.Draw("HIST SAME")
+        # nullRatio.Draw("same")
+        # oscRawRatio.Draw("same hist l")
+        # oscRatio.Draw("same hist l")
+        # if profRatio is not None:
+        #     profRatio.Draw("same hist l")
+
+        # straightLine = nullErrors.Clone()
+        # straightLine.SetLineColor(ROOT.kRed)
+        # straightLine.SetLineWidth(2)
+        # straightLine.SetFillColor(0)
+        # straightLine.Draw("HIST SAME")
+
+        # mask_boxes = []
+        # if len(self.mask_bins) > 0:
+        #     mask_boxes = draw_masked_bin_boxes(self.mask_bins, nullErrors, 0.5, 1.5)
 
         top.cd()
+        tag = "_{}".format(plot_tag) if plot_tag else ""
+        tag += make_profile_tag(exclude)
+
+        # Only tag lambda when using a non-nominal value.
+        if abs(float(lam) - 1.0) > 1e-12:
+            lam_str = "{:g}".format(float(lam))
+            lam_tag = lam_str.replace(".", "p").replace("-", "m")
+            tag += "_lam{}".format(lam_tag)
+
+        if self.profile_only not in [None, "", "none"]:
+            tag += "_profileOnly{}".format(str(self.profile_only).replace(",", "-"))
+
+        if self.profile_n_universes is not None:
+            tag += "_Nprof{}".format(self.profile_n_universes)
+
+        tag += make_mask_tag(self.mask_spec)
 
         overall.Print(
-            "plots/{}_stitched_{:.1f}_{:.3f}_{:.4f}.png".format(
-                name, parameters["m"], parameters["ue4"], parameters["umu4"]
+            "plots/{}_stitched{}_{:.1f}_{:.3f}_{:.4f}.png".format(
+                name, tag, parameters["m"], parameters["ue4"], parameters["umu4"]
             )
         )
 
@@ -724,11 +1665,13 @@ class PlottingContainer:
 
             null_hist = histogram.mc_hists[plot].Clone()
 
-            statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(null_hist)
+            # statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(null_hist)
+            statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolutionStoredA(null_hist)
             if null_hist.HasVertErrorBand("Flux"):
                 null_hist.PopVertErrorBand("Flux")
 
-            statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(total_hist)
+            # statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(total_hist)
+            statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolutionStoredA(total_hist)
             if total_hist.HasVertErrorBand("Flux"):
                 total_hist.PopVertErrorBand("Flux")
             total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
@@ -738,7 +1681,8 @@ class PlottingContainer:
                 if hist.Integral() <= 0:
                     continue
 
-                statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(hist)
+                # statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(hist)
+                statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolutionStoredA(hist)
 
                 if 'elastic' in plot:
                     hist.Scale(2, 'width')
@@ -798,8 +1742,8 @@ class PlottingContainer:
             narrow_pads=[1, 4]
         )
         overall.Print(
-            "plots/{}_oscillated_{:.1f}_{:.3f}_{:.4f}.png".format(
-                name, parameters["m"], parameters['ue4'], parameters['umu4']
+            "plots/{}_oscillated{}_{:.1f}_{:.3f}_{:.4f}.png".format(
+                name, tag, parameters["m"], parameters["ue4"], parameters["umu4"]
             )
         )
     # def PlotFluxMarginalizationEffects(self,parameters,name="",plotSamples=False,usePseudo=False):

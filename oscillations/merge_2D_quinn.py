@@ -162,7 +162,7 @@ def MergeChi2s():
         print("Done saving files")
         break
 
-if __name__ in "__main__":
+if __name__ == "__main__":
     print("Do you want to merge the chi2 contour files? (y/n)")
     ans = input().lower()
     if ans == 'y':

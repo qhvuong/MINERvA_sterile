@@ -449,6 +449,16 @@ parser.add_argument("--no-profile-flux",
                     action="store_false",
                     help="Disable flux profiling in chi2 calculation.")
 
+parser.add_argument("--hist-config-tag",
+                    dest="hist_config_tag",
+                    default="default",
+                    help="Tag used for output ROOT, HIST_CONFIG_<tag>.json, and plot names.",
+)
+parser.add_argument("--elastic-source",
+                    dest="elastic_source",
+                    default="paper",
+                    choices=["paper", "jaewon", "production", "prod", "mine"],
+)
 
 options = parser.parse_args()
 

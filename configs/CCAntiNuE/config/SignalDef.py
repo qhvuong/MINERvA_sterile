@@ -125,6 +125,9 @@ TRUTH_CATEGORIES["NCPi"] = lambda event: IsNC(event) and IsChargedPionInFinalSta
 TRUTH_CATEGORIES["CCOther"] = lambda event: IsCC(event)
 TRUTH_CATEGORIES["NCOther"] = lambda event: IsNC(event)
 
+# # This one is for inclusive nue true E vs true L template
+# TRUTH_CATEGORIES["CCNuE"] = lambda event: IsCC(event) and IsNueBar(event) and IsFiducial(event)
+
 # My signal is one or more of the listed categories.
 SIGNAL_DEFINITION = [
     "CCNuEQE",

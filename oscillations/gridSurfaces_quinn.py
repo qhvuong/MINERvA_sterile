@@ -9,6 +9,21 @@ MacroName = baseDir.split("/")[-4]
 MAT = os.environ["PLOTUTILSROOT"].split("/")[-2]
 CONFIG=os.environ["PYTHONPATH"].split(":")[0].split("/")[-1]
 
+def get_arg_value(args, key, default="default"):
+  if key in args:
+    i = args.index(key)
+    if i + 1 < len(args):
+      return args[i + 1]
+  return default
+
+def make_safe_tag(x):
+  if x is None:
+    return "none"
+  x = str(x).strip()
+  if x == "":
+    return "none"
+  return x.replace(",", "-").replace("/", "-")
+
 def createTarball(outDir):
   print("I'm inside createTarball()")
   found = os.path.isfile(outDir)
@@ -47,35 +62,99 @@ def addBashLine( wrapper , command ):
   wrapper.write("echo '---------------'\n")
 
 
-def submitJob(tupleName,tag):
+def submitJob(tupleName, tag):
 
-  # Create wrapper
-  wrapper_name = "grid_wrappers/%s/%s_wrapper.sh" % ( processingID , tupleName ) 
-  
-  my_wrapper = open(wrapper_name,"w")
+  wrapper_name = "grid_wrappers/%s/%s_wrapper.sh" % (processingID, tupleName)
+
+  my_wrapper = open(wrapper_name, "w")
   my_wrapper.write("#!/bin/sh\n")
   unpackTarball(my_wrapper)
 
-  # This is the bash line that will be executed on the grid
-  my_wrapper.write( "cd $CCNUEROOT/oscillations\n")
-  my_wrapper.write( "export USER=$(whoami)\n")
-  my_wrapper.write( "source py3env/bin/activate\n")
+  my_wrapper.write("cd $CCNUEROOT/oscillations\n")
+  my_wrapper.write("export USER=$(whoami)\n")
+  my_wrapper.write("source py3env/bin/activate\n")
+  my_wrapper.write("export PROCESS=${PROCESS:-0}\n")
+  my_wrapper.write("echo HIST_CONFIG_TAG={}\n".format(hist_config_tag))
+  my_wrapper.write("echo PROCESS=${PROCESS}\n")
+  my_wrapper.write("echo ANAARGS='{}'\n".format(argstring.replace("'", "'\"'\"'")))
+  my_wrapper.write("echo PROFILE_TAG={}\n".format(profile_tag))
+  my_wrapper.write("echo EXCLUDE_TAG={}\n".format(exclude_tag))
+  my_wrapper.write("echo NPROF_TAG={}\n".format(nprof_tag))
+  my_wrapper.write("echo ANALYSIS_TAG={}\n".format(analysis_tag))
 
-  # Wrapper command doesn't like when exclude_systematic is empty
-  my_wrapper.write( "py3env/bin/python3 makeSurface_quinn.py --grid --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (tupleName,tag,tupleName,tag,argstring) )
+  command = (
+    "start_time=$(date +%%s)\n"
+    "echo \"START_TIME=$(date)\" >> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log\n"
+    "py3env/bin/python3 makeSurface_quinn.py "
+    "--grid "
+    "-m ${PROCESS} "
+    "-o $CONDOR_DIR_HISTS "
+    "%s "
+    "2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err "
+    "1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log\n"
+    "status=$?\n"
+    "end_time=$(date +%%s)\n"
+    "runtime=$((end_time - start_time))\n"
+    "echo \"END_TIME=$(date)\" >> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log\n"
+    "echo \"RUNTIME_SECONDS=${runtime}\" >> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log\n"
+    "exit $status\n"
+  ) % (
+    tupleName, tag,
+    argstring,
+    tupleName, tag,
+    tupleName, tag,
+    tupleName, tag,
+    tupleName, tag,
+  )
 
-  my_wrapper.write("exit $?\n")
+  my_wrapper.write("echo 'Running command:'\n")
+  my_wrapper.write("echo \"%s\"\n" % command.replace('"', '\\"').strip())
+  my_wrapper.write(command)
   my_wrapper.close()
-  print( "py3env/bin/python3 makeSurface_quinn.py --grid --delta_m ${PROCESS} --output $CONDOR_DIR_HISTS 2>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.err 1>> $CONDOR_DIR_LOGS/%s-%s-${PROCESS}.log %s \n" % (tupleName,tag,tupleName,tag,argstring) )
-  os.system( "chmod 777 %s" % wrapper_name )
-  
-  cmd = "jobsub_submit --group=minerva -l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --append_condor_requirements='CpuFamily != 6' --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % ( memory , outdir_tarball , outdir_hists , outdir_logs , njobs, 3, os.environ["PWD"] , wrapper_name ) 
+
+  print(command)
+  os.system("chmod 777 %s" % wrapper_name)
+
+  cmd = (
+    "jobsub_submit "
+    "--group=minerva "
+    "-l '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"' "
+    "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC "
+    "--append_condor_requirements='CpuFamily != 6' "
+    "--role=Analysis "
+    "--memory %dMB "
+    "-f %s "
+    "-d HISTS %s "
+    "-d LOGS %s "
+    "-N %d "
+    "--expected-lifetime=%dh "
+    "file://%s/%s"
+  ) % (
+    memory,
+    outdir_tarball,
+    outdir_hists,
+    outdir_logs,
+    njobs,
+    expected_lifetime,
+    os.environ["PWD"],
+    wrapper_name
+  )
+
+  print(cmd)
   os.system(cmd)
 
 if __name__ == '__main__':
   PNFS_switch = gridargs.PNFS_switch
 
   argstring = " ".join(anaargs)
+
+  hist_config_tag = get_arg_value(anaargs, "--hist-config-tag", "default")
+
+  if hist_config_tag in [None, "", "none"]:
+    hist_config_tag = "default"
+
+  print("hist_config_tag =", hist_config_tag)
+  print("argstring =", argstring)
 
   if "--profile-flux" in argstring:
     profile_tag = "profiledFlux"
@@ -84,31 +163,62 @@ if __name__ == '__main__':
   else:
     profile_tag = "defaultFluxMode"
 
+  exclude_arg = get_arg_value(anaargs, "--exclude", "none")
+  if exclude_arg in [None, "", "none"]:
+    exclude_tag = "includeAll"
+  else:
+    exclude_tag = "exclude{}".format(make_safe_tag(exclude_arg))
+
+  profile_only_arg = get_arg_value(anaargs, "--profile-only", "none")
+  if profile_only_arg in [None, "", "none"]:
+    profile_only_tag = ""
+  else:
+    profile_only_tag = "_profileOnly{}".format(make_safe_tag(profile_only_arg))
+
+  nprof_arg = get_arg_value(anaargs, "--profile-n-universes", "All")
+  if nprof_arg in [None, "", "none", "All"]:
+    nprof_tag = "NprofAll"
+  else:
+    nprof_tag = "Nprof{}".format(make_safe_tag(nprof_arg))
+
+  analysis_tag = "{}_{}_{}{}".format(
+    profile_tag,
+    exclude_tag,
+    nprof_tag,
+    profile_only_tag
+  )
+
+  print("profile_tag =", profile_tag)
+  print("exclude_tag =", exclude_tag)
+  print("nprof_tag =", nprof_tag)
+  print("profile_only_tag =", profile_only_tag)
+  print("analysis_tag =", analysis_tag)
+
   njobs = 100
   # njobs = 1
 
   # Automatically generate unique output directory
-  processingID = '%s_%s_%s-%s' % (
-      "Oscillation_Surface_sansNuE",
-      profile_tag,
+  processingID = '%s_%s_%s_%s-%s' % (
+      "Oscillation_Surface",
+      hist_config_tag,
+      analysis_tag,
       dt.date.today(),
       dt.datetime.today().strftime("%H%M%S")
   )
-  # processingID = '%s_%s_test%d_%s-%s' % (
-  #     "Oscillation_Surface",
-  #     profile_tag,
-  #     njobs,
-  #     dt.date.today(),
-  #     dt.datetime.today().strftime("%H%M%S")
-  # )
 
-  outdir_hists = "/pnfs/minerva/scratch/users/%s/%s_Oscillation_Surface_texts" % (
-      os.environ["USER"], processingID
+  outdir_hists = "/pnfs/minerva/scratch/users/%s/%s_%s_%s_Oscillation_Surface_npys" % (
+      os.environ["USER"],
+      hist_config_tag,
+      analysis_tag,
+      processingID
   )
   os.system("mkdir -p %s" % outdir_hists)
 
-  outdir_logs = "/pnfs/minerva/scratch/users/%s/%s_Oscillation_Surface_logs" % (
-      os.environ["USER"], processingID
+  outdir_logs = "/pnfs/minerva/scratch/users/%s/%s_%s_%s_Oscillation_Surface_logs" % (
+      os.environ["USER"],
+      hist_config_tag,
+      analysis_tag,
+      processingID
   )
   os.system("mkdir -p %s" % outdir_logs)
 
@@ -130,7 +240,7 @@ if __name__ == '__main__':
   else:
     count = gridargs.count
 
-
+  expected_lifetime = 3
 
   cmdString = "FitSpace"
   tag = gridargs.ntuple_tag

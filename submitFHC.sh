@@ -3,10 +3,15 @@ set -euo pipefail
 
 tag=${1:?You must provide a selection_tag}
 count=${2:-30}
-exclude=${3:-None}
+exclude_universes=${3:-None}
 sideband=${4:-None}
 
-## Running format: ./submitFHC.sh selection_tag count exclude sideband(s)
+## Running format:
+## ./submitFHC.sh selection_tag count exclude_universes sideband(s)
+##
+## Example:
+## ./submitFHC.sh test 30 all
+## ./submitFHC.sh test 30 None my_sideband
 
 logdir="/exp/minerva/data/users/qvuong/runningNotes"
 mkdir -p "${logdir}"
@@ -19,14 +24,14 @@ timestamp=$(date +%Y-%m-%d_%H%M%S)
 tarball="/pnfs/minerva/resilient/tarballs/${USER}-CCNUE_selection_${tag}_${timestamp}.tar.gz"
 
 echo "Using shared tarball: ${tarball}"
-echo "Selection tag: ${tag}"
-echo "MC count/job : ${count}"
-echo "Exclude      : ${exclude}"
-echo "Sideband     : ${sideband}"
+echo "Selection tag      : ${tag}"
+echo "MC count/job       : ${count}"
+echo "Exclude universes  : ${exclude_universes}"
+echo "Sideband           : ${sideband}"
 
-EXCLUDE_ARGS=()
-if [[ -n "${exclude}" && "${exclude}" != "None" ]]; then
-  EXCLUDE_ARGS=(--exclude "${exclude}")
+EXCLUDE_UNIVERSE_ARGS=()
+if [[ -n "${exclude_universes}" && "${exclude_universes}" != "None" ]]; then
+  EXCLUDE_UNIVERSE_ARGS=(--exclude-universes "${exclude_universes}")
 fi
 
 USE_SIDEBAND_ARGS=(--use-sideband)
@@ -36,11 +41,11 @@ fi
 
 COMMON_ARGS=(
   --ntuple_tag MAD
-  "${EXCLUDE_ARGS[@]}"
   "${USE_SIDEBAND_ARGS[@]}"
   --truth
   --cal_POT
   --selection_tag "${tag}"
+  "${EXCLUDE_UNIVERSE_ARGS[@]}"
   --tarball "${tarball}"
 )
 
