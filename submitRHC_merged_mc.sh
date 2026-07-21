@@ -47,11 +47,13 @@ COMMON_ARGS=(
   --tarball "${tarball}"
 )
 
-# for name in 1 7 9 13C 13C_2p2h; do
-for name in 1; do
+for name in 5 5_2p2h; do
+# for name in 1 7 9 13C; do
+# for name in 7 9 13C; do
+# for name in 1; do
   cmd=(
     python selection/gridSelection.py
-    --playlist le${name}_p8_test
+    --playlist le${name}_p8
     "${COMMON_ARGS[@]}"
     --mc_only
   )
@@ -65,12 +67,12 @@ for name in 1; do
   "${cmd[@]}"
 done
 
-# # for name in 1 7 9 13A 13B 13C 13D 13E; do
-# for name in 1; do
+# for name in 5; do
 #   cmd=(
 #     python selection/gridSelection.py
-#     --playlist le${name}_p8_test
+#     --playlist le${name}_p8
 #     "${COMMON_ARGS[@]}"
+#     --count 20
 #     --data_only
 #   )
 

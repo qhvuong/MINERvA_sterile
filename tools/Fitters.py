@@ -42,6 +42,9 @@ ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
 _PRINTED_FLUXFITTER_DIAGNOSTIC = False
+_PRINTED_FLUX_SVD = set()
+_PRINTED_FLUX_WEIGHTED_SVD = set()
+_PRINTED_RELATIVE_A_DIAGNOSTIC = False
 
 def GetMaskedBinIndices(mask_spec, hist_config="HIST_CONFIG.json", verbose=False):
     """
@@ -226,9 +229,9 @@ class OscillationFitter():
         # Current convention: dm2 = x[0] * 100
         bounds = np.array([
             [0.0, 1.0],   # dm2 / 100
-            [0.0, 0.15],  # Ue4^2
-            [0.0, 0.41],  # Umu4^2
-            [0.0, 0.66],  # Utau4^2
+            [0.0, 0.394],  # Ue4^2
+            [0.0, 0.489],  # Umu4^2
+            [0.0, 0.718],  # Utau4^2
         ], dtype=float)
 
         cons = optimize.LinearConstraint([[0, 1, 1, 1]], -np.inf, 1)
@@ -465,30 +468,149 @@ class FluxFitter():
         """
         Return the flux-universe basis used for profiling.
 
-        If profile_n_universes is set, only the first N flux universes
-        are used as nuisance-parameter directions.
+        Relative-A diagnostic mode:
+            R[k,i] = A_abs[k,i] / MC_CV[i]
+            A_used[k,i] = R[k,i] * MC_current[i]
+
+        At null, or when USE_RELATIVE_FLUX_A is disabled,
+        use the original absolute A matrix.
         """
         universes = self.hist.GetFluxUniverses()
-        A = self.hist.GetAMatrix()
 
-        if self.profile_n_universes is None:
-            return universes, A
+        A_abs = np.asarray(
+            self.hist.GetAMatrix(),
+            dtype=float,
+        )
 
-        nprof = int(self.profile_n_universes)
+        use_relative_A = (
+            os.environ.get("USE_RELATIVE_FLUX_A", "0") == "1"
+        )
 
-        if nprof <= 0:
-            raise RuntimeError("profile_n_universes must be positive, got {}".format(nprof))
+        unosc_cv = None
+        current_mc = None
+        relative_A = None
 
-        if nprof > A.shape[0]:
-            raise RuntimeError(
-                "profile_n_universes={} requested, but A only has {} universes".format(
-                    nprof,
-                    A.shape[0],
+        if use_relative_A and self.useOsc:
+            unosc_cv = np.asarray(
+                self.hist.GetMCHistogram(),
+                dtype=float,
+            )[1:-1]
+
+            current_mc = np.asarray(
+                self.mcHist,
+                dtype=float,
+            )[1:-1]
+
+            if A_abs.shape[1] != len(unosc_cv):
+                raise RuntimeError(
+                    "A columns {} do not match unoscillated CV bins {}".format(
+                        A_abs.shape[1],
+                        len(unosc_cv),
+                    )
                 )
+
+            if len(current_mc) != len(unosc_cv):
+                raise RuntimeError(
+                    "Oscillated MC bins {} do not match unoscillated CV bins {}".format(
+                        len(current_mc),
+                        len(unosc_cv),
+                    )
+                )
+
+            relative_A = np.divide(
+                A_abs,
+                unosc_cv[None, :],
+                out=np.zeros_like(A_abs),
+                where=np.abs(unosc_cv[None, :]) > 1e-12,
             )
 
-        universes = universes[:nprof]
-        A = A[:nprof, :]
+            A = relative_A * current_mc[None, :]
+
+        else:
+            A = A_abs
+
+        # Apply Nprof exactly once.
+        if self.profile_n_universes is not None:
+            nprof = int(self.profile_n_universes)
+
+            if nprof <= 0:
+                raise RuntimeError(
+                    "profile_n_universes must be positive, got {}".format(
+                        nprof
+                    )
+                )
+
+            if nprof > A.shape[0]:
+                raise RuntimeError(
+                    "profile_n_universes={} requested, but A only has "
+                    "{} universes".format(
+                        nprof,
+                        A.shape[0],
+                    )
+                )
+
+            universes = universes[:nprof]
+            A = A[:nprof, :]
+
+        # Print only at the first genuinely oscillated point.
+        global _PRINTED_RELATIVE_A_DIAGNOSTIC
+
+        if (
+            use_relative_A
+            and self.useOsc
+            and not _PRINTED_RELATIVE_A_DIAGNOSTIC
+        ):
+            osc_to_cv = np.divide(
+                current_mc,
+                unosc_cv,
+                out=np.ones_like(current_mc),
+                where=np.abs(unosc_cv) > 1e-12,
+            )
+
+            nontrivial = (
+                np.max(np.abs(osc_to_cv - 1.0)) > 1e-6
+            )
+
+            if nontrivial:
+                A_abs_used = A_abs
+
+                if self.profile_n_universes is not None:
+                    A_abs_used = A_abs_used[
+                        :int(self.profile_n_universes),
+                        :,
+                    ]
+
+                print("")
+                print("===== relative flux-A nontrivial diagnostic =====")
+                print("returned A shape        =", A.shape)
+                print("absolute A used shape   =", A_abs_used.shape)
+                print("min osc/CV ratio        =", np.min(osc_to_cv))
+                print("max osc/CV ratio        =", np.max(osc_to_cv))
+                print("mean osc/CV ratio       =", np.mean(osc_to_cv))
+                print(
+                    "max |A-A_abs_used|      =",
+                    np.max(np.abs(A - A_abs_used)),
+                )
+                print(
+                    "mean |A-A_abs_used|     =",
+                    np.mean(np.abs(A - A_abs_used)),
+                )
+                print(
+                    "fraction changed >1e-8  =",
+                    np.mean(np.abs(A - A_abs_used) > 1e-8),
+                )
+                print(
+                    "relative-A finite       =",
+                    np.all(np.isfinite(relative_A)),
+                )
+                print(
+                    "returned A finite       =",
+                    np.all(np.isfinite(A)),
+                )
+                print("===== end relative flux-A diagnostic =====")
+                print("")
+
+                _PRINTED_RELATIVE_A_DIAGNOSTIC = True
 
         return universes, A
 
@@ -537,6 +659,103 @@ class FluxFitter():
         mc   = slicer(mc, sliceInds)
         A    = slicer(A, sliceInds, axis=1)
 
+        # -------------------------------------------------
+        # SVD diagnostic for the actual profiling matrix
+        # -------------------------------------------------
+        global _PRINTED_FLUX_SVD
+
+        svd_key = (
+            self.profile_n_universes,
+            str(self.profile_only),
+            str(self.exclude),
+            tuple(self.mask_bins),
+            tuple(sliceInds),
+        )
+
+        if (
+            os.environ.get("DEBUG_FLUX_SVD", "0") == "1"
+            and svd_key not in _PRINTED_FLUX_SVD
+        ):
+            _PRINTED_FLUX_SVD.add(svd_key)
+
+            singular_values = np.linalg.svd(
+                A,
+                full_matrices=False,
+                compute_uv=False,
+            )
+
+            tolerance = (
+                np.finfo(float).eps
+                * max(A.shape)
+                * singular_values[0]
+                if len(singular_values) > 0
+                else 0.0
+            )
+
+            numerical_rank = int(np.sum(singular_values > tolerance))
+
+            variance = singular_values**2
+            total_variance = np.sum(variance)
+
+            if total_variance > 0:
+                variance_fraction = variance / total_variance
+                cumulative_fraction = np.cumsum(variance_fraction)
+            else:
+                variance_fraction = np.zeros_like(variance)
+                cumulative_fraction = np.zeros_like(variance)
+
+            print("")
+            print("===== flux profiling A-matrix SVD =====")
+            print("profile_n_universes =", self.profile_n_universes)
+            print("profile_only        =", self.profile_only)
+            print("exclude             =", self.exclude)
+            print("mask_bins           =", self.mask_bins)
+            print("A shape             =", A.shape)
+            print("numerical rank      =", numerical_rank)
+            print("SVD tolerance       =", tolerance)
+
+            if len(singular_values) > 0:
+                print("largest singular value  =", singular_values[0])
+                print("smallest singular value =", singular_values[-1])
+
+                if singular_values[-1] > 0:
+                    print(
+                        "condition number A       =",
+                        singular_values[0] / singular_values[-1],
+                    )
+                else:
+                    print("condition number A       = inf")
+
+            for target in [0.90, 0.95, 0.99, 0.999]:
+                if total_variance > 0:
+                    n_required = (
+                        int(np.searchsorted(cumulative_fraction, target)) + 1
+                    )
+                else:
+                    n_required = 0
+
+                print(
+                    "{:5.1f}% cumulative S^2 -> {} modes".format(
+                        100.0 * target,
+                        n_required,
+                    )
+                )
+
+            print("")
+            print(" index      singular value       frac S^2       cumulative")
+            for i, value in enumerate(singular_values):
+                print(
+                    "{:5d}  {:18.10e}  {:12.6e}  {:12.6e}".format(
+                        i,
+                        value,
+                        variance_fraction[i],
+                        cumulative_fraction[i],
+                    )
+                )
+
+            print("===== end flux profiling A-matrix SVD =====")
+            print("")
+
         global _PRINTED_FLUXFITTER_DIAGNOSTIC
         if not _PRINTED_FLUXFITTER_DIAGNOSTIC:
             print("\n===== FluxFitter universe-basis diagnostic =====")
@@ -549,6 +768,144 @@ class FluxFitter():
         cov_sans = self.hist.GetCovarianceMatrix(sansFlux=True)
         cov_sliced = slicer(cov_sans, sliceInds)
         V = np.linalg.pinv(cov_sliced)
+
+        # -------------------------------------------------
+        # Covariance-weighted SVD diagnostic
+        # Uses the same metric as A @ V @ A.T in the fit.
+        # -------------------------------------------------
+        global _PRINTED_FLUX_WEIGHTED_SVD
+
+        weighted_svd_key = (
+            self.profile_n_universes,
+            str(self.profile_only),
+            str(self.exclude),
+            tuple(self.mask_bins),
+            tuple(sliceInds),
+        )
+
+        if (
+            os.environ.get("DEBUG_FLUX_WEIGHTED_SVD", "0") == "1"
+            and weighted_svd_key not in _PRINTED_FLUX_WEIGHTED_SVD
+        ):
+            _PRINTED_FLUX_WEIGHTED_SVD.add(weighted_svd_key)
+
+            # V should be symmetric, but explicitly symmetrize against
+            # small numerical asymmetries from the pseudoinverse.
+            V_sym = 0.5 * (V + V.T)
+
+            eigvals, eigvecs = np.linalg.eigh(V_sym)
+
+            # Protect against tiny negative eigenvalues from numerical precision.
+            eigvals = np.clip(eigvals, 0.0, None)
+
+            sqrtV = (
+                eigvecs
+                @ np.diag(np.sqrt(eigvals))
+                @ eigvecs.T
+            )
+
+            A_weighted = A @ sqrtV
+
+            S_weighted = np.linalg.svd(
+                A_weighted,
+                full_matrices=False,
+                compute_uv=False,
+            )
+
+            weighted_variance = S_weighted**2
+            total_weighted_variance = np.sum(weighted_variance)
+
+            if total_weighted_variance > 0:
+                weighted_fraction = (
+                    weighted_variance / total_weighted_variance
+                )
+                weighted_cumulative = np.cumsum(weighted_fraction)
+            else:
+                weighted_fraction = np.zeros_like(S_weighted)
+                weighted_cumulative = np.zeros_like(S_weighted)
+
+            tolerance_weighted = (
+                np.finfo(float).eps
+                * max(A_weighted.shape)
+                * S_weighted[0]
+                if len(S_weighted) > 0
+                else 0.0
+            )
+
+            weighted_rank = int(
+                np.sum(S_weighted > tolerance_weighted)
+            )
+
+            print("")
+            print("===== covariance-weighted flux A-matrix SVD =====")
+            print("profile_n_universes =", self.profile_n_universes)
+            print("profile_only        =", self.profile_only)
+            print("exclude             =", self.exclude)
+            print("mask_bins           =", self.mask_bins)
+            print("A shape             =", A.shape)
+            print("A_weighted shape    =", A_weighted.shape)
+            print("weighted rank       =", weighted_rank)
+            print("weighted tolerance  =", tolerance_weighted)
+
+            if len(S_weighted) > 0:
+                print(
+                    "largest weighted singular value  =",
+                    S_weighted[0],
+                )
+                print(
+                    "smallest weighted singular value =",
+                    S_weighted[-1],
+                )
+
+                if S_weighted[-1] > 0:
+                    print(
+                        "condition number A_weighted     =",
+                        S_weighted[0] / S_weighted[-1],
+                    )
+                else:
+                    print("condition number A_weighted     = inf")
+
+            for target in [0.90, 0.95, 0.99, 0.999]:
+                if total_weighted_variance > 0:
+                    n_required = (
+                        int(
+                            np.searchsorted(
+                                weighted_cumulative,
+                                target,
+                            )
+                        )
+                        + 1
+                    )
+                else:
+                    n_required = 0
+
+                print(
+                    "{:5.1f}% cumulative weighted S^2 -> {} modes".format(
+                        100.0 * target,
+                        n_required,
+                    )
+                )
+
+            print("")
+            print(
+                " index      weighted singular value   "
+                "frac S^2       cumulative"
+            )
+
+            for i, value in enumerate(S_weighted):
+                print(
+                    "{:5d}  {:22.10e}  {:12.6e}  {:12.6e}".format(
+                        i,
+                        value,
+                        weighted_fraction[i],
+                        weighted_cumulative[i],
+                    )
+                )
+
+            print(
+                "===== end covariance-weighted flux A-matrix SVD ====="
+            )
+            print("")
 
         C = data - mc
         I = np.identity(len(universes))

@@ -1,0 +1,2 @@
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/NUEELSignal/Playlist1M/MasterAnaDev_mc_AnaTuple_run00113020_Playlist.root
+root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/NUEELSignal/Playlist1M/MasterAnaDev_mc_AnaTuple_run00113055_Playlist.root

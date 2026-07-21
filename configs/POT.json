@@ -852,6 +852,14 @@
             }
         }
     },
+    "me1B_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Bp8scattering.txt"
+            }
+        }
+    },
     "me1C_scattering": {
         "mc": {
             "MAD": {
@@ -865,6 +873,14 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Cp6scattering.txt"
+            }
+        }
+    },
+    "me1C_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Cp8scattering.txt"
             }
         }
     },
@@ -884,6 +900,14 @@
             }
         }
     },
+    "me1D_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Dp8scattering.txt"
+            }
+        }
+    },
     "me1E_scattering": {
         "mc": {
             "MAD": {
@@ -897,6 +921,14 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Ep6scattering.txt"
+            }
+        }
+    },
+    "me1E_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ep8scattering.txt"
             }
         }
     },
@@ -916,6 +948,14 @@
             }
         }
     },
+    "me1F_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Fp8scattering.txt"
+            }
+        }
+    },
     "me1G_scattering": {
         "mc": {
             "MAD": {
@@ -932,11 +972,27 @@
             }
         }
     },
+    "me1G_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Gp8scattering.txt"
+            }
+        }
+    },
     "me1L_p6_scattering": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Lp6scattering.txt"
+            }
+        }
+    },
+    "me1L_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Lp8scattering.txt"
             }
         }
     },
@@ -948,11 +1004,27 @@
             }
         }
     },
+    "me1M_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Mp8scattering.txt"
+            }
+        }
+    },
     "me1N_p6_scattering": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Np6scattering.txt"
+            }
+        }
+    },
+    "me1N_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Np8scattering.txt"
             }
         }
     },
@@ -964,11 +1036,27 @@
             }
         }
     },
+    "me1O_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Op8scattering.txt"
+            }
+        }
+    },
     "me1P_p6_scattering": {
         "mc": {
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Pp6scattering.txt"
+            }
+        }
+    },
+    "me1P_p8_scattering": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Pp8scattering.txt"
             }
         }
     },

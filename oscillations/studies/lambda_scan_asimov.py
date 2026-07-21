@@ -2,52 +2,91 @@
 
 import os
 import sys
-import argparse
 import csv
+import argparse
 import shutil
-import json
 import numpy as np
-import logging
+import gc
+import json
 
 def parse_scan_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run null pseudo-data L-curve scans over lambda and Nprof. "
+            "One pseudo-dataset is reused for every lambda and Nprof "
+            "within each toy."
+        )
+    )
 
     parser.add_argument("--hist-config-tag", default=None)
-    parser.add_argument("--exclude", default=None)
-    parser.add_argument("--mask", default="none")
-    parser.add_argument("--out", default=None)
-
-    parser.add_argument("--n-toys", type=int, default=1)
-    parser.add_argument("--seed", type=int, default=12345)
 
     parser.add_argument(
-        "--toy-mode",
-        default="gauss_poisson",
-        choices=["asimov", "poisson", "gauss", "gauss_poisson"],
+        "--toy-source-hist-config-tag",
+        default="prodNueel_noRatio_p8",
         help=(
-            "asimov: data = MC CV; "
-            "poisson: Poisson(MC CV); "
-            "gauss: MC CV + Gaussian covariance fluctuation; "
-            "gauss_poisson: Gaussian covariance fluctuation then Poisson throw"
+            "Direct CCnue stitched configuration used to generate the "
+            "primitive elastic, CCnue, CCnuebar, CCnumu, and CCnumubar "
+            "pseudo-data. All analysis configurations should use the "
+            "same source tag and seed."
+        ),
+    )
+
+    parser.add_argument("--exclude", default=None)
+    parser.add_argument("--mask", default="none")
+    parser.add_argument("--profile-only", default=None)
+
+    parser.add_argument(
+        "--lambdas",
+        default="0.3,0.5,0.7,0.85,1,1.15,1.3,1.5,2,3,10",
+        help="Comma-separated lambda values.",
+    )
+
+    parser.add_argument(
+        "--nprof-values",
+        default="30,40,50,75,100,200,500",
+        help="Comma-separated Nprof values.",
+    )
+
+    parser.add_argument(
+        "--ntoys",
+        type=int,
+        default=100,
+        help="Number of null pseudo-data toys.",
+    )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=12345,
+        help="Base NumPy random seed.",
+    )
+
+    parser.add_argument(
+        "--throw-mode",
+        choices=[
+            "poisson",
+            "gaussian_sansflux",
+            "asimov",
+        ],
+        default="poisson",
+        help=(
+            "Pseudo-data construction. "
+            "'poisson' throws each nominal count bin independently; "
+            "'gaussian_sansflux' draws a correlated shift using the "
+            "sans-flux covariance; "
+            "'asimov' uses the nominal MC without fluctuation."
         ),
     )
 
     parser.add_argument(
-        "--cov-mode",
-        default="full",
-        choices=["full", "sansFlux"],
-        help="Covariance used for Gaussian toy fluctuation.",
-    )
-
-    parser.add_argument(
-        "--lambdas",
-        default="0.01,0.03,0.1,0.2,0.3,0.5,0.7,0.85,1,1.15,1.3,1.5,2,3,5,10,30,100",
-        help="Comma-separated lambda values",
+        "--out",
+        default=None,
+        help="Output CSV path.",
     )
 
     args, remaining = parser.parse_known_args()
 
-    # Hide lambda-scan-only args from AnalysisConfig/project parsers.
+    # Hide scan-only arguments from AnalysisConfig/project parsers.
     sys.argv = [sys.argv[0]] + remaining
 
     return args
@@ -55,164 +94,43 @@ def parse_scan_args():
 
 args = parse_scan_args()
 
+
 import ROOT
 import PlotUtils
 
 from config.AnalysisConfig import AnalysisConfig
-from tools.Helper import TMatrix_to_Numpy
 from tools.StitchedHistogram import StitchedHistogram
-from tools.Fitters import Statistics, OscillationFitter
+from tools.Fitters import Statistics
 
 ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 
-def throw_multivariate_psd(mean, cov, size=1, tol=1e-10):
-    """
-    Draw from N(mean, cov) for a symmetric positive-semidefinite covariance.
-    Allows exact zero eigenvalues, unlike Cholesky.
 
-    Returns:
-      size == 1 : shape (nbins,)
-      size > 1  : shape (size, nbins)
-    """
-    mean = np.asarray(mean, dtype=float)
-    cov = np.asarray(cov, dtype=float)
+def parse_csv_floats(spec):
+    values = [
+        float(value.strip())
+        for value in str(spec).split(",")
+        if value.strip() != ""
+    ]
 
-    # Force exact symmetry.
-    cov = 0.5 * (cov + cov.T)
+    if len(values) == 0:
+        raise RuntimeError("No floating-point values were provided")
 
-    eigvals, eigvecs = np.linalg.eigh(cov)
-
-    min_eig = np.min(eigvals)
-    if min_eig < -tol:
-        print("WARNING: covariance has negative eigenvalue:", min_eig)
-
-    # Clip tiny negative numerical noise.
-    eigvals = np.clip(eigvals, 0.0, None)
-
-    z = np.random.normal(size=(size, len(mean)))
-    sqrt_cov = eigvecs @ np.diag(np.sqrt(eigvals))
-
-    throws = mean + z @ sqrt_cov.T
-
-    if size == 1:
-        return throws[0]
-
-    return throws
+    return values
 
 
-def ThrowSystematics(
-    histogram,
-    throwFlux=False,
-    useDataSubMCCov=True,
-    n_samples=50,
-    doDiagnostics=False,
-):
-    pred_vals = np.array(histogram.GetMCHistogram())[1:-1]
+def parse_csv_ints(spec):
+    values = [
+        int(value.strip())
+        for value in str(spec).split(",")
+        if value.strip() != ""
+    ]
 
-    # Full covariance currently includes stat + all systematics.
-    V_full = histogram.GetCovarianceMatrix(False)
-    V_sansFlux = histogram.GetCovarianceMatrix(sansFlux=True)
-    V_flux = V_full - V_sansFlux
+    if len(values) == 0:
+        raise RuntimeError("No integer values were provided")
 
-    # Get the stat covariance from the same residual histogram convention
-    # used in StitchedHistogram.SetCovarianceMatrices().
-    h_test = histogram.GetDataHistogram().Clone()
-    h_test.Add(histogram.GetMCHistogram(), -1)
+    return values
 
-    V_stat = TMatrix_to_Numpy(h_test.GetStatErrorMatrix())[1:-1, 1:-1]
-
-    # Remove stat from the Gaussian throw covariance.
-    # Poisson will handle statistical fluctuations later.
-    V_full_systOnly = V_full - V_stat
-    V_sansFlux_systOnly = V_sansFlux - V_stat
-
-    # Force symmetry.
-    V_flux = 0.5 * (V_flux + V_flux.T)
-    V_full_systOnly = 0.5 * (V_full_systOnly + V_full_systOnly.T)
-    V_sansFlux_systOnly = 0.5 * (V_sansFlux_systOnly + V_sansFlux_systOnly.T)
-
-    if doDiagnostics:
-        print_cov_diagnostics("V_full = stat + all syst", V_full)
-        print_cov_diagnostics("V_sansFlux = stat + nonflux syst", V_sansFlux)
-        print_cov_diagnostics("V_stat", V_stat)
-        print_cov_diagnostics("V_flux", V_flux)
-        print_cov_diagnostics("V_full_systOnly", V_full_systOnly)
-        print_cov_diagnostics("V_sansFlux_systOnly", V_sansFlux_systOnly)
-
-    if throwFlux:
-        # Same strategy as Ryan's script:
-        # one independent flux throw per toy.
-        flux_throws = throw_multivariate_psd(
-            pred_vals,
-            V_flux,
-            size=n_samples,
-        )
-
-        flux_throws = np.asarray(flux_throws)
-        if flux_throws.ndim == 1:
-            flux_throws = flux_throws.reshape(1, -1)
-
-        # Then one independent non-flux systematic throw per toy,
-        # centered on that toy's flux-shifted mean.
-        sys_throws = []
-        for flux_mean in flux_throws:
-            toy_mean = throw_multivariate_psd(
-                flux_mean,
-                V_sansFlux_systOnly,
-                size=1,
-            )
-            sys_throws.append(toy_mean)
-
-        sys_throws = np.asarray(sys_throws)
-
-    else:
-        # No explicit flux profiling:
-        # throw all systematics together, but still no stat in the Gaussian covariance.
-        sys_throws = throw_multivariate_psd(
-            pred_vals,
-            V_full_systOnly,
-            size=n_samples,
-        )
-
-    sys_throws = np.asarray(sys_throws)
-    if sys_throws.ndim == 1:
-        sys_throws = sys_throws.reshape(1, -1)
-
-    print("ThrowSystematics shape:", sys_throws.shape)
-    return sys_throws
-
-def ThrowPoissons(lambdas, histogram, throwFlux=False):
-    lambdas = np.asarray(lambdas)
-
-    # Force shape = (n_toys, n_bins)
-    if lambdas.ndim == 1:
-        lambdas = lambdas.reshape(1, -1)
-
-    print("ThrowPoissons input shape:", lambdas.shape)
-
-    throws = []
-    for lam in lambdas:
-        while lam[lam < 0].any():
-            logging.error("Negative value in sys throws, rerunning this throw...")
-            lam = ThrowSystematics(
-                histogram,
-                throwFlux=throwFlux,
-                n_samples=1,
-                doDiagnostics=False,
-            )[0]
-
-        throw = np.random.poisson(lam)
-        throws.append(throw)
-
-    throws = np.asarray(throws)
-
-    if throws.ndim == 1:
-        throws = throws.reshape(1, -1)
-
-    print("ThrowPoissons output shape:", throws.shape)
-
-    return throws
 
 def write_rows_csv(rows, out_csv):
     if len(rows) == 0:
@@ -220,16 +138,50 @@ def write_rows_csv(rows, out_csv):
 
     fieldnames = list(rows[0].keys())
 
-    with open(out_csv, "w") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+    with open(out_csv, "w") as output_file:
+        writer = csv.DictWriter(
+            output_file,
+            fieldnames=fieldnames,
+        )
         writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+        writer.writerows(rows)
+
+
+def normalize_exclude(exclude):
+    if exclude is None:
+        return ""
+
+    if isinstance(exclude, str):
+        if exclude.strip().lower() in ["", "none"]:
+            return ""
+
+    return exclude
+
+
+def normalize_profile_only(profile_only):
+    if profile_only is None:
+        return None
+
+    if isinstance(profile_only, str):
+        if profile_only.strip().lower() in ["", "none"]:
+            return None
+
+    return profile_only
 
 
 def parse_mask(mask_name):
+    """
+    Predefined masks used in the original lambda-scan studies.
+    """
     if mask_name in [None, "", "none", "None"]:
         return None
+
+    if mask_name == "nonratio":
+        return {
+            "fhc_elastic": list(range(1, 5)),
+            "fhc_numu_selection": list(range(1, 13)),
+            "rhc_numu_selection": list(range(1, 13)),
+        }
 
     if mask_name == "ratio":
         return {
@@ -265,193 +217,396 @@ def parse_mask(mask_name):
             "rhc_ratio": [1, 9, 10],
         }
 
-    raise ValueError("Unknown mask_name: {}".format(mask_name))
+    raise ValueError(
+        "Unknown mask name: {}".format(mask_name)
+    )
 
 
-def psd_gaussian_shift(cov, rng):
+def covariance_square_root(covariance):
     """
-    Draw one correlated Gaussian fluctuation from covariance using PSD eigen sqrt.
-    Handles tiny negative eigenvalues from numerical noise.
+    Return a PSD square root of a symmetric covariance matrix.
+
+    Small negative eigenvalues from numerical precision are clipped to zero.
     """
-    cov = 0.5 * (cov + cov.T)
+    covariance = np.asarray(
+        covariance,
+        dtype=float,
+    )
 
-    vals, vecs = np.linalg.eigh(cov)
+    covariance = 0.5 * (
+        covariance + covariance.T
+    )
 
-    min_eval = np.min(vals)
-    if min_eval < -1e-6 * max(np.max(vals), 1.0):
-        print("WARNING: covariance has significantly negative eigenvalue:", min_eval)
+    eigenvalues, eigenvectors = np.linalg.eigh(
+        covariance
+    )
 
-    vals = np.clip(vals, 0.0, None)
+    minimum_before_clip = float(
+        np.min(eigenvalues)
+    )
 
-    z = rng.normal(size=len(vals))
-    shift = vecs @ (np.sqrt(vals) * z)
+    eigenvalues = np.clip(
+        eigenvalues,
+        0.0,
+        None,
+    )
 
-    return shift
+    sqrt_covariance = (
+        eigenvectors
+        @ np.diag(np.sqrt(eigenvalues))
+        @ eigenvectors.T
+    )
+
+    return sqrt_covariance, minimum_before_clip
 
 
-def generate_pseudo_vector(base_histogram, rng, toy_mode, cov_mode):
+DIRECT_SLICES = {
+    "fhc_elastic": slice(0, 4),
+    "fhc_nue_selection": slice(4, 16),
+    "rhc_nue_selection": slice(16, 28),
+    "fhc_numu_selection": slice(28, 40),
+    "rhc_numu_selection": slice(40, 52),
+}
+
+
+def make_primitive_null_pseudodata(
+    source_histogram,
+    throw_mode,
+    rng,
+    sqrt_sansflux=None,
+):
     """
-    Generate one pseudo-data vector in stitched global-bin order.
+    Generate one toy in the direct primitive sample space:
 
-    toy_mode:
-        asimov        -> MC CV
-        poisson       -> Poisson(MC CV)
-        gauss         -> MC CV + Gaussian cov fluctuation
-        gauss_poisson -> Gaussian cov fluctuation, then Poisson
+        fhc_elastic
+        fhc_nue_selection
+        rhc_nue_selection
+        fhc_numu_selection
+        rhc_numu_selection
+
+    The same primitive toy can then be transformed into either the
+    direct or ratio stitched configuration.
     """
-    base = np.array(base_histogram.GetMCHistogram())[1:-1].astype(float)
+    nominal = np.asarray(
+        source_histogram.GetMCHistogram(),
+        dtype=float,
+    )[1:-1]
 
-    mean = base.copy()
-
-    if toy_mode in ["gauss", "gauss_poisson"]:
-        if cov_mode == "full":
-            cov = base_histogram.GetCovarianceMatrix(sansFlux=False)
-        elif cov_mode == "sansFlux":
-            cov = base_histogram.GetCovarianceMatrix(sansFlux=True)
-        else:
-            raise ValueError("Unknown cov_mode: {}".format(cov_mode))
-
-        shift = psd_gaussian_shift(cov, rng)
-        mean = mean + shift
-
-    mean = np.clip(mean, 0.0, None)
-
-    if toy_mode in ["poisson", "gauss_poisson"]:
-        pseudo = rng.poisson(mean)
-    elif toy_mode in ["asimov", "gauss"]:
-        pseudo = mean
-    else:
-        raise ValueError("Unknown toy_mode: {}".format(toy_mode))
-
-    return pseudo.astype(float)
-
-
-def overwrite_data_hist_from_stitched_vector(histogram, stitched_vector):
-    """
-    Replace the stitched data histogram with a pseudo-data vector.
-
-    This follows the same strategy as fitAsimovs_quinn.py:
-    start from the existing stitched data histogram, build weights so that
-    DivideSingle changes the bin contents to the toy values, then call
-    SetDataHistogram().
-    """
-    stitched_data = histogram.GetDataHistogram()
-
-    toy = np.asarray(stitched_vector, dtype=float)
-    if toy.ndim != 1:
-        raise RuntimeError("stitched_vector must be 1D")
-
-    if stitched_data.GetNbinsX() != len(toy):
+    if len(nominal) != 52:
         raise RuntimeError(
-            "Toy vector length {} does not match stitched data bins {}".format(
-                len(toy),
-                stitched_data.GetNbinsX()
+            "Primitive direct source must contain 52 bins, got {}".format(
+                len(nominal)
             )
         )
 
-    weights = stitched_data.Clone().GetCVHistoWithStatError()
+    if not np.all(np.isfinite(nominal)):
+        raise RuntimeError(
+            "Primitive nominal MC contains non-finite values"
+        )
 
-    for i in range(1, weights.GetNbinsX() + 1):
-        if toy[i - 1] != 0:
-            weight = stitched_data.GetBinContent(i) / toy[i - 1]
-        else:
-            weight = stitched_data.GetBinContent(i)
+    if throw_mode == "asimov":
+        pseudo = nominal.copy()
 
-        weights.SetBinContent(i, weight)
-        weights.SetBinError(i, 0)
+    elif throw_mode == "poisson":
+        if np.any(nominal < 0.0):
+            bad = np.where(nominal < 0.0)[0]
+            raise RuntimeError(
+                "Poisson throw requested but primitive nominal bins "
+                "are negative: {}".format(bad.tolist())
+            )
 
-    data_histogram = stitched_data.Clone()
-    data_histogram.DivideSingle(data_histogram, weights)
+        pseudo = rng.poisson(
+            nominal
+        ).astype(float)
 
-    histogram.SetDataHistogram(data_histogram)
+    elif throw_mode == "gaussian_sansflux":
+        if sqrt_sansflux is None:
+            raise RuntimeError(
+                "gaussian_sansflux requires the direct-source "
+                "sans-flux covariance square root"
+            )
+
+        z = rng.normal(
+            loc=0.0,
+            scale=1.0,
+            size=len(nominal),
+        )
+
+        pseudo_raw = nominal + sqrt_sansflux @ z
+
+        negative_bins = np.where(pseudo_raw < 0.0)[0]
+
+        if len(negative_bins) > 0:
+            print(
+                "WARNING: Gaussian primitive toy has {} negative bins "
+                "before clipping: global bins {}".format(
+                    len(negative_bins),
+                    (negative_bins + 1).tolist(),
+                )
+            )
+
+        pseudo = np.clip(
+            pseudo_raw,
+            0.0,
+            None,
+        )
+
+    else:
+        raise RuntimeError(
+            "Unknown throw mode: {}".format(
+                throw_mode
+            )
+        )
+
+    return nominal, pseudo
 
 
-def get_residual_and_penalty(stat, useOsc=False):
-    chi2, penalty = stat.Chi2DataMC(
+def safe_ratio(numerator, denominator, label):
+    """
+    Construct a finite ratio and reject toys containing zero
+    denominator bins.
+    """
+    numerator = np.asarray(
+        numerator,
+        dtype=float,
+    )
+
+    denominator = np.asarray(
+        denominator,
+        dtype=float,
+    )
+
+    zero_denominator = np.abs(denominator) <= 1e-12
+
+    if np.any(zero_denominator):
+        raise RuntimeError(
+            "{} has zero denominator in local bins {}".format(
+                label,
+                (np.where(zero_denominator)[0] + 1).tolist(),
+            )
+        )
+
+    ratio = np.divide(
+        numerator,
+        denominator,
+        out=np.zeros_like(numerator, dtype=float),
+        where=~zero_denominator,
+    )
+
+    if not np.all(np.isfinite(ratio)):
+        raise RuntimeError(
+            "{} ratio contains non-finite values".format(label)
+        )
+
+    return ratio
+
+
+def convert_primitive_vector_to_target(
+    primitive_vector,
+    target_has_ratio,
+):
+    """
+    Convert the common primitive direct-space vector to the stitched
+    layout used by the target analysis configuration.
+
+    Direct target:
+        elastic, nue, nuebar, numu, numubar
+
+    Ratio target:
+        elastic, numu/nue, numubar/nuebar, numu, numubar
+    """
+    primitive_vector = np.asarray(
+        primitive_vector,
+        dtype=float,
+    )
+
+    if len(primitive_vector) != 52:
+        raise RuntimeError(
+            "Primitive vector must contain 52 bins, got {}".format(
+                len(primitive_vector)
+            )
+        )
+
+    fhc_elastic = primitive_vector[
+        DIRECT_SLICES["fhc_elastic"]
+    ]
+
+    fhc_nue = primitive_vector[
+        DIRECT_SLICES["fhc_nue_selection"]
+    ]
+
+    rhc_nue = primitive_vector[
+        DIRECT_SLICES["rhc_nue_selection"]
+    ]
+
+    fhc_numu = primitive_vector[
+        DIRECT_SLICES["fhc_numu_selection"]
+    ]
+
+    rhc_numu = primitive_vector[
+        DIRECT_SLICES["rhc_numu_selection"]
+    ]
+
+    if not target_has_ratio:
+        return np.concatenate([
+            fhc_elastic,
+            fhc_nue,
+            rhc_nue,
+            fhc_numu,
+            rhc_numu,
+        ])
+
+    fhc_ratio = safe_ratio(
+        fhc_numu,
+        fhc_nue,
+        "FHC CCnumu/CCnue",
+    )
+
+    rhc_ratio = safe_ratio(
+        rhc_numu,
+        rhc_nue,
+        "RHC CCnumubar/CCnuebar",
+    )
+
+    return np.concatenate([
+        fhc_elastic,
+        fhc_ratio,
+        rhc_ratio,
+        fhc_numu,
+        rhc_numu,
+    ])
+
+
+def set_pseudo_histogram_from_vector(
+    histogram,
+    pseudo_vector,
+    toy_index,
+):
+    """
+    Set the StitchedHistogram pseudo histogram from a stitched-bin vector.
+
+    The pseudo histogram is cloned from the nominal MC so it has the
+    correct binning and ROOT histogram type.
+    """
+    pseudo_vector = np.asarray(
+        pseudo_vector,
+        dtype=float,
+    )
+
+    nominal_histogram = histogram.GetMCHistogram()
+
+    if nominal_histogram.GetNbinsX() != len(pseudo_vector):
+        raise RuntimeError(
+            "Pseudo vector has {} bins, but stitched histogram has {}".format(
+                len(pseudo_vector),
+                nominal_histogram.GetNbinsX(),
+            )
+        )
+
+    pseudo_histogram = nominal_histogram.Clone(
+        "pseudo_null_toy_{}".format(toy_index)
+    )
+
+    pseudo_histogram.SetDirectory(0)
+
+    for bin_number in range(
+        1,
+        pseudo_histogram.GetNbinsX() + 1,
+    ):
+        value = float(
+            pseudo_vector[bin_number - 1]
+        )
+
+        pseudo_histogram.SetBinContent(
+            bin_number,
+            value,
+        )
+
+        # The χ² covariance is handled separately.
+        # These ROOT bin errors are not used by Statistics.Chi2DataMC.
+        pseudo_histogram.SetBinError(
+            bin_number,
+            np.sqrt(max(value, 0.0)),
+        )
+
+    histogram.SetPseudoHistogram(
+        pseudo_histogram
+    )
+
+
+def get_residual_and_penalty(statistic):
+    """
+    Evaluate the profiled null χ² against the pseudo-data histogram.
+    """
+    chi2, penalty = statistic.Chi2DataMC(
         marginalize=True,
-        useOsc=useOsc,
-    )
-
-    flux_fitter = stat.GetFluxFitter(useOsc=useOsc)
-    a = flux_fitter.GetFluxSolution()
-
-    residual = chi2 - penalty
-    norm_a = np.linalg.norm(a)
-    max_abs_a = np.max(np.abs(a))
-
-    return chi2, residual, penalty, norm_a, max_abs_a
-
-
-def run_one_lambda(sample_histogram, lam, exclude_samples, mask_spec):
-    """
-    Run null profiled chi2 and oscillation best fit for one lambda value.
-    This uses whatever is currently stored in sample_histogram.data_hists.
-    """
-
-    stat_null = Statistics(
-        sample_histogram,
-        exclude=exclude_samples,
-        lam=lam,
-        mask_spec=mask_spec,
-    )
-
-    chi2_null, resid_null, pen_null, norm_null, max_null = get_residual_and_penalty(
-        stat_null,
+        usePseudo=True,
         useOsc=False,
     )
 
-    fitter = OscillationFitter(
+    flux_fitter = statistic.GetFluxFitter(
+        useOsc=False
+    )
+
+    solution = np.array(
+        flux_fitter.GetFluxSolution(),
+        dtype=float,
+        copy=True,
+    )
+
+    residual = float(
+        chi2 - penalty
+    )
+
+    norm_a = float(
+        np.linalg.norm(solution)
+    )
+
+    max_abs_a = float(
+        np.max(np.abs(solution))
+    )
+
+    del flux_fitter
+
+    return {
+        "chi2_null": float(chi2),
+        "resid_null": residual,
+        "penalty_null": float(penalty),
+        "norm_a_null": norm_a,
+        "max_abs_a_null": max_abs_a,
+    }
+
+
+def run_one_point(
+    sample_histogram,
+    lam,
+    nprof,
+    exclude_samples,
+    mask_spec,
+    profile_only,
+):
+    statistic = Statistics(
         sample_histogram,
         exclude=exclude_samples,
         lam=lam,
-        marginalize_flux=True,
         mask_spec=mask_spec,
+        profile_only=profile_only,
+        profile_n_universes=nprof,
     )
 
-    chi2_bf_fit, res = fitter.DoFit()
-
-    sample_histogram.OscillateHistogram(
-        res["m"],
-        res["ue4"],
-        res["umu4"],
-        res["utau4"],
+    result = get_residual_and_penalty(
+        statistic
     )
 
-    stat_bf = Statistics(
-        sample_histogram,
-        exclude=exclude_samples,
-        lam=lam,
-        mask_spec=mask_spec,
-    )
-
-    chi2_bf, resid_bf, pen_bf, norm_bf, max_bf = get_residual_and_penalty(
-        stat_bf,
-        useOsc=True,
-    )
+    del statistic
 
     row = {
-        "lambda": lam,
-        "log_lambda": np.log10(lam),
-
-        "chi2_null": chi2_null,
-        "resid_null": resid_null,
-        "penalty_null": pen_null,
-        "norm_a_null": norm_null,
-        "max_abs_a_null": max_null,
-
-        "chi2_bf": chi2_bf,
-        "resid_bf": resid_bf,
-        "penalty_bf": pen_bf,
-        "norm_a_bf": norm_bf,
-        "max_abs_a_bf": max_bf,
-
-        "delta_chi2": chi2_null - chi2_bf,
-
-        "dm2": res["m"],
-        "ue4": res["ue4"],
-        "umu4": res["umu4"],
-        "utau4": res["utau4"],
+        "lambda": float(lam),
+        "log_lambda": float(np.log10(lam)),
+        "nprof": int(nprof),
     }
+
+    row.update(result)
 
     return row
 
@@ -459,205 +614,608 @@ def run_one_lambda(sample_histogram, lam, exclude_samples, mask_spec):
 def main():
     global args
 
-    # Match fitAsimovs_quinn.py seeding convention closely enough.
-    np.random.seed(args.seed)
+    ccnueroot = os.environ.get(
+        "CCNUEROOT"
+    )
 
-    ccnueroot = os.environ.get("CCNUEROOT")
     if ccnueroot is None:
-        raise RuntimeError("CCNUEROOT is not set")
+        raise RuntimeError(
+            "CCNUEROOT is not set"
+        )
 
     plot_tag = args.hist_config_tag
+
     if plot_tag is None:
-        plot_tag = getattr(AnalysisConfig, "hist_config_tag", "default")
+        plot_tag = getattr(
+            AnalysisConfig,
+            "hist_config_tag",
+            "default",
+        )
 
     if plot_tag in [None, "", "none"]:
         plot_tag = "default"
 
     exclude_samples = args.exclude
-    if exclude_samples is None:
-        exclude_samples = getattr(AnalysisConfig, "exclude", "")
 
     if exclude_samples is None:
-        exclude_samples = ""
+        exclude_samples = getattr(
+            AnalysisConfig,
+            "exclude",
+            "",
+        )
 
-    if isinstance(exclude_samples, str):
-        if exclude_samples.strip().lower() in ["none", ""]:
-            exclude_samples = ""
+    exclude_samples = normalize_exclude(
+        exclude_samples
+    )
 
-    mask_spec = parse_mask(args.mask)
+    profile_only = normalize_profile_only(
+        args.profile_only
+    )
 
-    filename = "rootfiles/NuE_stitched_hists_{}.root".format(plot_tag)
-    file_path = "{}/oscillations/{}".format(ccnueroot, filename)
+    mask_spec = parse_mask(
+        args.mask
+    )
 
-    hist_config = "HIST_CONFIG_{}.json".format(plot_tag)
-    if not os.path.exists(hist_config):
-        raise RuntimeError("Missing requested hist config file: {}".format(hist_config))
+    lambda_values = parse_csv_floats(
+        args.lambdas
+    )
 
-    shutil.copyfile(hist_config, "HIST_CONFIG.json")
+    nprof_values = parse_csv_ints(
+        args.nprof_values
+    )
 
-    lambda_values = [float(x) for x in args.lambdas.split(",")]
+    if args.ntoys <= 0:
+        raise RuntimeError(
+            "--ntoys must be positive"
+        )
 
-    # For FC-consistent toy throwing:
-    # profileFlux=True means throw flux separately, then sans-flux syst, then Poisson.
-    # profileFlux=False means throw full syst-only covariance, then Poisson.
-    profileFlux = True
+    if any(value <= 0 for value in nprof_values):
+        raise RuntimeError(
+            "All Nprof values must be positive"
+        )
+
+    # --------------------------------------------------
+    # Target configuration: the analysis being scanned.
+    # --------------------------------------------------
+    target_filename = (
+        "rootfiles/"
+        "NuE_stitched_hists_{}.root"
+    ).format(plot_tag)
+
+    target_file_path = os.path.join(
+        ccnueroot,
+        "oscillations",
+        target_filename,
+    )
+
+    target_hist_config = (
+        "HIST_CONFIG_{}.json"
+    ).format(plot_tag)
+
+    # --------------------------------------------------
+    # Primitive source configuration: always direct CCnue.
+    # --------------------------------------------------
+    toy_source_tag = args.toy_source_hist_config_tag
+
+    source_filename = (
+        "rootfiles/"
+        "NuE_stitched_hists_{}.root"
+    ).format(toy_source_tag)
+
+    source_file_path = os.path.join(
+        ccnueroot,
+        "oscillations",
+        source_filename,
+    )
+
+    source_hist_config = (
+        "HIST_CONFIG_{}.json"
+    ).format(toy_source_tag)
+
+    for label, path in [
+        ("target stitched ROOT file", target_file_path),
+        ("target HIST_CONFIG", target_hist_config),
+        ("toy-source stitched ROOT file", source_file_path),
+        ("toy-source HIST_CONFIG", source_hist_config),
+    ]:
+        if not os.path.exists(path):
+            raise RuntimeError(
+                "Missing {}: {}".format(label, path)
+            )
+
+    # Load the direct primitive source using its own configuration.
+    shutil.copyfile(
+        source_hist_config,
+        "HIST_CONFIG.json",
+    )
+
+    primitive_source_histogram = StitchedHistogram(
+        "primitive_source"
+    )
+
+    primitive_source_histogram.Load(
+        source_file_path
+    )
+
+    expected_primitive_samples = {
+        "fhc_elastic",
+        "fhc_nue_selection",
+        "rhc_nue_selection",
+        "fhc_numu_selection",
+        "rhc_numu_selection",
+    }
+
+    missing_primitive_samples = (
+        expected_primitive_samples
+        - set(primitive_source_histogram.keys)
+    )
+
+    if missing_primitive_samples:
+        raise RuntimeError(
+            "Toy source must be the direct configuration. "
+            "Missing primitive samples: {}".format(
+                sorted(missing_primitive_samples)
+            )
+        )
+
+    # Now activate and load the target analysis configuration.
+    shutil.copyfile(
+        target_hist_config,
+        "HIST_CONFIG.json",
+    )
+
+    target_source_histogram = StitchedHistogram(
+        "target_source"
+    )
+
+    target_source_histogram.Load(
+        target_file_path
+    )
+
+    with open(target_hist_config, "r") as config_file:
+        target_layout = json.load(config_file)
+
+    has_ratio_samples = (
+        "fhc_ratio" in target_layout
+        and "rhc_ratio" in target_layout
+    )
+
+    has_direct_nue_samples = (
+        "fhc_nue_selection" in target_layout
+        and "rhc_nue_selection" in target_layout
+    )
+
+    if has_ratio_samples == has_direct_nue_samples:
+        raise RuntimeError(
+            "Could not uniquely identify target stitched layout. "
+            "Expected either ratio samples or direct CCnue samples. "
+            "HIST_CONFIG keys: {}".format(
+                list(target_layout.keys())
+            )
+        )
+
+    total_flux_universes = (
+        target_source_histogram.GetAMatrix().shape[0]
+    )
+
+    invalid_nprof = [
+        value
+        for value in nprof_values
+        if value > total_flux_universes
+    ]
+
+    if len(invalid_nprof) > 0:
+        raise RuntimeError(
+            "Requested Nprof values {} exceed the {} available "
+            "flux universes".format(
+                invalid_nprof,
+                total_flux_universes,
+            )
+        )
+
+    sqrt_sansflux = None
+    minimum_sansflux_eigenvalue = np.nan
+
+    if args.throw_mode == "gaussian_sansflux":
+        primitive_sansflux_covariance = (
+            primitive_source_histogram.GetCovarianceMatrix(
+                sansFlux=True
+            )
+        )
+
+        if primitive_sansflux_covariance.shape != (52, 52):
+            raise RuntimeError(
+                "Expected primitive direct sans-flux covariance "
+                "shape (52, 52), got {}".format(
+                    primitive_sansflux_covariance.shape
+                )
+            )
+
+        (
+            sqrt_sansflux,
+            minimum_sansflux_eigenvalue,
+        ) = covariance_square_root(
+            primitive_sansflux_covariance
+        )
+
 
     if args.out is None:
-        mask_label = args.mask if args.mask not in [None, ""] else "none"
-        exclude_label = exclude_samples if exclude_samples not in [None, ""] else "none"
-        out_csv = "lambda_scan_asimov_{}_exclude_{}_mask_{}_fcThrow_ntoys{}.csv".format(
+        exclude_label = (
+            exclude_samples
+            if exclude_samples != ""
+            else "none"
+        )
+
+        profile_label = (
+            profile_only
+            if profile_only is not None
+            else "none"
+        )
+
+        out_csv = (
+            "lambda_scan_asimov_"
+            "{}_exclude_{}_profileOnly_{}_mask_{}_"
+            "{}_Ntoys{}.csv"
+        ).format(
             plot_tag,
             exclude_label.replace(",", "_"),
-            mask_label,
-            args.n_toys,
+            profile_label,
+            args.mask,
+            args.throw_mode,
+            args.ntoys,
         )
+
     else:
         out_csv = args.out
 
-    out_dir = os.path.dirname(out_csv)
+    out_dir = os.path.dirname(
+        out_csv
+    )
+
     if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
-
-    print("\n===== FC-style Asimov/toy lambda scan setup =====")
-    print("plot_tag       =", plot_tag)
-    print("file           =", file_path)
-    print("hist_config    =", hist_config)
-    print("exclude        =", exclude_samples)
-    print("mask           =", args.mask)
-    print("mask_spec      =", mask_spec)
-    print("profileFlux    =", profileFlux)
-    print("n_toys         =", args.n_toys)
-    print("seed           =", args.seed)
-    print("lambdas        =", lambda_values)
-    print("output csv     =", out_csv)
-
-    # Load once to generate all toys.
-    toy_source_hist = StitchedHistogram("toy_source")
-    toy_source_hist.Load(file_path)
-
-    print("\n===== Loaded stitched covariance check =====")
-    print("full covariance shape      =", toy_source_hist.GetCovarianceMatrix(False).shape)
-    print("sans-flux covariance shape =", toy_source_hist.GetCovarianceMatrix(True).shape)
-
-    # Generate toys using the same method as fitAsimovs_quinn.py:
-    # MC CV -> Gaussian systematic throw -> Poisson throw.
-    # If profileFlux=True:
-    #   flux covariance throw first,
-    #   then sans-flux systematic covariance throw around flux-shifted mean,
-    #   then Poisson.
-    if args.toy_mode == "asimov":
-        base = np.array(toy_source_hist.GetMCHistogram())[1:-1].astype(float)
-        experiments = np.asarray([base.copy() for _ in range(args.n_toys)])
-    elif args.toy_mode == "poisson":
-        base = np.array(toy_source_hist.GetMCHistogram())[1:-1].astype(float)
-        experiments = np.random.poisson(base, size=(args.n_toys, len(base)))
-    elif args.toy_mode in ["gauss", "gauss_poisson"]:
-        sys_throws = ThrowSystematics(
-            toy_source_hist,
-            throwFlux=profileFlux,
-            n_samples=args.n_toys,
-            doDiagnostics=False,
+        os.makedirs(
+            out_dir,
+            exist_ok=True,
         )
 
-        if args.toy_mode == "gauss":
-            experiments = sys_throws
-        else:
-            experiments = ThrowPoissons(
-                sys_throws,
-                toy_source_hist,
-                throwFlux=profileFlux,
+    print("")
+    print("===== NULL PSEUDO-DATA NPROF L-CURVE SCAN =====")
+    print("target plot_tag          =", plot_tag)
+    print("target file              =", target_file_path)
+    print("target hist_config       =", target_hist_config)
+    print("toy source tag           =", toy_source_tag)
+    print("toy source file          =", source_file_path)
+    print("toy source hist_config   =", source_hist_config)
+    print(
+        "target samples           =",
+        target_source_histogram.keys,
+    )
+    print(
+        "primitive source samples =",
+        primitive_source_histogram.keys,
+    )
+    print("target has ratios        =", has_ratio_samples)
+    print("exclude                  =", exclude_samples)
+    print("profile_only             =", profile_only)
+    print("mask                     =", args.mask)
+    print("mask_spec                =", mask_spec)
+    print("throw_mode               =", args.throw_mode)
+    print("ntoys                    =", args.ntoys)
+    print("seed                     =", args.seed)
+    print("lambdas                  =", lambda_values)
+    print("nprof_values             =", nprof_values)
+    print("total flux universes     =", total_flux_universes)
+    print(
+        "minimum primitive sansFlux eigenvalue before clipping =",
+        minimum_sansflux_eigenvalue,
+    )
+    print("output csv               =", out_csv)
+    print("")
+
+
+    # --------------------------------------------------
+    # Verify that the direct source exactly reconstructs
+    # the target configuration at nominal.
+    # --------------------------------------------------
+    primitive_nominal = np.asarray(
+        primitive_source_histogram.GetMCHistogram(),
+        dtype=float,
+    )[1:-1]
+
+    rebuilt_target_nominal = convert_primitive_vector_to_target(
+        primitive_nominal,
+        target_has_ratio=has_ratio_samples,
+    )
+
+    stored_target_nominal = np.asarray(
+        target_source_histogram.GetMCHistogram(),
+        dtype=float,
+    )[1:-1]
+
+    if len(rebuilt_target_nominal) != len(stored_target_nominal):
+        raise RuntimeError(
+            "Rebuilt target nominal has {} bins, but stored target "
+            "has {} bins".format(
+                len(rebuilt_target_nominal),
+                len(stored_target_nominal),
             )
-    else:
-        raise ValueError("Unknown toy_mode: {}".format(args.toy_mode))
+        )
 
-    experiments = np.asarray(experiments)
-    if experiments.ndim == 1:
-        experiments = experiments.reshape(1, -1)
+    nominal_difference = (
+        rebuilt_target_nominal
+        - stored_target_nominal
+    )
 
-    print("\n===== Generated experiments =====")
-    print("experiments shape =", experiments.shape)
-    print("sum min/max       =", np.min(np.sum(experiments, axis=1)), np.max(np.sum(experiments, axis=1)))
-    print("bin min/max       =", np.min(experiments), np.max(experiments))
+    max_nominal_abs_difference = float(
+        np.max(np.abs(nominal_difference))
+    )
+
+    max_nominal_relative_difference = float(
+        np.max(
+            np.divide(
+                np.abs(nominal_difference),
+                np.maximum(
+                    np.abs(stored_target_nominal),
+                    1e-12,
+                ),
+            )
+        )
+    )
+
+    print("")
+    print("===== MATCHED-TOY NOMINAL CLOSURE =====")
+    print("target has ratios        =", has_ratio_samples)
+    print(
+        "rebuilt target shape    =",
+        rebuilt_target_nominal.shape,
+    )
+    print(
+        "stored target shape     =",
+        stored_target_nominal.shape,
+    )
+    print(
+        "max absolute difference =",
+        max_nominal_abs_difference,
+    )
+    print(
+        "max relative difference =",
+        max_nominal_relative_difference,
+    )
+    print("===== END NOMINAL CLOSURE =====")
+    print("")
+
+    if max_nominal_relative_difference > 1e-8:
+        raise RuntimeError(
+            "Primitive source does not reproduce the target nominal. "
+            "Do not run matched toys until this closure is understood."
+        )
+
 
     rows = []
 
-    for toy_id, pseudo_vector in enumerate(experiments):
-        print("\n\n################################################")
-        print("Scanning toy =", toy_id)
-        print("pseudo sum =", np.sum(pseudo_vector))
-        print("pseudo min =", np.min(pseudo_vector))
-        print("pseudo max =", np.max(pseudo_vector))
+    for toy_index in range(args.ntoys):
+        toy_seed = args.seed + toy_index
+        toy_rng = np.random.default_rng(toy_seed)
+
+        (
+            primitive_nominal_vector,
+            primitive_pseudo_vector,
+        ) = make_primitive_null_pseudodata(
+            source_histogram=primitive_source_histogram,
+            throw_mode=args.throw_mode,
+            rng=toy_rng,
+            sqrt_sansflux=sqrt_sansflux,
+        )
+
+        nominal_vector = convert_primitive_vector_to_target(
+            primitive_nominal_vector,
+            target_has_ratio=has_ratio_samples,
+        )
+
+        pseudo_vector = convert_primitive_vector_to_target(
+            primitive_pseudo_vector,
+            target_has_ratio=has_ratio_samples,
+        )
+
+        print("")
         print("################################################")
-
-        for lam in lambda_values:
-            print("\n\n==============================================")
-            print("Toy =", toy_id, "lambda =", lam)
-            print("==============================================")
-
-            # Reload fresh histogram for each lambda to avoid stale oscillated state.
-            sample_histogram = StitchedHistogram("sample")
-            sample_histogram.Load(file_path)
-
-            # Apply exactly the same pseudo-data vector for every lambda in this toy.
-            overwrite_data_hist_from_stitched_vector(
-                sample_histogram,
-                pseudo_vector,
+        print(
+            "Toy {}/{}".format(
+                toy_index,
+                args.ntoys - 1,
             )
-            check_data = np.array(sample_histogram.GetDataHistogram())[1:-1]
-            print("check data sum after SetDataHistogram =", np.sum(check_data))
-            print("check max |data - toy| =", np.max(np.abs(check_data - pseudo_vector)))
+        )
+        print("################################################")
+        print("toy_index        =", toy_index)
+        print("toy_seed         =", toy_seed)
+        print("nominal sum      =", np.sum(nominal_vector))
+        print("pseudo sum       =", np.sum(pseudo_vector))
+        print(
+            "sum pseudo-CV    =",
+            np.sum(pseudo_vector - nominal_vector),
+        )
+        print(
+            "norm pseudo-CV   =",
+            np.linalg.norm(
+                pseudo_vector - nominal_vector
+            ),
+        )
+        print(
+            "max |pseudo-CV|  =",
+            np.max(
+                np.abs(
+                    pseudo_vector - nominal_vector
+                )
+            ),
+        )
 
+        # This exact pseudo-vector is reused across every Nprof and lambda.
+        # Load one fresh histogram for this toy only.
+        sample_histogram = StitchedHistogram(
+            "sample_toy_{}".format(toy_index)
+        )
 
-            row = run_one_lambda(
-                sample_histogram=sample_histogram,
-                lam=lam,
-                exclude_samples=exclude_samples,
-                mask_spec=mask_spec,
+        shutil.copyfile(
+            target_hist_config,
+            "HIST_CONFIG.json",
+        )
+
+        sample_histogram.Load(
+            target_file_path
+        )
+
+        set_pseudo_histogram_from_vector(
+            sample_histogram,
+            pseudo_vector,
+            toy_index,
+        )
+
+        check_pseudo = np.asarray(
+            sample_histogram.GetPseudoHistogram(),
+            dtype=float,
+        )[1:-1]
+
+        max_pseudo_difference = float(
+            np.max(
+                np.abs(
+                    check_pseudo - pseudo_vector
+                )
+            )
+        )
+
+        if max_pseudo_difference > 1e-10:
+            raise RuntimeError(
+                "Pseudo histogram assignment failed: "
+                "max difference = {}".format(
+                    max_pseudo_difference
+                )
             )
 
-            row["toy_id"] = toy_id
-            row["seed"] = args.seed
-            row["toy_mode"] = args.toy_mode
-            row["throw_style"] = "fitAsimovs_quinn"
-            row["hist_config_tag"] = plot_tag
-            row["exclude"] = exclude_samples if exclude_samples != "" else "none"
-            row["mask"] = args.mask
+        for nprof in nprof_values:
+            for lam in lambda_values:
+                print("")
+                print(
+                    "toy={} Nprof={} lambda={}".format(
+                        toy_index,
+                        nprof,
+                        lam,
+                    )
+                )
 
-            rows.append(row)
+                row = run_one_point(
+                    sample_histogram=sample_histogram,
+                    lam=lam,
+                    nprof=nprof,
+                    exclude_samples=exclude_samples,
+                    mask_spec=mask_spec,
+                    profile_only=profile_only,
+                )
 
-            print("\n===== toy lambda result =====")
-            for k in [
-                "toy_id",
-                "lambda",
-                "log_lambda",
-                "chi2_null",
-                "chi2_bf",
-                "delta_chi2",
-                "resid_null",
-                "resid_bf",
-                "penalty_null",
-                "penalty_bf",
-                "norm_a_null",
-                "norm_a_bf",
-                "max_abs_a_null",
-                "max_abs_a_bf",
-                "dm2",
-                "ue4",
-                "umu4",
-                "utau4",
-            ]:
-                print("{:20s} {}".format(k, row[k]))
+                row.update({
+                    "toy_index": int(toy_index),
+                    "toy_seed": int(toy_seed),
+                    "throw_mode": args.throw_mode,
+                    "base_seed": int(args.seed),
 
-            write_rows_csv(rows, out_csv)
-            print("Wrote partial results to", out_csv)
+                    "hist_config_tag": plot_tag,
+                    "toy_source_hist_config_tag": toy_source_tag,
+                    "target_has_ratio": int(has_ratio_samples),
+                    "matched_primitive_toy": 1,
 
-    write_rows_csv(rows, out_csv)
+                    "exclude": (
+                        exclude_samples
+                        if exclude_samples != ""
+                        else "none"
+                    ),
+                    "profile_only": (
+                        profile_only
+                        if profile_only is not None
+                        else "none"
+                    ),
+                    "mask": args.mask,
 
-    print("\n===== final Asimov/toy lambda scan table =====")
-    for row in rows:
-        print(row)
+                    "primitive_nominal_sum": float(
+                        np.sum(primitive_nominal_vector)
+                    ),
+                    "primitive_pseudo_sum": float(
+                        np.sum(primitive_pseudo_vector)
+                    ),
+                    "primitive_shift_norm": float(
+                        np.linalg.norm(
+                            primitive_pseudo_vector
+                            - primitive_nominal_vector
+                        )
+                    ),
+                    "nominal_sum": float(
+                        np.sum(nominal_vector)
+                    ),
+                    "pseudo_sum": float(
+                        np.sum(pseudo_vector)
+                    ),
+                    "pseudo_minus_nominal_sum": float(
+                        np.sum(
+                            pseudo_vector
+                            - nominal_vector
+                        )
+                    ),
+                    "pseudo_minus_nominal_norm": float(
+                        np.linalg.norm(
+                            pseudo_vector
+                            - nominal_vector
+                        )
+                    ),
+                    "pseudo_minus_nominal_max_abs": float(
+                        np.max(
+                            np.abs(
+                                pseudo_vector
+                                - nominal_vector
+                            )
+                        )
+                    ),
+                    "n_flux_universes_total": int(
+                        total_flux_universes
+                    ),
+                })
 
-    print("\nSaved:", out_csv)
+                rows.append(row)
+
+                print("")
+                print("===== toy lambda result =====")
+                for key in [
+                    "toy_index",
+                    "nprof",
+                    "lambda",
+                    "chi2_null",
+                    "resid_null",
+                    "penalty_null",
+                    "norm_a_null",
+                    "max_abs_a_null",
+                ]:
+                    print(
+                        "{:20s} {}".format(
+                            key,
+                            row[key],
+                        )
+                    )
+
+        # Save only after the full toy is complete.
+        write_rows_csv(
+            rows,
+            out_csv,
+        )
+
+        print(
+            "Wrote partial results through toy",
+            toy_index,
+        )
+
+        del sample_histogram
+        gc.collect()
+
+    print("")
+    print("===== SCAN COMPLETE =====")
+    print("rows written =", len(rows))
+    print("saved        =", out_csv)
 
 
 if __name__ == "__main__":

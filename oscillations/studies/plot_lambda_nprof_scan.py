@@ -13,12 +13,40 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
+# CASE_PATTERNS = {
+#     "excludeRatio_maskRatio": "prodNueel exclude ratio, mask ratio",
+#     "includeRatio": "prodNueel include ratio",
+#     "profileOnlyRatio_maskNonRatio": "prodNueel only ratio",
+#     "noRatio": "prodNueel_noRatio",
+# }
 CASE_PATTERNS = {
-    "excludeRatio_maskRatio": "prodNueel exclude ratio, mask ratio",
-    "includeRatio": "prodNueel include ratio",
-    "profileOnlyRatio_maskNonRatio": "prodNueel only ratio",
-    "noRatio": "prodNueel_noRatio",
+    "excludeRatio": r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
+    "includeAll_ratioConfig": r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
+    "profileOnlyRatio": r"Profile only CC ratios",
+    "directCC_includeAll": r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
 }
+CASE_SAFE_NAMES = {
+    r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling":
+        "excludeRatio",
+
+    r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled":
+        "includeAll_ratioConfig",
+
+    r"Profile only CC ratios":
+        "profileOnlyRatio",
+
+    r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled":
+        "directCC_includeAll",
+}
+
+
+def safe_case_name(case):
+    if case not in CASE_SAFE_NAMES:
+        raise RuntimeError(
+            "No safe filename mapping defined for case: {}".format(case)
+        )
+
+    return CASE_SAFE_NAMES[case]
 
 
 def finite(x):
@@ -66,8 +94,22 @@ def infer_case_and_nprof(path):
     return case, nprof
 
 
+# def get_lambda1_row(rows):
+#     return min(rows, key=lambda r: abs(float(r["lambda"]) - 1.0))
 def get_lambda1_row(rows):
-    return min(rows, key=lambda r: abs(float(r["lambda"]) - 1.0))
+    matches = [
+        r for r in rows
+        if abs(float(r["lambda"]) - 1.0) < 1e-10
+    ]
+
+    if len(matches) != 1:
+        raise RuntimeError(
+            "Expected exactly one lambda=1 row, found {}".format(
+                len(matches)
+            )
+        )
+
+    return matches[0]
 
 
 def plot_lcurves_by_case(grouped, outdir):
@@ -92,7 +134,7 @@ def plot_lcurves_by_case(grouped, outdir):
             plt.plot(x, y, marker="o", linewidth=1.5, markersize=4, label="Nprof={}".format(nprof))
 
             for xi, yi, li in zip(x, y, lam):
-                if li in [0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 100.0]:
+                if li in [0.1, 1, 2, 5, 10, 100]:
                     plt.text(xi, yi, "{:g}".format(li), fontsize=6)
 
         plt.xlabel(r"Residual $\chi^2$")
@@ -102,7 +144,8 @@ def plot_lcurves_by_case(grouped, outdir):
         plt.legend(fontsize=8)
         plt.tight_layout()
 
-        safe = case.replace(" ", "_").replace(",", "").replace("/", "-")
+        # safe = case.replace(" ", "_").replace(",", "").replace("/", "-")
+        safe = safe_case_name(case)
         out = os.path.join(outdir, "lcurve_by_nprof_{}.png".format(safe))
         plt.savefig(out, dpi=200)
         plt.close()
@@ -154,7 +197,7 @@ def plot_lcurves_by_nprof(grouped, outdir):
 
             # Optional: label a few lambda points
             for xi, yi, li in zip(x, y, lam):
-                if li in [0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 100.0]:
+                if li in [0.1, 1, 2, 5, 10, 100]:
                     plt.text(xi, yi, "{:g}".format(li), fontsize=6)
 
         if not plotted_any:
@@ -228,7 +271,8 @@ def plot_vs_lambda_grid(grouped, outdir):
     ]
 
     for case, by_nprof in grouped.items():
-        safe = case.replace(" ", "_").replace(",", "").replace("/", "-")
+        # safe = case.replace(" ", "_").replace(",", "").replace("/", "-")
+        safe = safe_case_name(case)
 
         for key, ylabel, tag in metrics:
             plt.figure(figsize=(8, 5.5))
@@ -286,11 +330,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--glob",
-        default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/nprof/*Nprof*_fixedFlux.csv",
+        # default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/nprof/*Nprof*_fixedFlux.csv",
+        default="/exp/minerva/data/users/qvuong/surfaces/csvs/p8_lambda_scans/*Nprof*.csv",
     )
     parser.add_argument(
         "--outdir",
-        default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/plots_nprof_lcurve_fixedFlux",
+        # default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/plots_nprof_lcurve_fixedFlux",
+        default="/exp/minerva/data/users/qvuong/surfaces/plots/p8_lambda_scans",
     )
     args = parser.parse_args()
 

@@ -485,6 +485,15 @@ def maybe_madd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
 #         print("[RUNNING] madd for FHC DATA")
 #         subprocess.run(cmd_data, check=False)
 
+def special_parent_playlist(playlist: Optional[str]) -> Optional[str]:
+    if not playlist:
+        return None
+
+    if "_2p2h" not in playlist:
+        return None
+
+    return playlist.replace("_2p2h", "", 1)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("runningNotes", help="runningNotes.txt file")
@@ -630,33 +639,37 @@ def main():
     # Handle last block (if we didn't break early due to max-blocks)
     if current is not None and (args.max_blocks is None or blocks_processed < args.max_blocks):
         finalize_block()
-                
+                    
     special_block_map = {}
     for block in all_blocks:
         pl = block.get("playlist")
         tag = block.get("selection_tag")
         stamp = block.get("stamp")
-        if pl == "le13C_2p2h_p6" and tag and stamp:
-            special_block_map[("le13C_p6", tag)] = hist_dir_from_block(block)
+
+        parent_playlist = special_parent_playlist(pl)
+        if parent_playlist and tag and stamp:
+            special_block_map[(parent_playlist, tag)] = hist_dir_from_block(block)
 
     for block in all_blocks:
         playlist = block.get("playlist")
         tag = block.get("selection_tag")
 
-        if playlist == "le13C_2p2h_p6":
+        parent_playlist = special_parent_playlist(playlist)
+        if parent_playlist:
+
             if args.dry_run:
-                print("[DRY-RUN] Showing diagnostics for special-sample block")
-                log_lines.append("[DRY-RUN] Showing diagnostics for special-sample block")
+                print(f"[DRY-RUN] Showing diagnostics for special-sample block {playlist} -> {parent_playlist}")
+                log_lines.append(f"[DRY-RUN] Showing diagnostics for special-sample block {playlist} -> {parent_playlist}")
                 log_lines.append("")
                 handle_block(block, True, log_lines, special_sample_dir=None)
             else:
-                print("[SKIP] Special-sample submission block is used only as input to le13C_p6 combine step")
-                log_lines.append("[SKIP] Special-sample submission block is used only as input to le13C_p6 combine step")
+                print(f"[SKIP] Special-sample submission block {playlist} is used only as input to {parent_playlist} combine step")
+                log_lines.append(f"[SKIP] Special-sample submission block {playlist} is used only as input to {parent_playlist} combine step")
                 log_lines.append("")
             continue
 
         special_dir = None
-        if playlist == "le13C_p6" and tag:
+        if tag and block.get("expected_mc_jobs", 0) > 0:
             special_dir = special_block_map.get((playlist, tag))
 
         handle_block(block, args.dry_run, log_lines, special_sample_dir=special_dir)

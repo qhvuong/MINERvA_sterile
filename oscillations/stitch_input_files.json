@@ -1,0 +1,69 @@
+{
+    "p6": {
+      "fhc_elastic": {
+        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_allSystematics_fullStatsFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_allSystematics_fullStatsFluxes_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_allSystematics_fullStatsFluxes_MAD.root",
+        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p6_scattering_LElike_MAD.root",
+        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+      },
+  
+      "fhc_ccnue": {
+        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_allSystematics_fullStatsFluxes_MAD.root",
+        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_allSystematics_fullStatsFluxes_MAD.root"
+      },
+  
+      "rhc_ccnuebar": {
+        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
+        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_allSystematics_fullStatsFluxes_MAD.root"
+      },
+  
+      "fhc_ccnumu": {
+        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root"
+      },
+  
+      "rhc_ccnumubar": {
+        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root"
+      }
+    },
+  
+    "p8": {
+      "fhc_elastic": {
+        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_allSystematics_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_allSystematics_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_allSystematics_MAD.root",
+        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_p8Tuples_LElike_MAD.root",
+        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+      },
+  
+      "fhc_ccnue": {
+        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_allSystematics_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_allSystematics_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_allSystematics_MAD.root",
+        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_MAD.root"
+      },
+  
+      "rhc_ccnuebar": {
+        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_allSystematics_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_allSystematics_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_allSystematics_MAD.root",
+        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_MAD.root"
+      },
+  
+      "fhc_ccnumu": {
+        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_allSystematics_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_allSystematics_MAD.root"
+      },
+  
+      "rhc_ccnumubar": {
+        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_allSystematics_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_allSystematics_MAD.root"
+      }
+    }
+  }

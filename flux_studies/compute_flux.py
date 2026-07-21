@@ -121,11 +121,30 @@ DefaultFileList = { \
     }
 DefaultMeanPOTPerFile = { "FHC" : 2.192000E+20 / 440 , "RHC" : 8.975000E+20 / 1800 }
 
+
+# # This is LE flux binning
+# STANDARD_FLUX_BINNING = [
+#     0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+#     5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5,
+#     10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,
+#     20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0,
+# ]
+
+# This is ME flux binning
 STANDARD_FLUX_BINNING = [
-    0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
-    5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5,
-    10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,
-    20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0,
+    0.0, 0.5, 1.0, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 
+    2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 
+    3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 
+    4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 
+    5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 6.0, 6.1, 
+    6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.0, 7.1, 
+    7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 8.0, 8.1, 
+    8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.1, 
+    9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 10.0, 10.5, 
+    11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5, 
+    16.0, 16.5, 17.0, 17.5, 18.0, 18.5, 19.0, 19.5, 20.0, 21.0, 
+    22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 35.0, 
+    40.0, 45.0, 50.0, 55.0, 60.0, 70.0, 80.0, 90.0, 100.0 
 ]
 
 class FluxCalculator(object):
@@ -144,8 +163,8 @@ class FluxCalculator(object):
                 nu_helicity=None,
                 qgsp=False,
                 testing=False,
-                # xsec_file="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root",            # This is ME splines
-                xsec_file="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root",
+                xsec_file="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root",            # This is ME splines
+                # xsec_file="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root",
                 filelist=None,
                 pot_per_file=None,
                 use_meta_tree=False,
@@ -751,8 +770,8 @@ def Bootstrap():
                 "--xsec_file",
                 dest="xsec_file",
                 help="The input ROOT file containing GENIE's cross-sections.  Default: '%default'.",
-                # default="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root"
-                default="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root"
+                default="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root"
+                # default="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root"
         )
         
         parser.add_option(

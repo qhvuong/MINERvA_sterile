@@ -98,9 +98,9 @@ class StitchedHistogram:
 
         self.is_processed = False
 
-        self.n_flux_universes = 100
+        self.n_flux_universes = 1000
 
-        self.use_1000_flux_universes = True
+        # self.use_1000_flux_universes = True
 
     def __del__(self):
         self.data_hists = {}
@@ -235,8 +235,8 @@ class StitchedHistogram:
             print("Loaded external covariance: fhc_elastic")
             print("  Nrows =", cov.GetNrows())
             print("  Ncols =", cov.GetNcols())
-        else:
-            print("No external covariance matrix found for fhc_elastic.")
+        # else:
+        #     print("No external covariance matrix found for fhc_elastic.")
 
     def GetExternalCovarianceBinIndices(self, sample_name):
         """
@@ -993,7 +993,7 @@ class StitchedHistogram:
             mc_h = f.Get("mc_" + h)
 
             if type(data_h) != PlotUtils.MnvH1D or type(mc_h) != PlotUtils.MnvH1D:
-                print("Skipping missing/non-MnvH1D sample:", h)
+                # print("Skipping missing/non-MnvH1D sample:", h)
                 continue
 
             self.data_hists[h] = data_h
@@ -1041,9 +1041,9 @@ class StitchedHistogram:
             self.titles["fhc_ratio"] = "FHC Ratio"
             self.titles["rhc_ratio"] = "RHC Ratio"
 
-        print("Loaded stitched samples:")
-        for h in self.keys:
-            print("  ", h)
+        # print("Loaded stitched samples:")
+        # for h in self.keys:
+        #     print("  ", h)
 
         self.LoadExternalCovariances(f)
         # Do not close f before cloning if ROOT owns the objects.

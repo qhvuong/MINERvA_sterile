@@ -1465,7 +1465,6 @@ PLOTS_TO_MAKE = [
 
     {"name":"Lepton Energy",
         "plot_type" : "stacked"},
-
     # {"name":"Biased Neutrino Energy",
     #     "plot_type" : "stacked"},
     # # {"name":"E Theta Squared",

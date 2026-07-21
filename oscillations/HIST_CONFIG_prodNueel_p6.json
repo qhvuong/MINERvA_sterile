@@ -1,0 +1,22 @@
+{
+    "fhc_elastic": {
+        "start": 0,
+        "end": 3
+    },
+    "fhc_ratio": {
+        "start": 4,
+        "end": 15
+    },
+    "rhc_ratio": {
+        "start": 16,
+        "end": 27
+    },
+    "fhc_numu_selection": {
+        "start": 28,
+        "end": 39
+    },
+    "rhc_numu_selection": {
+        "start": 40,
+        "end": 51
+    }
+}

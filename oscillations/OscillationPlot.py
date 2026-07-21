@@ -6,6 +6,17 @@ import PlotUtils
 import numpy as np
 import math
 from array import array
+import argparse
+
+# Parse plotting-only args first, before AnalysisConfig sees sys.argv.
+_plot_parser = argparse.ArgumentParser(add_help=False)
+_plot_parser.add_argument("--plot-input-dir", default="chi2s")
+_plot_parser.add_argument("--plot-mode", default="noFluxProfile")
+_plot_parser.add_argument("--plot-no-fc", dest="plot_use_fc", action="store_false", default=True)
+_plot_parser.add_argument("--critical-only", action="store_true", default=False)
+
+_plot_args, _remaining_argv = _plot_parser.parse_known_args()
+sys.argv = [sys.argv[0]] + _remaining_argv
 
 from tools.PlotLibrary import HistHolder
 from tools.StitchedHistogram import *
@@ -580,6 +591,200 @@ class PanelPlot:
         self.Save()
         plt.close()
 
+    def PlotRawSurfacePanel(
+        self,
+        surface3d,
+        zlabel=r"$\chi^2$",
+        contour_levels=None,
+        contour_color="white",
+        contour_label_fmt="%.2f",
+    ):
+        """
+        Plot raw 2D surface values on the same 3x3 panel layout used by FC plots.
+
+        surface3d is indexed as:
+          [dm2, umu4, ue4]
+
+        self.panel determines which axis is fixed:
+          panel="dm2"  -> x=ue4,  y=umu4, fixed dm2
+          panel="umu4" -> x=ue4,  y=dm2,  fixed umu4
+          panel="ue4"  -> x=umu4, y=dm2,  fixed ue4
+        """
+
+        self.CreateAxis()
+
+        X, Y = np.meshgrid(self.x, self.y)
+
+        z_slices = []
+
+        for idx in self.indices:
+            if self.panel == "dm2":
+                z = surface3d[idx, :, :]
+            elif self.panel == "umu4":
+                z = surface3d[:, idx, :]
+            elif self.panel == "ue4":
+                z = surface3d[:, :, idx]
+            else:
+                raise ValueError("Unknown panel: {}".format(self.panel))
+
+            z_slices.append(z)
+
+        zmin = min(np.nanmin(z) for z in z_slices)
+        zmax = max(np.nanmax(z) for z in z_slices)
+
+        pcm = None
+
+        for i, ax in enumerate(self.axes.flatten()):
+            if i >= len(z_slices):
+                ax.axis("off")
+                continue
+
+            z = z_slices[i]
+
+            pcm = ax.pcolormesh(
+                X,
+                Y,
+                z,
+                shading="auto",
+                vmin=zmin,
+                vmax=zmax,
+            )
+
+            if contour_levels is not None:
+                good_levels = [
+                    lev for lev in contour_levels
+                    if lev > np.nanmin(z) and lev < np.nanmax(z)
+                ]
+
+                if len(good_levels) > 0:
+                    cs = ax.contour(
+                        X,
+                        Y,
+                        z,
+                        levels=good_levels,
+                        colors=contour_color,
+                        linewidths=1.1,
+                    )
+                    ax.clabel(cs, fmt=contour_label_fmt, fontsize=7)
+
+        cbar = self.fig.colorbar(
+            pcm,
+            ax=self.axes.ravel().tolist(),
+            shrink=0.90,
+            pad=0.02,
+        )
+        cbar.set_label(zlabel, fontsize=14)
+
+        self.artists.append(cbar.ax)
+
+        self.Save()
+
+def PlotAsimovRawChi2Panels(asimov_chi2s, mode, title):
+    """
+    Make original-style 3x3 panel plots for raw Asimov chi2.
+    Uses the same str_to_indices slices as the FC contour plots.
+    """
+
+    outbase = "/exp/minerva/data/users/qvuong/surfaces/plots"
+
+    pplot = PanelPlot(title + "\nAsimov raw $\\chi^2$", "ue4", "umu4", "dm2")
+
+    # 1. fixed dm2: ue4 vs umu4
+    pplot.SetXaxis("ue4")
+    pplot.SetYaxis("umu4")
+    pplot.SetPanel("dm2")
+    pplot.SetName("{}/Asimov_raw_chi2_ue4_vs_umu4_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(asimov_chi2s, zlabel=r"Asimov raw $\chi^2$")
+    pplot.Zoom()
+
+    # 2. fixed umu4: ue4 vs dm2
+    pplot = PanelPlot(title + "\nAsimov raw $\\chi^2$", "ue4", "dm2", "umu4")
+    pplot.SetName("{}/Asimov_raw_chi2_ue4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(asimov_chi2s, zlabel=r"Asimov raw $\chi^2$")
+    pplot.Zoom()
+
+    # 3. fixed ue4: umu4 vs dm2
+    pplot = PanelPlot(title + "\nAsimov raw $\\chi^2$", "umu4", "dm2", "ue4")
+    pplot.SetName("{}/Asimov_raw_chi2_umu4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(asimov_chi2s, zlabel=r"Asimov raw $\chi^2$")
+    pplot.Zoom()
+
+def PlotAsimovDChi2Panels(asimov_dchi2s, mode, title, fc_levels=None):
+    """
+    Make original-style 3x3 panel plots for Asimov delta-chi2.
+    Uses the same str_to_indices slices as the FC contour plots.
+    """
+
+    outbase = "/exp/minerva/data/users/qvuong/surfaces/plots"
+
+    # 1. fixed dm2: ue4 vs umu4
+    pplot = PanelPlot(title + "\nAsimov $\\Delta\\chi^2$", "ue4", "umu4", "dm2")
+    pplot.SetName("{}/Asimov_dchi2_ue4_vs_umu4_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(
+        asimov_dchi2s,
+        zlabel=r"Asimov $\Delta\chi^2$",
+        contour_levels=fc_levels,
+    )
+    pplot.Zoom()
+
+    # 2. fixed umu4: ue4 vs dm2
+    pplot = PanelPlot(title + "\nAsimov $\\Delta\\chi^2$", "ue4", "dm2", "umu4")
+    pplot.SetName("{}/Asimov_dchi2_ue4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(
+        asimov_dchi2s,
+        zlabel=r"Asimov $\Delta\chi^2$",
+        contour_levels=fc_levels,
+    )
+    pplot.Zoom()
+
+    # 3. fixed ue4: umu4 vs dm2
+    pplot = PanelPlot(title + "\nAsimov $\\Delta\\chi^2$", "umu4", "dm2", "ue4")
+    pplot.SetName("{}/Asimov_dchi2_umu4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(
+        asimov_dchi2s,
+        zlabel=r"Asimov $\Delta\chi^2$",
+        contour_levels=fc_levels,
+    )
+    pplot.Zoom()
+
+def PlotDataDChi2Panels(data_dchi2s, mode, title, fc_levels=None):
+    """
+    Make original-style 3x3 panel plots for data delta-chi2.
+    Uses the same str_to_indices slices as the FC contour plots.
+    Draws FC critical contour levels if fc_levels is provided.
+    """
+
+    outbase = "/exp/minerva/data/users/qvuong/surfaces/plots"
+
+    # 1. fixed dm2: ue4 vs umu4
+    pplot = PanelPlot(title + "\nData $\\Delta\\chi^2$", "ue4", "umu4", "dm2")
+    pplot.SetName("{}/Data_dchi2_ue4_vs_umu4_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(
+        data_dchi2s,
+        zlabel=r"Data $\Delta\chi^2$",
+        contour_levels=fc_levels,
+    )
+    pplot.Zoom()
+
+    # 2. fixed umu4: ue4 vs dm2
+    pplot = PanelPlot(title + "\nData $\\Delta\\chi^2$", "ue4", "dm2", "umu4")
+    pplot.SetName("{}/Data_dchi2_ue4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(
+        data_dchi2s,
+        zlabel=r"Data $\Delta\chi^2$",
+        contour_levels=fc_levels,
+    )
+    pplot.Zoom()
+
+    # 3. fixed ue4: umu4 vs dm2
+    pplot = PanelPlot(title + "\nData $\\Delta\\chi^2$", "umu4", "dm2", "ue4")
+    pplot.SetName("{}/Data_dchi2_umu4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.PlotRawSurfacePanel(
+        data_dchi2s,
+        zlabel=r"Data $\Delta\chi^2$",
+        contour_levels=fc_levels,
+    )
+    pplot.Zoom()
 
 def GetFCSlices(dchi2s,achi2s,results,panel):
     indices = str_to_indices[panel]
@@ -606,196 +811,533 @@ def GetFCSlice(dchi2s,achi2s,results,index,slc):
 
     return(FC_sens,FC_excl)
 
-if __name__ == "__main__":
-    filename = "NuE_stitched_hists.root"
-    file_path = "{}/oscillations/rootfiles/{}".format(ccnueroot,filename)
 
-    lam = int(AnalysisConfig.lambdaValue)
-    exclude = AnalysisConfig.exclude
+def GetContinuousBestFitChi2(mode):
+    """
+    Continuous best-fit chi2 values from the nominal no-throw fits.
 
-    histogram = StitchedHistogram("sample")
-    histogram.Load(file_path)
+    These are the values analogous to Ryan's hard-coded best_fit values,
+    but for our updated configurations.
+    """
 
-    #invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
-    #fitter = Fitter(sample_histogram,invCov=invCov,lam=lam,exclude=exclude)
-    #best_fit,res = fitter.DoFit()
+    best_fit_chi2 = {
+        # prodNueel_noRatio, --profile-flux
+        "prodNueel_noRatio_profiledFlux": 35.139265,
 
-    title = 'MINERvA Sterile Neutrino Search'
-    if exclude == 'ratio':
-        #title+='Sans Flavor Ratio'
-        best_fit = 139.336
-    elif lam == 1:
-        best_fit = 101.24
-    elif lam == 12:
-        best_fit = 152.65
+        # prodNueel, --profile-flux --exclude ratio
+        # The merged surface mode name does not include excludeRatio unless
+        # you added it to the gridSurfaces/makeSurface output naming.
+        "prodNueel_profiledFlux": 38.769660,
 
-    #indexed like [dm2,umu4,ue4]
-    data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-    asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-    results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
+        # Optional alias if you later encode exclude ratio in the mode name
+        "prodNueel_profiledFlux_excluderatio": 38.769660,
+        "prodNueel_profiledFlux_excludeRatio": 38.769660,
+    }
 
-    pplot = PanelPlot(title,'ue4','dm2','umu4')
+    return best_fit_chi2.get(mode, None)
 
-    stereo = ExperimentContour("STEREO 95% Excl.","exp_results/stereo_2Dexcl.csv",False,"black",h_index=0)
-    minos = ExperimentContour("MINOS 90% Excl.","exp_results/MINOS.csv",False,"black",h_index=1)
-    prospect = ExperimentContour("PROSPECT 95% Excl.","exp_results/prospect.csv",False,"blue",h_index=2)
-    katrin = ExperimentContour("KATRIN 95% Excl.","exp_results/katrin_noMass.csv",False,"purple",h_index=3)
-    microboone = ExperimentContour("MicroBooNE 95% Excl.","exp_results/microboone.csv",False,"teal",h_index=4)
-    neutrino4 = ExperimentContour("Neutrino-4 $2\sigma$ Conf.",["exp_results/n4_c1.csv","exp_results/n4_c2.csv","exp_results/n4_c3.csv","exp_results/n4_c4.csv"],True,"pink",h_index=2)
-    raa = ExperimentContour("RAA 90% Allowed","exp_results/RAA.csv",True,"gray",h_index=3)
+
+def LoadMergedSurfaces(input_dir, mode, use_fc=True):
+    """
+    Load merged outputs from merge_2D_quinn.py.
+
+    Expected files:
+      data_chi2s_<mode>.npy
+      asimov_chi2s_<mode>.npy
+      data_penalties_<mode>.npy
+      asimov_penalties_<mode>.npy
+      delta_m_values_<mode>.npy
+
+    Optional FC file:
+      asimov_deltachi2s.npy
+    """
+
+    data_file = os.path.join(input_dir, "data_chi2s_{}.npy".format(mode))
+    asimov_file = os.path.join(input_dir, "asimov_chi2s_{}.npy".format(mode))
+    data_penalty_file = os.path.join(input_dir, "data_penalties_{}.npy".format(mode))
+    asimov_penalty_file = os.path.join(input_dir, "asimov_penalties_{}.npy".format(mode))
+    dm_file = os.path.join(input_dir, "delta_m_values_{}.npy".format(mode))
+
+    for f in [data_file, asimov_file, data_penalty_file, asimov_penalty_file, dm_file]:
+        if not os.path.isfile(f):
+            raise IOError("Missing required merged file: {}".format(f))
+
+    data_chi2s = np.load(data_file)
+    asimov_chi2s = np.load(asimov_file)
+    data_penalties = np.load(data_penalty_file)
+    asimov_penalties = np.load(asimov_penalty_file)
+    delta_m_values = np.load(dm_file)
+
+    print("Loaded mode:", mode)
+    print("  data_chi2s shape       =", data_chi2s.shape)
+    print("  asimov_chi2s shape     =", asimov_chi2s.shape)
+    print("  data_penalties max     =", np.nanmax(data_penalties))
+    print("  asimov_penalties max   =", np.nanmax(asimov_penalties))
+    print("  delta_m_values shape   =", delta_m_values.shape)
+
+    # Data delta-chi2 relative to the scanned grid minimum.
+    data_grid_min = np.nanmin(data_chi2s)
+    data_grid_idx = np.unravel_index(np.nanargmin(data_chi2s), data_chi2s.shape)
+    data_dchi2s = data_chi2s - data_grid_min
+
+    # Asimov delta-chi2 relative to the scanned grid minimum.
+    asimov_grid_min = np.nanmin(asimov_chi2s)
+    asimov_grid_idx = np.unravel_index(np.nanargmin(asimov_chi2s), asimov_chi2s.shape)
+    asimov_dchi2s = asimov_chi2s - asimov_grid_min
+
+    print("  data grid min chi2    =", data_grid_min)
+    print("  data grid min index   =", data_grid_idx)
+    print("  data grid min dm2     =", delta_m_values[data_grid_idx[0]])
+    print("  data grid min umu4    =", str_to_axis["umu4"][data_grid_idx[1]])
+    print("  data grid min ue4     =", str_to_axis["ue4"][data_grid_idx[2]])
+    print("  data dchi2 min/max    =", np.nanmin(data_dchi2s), np.nanmax(data_dchi2s))
+
+    print("  asimov grid min chi2  =", asimov_grid_min)
+    print("  asimov grid min index =", asimov_grid_idx)
+    print("  asimov grid min dm2   =", delta_m_values[asimov_grid_idx[0]])
+    print("  asimov grid min umu4  =", str_to_axis["umu4"][asimov_grid_idx[1]])
+    print("  asimov grid min ue4   =", str_to_axis["ue4"][asimov_grid_idx[2]])
+    print("  asimov dchi2 min/max  =", np.nanmin(asimov_dchi2s), np.nanmax(asimov_dchi2s))
+
+    results = None
+    if use_fc:
+        fc_file = os.path.join(input_dir, "asimov_deltachi2s_{}.npy".format(mode))
+        if not os.path.isfile(fc_file):
+            raise IOError(
+                "Missing FC toy file: {}. "
+                "Run MergeAsimovs first, or use --plot-no-fc for fixed chi2/surface plots.".format(fc_file)
+            )
+        results = np.load(fc_file)
+        print("  FC results shape       =", results.shape)
+        print("  FC results min/max     =", np.nanmin(results), np.nanmax(results))
+
+    return data_dchi2s, asimov_dchi2s, results, delta_m_values
+
+
+def PlotOneSurface(surface3d, panel="dm2", index=0, name="surface.png",
+                   title="Chi2 surface", levels=None):
+    """
+    Plot one 2D slice from a merged 3D chi2 surface.
+
+    surface3d is indexed as:
+      [dm2, umu4, ue4]
+    """
+
+    # if levels is None:
+    #     levels = [1, 2.71, 3.84, 6.63, 9.0, 11.83]
+
+    if panel == "dm2":
+        # fixed dm2 slice: y=umu4, x=ue4
+        z = surface3d[index, :, :]
+        xaxis = "ue4"
+        yaxis = "umu4"
+        fixed_value = str_to_axis["dm2"][index]
+
+    elif panel == "umu4":
+        # fixed umu4 slice: y=dm2, x=ue4
+        z = surface3d[:, index, :]
+        xaxis = "ue4"
+        yaxis = "dm2"
+        fixed_value = str_to_axis["umu4"][index]
+
+    elif panel == "ue4":
+        # fixed ue4 slice: y=dm2, x=umu4
+        z = surface3d[:, :, index]
+        xaxis = "umu4"
+        yaxis = "dm2"
+        fixed_value = str_to_axis["ue4"][index]
+
+    else:
+        raise ValueError("panel must be one of: dm2, umu4, ue4")
+
+    x = str_to_axis[xaxis]
+    y = str_to_axis[yaxis]
+    X, Y = np.meshgrid(x, y)
+
+    print("Plotting:", name)
+    print("  panel =", panel)
+    print("  index =", index)
+    print("  fixed value =", fixed_value)
+    print("  z shape =", z.shape)
+    print("  z min/max =", np.nanmin(z), np.nanmax(z))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(str_to_latex[xaxis], fontsize=14)
+    ax.set_ylabel(str_to_latex[yaxis], fontsize=14)
+
+    label = "{} = {:.4g}".format(panel, fixed_value)
+    ax.set_title("{}\n{}".format(title, label), fontsize=14)
+
+    # Filled color map for the surface
+    pcm = ax.pcolormesh(X, Y, z, shading="auto")
+    cbar = fig.colorbar(pcm, ax=ax)
+    if levels is None:
+        cbar.set_label(r"$\chi^2$", fontsize=14)
+    else:
+        cbar.set_label(r"$\Delta\chi^2$", fontsize=14)
+
+    # Contour lines
+    if levels is not None:
+        good_levels = [lev for lev in levels if lev > np.nanmin(z) and lev < np.nanmax(z)]
+        if len(good_levels) > 0:
+            print("  Drawing contour levels:", good_levels)
+            cs = ax.contour(X, Y, z, levels=good_levels, colors="white", linewidths=1.2)
+            ax.clabel(cs, fmt="%.2f", fontsize=8)
+        else:
+            print("  No contour levels inside z range.")
+
+    os.makedirs(os.path.dirname(name), exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(name)
+    plt.close(fig)
+
+def PlotFCContours(data_chi2s, asimov_chi2s, results, mode, title):
+    """
+    Make the original-style FC contour panel plots.
+
+    data_chi2s should already be data chi2 - best_fit.
+    asimov_chi2s is the null/Asimov chi2 surface.
+    results is the FC toy dchi2 distribution.
+    """
+
+    limits = [95]
+
+    pplot = PanelPlot(title, "ue4", "dm2", "umu4")
+
+    stereo = ExperimentContour("STEREO 95% Excl.", "exp_results/stereo_2Dexcl.csv", False, "black", h_index=0)
+    minos = ExperimentContour("MINOS 90% Excl.", "exp_results/MINOS.csv", False, "black", h_index=1)
+    prospect = ExperimentContour("PROSPECT 95% Excl.", "exp_results/prospect.csv", False, "blue", h_index=2)
+    katrin = ExperimentContour("KATRIN 95% Excl.", "exp_results/katrin_noMass.csv", False, "purple", h_index=3)
+    microboone = ExperimentContour("MicroBooNE 95% Excl.", "exp_results/microboone.csv", False, "teal", h_index=4)
+    neutrino4 = ExperimentContour(
+        "Neutrino-4 $2\sigma$ Conf.",
+        ["exp_results/n4_c1.csv", "exp_results/n4_c2.csv", "exp_results/n4_c3.csv", "exp_results/n4_c4.csv"],
+        True,
+        "pink",
+        h_index=2
+    )
+    raa = ExperimentContour("RAA 90% Allowed", "exp_results/RAA.csv", True, "gray", h_index=3)
 
     neutrino4.SetPatch("Patch")
     raa.SetPatch("Patch")
 
-    limits = [95]
-
-    pplot.AddExclusions([stereo,minos,prospect,katrin,microboone])
+    pplot.AddExclusions([stereo, minos, prospect, katrin, microboone])
 
     if not fill_exclusions:
-        pplot.AddAlloweds([neutrino4,raa])
+        pplot.AddAlloweds([neutrino4, raa])
 
-    if AnalysisConfig.animate:
-        for i in range(len(str_to_axis["dm2"])):
-            '''
-            pplot.SetXaxis("ue4")
-            pplot.SetYaxis("umu4")
-            pplot.SetPanel("dm2")
-            sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["dm2"])
-            name = "plots/ue4_vs_umu4_%02d.png" % i
-            pplot.SetName(name)
-            pplot.Animate(excl,sens,limits,i)
-            '''
-            pplot.SetXaxis("ue4")
-            pplot.SetYaxis("dm2")
-            pplot.SetPanel("umu4")
-            sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["umu4"])
-            name = "plots/ue4_vs_dm2_%02d.png" % i
-            pplot.SetName(name)
-            pplot.Animate(excl,sens,limits,i)
-            '''
-            pplot.SetXaxis("umu4")
-            pplot.SetPanel("ue4")
-            sens,excl = GetFCSlice(data_chi2s,asimov_chi2s,results,i,str_to_index["ue4"])
-            name = "plots/umu4_vs_dm2_%02d.png" % i
-            pplot.SetName(name)
-            pplot.Animate(excl,sens,limits,i)
-            '''
-    elif AnalysisConfig.compare_profiles:
-        #lam = 1
-        #best_fit = 101.24
-        #exclude = "none"
-        #data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        #asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        #results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        #sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+    # os.makedirs("plots", exist_ok=True)
 
-        #lam = 12
-        #best_fit = 152.65
-        #exclude = "none"
-        #data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        #asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        #results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        #sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+    pplot.SetXaxis("ue4")
+    pplot.SetYaxis("umu4")
+    pplot.SetPanel("dm2")
+    sens_list, excl_list = GetFCSlices(data_chi2s, asimov_chi2s, results, "dm2")
+    pplot.SetName("/exp/minerva/data/users/qvuong/surfaces/plots/FC_ue4_vs_umu4_{}.png".format(mode))
+    pplot.MakePlot(excl_list, sens_list, limits)
+    pplot.Zoom()
 
-        lam = 1
-        exclude = "ratio"
-        best_fit = 139.336
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+    pplot.SetXaxis("ue4")
+    pplot.SetYaxis("dm2")
+    pplot.SetPanel("umu4")
+    sens_list, excl_list = GetFCSlices(data_chi2s, asimov_chi2s, results, "umu4")
+    pplot.SetName("/exp/minerva/data/users/qvuong/surfaces/plots/FC_ue4_vs_dm2_{}.png".format(mode))
+    pplot.MakePlot(excl_list, sens_list, limits)
+    pplot.Zoom()
 
-        best_fit =  134.126
-        data_chi2s = np.load("chi2s/data_chi2s.npy") - best_fit
-        asimov_chi2s = np.load("chi2s/asimov_chi2s.npy")
-        results = np.load("chi2s/asimov_deltachi2s.npy")
-        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
+    pplot.SetXaxis("umu4")
+    pplot.SetYaxis("dm2")
+    pplot.SetPanel("ue4")
+    sens_list, excl_list = GetFCSlices(data_chi2s, asimov_chi2s, results, "ue4")
+    pplot.SetName("/exp/minerva/data/users/qvuong/surfaces/plots/FC_umu4_vs_dm2_{}.png".format(mode))
+    pplot.MakePlot(excl_list, sens_list, limits)
+    pplot.Zoom()
 
-        pplot.SetTitle("MINERvA Sterile Neutrino Search\nFlux Profiling Comparison")
-        pplot.SetXaxis("ue4")
-        pplot.SetYaxis("dm2")
-        pplot.SetPanel("umu4")
-        name = "plots/FC_ue4_vs_dm2_profiling.png"
-        pplot.SetName(name)
-        pplot.MakeCompPlot([excl_list1,excl_list2],[sens_list1,sens_list2],["Old","New"],limits)
-        pplot.Zoom()
+def PlotFCCriticalDistribution(input_dir, mode):
+    fc_file = os.path.join(input_dir, "asimov_deltachi2s_{}.npy".format(mode))
 
-        lam = 1
-        exclude = "ratio"
-        best_fit = 139.336
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+    if not os.path.isfile(fc_file):
+        raise IOError("Missing FC toy file: {}".format(fc_file))
 
-        best_fit =  134.126
-        data_chi2s = np.load("chi2s/data_chi2s.npy") - best_fit
-        asimov_chi2s = np.load("chi2s/asimov_chi2s.npy")
-        results = np.load("chi2s/asimov_deltachi2s.npy")
-        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
+    results = np.load(fc_file)
+    results = np.asarray(results).ravel()
+    results = results[np.isfinite(results)]
 
-        pplot.SetXaxis("umu4")
-        pplot.SetYaxis("dm2")
-        pplot.SetPanel("ue4")
-        name = "plots/FC_umu4_vs_dm2_profiling.png"
-        pplot.SetName(name)
-        pplot.MakeCompPlot([excl_list1,excl_list2],[sens_list1,sens_list2],["Old","New"],limits)        
-        pplot.Zoom()
+    print("\nLoaded FC toy dchi2 file:")
+    print("  file   =", fc_file)
+    print("  ntoys  =", results.size)
+    print("  min    =", np.min(results))
+    print("  max    =", np.max(results))
+    print("  mean   =", np.mean(results))
+    print("  median =", np.median(results))
 
-        lam = 1
-        exclude = "ratio"
-        best_fit = 139.336
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        sens_list1,excl_list1 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+    cls = [68, 90, 95, 99]
+    crit = {cl: np.percentile(results, cl) for cl in cls}
 
-        best_fit =  134.126
-        data_chi2s = np.load("chi2s/data_chi2s.npy") - best_fit
-        asimov_chi2s = np.load("chi2s/asimov_chi2s.npy")
-        results = np.load("chi2s/asimov_deltachi2s.npy")
-        sens_list2,excl_list2 = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
+    print("\nFC critical dchi2 levels:")
+    for cl in cls:
+        print("  {}% = {}".format(cl, crit[cl]))
 
-        pplot.SetXaxis("ue4")
-        pplot.SetYaxis("umu4")
-        pplot.SetPanel("dm2")
-        name = "plots/FC_ue4_vs_umu4_profiling.png"
-        pplot.SetName(name)
-        pplot.MakeCompPlot([excl_list1,excl_list2],[sens_list1,sens_list2],["Old","New"],limits)
-        pplot.Zoom()
+    outdir = os.path.join(input_dir, "plots")
+    os.makedirs(outdir, exist_ok=True)
 
-    else:
-        title = 'MINERvA Sterile Neutrino Search'
-        if exclude == 'ratio':
-            best_fit = 139.336
-        elif lam == 1:
-            best_fit = 101.24
-        elif lam == 12:
-            best_fit = 152.65
-        data_chi2s = np.load("chi2s/lambda{}_{}/data_chi2s.npy".format(lam,exclude)) - best_fit
-        asimov_chi2s = np.load("chi2s/lambda{}_{}/asimov_chi2s.npy".format(lam,exclude))
-        results = np.load("chi2s/lambda{}_{}/asimov_deltachi2s.npy".format(lam,exclude))
-        
-        pplot.SetXaxis("ue4")
-        pplot.SetYaxis("umu4")
-        pplot.SetPanel("dm2")
-        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"dm2")
-        pplot.SetName("plots/FC_ue4_vs_umu4_lambda{}_exclude_{}.png".format(lam,exclude))
-        pplot.MakePlot(excl_list,sens_list,limits)
-        pplot.Zoom()
+    outname = os.path.join(
+        outdir,
+        "FC_dchi2_distribution_{}.png".format(mode)
+    )
 
-        pplot.SetXaxis("ue4")
-        pplot.SetYaxis("dm2")
-        pplot.SetPanel("umu4")
-        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"umu4")
-        pplot.SetName("plots/FC_ue4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
-        pplot.MakePlot(excl_list,sens_list,limits)
-        pplot.Zoom()
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-        pplot.SetXaxis("umu4")
-        pplot.SetYaxis("dm2")
-        pplot.SetPanel("ue4")
-        sens_list,excl_list = GetFCSlices(data_chi2s,asimov_chi2s,results,"ue4")
-        pplot.SetName("plots/FC_umu4_vs_dm2_lambda{}_exclude_{}.png".format(lam,exclude))
-        pplot.MakePlot(excl_list,sens_list,limits)
-        pplot.Zoom()
+    ax.hist(
+        results,
+        bins=60,
+        histtype="stepfilled",
+        alpha=0.45,
+        density=False,
+    )
+
+    ymax = ax.get_ylim()[1]
+
+    line_styles = {
+        68: "--",
+        90: "-.",
+        95: "-",
+        99: ":",
+    }
+
+    for cl in cls:
+        x = crit[cl]
+        ax.axvline(x, linestyle=line_styles[cl], linewidth=2)
+        ax.text(
+            x,
+            0.92 * ymax,
+            "{}% = {:.3g}".format(cl, x),
+            rotation=90,
+            va="top",
+            ha="right",
+            fontsize=10,
+        )
+
+    # plot_max = 300.0
+    # plot_results = results[results <= plot_max]
+    # n_overflow = results.size - plot_results.size
+
+    # fig, ax = plt.subplots(figsize=(8, 6))
+
+    # ax.hist(
+    #     plot_results,
+    #     bins=60,
+    #     range=(0, plot_max),
+    #     histtype="stepfilled",
+    #     alpha=0.45,
+    #     density=False,
+    # )
+
+    # ax.set_xlim(-20, plot_max)
+
+    # ymax = ax.get_ylim()[1]
+
+    # line_styles = {
+    #     68: "--",
+    #     90: "-.",
+    #     95: "-",
+    #     99: ":",
+    # }
+
+    # for cl in cls:
+    #     x = crit[cl]
+
+    #     if x <= plot_max:
+    #         ax.axvline(x, linestyle=line_styles[cl], linewidth=2)
+    #         ax.text(
+    #             x,
+    #             0.92 * ymax,
+    #             "{}% = {:.3g}".format(cl, x),
+    #             rotation=90,
+    #             va="top",
+    #             ha="right",
+    #             fontsize=10,
+    #         )
+    #     else:
+    #         ax.text(
+    #             0.98 * plot_max,
+    #             0.92 * ymax,
+    #             "{}% = {:.3g} > {}".format(cl, x, plot_max),
+    #             rotation=90,
+    #             va="top",
+    #             ha="right",
+    #             fontsize=10,
+    #         )
+
+    # if n_overflow > 0:
+    #     ax.text(
+    #         0.98,
+    #         0.85,
+    #         "Overflow > {}: {} toys".format(plot_max, n_overflow),
+    #         transform=ax.transAxes,
+    #         ha="right",
+    #         va="top",
+    #         fontsize=10,
+    #     )
+
+    ax.set_xlabel(r"Toy $\Delta\chi^2$")
+    ax.set_ylabel("Number of toys")
+    ax.set_title("FC toy distribution\n{}".format(mode))
+    ax.grid(True, alpha=0.25)
+
+    fig.tight_layout()
+    fig.savefig(outname)
+    plt.close(fig)
+
+    print("\nSaved FC dchi2 distribution plot:")
+    print("  {}".format(outname))
+
+    return results, crit
+
+
+
+
+if __name__ == "__main__":
+
+    if _plot_args.critical_only:
+        PlotFCCriticalDistribution(
+            _plot_args.plot_input_dir,
+            _plot_args.plot_mode,
+        )
+        sys.exit(0)
+
+    title = "MINERvA Sterile Neutrino Search"
+    if _plot_args.plot_mode == "noFluxProfile":
+        title += "\nNo flux profiling"
+    elif _plot_args.plot_mode == "profiledFlux":
+        title += "\nFlux profiled"
+
+    data_dchi2s, asimov_dchi2s, results, delta_m_values = LoadMergedSurfaces(
+        _plot_args.plot_input_dir,
+        _plot_args.plot_mode,
+        use_fc=_plot_args.plot_use_fc
+    )
+
+    fc_levels = None
+    if _plot_args.plot_use_fc and results is not None:
+        fc68 = np.percentile(results, 68)
+        fc90 = np.percentile(results, 90)
+        fc95 = np.percentile(results, 95)
+        fc99 = np.percentile(results, 99)
+
+        fc_levels = [fc68, fc90, fc95, fc99]
+
+        print("\nFC critical dchi2 levels:")
+        print("  68% =", fc68)
+        print("  90% =", fc90)
+        print("  95% =", fc95)
+        print("  99% =", fc99)
+
+    # --------------------------------------------------
+    # 1. Raw surface plots
+    # --------------------------------------------------
+    outdir = "/exp/minerva/data/users/qvuong/surfaces/plots/surfaces_{}".format(_plot_args.plot_mode)
+    os.makedirs(outdir, exist_ok=True)
+
+    # # --------------------------------------------------
+    # # 1a. Fixed dm2 slices: ue4 vs umu4
+    # # surface index: [dm2, umu4, ue4]
+    # # --------------------------------------------------
+    # for i in range(data_dchi2s.shape[0]):
+    #     dm2_val = delta_m_values[i]
+
+    #     PlotOneSurface(
+    #         data_dchi2s,
+    #         panel="dm2",
+    #         index=i,
+    #         name="{}/data_surface_ue4_vs_umu4_dm2idx{:03d}.png".format(outdir, i),
+    #         title="Data surface, {}: dm2 = {:.4g}".format(_plot_args.plot_mode, dm2_val),
+    #         levels=fc_levels
+    #     )
+
+    #     PlotOneSurface(
+    #         asimov_dchi2s,
+    #         panel="dm2",
+    #         index=i,
+    #         name="{}/asimov_surface_ue4_vs_umu4_dm2idx{:03d}.png".format(outdir, i),
+    #         title="Asimov raw χ² surface, {}: dm2 = {:.4g}".format(_plot_args.plot_mode, dm2_val),
+    #         levels=None
+    #     )
+
+    # # --------------------------------------------------
+    # # 1b. Fixed umu4 slices: ue4 vs dm2
+    # # surface index: [dm2, umu4, ue4]
+    # # --------------------------------------------------
+    # for i in range(data_dchi2s.shape[1]):
+    #     umu4_val = str_to_axis["umu4"][i]
+
+    #     PlotOneSurface(
+    #         data_dchi2s,
+    #         panel="umu4",
+    #         index=i,
+    #         name="{}/data_surface_ue4_vs_dm2_umu4idx{:03d}.png".format(outdir, i),
+    #         title="Data surface, {}: umu4 = {:.4g}".format(_plot_args.plot_mode, umu4_val),
+    #         levels=fc_levels
+    #     )
+
+    #     PlotOneSurface(
+    #         asimov_dchi2s,
+    #         panel="umu4",
+    #         index=i,
+    #         name="{}/asimov_surface_ue4_vs_dm2_umu4idx{:03d}.png".format(outdir, i),
+    #         title="Asimov raw χ² surface, {}: umu4 = {:.4g}".format(_plot_args.plot_mode, umu4_val),
+    #         levels=None
+    #     )
+
+    # # --------------------------------------------------
+    # # 1c. Fixed ue4 slices: umu4 vs dm2
+    # # surface index: [dm2, umu4, ue4]
+    # # --------------------------------------------------
+    # for i in range(data_dchi2s.shape[2]):
+    #     ue4_val = str_to_axis["ue4"][i]
+
+    #     PlotOneSurface(
+    #         data_dchi2s,
+    #         panel="ue4",
+    #         index=i,
+    #         name="{}/data_surface_umu4_vs_dm2_ue4idx{:03d}.png".format(outdir, i),
+    #         title="Data surface, {}: ue4 = {:.4g}".format(_plot_args.plot_mode, ue4_val),
+    #         levels=fc_levels
+    #     )
+
+    #     PlotOneSurface(
+    #         asimov_dchi2s,
+    #         panel="ue4",
+    #         index=i,
+    #         name="{}/asimov_surface_umu4_vs_dm2_ue4idx{:03d}.png".format(outdir, i),
+    #         title="Asimov raw χ² surface, {}: ue4 = {:.4g}".format(_plot_args.plot_mode, ue4_val),
+    #         levels=None
+    #     )
+
+    # --------------------------------------------------
+    # 2. FC contour plots
+    # --------------------------------------------------
+    if _plot_args.plot_use_fc:
+        PlotFCContours(
+            data_dchi2s,
+            asimov_dchi2s,
+            results,
+            _plot_args.plot_mode,
+            title
+        )
+
+    PlotAsimovDChi2Panels(
+        asimov_dchi2s,
+        _plot_args.plot_mode,
+        title,
+        fc_levels=fc_levels,
+    )
+
+    PlotDataDChi2Panels(
+        data_dchi2s,
+        _plot_args.plot_mode,
+        title,
+        fc_levels=fc_levels,
+    )
