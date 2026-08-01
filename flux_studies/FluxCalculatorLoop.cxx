@@ -11,6 +11,24 @@
 #include "PlotUtils/MnvH1D.h"
 #include "FluxCalculatorLoop.h"
 
+
+
+/*
+ * P8 CHANGES:
+ *
+ * beamUniverseOffset:
+ *   Cyclically shifts only the BeamFocus universe index. This is used
+ *   to decorrelate the BeamFocus uncertainties between FHC and RHC
+ *   while leaving the PPFX universe ordering unchanged.
+ *
+ * useFlatBeamFocus:
+ *   Selects externally supplied flat BeamFocus weights instead of the
+ *   event-dependent tuple BeamFocus weights.
+ *
+ * flatBeamFocusWeights:
+ *   Contains one relative BeamFocus weight per universe for species
+ *   whose LE tuples do not contain the appropriate focusing variation.
+ */
 void FluxCalculatorLoop::EventLoop(
   TChain* chain,
   const TEventList* evtList,
@@ -27,9 +45,14 @@ void FluxCalculatorLoop::EventLoop(
   double cvWeight;
   int nuParentID;
 
-  // double* combinedWeights = new double[1000];
   double* combinedWeights = nullptr;
 
+
+  /*
+  * P8 stores mc_wgt_Flux_BeamFocus and mc_wgt_ppfx1_Total as
+  * scaled integer arrays rather than double arrays. Separate integer
+  * branch buffers are therefore required before decoding the weights.
+  */
   std::map<std::string, int*> universeWeightsInt;
   std::map<std::string, double*> universeWeights;
   std::map<std::string, double> cvWeightContributions;
@@ -43,6 +66,8 @@ void FluxCalculatorLoop::EventLoop(
     universeWeights[*it_band] = new double[1000];
 
     const std::string wgtName = "mc_wgt_" + *it_band;
+
+    // P8: These two branches are stored as int[1000] with a scale of 1e-7.
     const bool isIntScaled = (*it_band == "Flux_BeamFocus" || *it_band == "ppfx1_Total");
 
     if (isIntScaled) {
@@ -53,6 +78,16 @@ void FluxCalculatorLoop::EventLoop(
       chain->SetBranchAddress(wgtName.c_str(), universeWeights[*it_band]);
     }
 
+
+    /*
+    * The P8 Flux_BeamFocus and ppfx1_Total universe values are
+    * absolute component weights.
+    * Read the matching component CV weights so that the universes can
+    * later be converted to relative multiplicative weights.
+    *
+    * Flux_BeamFocus corresponds to mc_hornCurrent_cvweight.
+    * ppfx1_Total corresponds to mc_ppfx1_cvweight.
+    */
     std::string name = *it_band;
 
     if (*it_band == "Flux_BeamFocus") { name = "hornCurrent"; }
@@ -68,6 +103,11 @@ void FluxCalculatorLoop::EventLoop(
 
   const unsigned int nCombinedUniv = histogram->GetVertErrorBand(histogram->GetVertErrorBandNames().front())->GetNHists();
 
+  /*
+  * The P8 tuple branches used here contain 1000 universe entries.
+  * Validate the histogram universe count before indexing these
+  * fixed-size tuple branch buffers.
+  */
   if (nCombinedUniv == 0) {
     std::cerr << "ERROR: BeamFocus error band contains zero universes." << std::endl;
 
@@ -92,9 +132,18 @@ void FluxCalculatorLoop::EventLoop(
     return;
   }
 
+  /*
+  * Normalize the requested cyclic BeamFocus offset to the available
+  * universe count. PPFX is intentionally not shifted.
+  */
   const unsigned int normalizedBeamOffset = beamUniverseOffset % nCombinedUniv;
   combinedWeights = new double[nCombinedUniv];
 
+
+  /*
+  * Flat BeamFocus mode requires exactly one externally supplied
+  * relative weight for every histogram universe.
+  */
   if (useFlatBeamFocus && flatBeamFocusWeights.size() != nCombinedUniv) {
     std::cerr << "ERROR: Flat BeamFocus vector contains "
               << flatBeamFocusWeights.size()
@@ -120,6 +169,12 @@ void FluxCalculatorLoop::EventLoop(
               )
             << std::endl;
 
+
+  /*
+  * Add the combined Flux error band. Each universe will later contain
+  *
+  *   PPFX_relative[u] * BeamFocus_relative[u].
+  */
   histogram->AddVertErrorBand("Flux", nCombinedUniv);
 
   if (universeWeights.find("ppfx1_Total") == universeWeights.end() ||
@@ -168,9 +223,16 @@ void FluxCalculatorLoop::EventLoop(
     chain->GetEntry(entrynum);
 
     /*
-     * Flux_BeamFocus and ppfx1_Total are stored as scaled integers.
-     * Convert them back to doubles.
-     */
+    * P8 CHANGE:
+    * Flux_BeamFocus and ppfx1_Total are stored as integer arrays.
+    *
+    * The stored value is the physical absolute component weight
+    * multiplied by 1e7. Decode it by multiplying by 1e-7.
+    *
+    * This step only restores the numeric value; the decoded weights
+    * must still be divided by their component CV weights to become
+    * relative universe weights.
+    */
     for (const auto& band : vertErrorBandNames) {
       if (band == "Flux_BeamFocus" || band == "ppfx1_Total") {
         for (unsigned int u = 0; u < nCombinedUniv; ++u) {
@@ -182,6 +244,10 @@ void FluxCalculatorLoop::EventLoop(
 
     parent_freq[nuParentID]++;
 
+    /*
+    * Skip events with invalid or effectively zero total CV weight.
+    * These events are not safe to use in the flux histograms.
+    */
     if (std::isnan(cvWeight) || cvWeight < 1.0e-6) {
       nanCount++;
       continue;
@@ -226,6 +292,13 @@ void FluxCalculatorLoop::EventLoop(
       beamCVContr = beamCVIt->second;
     }
 
+
+    /*
+    * Protect the absolute-to-relative conversion against missing,
+    * invalid, or effectively zero component CV weights. A fallback of
+    * 1 preserves the decoded universe value rather than producing NaN
+    * or an unbounded ratio.
+    */
     if (std::isnan(ppfxCVContr) || std::abs(ppfxCVContr) < 1.0e-12) {
       ppfxCVContr = 1.0;
     }
@@ -234,6 +307,21 @@ void FluxCalculatorLoop::EventLoop(
       beamCVContr = 1.0;
     }
 
+    /*
+    * Return the relative BeamFocus weight for one output universe.
+    *
+    * The BeamFocus source universe is shifted cyclically:
+    *
+    *   source = (output + offset) % N.
+    *
+    * In tuple mode, used for the right-sign species, the BeamFocus
+    * weight comes from the event tuple. The tuple value is an absolute
+    * component weight, so divide it by mc_hornCurrent_cvweight.
+    *
+    * In flat mode, used for the other species, use the corresponding
+    * species-dependent CSV weight. The CSV values are already relative
+    * and must not be divided again.
+    */
     const auto getBeamFocusRelative =
       [&](unsigned int outputUniverse) -> double
       {
@@ -252,6 +340,19 @@ void FluxCalculatorLoop::EventLoop(
           beamCVContr;
       };
 
+    /*
+    * Fill the standalone PPFX and BeamFocus error bands using relative
+    * universe weights.
+    *
+    * ppfx1_Total:
+    *   Keep universe u unchanged and divide the absolute tuple weight by
+    *   mc_ppfx1_cvweight.
+    *
+    * Flux_BeamFocus:
+    *   Apply the cyclic BeamFocus offset and obtain the relative weight
+    *   from getBeamFocusRelative(). This may use either the shifted tuple
+    *   weight or the shifted flat species-dependent CSV weight.
+    */
     for (std::vector<std::string>::const_iterator it_band = vertErrorBandNames.begin();
                                                   it_band != vertErrorBandNames.end();
                                                   ++it_band) {
@@ -259,18 +360,6 @@ void FluxCalculatorLoop::EventLoop(
       if (*it_band != "Flux_BeamFocus" && *it_band != "ppfx1_Total") {
         continue;
       }
-
-      // double cvContr = 1.0;
-
-      // const auto cvContrIt = cvWeightContributions.find(*it_band);
-
-      // if (cvContrIt != cvWeightContributions.end()) {
-      //   cvContr = cvContrIt->second;
-      // }
-
-      // if (std::isnan(cvContr) || std::abs(cvContr) < 1.0e-12) {
-      //   cvContr = 1.0;
-      // }
 
       double* reorderedWeights = new double[nCombinedUniv];
 
@@ -304,15 +393,15 @@ void FluxCalculatorLoop::EventLoop(
       delete[] reorderedWeights;
     }
 
-    /*
-     * Build combined Flux:
-     *
-     * Flux[u] =
-     *   (PPFX[u] / PPFX_CV)
-     *   *
-     *   (BeamFocus[(u + offset) % N] / BeamFocus_CV)
-     */
 
+    /*
+    * Build the combined Flux error band:
+    *
+    *   Flux[u] = PPFX_relative[u] * BeamFocus_relative[u].
+    *
+    * PPFX remains at universe u. BeamFocus uses the shifted source
+    * universe and may come either from the tuple or the flat CSV.
+    */
     for (unsigned int univ_idx = 0; univ_idx < nCombinedUniv; ++univ_idx) {
 
       const double ppfxRelative = universeWeights["ppfx1_Total"][univ_idx] / ppfxCVContr;
@@ -324,6 +413,11 @@ void FluxCalculatorLoop::EventLoop(
 
     static int debugCombinedPrints = 0;
 
+    /*
+    * Print a few representative combined-universe calculations to
+    * verify the PPFX index, shifted BeamFocus index, selected BeamFocus
+    * source, and final product during validation runs.
+    */
     if (debugCombinedPrints < 5) {
       const unsigned int outIdx = 0;
       const unsigned int ppfxIdx = outIdx;
@@ -379,7 +473,7 @@ void FluxCalculatorLoop::EventLoop(
   }
 
   std::cout << "Skipped " << nanCount
-            << " entries where the CV weight was NaN"
+            << " entries with invalid or effectively zero total CV weight"
             << std::endl;
 
   for (auto& it : universeWeightsInt) { delete[] it.second; }
