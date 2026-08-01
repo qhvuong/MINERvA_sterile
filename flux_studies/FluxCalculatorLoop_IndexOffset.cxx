@@ -18,17 +18,14 @@ void FluxCalculatorLoop::EventLoop(
   std::string branchName,
   double additionalWeight,
   bool cvWeighted,
-  unsigned int beamUniverseOffset,
-  bool useFlatBeamFocus,
-  const std::vector<double>& flatBeamFocusWeights
+  unsigned int beamUniverseOffset
 )
 {
   double cvVal;
   double cvWeight;
   int nuParentID;
 
-  // double* combinedWeights = new double[1000];
-  double* combinedWeights = nullptr;
+  double* combinedWeights = new double[1000];
 
   std::map<std::string, int*> universeWeightsInt;
   std::map<std::string, double*> universeWeights;
@@ -55,8 +52,12 @@ void FluxCalculatorLoop::EventLoop(
 
     std::string name = *it_band;
 
-    if (*it_band == "Flux_BeamFocus") { name = "hornCurrent"; }
-    else if (*it_band == "ppfx1_Total") { name = "ppfx1"; }
+    if (*it_band == "Flux_BeamFocus") {
+      name = "hornCurrent";
+    }
+    else if (*it_band == "ppfx1_Total") {
+      name = "ppfx1";
+    }
 
     const std::string cvWeightContributor = "mc_" + name + "_cvweight";
 
@@ -66,7 +67,8 @@ void FluxCalculatorLoop::EventLoop(
     }
   }
 
-  const unsigned int nCombinedUniv = histogram->GetVertErrorBand(histogram->GetVertErrorBandNames().front())->GetNHists();
+  const unsigned int nCombinedUniv =
+    histogram->GetVertErrorBand(histogram->GetVertErrorBandNames().front())->GetNHists();
 
   if (nCombinedUniv == 0) {
     std::cerr << "ERROR: BeamFocus error band contains zero universes." << std::endl;
@@ -78,47 +80,10 @@ void FluxCalculatorLoop::EventLoop(
     return;
   }
 
-  if (nCombinedUniv > 1000) {
-    std::cerr
-      << "ERROR: Requested "
-      << nCombinedUniv
-      << " universes, but tuple buffers contain only 1000."
-      << std::endl;
-
-    for (auto& it : universeWeightsInt) { delete[] it.second; }
-    for (auto& it : universeWeights) { delete[] it.second; }
-
-    delete[] combinedWeights;
-    return;
-  }
-
   const unsigned int normalizedBeamOffset = beamUniverseOffset % nCombinedUniv;
-  combinedWeights = new double[nCombinedUniv];
-
-  if (useFlatBeamFocus && flatBeamFocusWeights.size() != nCombinedUniv) {
-    std::cerr << "ERROR: Flat BeamFocus vector contains "
-              << flatBeamFocusWeights.size()
-              << " weights, but the histogram contains "
-              << nCombinedUniv << " universes." << std::endl;
-
-    for (auto& it : universeWeightsInt) { delete[] it.second; }
-
-    for (auto& it : universeWeights) { delete[] it.second; }
-
-    delete[] combinedWeights;
-    return;
-  }
 
   std::cout << "Using BeamFocus universe offset: " << normalizedBeamOffset
             << " out of " << nCombinedUniv << " universes" << std::endl;
-
-  std::cout << "BeamFocus source: "
-            << (
-                useFlatBeamFocus
-                  ? "flat species-dependent weights"
-                  : "event-dependent tuple weights"
-              )
-            << std::endl;
 
   histogram->AddVertErrorBand("Flux", nCombinedUniv);
 
@@ -197,61 +162,16 @@ void FluxCalculatorLoop::EventLoop(
     }
 
     /*
-      * Fill standalone flux error bands.
-      *
-      * PPFX remains unshifted.
-      *
-      * BeamFocus_saved[u] =
-      *   BeamFocus_input[(u + normalizedBeamOffset) % N]
-      *
-      * Tuple PPFX and BeamFocus weights are stored as absolute
-      * component weights and are divided by their matching CV
-      * contribution.
-      *
-      * Flat BeamFocus CSV values are already relative weights and
-      * are used directly.
-    */
-    double ppfxCVContr = 1.0;
-    double beamCVContr = 1.0;
-
-    const auto ppfxCVIt = cvWeightContributions.find("ppfx1_Total");
-
-    if (ppfxCVIt != cvWeightContributions.end()) {
-      ppfxCVContr = ppfxCVIt->second;
-    }
-
-    const auto beamCVIt = cvWeightContributions.find("Flux_BeamFocus");
-
-    if (beamCVIt != cvWeightContributions.end()) {
-      beamCVContr = beamCVIt->second;
-    }
-
-    if (std::isnan(ppfxCVContr) || std::abs(ppfxCVContr) < 1.0e-12) {
-      ppfxCVContr = 1.0;
-    }
-
-    if (std::isnan(beamCVContr) || std::abs(beamCVContr) < 1.0e-12) {
-      beamCVContr = 1.0;
-    }
-
-    const auto getBeamFocusRelative =
-      [&](unsigned int outputUniverse) -> double
-      {
-        const unsigned int sourceUniverse =
-          (outputUniverse + normalizedBeamOffset) % nCombinedUniv;
-
-        if (useFlatBeamFocus) {
-          // CSV values are already relative BeamFocus weights.
-          return flatBeamFocusWeights[sourceUniverse];
-        }
-
-        // P8 tuple BeamFocus values are absolute component weights.
-        // Convert to relative by dividing by the BeamFocus CV component.
-        return
-          universeWeights["Flux_BeamFocus"][sourceUniverse] /
-          beamCVContr;
-      };
-
+     * Fill standalone flux error bands.
+     *
+     * PPFX remains unshifted.
+     *
+     * BeamFocus_saved[u] =
+     *   BeamFocus_input[(u + normalizedBeamOffset) % N]
+     *
+     * P8 stores absolute weights, so standalone universe weights
+     * are divided by the corresponding component CV weight.
+     */
     for (std::vector<std::string>::const_iterator it_band = vertErrorBandNames.begin();
                                                   it_band != vertErrorBandNames.end();
                                                   ++it_band) {
@@ -260,28 +180,29 @@ void FluxCalculatorLoop::EventLoop(
         continue;
       }
 
-      // double cvContr = 1.0;
+      double cvContr = 1.0;
 
-      // const auto cvContrIt = cvWeightContributions.find(*it_band);
+      const auto cvContrIt = cvWeightContributions.find(*it_band);
 
-      // if (cvContrIt != cvWeightContributions.end()) {
-      //   cvContr = cvContrIt->second;
-      // }
+      if (cvContrIt != cvWeightContributions.end()) {
+        cvContr = cvContrIt->second;
+      }
 
-      // if (std::isnan(cvContr) || std::abs(cvContr) < 1.0e-12) {
-      //   cvContr = 1.0;
-      // }
+      if (std::isnan(cvContr) || std::abs(cvContr) < 1.0e-12) {
+        cvContr = 1.0;
+      }
 
       double* reorderedWeights = new double[nCombinedUniv];
 
       for (unsigned int univ_idx = 0; univ_idx < nCombinedUniv; ++univ_idx) {
+        unsigned int sourceIdx = univ_idx;
 
         if (*it_band == "Flux_BeamFocus") {
-          reorderedWeights[univ_idx] = getBeamFocusRelative(univ_idx);
+          sourceIdx = (univ_idx + normalizedBeamOffset) % nCombinedUniv;
         }
-        else {
-          reorderedWeights[univ_idx] = universeWeights["ppfx1_Total"][univ_idx] / ppfxCVContr;
-        }
+
+        reorderedWeights[univ_idx] =
+          universeWeights[*it_band][sourceIdx] / cvContr;
       }
 
       if (cvWeighted) {
@@ -312,12 +233,38 @@ void FluxCalculatorLoop::EventLoop(
      *   *
      *   (BeamFocus[(u + offset) % N] / BeamFocus_CV)
      */
+    double ppfxCVContr = 1.0;
+    double beamCVContr = 1.0;
+
+    const auto ppfxCVIt = cvWeightContributions.find("ppfx1_Total");
+
+    if (ppfxCVIt != cvWeightContributions.end()) {
+      ppfxCVContr = ppfxCVIt->second;
+    }
+
+    const auto beamCVIt = cvWeightContributions.find("Flux_BeamFocus");
+
+    if (beamCVIt != cvWeightContributions.end()) {
+      beamCVContr = beamCVIt->second;
+    }
+
+    if (std::isnan(ppfxCVContr) || std::abs(ppfxCVContr) < 1.0e-12) {
+      ppfxCVContr = 1.0;
+    }
+
+    if (std::isnan(beamCVContr) || std::abs(beamCVContr) < 1.0e-12) {
+      beamCVContr = 1.0;
+    }
 
     for (unsigned int univ_idx = 0; univ_idx < nCombinedUniv; ++univ_idx) {
+      const unsigned int beamIdx =
+        (univ_idx + normalizedBeamOffset) % nCombinedUniv;
 
-      const double ppfxRelative = universeWeights["ppfx1_Total"][univ_idx] / ppfxCVContr;
+      const double ppfxRelative =
+        universeWeights["ppfx1_Total"][univ_idx] / ppfxCVContr;
 
-      const double beamRelative = getBeamFocusRelative(univ_idx);
+      const double beamRelative =
+        universeWeights["Flux_BeamFocus"][beamIdx] / beamCVContr;
 
       combinedWeights[univ_idx] = ppfxRelative * beamRelative;
     }
@@ -327,15 +274,16 @@ void FluxCalculatorLoop::EventLoop(
     if (debugCombinedPrints < 5) {
       const unsigned int outIdx = 0;
       const unsigned int ppfxIdx = outIdx;
-      const unsigned int beamIdx = (outIdx + normalizedBeamOffset) % nCombinedUniv;
+      const unsigned int beamIdx =
+        (outIdx + normalizedBeamOffset) % nCombinedUniv;
 
-      const double ppfxForDebug = universeWeights["ppfx1_Total"][ppfxIdx] / ppfxCVContr;
+      const double ppfxForDebug =
+        universeWeights["ppfx1_Total"][ppfxIdx] / ppfxCVContr;
 
-      const double beamForDebug = getBeamFocusRelative(outIdx);
+      const double beamForDebug =
+        universeWeights["Flux_BeamFocus"][beamIdx] / beamCVContr;
 
       std::cout << "\nDEBUG combined Flux"
-                << " source="
-                << (useFlatBeamFocus ? "flat" : "tuple")
                 << " outIdx=" << outIdx
                 << " ppfxIdx=" << ppfxIdx
                 << " beamIdx=" << beamIdx

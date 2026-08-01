@@ -10,3 +10,6 @@ grid_wrappers/
 *.root
 *.png
 runningNotes/
+*.npz
+*.csv
+*.pdf
