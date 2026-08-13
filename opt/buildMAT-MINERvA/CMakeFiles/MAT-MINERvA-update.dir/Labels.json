@@ -1,0 +1,28 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/MAT-MINERvA-update"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/MAT-MINERvA-update.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-MINERvA-prefix/src/MAT-MINERvA-stamp/MAT-MINERvA-update.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-MINERvA-prefix/src/MAT-MINERvA-stamp/MAT-MINERvA-download.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-MINERvA-prefix/src/MAT-MINERvA-stamp/MAT-MINERvA-mkdir.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"MAT-MINERvA"
+		],
+		"name" : "MAT-MINERvA-update"
+	}
+}

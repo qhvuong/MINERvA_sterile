@@ -1,0 +1,13 @@
+.#*
+*.py[cod]
+*.~
+*.bak
+__pycache__/
+*.log
+*.txt
+grid_wrappers/
+*.d
+*.so
+*.root
+*.png
+

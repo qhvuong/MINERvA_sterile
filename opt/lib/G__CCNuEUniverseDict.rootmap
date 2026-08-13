@@ -1,0 +1,73 @@
+{ decls }
+namespace PlotUtils { namespace detail {  } }
+namespace PlotUtils {  }
+class PythonMinervaUniverse;
+namespace PlotUtils { namespace detail { class empty; } }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class Model; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class Reweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class GENIEReweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class FSIReweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class LowQ2PiReweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class MKReweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class MINOSEfficiencyReweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class RPAReweighter; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class SuSAFromValencia2p2hReweighter; }
+namespace PlotUtils { template <typename T> class BeamAngleXUniverse; }
+namespace PlotUtils { template <typename T> class BeamAngleYUniverse; }
+namespace PlotUtils { template <typename T> class FluxUniverse; }
+namespace PlotUtils { template <typename T> class GenieUniverse; }
+namespace PlotUtils { template <typename T> class GenieRvx1piUniverse; }
+namespace PlotUtils { template <typename T> class GenieFaCCQEUniverse; }
+namespace PlotUtils { template <typename T> class ResponseUniverse; }
+namespace PlotUtils { template <typename T> class LowQ2PionUniverse; }
+namespace PlotUtils { template <typename T> class RPAUniverse; }
+namespace PlotUtils { template <typename T> class Universe2p2h; }
+namespace PlotUtils { template <typename T> class MuonUniverseMinerva; }
+namespace PlotUtils { template <typename T> class MuonUniverseMinos; }
+namespace PlotUtils { template <typename T> class TargetMassScintillatorUniverse; }
+namespace PlotUtils { template <typename T> class TargetMassWaterUniverse; }
+namespace PlotUtils { template <typename T> class TargetMassCarbonUniverse; }
+namespace PlotUtils { template <typename T> class TargetMassLeadUniverse; }
+namespace PlotUtils { template <typename T> class TargetMassIronUniverse; }
+namespace PlotUtils { template <typename UNIVERSE, typename EVENT> class Cut; }
+namespace reco {  }
+namespace reco { template <typename UNIVERSE, typename EVENT> class HasMINOSMatch; }
+namespace reco { template <typename UNIVERSE, typename EVENT> class ZRange; }
+namespace reco { template <typename UNIVERSE, typename EVENT> class Apothem; }
+
+[ libG__CCNuEUniverseDict.so ]
+# List of selected classes
+class PlotUtils::BeamAngleXUniverse<PythonMinervaUniverse>
+class PlotUtils::BeamAngleYUniverse<PythonMinervaUniverse>
+class PlotUtils::Cut<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::FSIReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::FluxUniverse<PythonMinervaUniverse>
+class PlotUtils::GENIEReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::GenieFaCCQEUniverse<PythonMinervaUniverse>
+class PlotUtils::GenieRvx1piUniverse<PythonMinervaUniverse>
+class PlotUtils::GenieUniverse<PythonMinervaUniverse>
+class PlotUtils::LowQ2PiReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::LowQ2PionUniverse<PythonMinervaUniverse>
+class PlotUtils::MINOSEfficiencyReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::MKReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::Model<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::MuonUniverseMinerva<PythonMinervaUniverse>
+class PlotUtils::MuonUniverseMinos<PythonMinervaUniverse>
+class PlotUtils::RPAReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::RPAUniverse<PythonMinervaUniverse>
+class PlotUtils::ResponseUniverse<PythonMinervaUniverse>
+class PlotUtils::Reweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::SuSAFromValencia2p2hReweighter<PythonMinervaUniverse,PlotUtils::detail::empty>
+class PlotUtils::TargetMassCarbonUniverse<PythonMinervaUniverse>
+class PlotUtils::TargetMassIronUniverse<PythonMinervaUniverse>
+class PlotUtils::TargetMassLeadUniverse<PythonMinervaUniverse>
+class PlotUtils::TargetMassScintillatorUniverse<PythonMinervaUniverse>
+class PlotUtils::TargetMassWaterUniverse<PythonMinervaUniverse>
+class PlotUtils::Universe2p2h<PythonMinervaUniverse>
+class PlotUtils::detail::empty
+class PythonMinervaUniverse
+class reco::Apothem<PythonMinervaUniverse,PlotUtils::detail::empty>
+class reco::HasMINOSMatch<PythonMinervaUniverse,PlotUtils::detail::empty>
+class reco::ZRange<PythonMinervaUniverse,PlotUtils::detail::empty>
+header Cut.h
+header PythonMinervaUniverse.h

@@ -1,0 +1,23 @@
+{ decls }
+namespace PlotUtils {  }
+
+[ libMAT-MINERvADict.so ]
+# List of selected classes
+class PlotUtils::HyperDimLinearizer
+class PlotUtils::MinervaUniverse
+class PlotUtils::POTCounter
+class PlotUtils::TargetUtils
+class PlotUtils::weightDIS
+class PlotUtils::weightLowQ2Pi
+class PlotUtils::weightRPA
+class PlotUtils::weightZExp
+class PlotUtils::weight_2p2h
+header HyperDimLinearizer.h
+header MinervaUniverse.h
+header POTCounter.h
+header utilities/TargetUtils.h
+header weightDIS.h
+header weightLowQ2Pi.h
+header weightRPA.h
+header weightZExp.h
+header weight_2p2h.h

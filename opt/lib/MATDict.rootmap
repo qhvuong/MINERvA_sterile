@@ -1,0 +1,100 @@
+{ decls }
+namespace std {  }
+namespace PlotUtils {  }
+namespace ROOT {  }
+namespace ROOT { namespace detail {  } }
+
+[ libMATDict.so ]
+# List of selected classes
+class PlotUtils::BadUnivWgtError
+class PlotUtils::BaseUniverse
+class PlotUtils::ChainWrapper
+class PlotUtils::ConstraintAccessError
+class PlotUtils::ConstraintLoadError
+class PlotUtils::FluxReweighter
+class PlotUtils::GridCanvas
+class PlotUtils::MissingFluxUnivError
+class PlotUtils::MissingSpectatorStrategyError
+class PlotUtils::MnvH1D
+class PlotUtils::MnvH2D
+class PlotUtils::MnvH3D
+class PlotUtils::MnvHist
+class PlotUtils::MnvLatErrorBand
+class PlotUtils::MnvLatErrorBand2D
+class PlotUtils::MnvLatErrorBand3D
+class PlotUtils::MnvPlotter
+class PlotUtils::MnvPlotter::ErrorSummaryGroupMap
+class PlotUtils::MnvVertErrorBand
+class PlotUtils::MnvVertErrorBand2D
+class PlotUtils::MnvVertErrorBand3D
+class PlotUtils::NoFluxUnivError
+class PlotUtils::NoWgtdSpreadError
+class PlotUtils::SpectatorConstraintCollisionError
+class PlotUtils::TreeWrapper
+class ROOT::detail::beforeMain
+class ROOT::error
+class ROOT::exception
+class ROOT::warning
+class map<std::string,PlotUtils::MnvLatErrorBand*>
+class map<std::string,PlotUtils::MnvLatErrorBand2D*>
+class map<std::string,PlotUtils::MnvLatErrorBand3D*>
+class map<std::string,PlotUtils::MnvVertErrorBand*>
+class map<std::string,PlotUtils::MnvVertErrorBand2D*>
+class map<std::string,PlotUtils::MnvVertErrorBand3D*>
+class map<std::string,TH1D*>
+class map<std::string,TMatrixT<double>*>
+class map<string,PlotUtils::MnvLatErrorBand*,less<string>,allocator<pair<const string,PlotUtils::MnvLatErrorBand*> > >
+class map<string,PlotUtils::MnvLatErrorBand*>
+class map<string,PlotUtils::MnvLatErrorBand2D*,less<string>,allocator<pair<const string,PlotUtils::MnvLatErrorBand2D*> > >
+class map<string,PlotUtils::MnvLatErrorBand2D*>
+class map<string,PlotUtils::MnvLatErrorBand3D*,less<string>,allocator<pair<const string,PlotUtils::MnvLatErrorBand3D*> > >
+class map<string,PlotUtils::MnvLatErrorBand3D*>
+class map<string,PlotUtils::MnvVertErrorBand*,less<string>,allocator<pair<const string,PlotUtils::MnvVertErrorBand*> > >
+class map<string,PlotUtils::MnvVertErrorBand*>
+class map<string,PlotUtils::MnvVertErrorBand2D*,less<string>,allocator<pair<const string,PlotUtils::MnvVertErrorBand2D*> > >
+class map<string,PlotUtils::MnvVertErrorBand2D*>
+class map<string,PlotUtils::MnvVertErrorBand3D*,less<string>,allocator<pair<const string,PlotUtils::MnvVertErrorBand3D*> > >
+class map<string,PlotUtils::MnvVertErrorBand3D*>
+class map<string,TH1D*,less<string>,allocator<pair<const string,TH1D*> > >
+class map<string,TH1D*>
+class map<string,TMatrixT<double>*,less<string>,allocator<pair<const string,TMatrixT<double>*> > >
+class map<string,TMatrixT<double>*>
+class map<string,vector<string> >
+class map<string,vector<string>,less<string>,allocator<pair<const string,vector<string> > > >
+class pair<std::string,PlotUtils::MnvLatErrorBand*>
+class pair<std::string,PlotUtils::MnvLatErrorBand2D*>
+class pair<std::string,PlotUtils::MnvLatErrorBand3D*>
+class pair<std::string,PlotUtils::MnvVertErrorBand*>
+class pair<std::string,PlotUtils::MnvVertErrorBand2D*>
+class pair<std::string,PlotUtils::MnvVertErrorBand3D*>
+class pair<std::string,TMatrixT<double>*>
+class pair<std::string,std::vector<std::string> >
+class pair<string,PlotUtils::MnvLatErrorBand*>
+class pair<string,PlotUtils::MnvLatErrorBand2D*>
+class pair<string,PlotUtils::MnvLatErrorBand3D*>
+class pair<string,PlotUtils::MnvVertErrorBand*>
+class pair<string,PlotUtils::MnvVertErrorBand2D*>
+class pair<string,PlotUtils::MnvVertErrorBand3D*>
+class pair<string,TMatrixT<double>*>
+class pair<string,vector<string> >
+class vector<TH1D*>
+class vector<TH2D*>
+class vector<TH3D*>
+header Exceptions.h
+header BaseUniverse.h
+header ChainWrapper.h
+header FluxReweighter.h
+header GridCanvas.h
+header MnvH1D.h
+header MnvH2D.h
+header MnvH3D.h
+header HistogramUtils.h
+header MnvLatErrorBand.h
+header MnvLatErrorBand2D.h
+header MnvLatErrorBand3D.h
+header MnvPlotter.h
+header MnvVertErrorBand.h
+header MnvVertErrorBand2D.h
+header MnvVertErrorBand3D.h
+header TreeWrapper.h
+header ErrorHandler.h

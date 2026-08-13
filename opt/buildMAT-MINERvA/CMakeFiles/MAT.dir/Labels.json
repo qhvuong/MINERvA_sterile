@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/MAT"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/MAT.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/MAT-complete.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-build.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-configure.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-download.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-install.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-mkdir.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-patch_disconnected.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/MAT-prefix/src/MAT-stamp/MAT-update_disconnected.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"MAT"
+		],
+		"name" : "MAT"
+	}
+}

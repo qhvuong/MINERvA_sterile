@@ -1,0 +1,28 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/UnfoldUtils-update"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/CMakeFiles/UnfoldUtils-update.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/UnfoldUtils-prefix/src/UnfoldUtils-stamp/UnfoldUtils-update.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/UnfoldUtils-prefix/src/UnfoldUtils-stamp/UnfoldUtils-download.rule"
+		},
+		{
+			"file" : "/exp/minerva/app/users/qvuong/MAT_AL9/opt/buildMAT-MINERvA/UnfoldUtils-prefix/src/UnfoldUtils-stamp/UnfoldUtils-mkdir.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"UnfoldUtils"
+		],
+		"name" : "UnfoldUtils-update"
+	}
+}

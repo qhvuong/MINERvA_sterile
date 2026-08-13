@@ -1,0 +1,31 @@
+{ decls }
+namespace MinervaUnfold {  }
+namespace std {  }
+
+[ libUnfoldUtilsDict.so ]
+# List of selected classes
+class MinervaUnfold::MnvResponse
+class MinervaUnfold::MnvUnfold
+class RooUnfold
+class RooUnfoldBayes
+class RooUnfoldBinByBin
+class RooUnfoldErrors
+class RooUnfoldInvert
+class RooUnfoldParms
+class RooUnfoldResponse
+class RooUnfoldSvd
+class RooUnfoldTUnfold
+class map<std::string,std::string>
+class map<string,string,less<string>,allocator<pair<const string,string> > >
+class map<string,string>
+header MinervaUnfold/MnvResponse.h
+header MinervaUnfold/MnvUnfold.h
+header RooUnfold/RooUnfold.h
+header RooUnfold/RooUnfoldBayes.h
+header RooUnfold/RooUnfoldBinByBin.h
+header RooUnfold/RooUnfoldErrors.h
+header RooUnfold/RooUnfoldInvert.h
+header RooUnfold/RooUnfoldParms.h
+header RooUnfold/RooUnfoldResponse.h
+header RooUnfold/RooUnfoldSvd.h
+header RooUnfold/RooUnfoldTUnfold.h
