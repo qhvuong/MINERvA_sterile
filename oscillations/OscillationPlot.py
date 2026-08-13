@@ -719,7 +719,7 @@ def PlotAsimovDChi2Panels(asimov_dchi2s, mode, title, fc_levels=None):
 
     # 1. fixed dm2: ue4 vs umu4
     pplot = PanelPlot(title + "\nAsimov $\\Delta\\chi^2$", "ue4", "umu4", "dm2")
-    pplot.SetName("{}/Asimov_dchi2_ue4_vs_umu4_{}.png".format(outbase, mode))
+    pplot.SetName("{}/Asimov_dchi2_ue4_vs_umu4_{}_95CL.png".format(outbase, mode))
     pplot.PlotRawSurfacePanel(
         asimov_dchi2s,
         zlabel=r"Asimov $\Delta\chi^2$",
@@ -729,7 +729,7 @@ def PlotAsimovDChi2Panels(asimov_dchi2s, mode, title, fc_levels=None):
 
     # 2. fixed umu4: ue4 vs dm2
     pplot = PanelPlot(title + "\nAsimov $\\Delta\\chi^2$", "ue4", "dm2", "umu4")
-    pplot.SetName("{}/Asimov_dchi2_ue4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.SetName("{}/Asimov_dchi2_ue4_vs_dm2_{}_95CL.png".format(outbase, mode))
     pplot.PlotRawSurfacePanel(
         asimov_dchi2s,
         zlabel=r"Asimov $\Delta\chi^2$",
@@ -739,7 +739,7 @@ def PlotAsimovDChi2Panels(asimov_dchi2s, mode, title, fc_levels=None):
 
     # 3. fixed ue4: umu4 vs dm2
     pplot = PanelPlot(title + "\nAsimov $\\Delta\\chi^2$", "umu4", "dm2", "ue4")
-    pplot.SetName("{}/Asimov_dchi2_umu4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.SetName("{}/Asimov_dchi2_umu4_vs_dm2_{}_95CL.png".format(outbase, mode))
     pplot.PlotRawSurfacePanel(
         asimov_dchi2s,
         zlabel=r"Asimov $\Delta\chi^2$",
@@ -758,7 +758,7 @@ def PlotDataDChi2Panels(data_dchi2s, mode, title, fc_levels=None):
 
     # 1. fixed dm2: ue4 vs umu4
     pplot = PanelPlot(title + "\nData $\\Delta\\chi^2$", "ue4", "umu4", "dm2")
-    pplot.SetName("{}/Data_dchi2_ue4_vs_umu4_{}.png".format(outbase, mode))
+    pplot.SetName("{}/Data_dchi2_ue4_vs_umu4_{}_95CL.png".format(outbase, mode))
     pplot.PlotRawSurfacePanel(
         data_dchi2s,
         zlabel=r"Data $\Delta\chi^2$",
@@ -768,7 +768,7 @@ def PlotDataDChi2Panels(data_dchi2s, mode, title, fc_levels=None):
 
     # 2. fixed umu4: ue4 vs dm2
     pplot = PanelPlot(title + "\nData $\\Delta\\chi^2$", "ue4", "dm2", "umu4")
-    pplot.SetName("{}/Data_dchi2_ue4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.SetName("{}/Data_dchi2_ue4_vs_dm2_{}_95CL.png".format(outbase, mode))
     pplot.PlotRawSurfacePanel(
         data_dchi2s,
         zlabel=r"Data $\Delta\chi^2$",
@@ -778,7 +778,7 @@ def PlotDataDChi2Panels(data_dchi2s, mode, title, fc_levels=None):
 
     # 3. fixed ue4: umu4 vs dm2
     pplot = PanelPlot(title + "\nData $\\Delta\\chi^2$", "umu4", "dm2", "ue4")
-    pplot.SetName("{}/Data_dchi2_umu4_vs_dm2_{}.png".format(outbase, mode))
+    pplot.SetName("{}/Data_dchi2_umu4_vs_dm2_{}_95CL.png".format(outbase, mode))
     pplot.PlotRawSurfacePanel(
         data_dchi2s,
         zlabel=r"Data $\Delta\chi^2$",
@@ -1095,8 +1095,10 @@ def PlotFCCriticalDistribution(input_dir, mode):
         bins=60,
         histtype="stepfilled",
         alpha=0.45,
-        density=False,
+        density=True,
     )
+
+    ax.set_xlim(0, 20)
 
     ymax = ax.get_ylim()[1]
 
@@ -1183,7 +1185,8 @@ def PlotFCCriticalDistribution(input_dir, mode):
     #     )
 
     ax.set_xlabel(r"Toy $\Delta\chi^2$")
-    ax.set_ylabel("Number of toys")
+    # ax.set_ylabel("Number of toys")
+    ax.set_ylabel("Probability density")
     ax.set_title("FC toy distribution\n{}".format(mode))
     ax.grid(True, alpha=0.25)
 
@@ -1221,24 +1224,31 @@ if __name__ == "__main__":
     )
 
     fc_levels = None
-    if _plot_args.plot_use_fc and results is not None:
-        fc68 = np.percentile(results, 68)
-        fc90 = np.percentile(results, 90)
-        fc95 = np.percentile(results, 95)
-        fc99 = np.percentile(results, 99)
+    fc1sigma = np.percentile(results, 68.27)
+    fc2sigma = np.percentile(results, 95.45)
+    fc3sigma = np.percentile(results, 99.73)
 
-        fc_levels = [fc68, fc90, fc95, fc99]
+    # fc_levels = [
+    #     fc1sigma,
+    #     fc2sigma,
+    #     fc3sigma,
+    # ]
 
-        print("\nFC critical dchi2 levels:")
-        print("  68% =", fc68)
-        print("  90% =", fc90)
-        print("  95% =", fc95)
-        print("  99% =", fc99)
+    fc_levels = [
+        # fc1sigma,
+        fc2sigma,
+        # fc3sigma,
+    ]
+
+    print("\nFC sigma-equivalent critical dchi2 levels:")
+    print("  1 sigma (68.27%) =", fc1sigma)
+    print("  2 sigma (95.45%) =", fc2sigma)
+    print("  3 sigma (99.73%) =", fc3sigma)
 
     # --------------------------------------------------
     # 1. Raw surface plots
     # --------------------------------------------------
-    outdir = "/exp/minerva/data/users/qvuong/surfaces/plots/surfaces_{}".format(_plot_args.plot_mode)
+    outdir = "/exp/minerva/data/users/qvuong/surfaces/plots/p8/surfaces_{}".format(_plot_args.plot_mode)
     os.makedirs(outdir, exist_ok=True)
 
     # # --------------------------------------------------

@@ -38,71 +38,131 @@ def MergeAsimovs():
 def MergeChi2s():
     while True:
         print("Type the path of the directory that contains the chi2 contours you want to merge")
-        path = input()
+        path = input().strip()
+
         if len(path) == 0:
             print("Enter a valid path")
             break
 
         if path[-1] != '/':
-            path = path+'/'
-            
-        if os.path.isdir(path):
-            data_files = [f for f in os.listdir(path) if "chi2_surface" in f]
-            if len(data_files) == 0:
-                print("No files found in {}".format(path))
-                break
-        else:
+            path = path + '/'
+
+        if not os.path.isdir(path):
             print("directory does not exist")
             break
 
-        # ----- sort file names to order PMNS parametesr ----- #
-        start = '_m_'
-        end = '_Ue4'
-        m_names = [float(s[s.find(start)+len(start):s.rfind(end)]) for s in data_files]
-        m_names = list(set(m_names))
-        m_names.sort()
+        data_files = [
+            f for f in os.listdir(path)
+            if f.startswith("chi2_surface_data_") and f.endswith(".npy")
+        ]
 
-        datas = []
-        asimovs = []
-        datas_penalty = []
-        asimovs_penalty = []
+        if len(data_files) == 0:
+            print("No chi2 surface files found in {}".format(path))
+            break
 
-        for m in m_names:
-            m_data   = []
-            m_data_penalty = []
+        # Detect mode from filenames:
+        # chi2_surface_data_noFluxProfile_m_0.1.npy
+        modes = []
+        for f in data_files:
+            tmp = f.replace("chi2_surface_data_", "")
+            mode = tmp.split("_m_")[0]
+            modes.append(mode)
 
-            m_asimov = []
-            m_asimov_penalty = []
+        modes = sorted(list(set(modes)))
+        print("Found modes:", modes)
 
-            data = np.load(path+"chi2_surface_data_m_{}_Ue4_0.15.dat.npy".format(m))
-            data_penalty = np.load(path+"chi2_penalty_data_m_{}_Ue4_0.15.dat.npy".format(m))
+        for mode in modes:
+            mode_data_files = [
+                f for f in data_files
+                if f.startswith("chi2_surface_data_{}_m_".format(mode))
+            ]
 
-            asimov = np.load(path+"chi2_surface_pseudodata_m_{}_Ue4_0.15.dat.npy".format(m))
-            asimov_penalty = np.load(path+"chi2_penalty_pseudodata_m_{}_Ue4_0.15.dat.npy".format(m))
+            m_names = []
+            for f in mode_data_files:
+                m_str = f.replace("chi2_surface_data_{}_m_".format(mode), "")
+                m_str = m_str.replace(".npy", "")
+                m_names.append(float(m_str))
 
-            datas.append(data)
-            datas_penalty.append(data_penalty)
+            m_names = sorted(list(set(m_names)))
 
-            asimovs.append(asimov)
-            asimovs_penalty.append(asimov_penalty)
+            datas = []
+            asimovs = []
+            datas_penalty = []
+            asimovs_penalty = []
+            good_m_names = []
 
-        datas = np.array(datas)
-        datas_penalty = np.array(datas_penalty)
+            for m in m_names:
+                data_file = path + "chi2_surface_data_{}_m_{}.npy".format(mode, m)
+                data_penalty_file = path + "chi2_penalty_data_{}_m_{}.npy".format(mode, m)
 
-        asimovs = np.array(asimovs)
-        asimovs_penalty = np.array(asimovs_penalty)
+                asimov_file = path + "chi2_surface_pseudodata_{}_m_{}.npy".format(mode, m)
+                asimov_penalty_file = path + "chi2_penalty_pseudodata_{}_m_{}.npy".format(mode, m)
 
-        np.save("data_chi2s",datas)
-        np.save("data_penalties",datas_penalty)
-        
-        np.save("asimov_chi2s",asimovs)
-        np.save("asimov_penalties",asimovs_penalty)
+                files = [
+                    data_file,
+                    data_penalty_file,
+                    asimov_file,
+                    asimov_penalty_file,
+                ]
+
+                missing = [f for f in files if not os.path.isfile(f)]
+                if len(missing) > 0:
+                    print("Missing files for m = {}".format(m))
+                    for f in missing:
+                        print("  missing:", f)
+                    continue
+
+                data = np.load(data_file)
+                data_penalty = np.load(data_penalty_file)
+                asimov = np.load(asimov_file)
+                asimov_penalty = np.load(asimov_penalty_file)
+
+                bad = (
+                    np.isnan(data).any() or np.isinf(data).any() or
+                    np.isnan(asimov).any() or np.isinf(asimov).any() or
+                    np.isnan(data_penalty).any() or np.isinf(data_penalty).any() or
+                    np.isnan(asimov_penalty).any() or np.isinf(asimov_penalty).any()
+                )
+
+                if bad:
+                    print("Bad values found for m = {}".format(m))
+                    continue
+
+                datas.append(data)
+                datas_penalty.append(data_penalty)
+
+                asimovs.append(asimov)
+                asimovs_penalty.append(asimov_penalty)
+
+                good_m_names.append(m)
+
+            datas = np.array(datas)
+            datas_penalty = np.array(datas_penalty)
+
+            asimovs = np.array(asimovs)
+            asimovs_penalty = np.array(asimovs_penalty)
+
+            good_m_names = np.array(good_m_names)
+
+            print("Merged mode:", mode)
+            print("  data shape          =", datas.shape)
+            print("  data penalty shape  =", datas_penalty.shape)
+            print("  asimov shape        =", asimovs.shape)
+            print("  asimov penalty shape=", asimovs_penalty.shape)
+            print("  mass slices         =", good_m_names.shape[0])
+
+            np.save("data_chi2s_{}".format(mode), datas)
+            np.save("data_penalties_{}".format(mode), datas_penalty)
+
+            np.save("asimov_chi2s_{}".format(mode), asimovs)
+            np.save("asimov_penalties_{}".format(mode), asimovs_penalty)
+
+            np.save("delta_m_values_{}".format(mode), good_m_names)
 
         print("Done saving files")
-
         break
 
-if __name__ in "__main__":
+if __name__ == "__main__":
     print("Do you want to merge the chi2 contour files? (y/n)")
     ans = input().lower()
     if ans == 'y':

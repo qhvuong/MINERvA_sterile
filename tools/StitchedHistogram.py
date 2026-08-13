@@ -5,6 +5,7 @@ import json
 import ROOT
 import PlotUtils
 import numpy as np
+from array import array
 
 from itertools import compress
 from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS, ERROR_GROUPS_CONFIG
@@ -159,37 +160,83 @@ class StitchedHistogram:
         else:
             self.nueel_flavors[name] = hist.Clone()
 
+    # def AddSwappedSample(self, name, hist):
+    #     if name in self.swap_hists.keys():
+    #         print("{} has already been added to swapped sample dictionary. Doing nothing.".format(name))
+    #         return
+
+    #     beam = name[:3]
+    #     numu_key = beam + "_numu_selection"
+
+    #     if numu_key not in self.numu_hists:
+    #         raise KeyError(
+    #             "Cannot add swapped sample {} before {} exists in self.numu_hists. "
+    #             "Call AddHistograms('{}', ...) before AddSwappedSample('{}', ...)."
+    #             .format(name, numu_key, numu_key, name)
+    #         )
+
+    #     scaleIntegral = self.numu_hists[numu_key].Integral()
+    #     swapIntegral = hist.Integral()
+
+    #     if swapIntegral == 0 or not np.isfinite(swapIntegral):
+    #         raise ValueError(
+    #             "Bad swapped-sample integral for {}: {}".format(name, swapIntegral)
+    #         )
+
+    #     if not np.isfinite(scaleIntegral):
+    #         raise ValueError(
+    #             "Bad numu scale integral for {}: {}".format(numu_key, scaleIntegral)
+    #         )
+
+    #     print("\n===== AddSwappedSample diagnostic =====")
+    #     print("sample                 =", name)
+    #     print("numu reference         =", numu_key)
+    #     print("numu integral          =", scaleIntegral)
+    #     print("raw swap integral      =", swapIntegral)
+    #     print("applied scale          =", scaleIntegral / swapIntegral)
+
+    #     for i in range(1, min(hist.GetNbinsX(), 12) + 1):
+    #         print(
+    #             "bin {:2d}: numu={:12.6g} rawSwap={:12.6g} scaledSwap={:12.6g}".format(
+    #                 i,
+    #                 self.numu_hists[numu_key].GetBinContent(i),
+    #                 hist.GetBinContent(i),
+    #                 hist.GetBinContent(i) * scaleIntegral / swapIntegral,
+    #             )
+    #         )
+
+    #     h = hist.Clone()
+    #     h.Scale(scaleIntegral / swapIntegral)
+    #     self.swap_hists[name] = h
     def AddSwappedSample(self, name, hist):
-        if name in self.swap_hists.keys():
-            print("{} has already been added to swapped sample dictionary. Doing nothing.".format(name))
+        if name in self.swap_hists:
+            print(
+                "{} has already been added to swapped sample dictionary. "
+                "Doing nothing.".format(name)
+            )
             return
 
-        beam = name[:3]
-        numu_key = beam + "_numu_selection"
+        swap_integral = hist.Integral()
 
-        if numu_key not in self.numu_hists:
-            raise KeyError(
-                "Cannot add swapped sample {} before {} exists in self.numu_hists. "
-                "Call AddHistograms('{}', ...) before AddSwappedSample('{}', ...)."
-                .format(name, numu_key, numu_key, name)
-            )
-
-        scaleIntegral = self.numu_hists[numu_key].Integral()
-        swapIntegral = hist.Integral()
-
-        if swapIntegral == 0 or not np.isfinite(swapIntegral):
+        if swap_integral == 0 or not np.isfinite(swap_integral):
             raise ValueError(
-                "Bad swapped-sample integral for {}: {}".format(name, swapIntegral)
+                "Bad swapped-sample integral for {}: {}".format(
+                    name,
+                    swap_integral,
+                )
             )
 
-        if not np.isfinite(scaleIntegral):
-            raise ValueError(
-                "Bad numu scale integral for {}: {}".format(numu_key, scaleIntegral)
-            )
-
+        # The swapped sample has already been normalized to the analysis POT
+        # in stitch.py. Preserve that normalization.
         h = hist.Clone()
-        h.Scale(scaleIntegral / swapIntegral)
+        h.SetDirectory(0)
+
         self.swap_hists[name] = h
+
+        print("\n===== AddSwappedSample =====")
+        print("sample             =", name)
+        print("stored swap integral =", h.Integral())
+        print("additional scale     = none")
     # def AddSwappedSample(self,name,hist):
     #     if name in self.swap_hists.keys():
     #         print("{} has already been added to swapped sample dictionary. Doing nothing.".format(name))
@@ -758,6 +805,66 @@ class StitchedHistogram:
         return(n_bins_new)
 
 
+
+
+    def GetCommonLEBinEdges(self):
+        reference = None
+        reference_name = None
+
+        template_groups = [
+            ("nue", self.nue_templates),
+            ("numu", self.numu_templates),
+            ("swap", self.swap_templates),
+        ]
+
+        for component_name, template_dict in template_groups:
+            for sample_name, template in template_dict.items():
+                if template is None:
+                    continue
+
+                # Unstitched templates use:
+                # x = L/E
+                # y = reconstructed bin.
+                xaxis = template.GetXaxis()
+                nbins = template.GetNbinsX()
+
+                edges = [
+                    float(xaxis.GetBinLowEdge(i))
+                    for i in range(1, nbins + 1)
+                ]
+                edges.append(float(xaxis.GetBinUpEdge(nbins)))
+
+                edges = np.asarray(edges, dtype=float)
+
+                if reference is None:
+                    reference = edges
+                    reference_name = "{}:{}".format(
+                        component_name,
+                        sample_name,
+                    )
+                    continue
+
+                if len(edges) != len(reference) or not np.allclose(
+                    edges,
+                    reference,
+                    rtol=0.0,
+                    atol=1e-12,
+                ):
+                    raise RuntimeError(
+                        "Inconsistent L/E template axes: {} differs from {}".format(
+                            "{}:{}".format(component_name, sample_name),
+                            reference_name,
+                        )
+                    )
+
+        if reference is None:
+            raise RuntimeError("No L/E templates were found")
+
+        return reference
+
+
+
+
     def Stitch(self):
         # ----- Create empty ROOT histograms to fill with stitched content ----- #
         n_bins_new = self.TranslateBins()
@@ -774,9 +881,43 @@ class StitchedHistogram:
         self.elastic_id = ROOT.TH1D(self.name+"_nueelID",self.name+"_nueelID",n_bins_new,0,n_bins_new)
         self.ratio_id = ROOT.TH1D(self.name+"_ratioID",self.name+"_ratioID",n_bins_new,0,n_bins_new)
 
-        self.nue_template  = ROOT.TH2D(self.name+"_nue_template",self.name+"_nue_template",n_bins_new,0,n_bins_new,34,0,0.495)
-        self.numu_template  = ROOT.TH2D(self.name+"_numu_template",self.name+"_numu_template",n_bins_new,0,n_bins_new,34,0,0.495)
-        self.swap_template  = ROOT.TH2D(self.name+"_swap_template",self.name+"_swap_template",n_bins_new,0,n_bins_new,34,0,0.495)
+        # self.nue_template  = ROOT.TH2D(self.name+"_nue_template",self.name+"_nue_template",n_bins_new,0,n_bins_new,34,0,0.495)
+        # self.numu_template  = ROOT.TH2D(self.name+"_numu_template",self.name+"_numu_template",n_bins_new,0,n_bins_new,34,0,0.495)
+        # self.swap_template  = ROOT.TH2D(self.name+"_swap_template",self.name+"_swap_template",n_bins_new,0,n_bins_new,34,0,0.495)
+        le_edges = self.GetCommonLEBinEdges()
+        le_edges_root = array("d", le_edges.tolist())
+        n_le_bins = len(le_edges) - 1
+
+        self.nue_template = ROOT.TH2D(
+            self.name + "_nue_template",
+            self.name + "_nue_template",
+            n_bins_new,
+            0,
+            n_bins_new,
+            n_le_bins,
+            le_edges_root,
+        )
+
+        self.numu_template = ROOT.TH2D(
+            self.name + "_numu_template",
+            self.name + "_numu_template",
+            n_bins_new,
+            0,
+            n_bins_new,
+            n_le_bins,
+            le_edges_root,
+        )
+
+        self.swap_template = ROOT.TH2D(
+            self.name + "_swap_template",
+            self.name + "_swap_template",
+            n_bins_new,
+            0,
+            n_bins_new,
+            n_le_bins,
+            le_edges_root,
+        )
+
 
         # ----- Combine samples to one histogram ----- #
         print("Filling CV content in stitched histogram...")
@@ -1175,68 +1316,234 @@ class StitchedHistogram:
             MNVPLOTTER.ApplyAxisStyle(self.data_hist)
             self.data_hist.GetXaxis().SetNdivisions(510) #5 minor divisions between 9 major divisions.  I'm trying to match a specific paper here.
 
+    # def StitchThis2D(self):
+    #     for i in range(1, self.mc_hist.GetNbinsX()+1):
+    #         h = self.bin_dictionary[i]['sample']
+    #         sample_i = self.bin_dictionary[i]['bin']
+
+    #         h_nue = self.nue_templates[h].Clone()
+    #         h_numu = self.numu_templates[h].Clone()
+    #         h_swap = self.swap_templates[h].Clone()
+
+    #         # ----- nu_e sample L/E templates ----- #
+    #         colInt = 0
+
+    #         # Get integrated column content to normalize
+    #         for c in range(1,h_nue.GetNbinsX()+1):
+    #             if isinstance(h_nue,ROOT.TH1D):
+    #                 colInt+=h_nue.GetBinContent(c)
+    #             else:
+    #                 colInt+=h_nue.GetBinContent(c,sample_i)
+
+    #         # Set each bin in stiched histogram with fractional column content
+    #         for c in range(1,h_nue.GetNbinsX()+1):
+    #             if isinstance(h_nue,ROOT.TH1D):
+    #                 bin_c = h_nue.GetBinContent(c)
+    #             else:
+    #                 bin_c = h_nue.GetBinContent(c,sample_i)
+    #             self.nue_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
+
+    #         # ----- nu_mu sample L/E templates ----- #
+    #         colInt = 0
+
+    #         # Get integrated column content to normalize
+    #         for c in range(1,h_numu.GetNbinsX()+1):
+    #             if isinstance(h_numu,ROOT.TH1D):
+    #                 colInt+=h_numu.GetBinContent(c)
+    #             else:
+    #                 colInt+=h_numu.GetBinContent(c,sample_i)
+
+    #         # Set each bin in stiched histogram with fractional column content
+    #         for c in range(1,h_numu.GetNbinsX()+1):
+    #             if isinstance(h_numu,ROOT.TH1D):
+    #                 bin_c = h_numu.GetBinContent(c)
+    #             else:
+    #                 bin_c = h_numu.GetBinContent(c,sample_i)
+    #             self.numu_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
+
+    #         # ----- nu_mu->nu_e sample L/E templates ----- #
+    #         colInt = 0
+
+    #         # Get integrated column content to normalize
+    #         for c in range(1,h_swap.GetNbinsX()+1):
+    #             if isinstance(h_swap,ROOT.TH1D):
+    #                 colInt+=h_swap.GetBinContent(c)
+    #             else:
+    #                 colInt+=h_swap.GetBinContent(c,sample_i)
+
+    #         # Set each bin in stiched histogram with fractional column content
+    #         for c in range(1,h_swap.GetNbinsX()+1):
+    #             if isinstance(h_swap,ROOT.TH1D):
+    #                 bin_c = h_swap.GetBinContent(c)
+    #             else:
+    #                 bin_c = h_swap.GetBinContent(c,sample_i)
+    #             self.swap_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
     def StitchThis2D(self):
-        for i in range(1, self.mc_hist.GetNbinsX()+1):
-            h = self.bin_dictionary[i]['sample']
-            sample_i = self.bin_dictionary[i]['bin']
+        def copy_normalized_slice(
+            source,
+            destination,
+            stitched_bin,
+            source_reco_bin,
+            label,
+            sample_name,
+        ):
+            if source is None:
+                raise RuntimeError(
+                    "Missing {} template for {}".format(
+                        label,
+                        sample_name,
+                    )
+                )
 
-            h_nue = self.nue_templates[h].Clone()
-            h_numu = self.numu_templates[h].Clone()
-            h_swap = self.swap_templates[h].Clone()
+            if source.InheritsFrom("TH2"):
+                if source_reco_bin < 1 or source_reco_bin > source.GetNbinsY():
+                    raise RuntimeError(
+                        "{} reconstructed bin {} is outside template y range "
+                        "1..{} for {}".format(
+                            label,
+                            source_reco_bin,
+                            source.GetNbinsY(),
+                            sample_name,
+                        )
+                    )
 
-            # ----- nu_e sample L/E templates ----- #
-            colInt = 0
+                n_le_bins = source.GetNbinsX()
 
-            # Get integrated column content to normalize
-            for c in range(1,h_nue.GetNbinsX()+1):
-                if isinstance(h_nue,ROOT.TH1D):
-                    colInt+=h_nue.GetBinContent(c)
-                else:
-                    colInt+=h_nue.GetBinContent(c,sample_i)
+                if n_le_bins != destination.GetNbinsY():
+                    raise RuntimeError(
+                        "{} L/E bin count mismatch for {}: source={}, stitched={}".format(
+                            label,
+                            sample_name,
+                            n_le_bins,
+                            destination.GetNbinsY(),
+                        )
+                    )
 
-            # Set each bin in stiched histogram with fractional column content
-            for c in range(1,h_nue.GetNbinsX()+1):
-                if isinstance(h_nue,ROOT.TH1D):
-                    bin_c = h_nue.GetBinContent(c)
-                else:
-                    bin_c = h_nue.GetBinContent(c,sample_i)
-                self.nue_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
+                contents = np.asarray(
+                    [
+                        source.GetBinContent(le_bin, source_reco_bin)
+                        for le_bin in range(1, n_le_bins + 1)
+                    ],
+                    dtype=float,
+                )
 
-            # ----- nu_mu sample L/E templates ----- #
-            colInt = 0
+            elif source.InheritsFrom("TH1"):
+                n_le_bins = source.GetNbinsX()
 
-            # Get integrated column content to normalize
-            for c in range(1,h_numu.GetNbinsX()+1):
-                if isinstance(h_numu,ROOT.TH1D):
-                    colInt+=h_numu.GetBinContent(c)
-                else:
-                    colInt+=h_numu.GetBinContent(c,sample_i)
+                if n_le_bins != destination.GetNbinsY():
+                    raise RuntimeError(
+                        "{} 1D L/E bin count mismatch for {}: source={}, stitched={}".format(
+                            label,
+                            sample_name,
+                            n_le_bins,
+                            destination.GetNbinsY(),
+                        )
+                    )
 
-            # Set each bin in stiched histogram with fractional column content
-            for c in range(1,h_numu.GetNbinsX()+1):
-                if isinstance(h_numu,ROOT.TH1D):
-                    bin_c = h_numu.GetBinContent(c)
-                else:
-                    bin_c = h_numu.GetBinContent(c,sample_i)
-                self.numu_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
+                contents = np.asarray(
+                    [
+                        source.GetBinContent(le_bin)
+                        for le_bin in range(1, n_le_bins + 1)
+                    ],
+                    dtype=float,
+                )
 
-            # ----- nu_mu->nu_e sample L/E templates ----- #
-            colInt = 0
+            else:
+                raise TypeError(
+                    "Unsupported {} template type for {}: {}".format(
+                        label,
+                        sample_name,
+                        type(source),
+                    )
+                )
 
-            # Get integrated column content to normalize
-            for c in range(1,h_swap.GetNbinsX()+1):
-                if isinstance(h_swap,ROOT.TH1D):
-                    colInt+=h_swap.GetBinContent(c)
-                else:
-                    colInt+=h_swap.GetBinContent(c,sample_i)
+            if not np.all(np.isfinite(contents)):
+                raise RuntimeError(
+                    "Nonfinite {} template content for {}, reco bin {}".format(
+                        label,
+                        sample_name,
+                        source_reco_bin,
+                    )
+                )
 
-            # Set each bin in stiched histogram with fractional column content
-            for c in range(1,h_swap.GetNbinsX()+1):
-                if isinstance(h_swap,ROOT.TH1D):
-                    bin_c = h_swap.GetBinContent(c)
-                else:
-                    bin_c = h_swap.GetBinContent(c,sample_i)
-                self.swap_template.SetBinContent(i, c, bin_c/colInt if colInt > 0 else 0)
+            if np.any(contents < 0):
+                raise RuntimeError(
+                    "Negative {} template content for {}, reco bin {}".format(
+                        label,
+                        sample_name,
+                        source_reco_bin,
+                    )
+                )
+
+            normalization = float(np.sum(contents))
+
+            if normalization <= 0:
+                # An empty physical component is allowed.
+                for le_bin in range(1, destination.GetNbinsY() + 1):
+                    destination.SetBinContent(
+                        stitched_bin,
+                        le_bin,
+                        0.0,
+                    )
+                return
+
+            fractions = contents / normalization
+
+            for le_bin, value in enumerate(fractions, start=1):
+                destination.SetBinContent(
+                    stitched_bin,
+                    le_bin,
+                    float(value),
+                )
+
+            check = sum(
+                destination.GetBinContent(stitched_bin, le_bin)
+                for le_bin in range(1, destination.GetNbinsY() + 1)
+            )
+
+            if abs(check - 1.0) > 1e-10:
+                raise RuntimeError(
+                    "{} stitched-template normalization failed for {}, "
+                    "stitched bin {}: sum={}".format(
+                        label,
+                        sample_name,
+                        stitched_bin,
+                        check,
+                    )
+                )
+
+        for stitched_bin in range(1, self.mc_hist.GetNbinsX() + 1):
+            sample_name = self.bin_dictionary[stitched_bin]["sample"]
+            source_reco_bin = self.bin_dictionary[stitched_bin]["bin"]
+
+            copy_normalized_slice(
+                self.nue_templates[sample_name],
+                self.nue_template,
+                stitched_bin,
+                source_reco_bin,
+                "nue",
+                sample_name,
+            )
+
+            copy_normalized_slice(
+                self.numu_templates[sample_name],
+                self.numu_template,
+                stitched_bin,
+                source_reco_bin,
+                "numu",
+                sample_name,
+            )
+
+            copy_normalized_slice(
+                self.swap_templates[sample_name],
+                self.swap_template,
+                stitched_bin,
+                source_reco_bin,
+                "swap",
+                sample_name,
+            )
+
+
 
     def RemoveSystematics(self, exclude):
         for name in self.mc_hist.GetVertErrorBandNames():
@@ -1756,7 +2063,17 @@ class StitchedHistogram:
         numunue_weights = hist.GetCVHistoWithStatError().Clone()
         numunutau_weights = hist.GetCVHistoWithStatError().Clone()
 
-        for i in range(0,hist.GetNbinsX() + 1):
+        for weight_hist in [
+            nue_weights,
+            numu_weights,
+            nuenutau_weights,
+            numunue_weights,
+            numunutau_weights,
+        ]:
+            weight_hist.Reset()
+
+        # for i in range(0,hist.GetNbinsX() + 1):
+        for i in range(1,hist.GetNbinsX() + 1):
             nue_sin = sin_average(i,m,self.nue_template)
             numu_sin = sin_average(i,m,self.numu_template)
             swap_sin = sin_average(i,m,self.swap_template)
@@ -1840,7 +2157,17 @@ class StitchedHistogram:
         numunue_weights = hist.GetCVHistoWithStatError().Clone()
         numunutau_weights = hist.GetCVHistoWithStatError().Clone()
 
-        for i in range(0,hist.GetNbinsX() + 1):
+        for weight_hist in [
+            nue_weights,
+            numu_weights,
+            nuenutau_weights,
+            numunue_weights,
+            numunutau_weights,
+        ]:
+            weight_hist.Reset()
+
+        # for i in range(0,hist.GetNbinsX() + 1):
+        for i in range(1,hist.GetNbinsX() + 1):
             nue_sin = sin_average(i,m,hist_nueTemp,False)
             numu_sin = sin_average(i,m,hist_numuTemp,False)
             swap_sin = sin_average(i,m,hist_swapTemp,False)
@@ -1931,13 +2258,39 @@ class StitchedHistogram:
         elif 'imd' in name or 'numu' in name:
             oscHists.append(numu)
             total.Add(numu)
+        # elif 'ratio' in name:
+        #     oscHists.append(nue)
+        #     oscHists.append(numunue)
+        #     oscHists.append(numu)
+        #     total.Add(nue)
+        #     total.Add(numunue)
+        #     total.Add(numu)
         elif 'ratio' in name:
-            oscHists.append(nue)
-            oscHists.append(numunue)
-            oscHists.append(numu)
-            total.Add(nue)
-            total.Add(numunue)
-            total.Add(numu)
+            denominator = nue.Clone(name + "_osc_ratio_denominator")
+            denominator.Add(numunue)
+
+            ratio = numu.Clone(name + "_osc_ratio")
+            ratio.Reset()
+
+            for i in range(1, ratio.GetNbinsX() + 1):
+                numerator_value = numu.GetBinContent(i)
+                denominator_value = denominator.GetBinContent(i)
+
+                if denominator_value <= 0:
+                    ratio.SetBinContent(i, 0.0)
+                    ratio.SetBinError(i, 0.0)
+                    continue
+
+                ratio.SetBinContent(
+                    i,
+                    numerator_value / denominator_value,
+                )
+                ratio.SetBinError(i, 0.0)
+
+            ratio.SetTitle("CC #nu_{#mu}/#nu_{e}")
+
+            oscHists.append(ratio)
+            total.Add(ratio)
         elif 'nue' in name:
             oscHists.append(nue)
             oscHists.append(numunue)

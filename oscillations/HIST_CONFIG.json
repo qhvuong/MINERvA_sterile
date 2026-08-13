@@ -3,11 +3,11 @@
         "start": 0,
         "end": 3
     },
-    "fhc_ratio": {
+    "fhc_nue_selection": {
         "start": 4,
         "end": 15
     },
-    "rhc_ratio": {
+    "rhc_nue_selection": {
         "start": 16,
         "end": 27
     },

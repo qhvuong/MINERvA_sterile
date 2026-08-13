@@ -40,31 +40,145 @@ def InvertID(hist):
             hist.SetBinContent(i,0.0)
             hist.SetBinError(i,0.0)
 
-def sin_average(q=0,dm2=0,template=None,yaxis=True):
-    avgsin = 0
-    total_N = 0
+
+def sin_average(q=0, dm2=0, template=None, yaxis=True):
+    """
+    Compute the template-weighted average of
+
+        sin^2(1.27 * dm2 * L/E)
+
+    for reconstructed bin q.
+
+    yaxis=True:
+        stitched template:
+            x = reconstructed/stitched bin
+            y = L/E
+
+    yaxis=False:
+        sample-level template:
+            x = L/E
+            y = reconstructed bin
+    """
+    if template is None:
+        raise ValueError("sin_average requires a template histogram")
+
+    k = 1.27 * float(dm2)
+
+    weighted_sum = 0.0
+    total_N = 0.0
 
     if yaxis:
-        length = template.GetNbinsY()+1
-        axis = template.GetYaxis()
-    else:
-        length = template.GetNbinsX()+1
-        axis = template.GetXaxis()
+        le_axis = template.GetYaxis()
+        n_le_bins = template.GetNbinsY()
 
-    for b in range(length):
-        lowEdge = axis.GetBinLowEdge(b)
-        upEdge = axis.GetBinUpEdge(b)
-        bin_width = upEdge-lowEdge
-        bin_center = (upEdge+lowEdge)/2
-        N_bin = template.GetBinContent(q,b)
-        total_N+=N_bin
+        def get_content(le_bin):
+            return template.GetBinContent(q, le_bin)
+
+    else:
+        le_axis = template.GetXaxis()
+        n_le_bins = template.GetNbinsX()
+
+        def get_content(le_bin):
+            return template.GetBinContent(le_bin, q)
+
+    # Use regular L/E bins only:
+    # 1 through n_le_bins.
+    # Do not include underflow or overflow.
+    for b in range(1, n_le_bins + 1):
+        N_bin = float(get_content(b))
+
+        if not np.isfinite(N_bin):
+            raise RuntimeError(
+                "Nonfinite template content in q={}, L/E bin={}: {}".format(
+                    q,
+                    b,
+                    N_bin,
+                )
+            )
+
         if N_bin == 0:
             continue
-        nue_sin = np.sin(1.27*dm2*bin_center)**2
-        avgsin += nue_sin * N_bin
-    if total_N != 0:
-        avgsin = avgsin / total_N
-    return(avgsin)
+
+        low_edge = float(le_axis.GetBinLowEdge(b))
+        up_edge = float(le_axis.GetBinUpEdge(b))
+        bin_width = up_edge - low_edge
+
+        if bin_width <= 0:
+            raise RuntimeError(
+                "Invalid L/E bin width in bin {}: [{}, {}]".format(
+                    b,
+                    low_edge,
+                    up_edge,
+                )
+            )
+
+        if abs(k) < 1e-14:
+            avg_sin2 = 0.0
+        else:
+            avg_sin2 = (
+                0.5
+                - (
+                    np.sin(2.0 * k * up_edge)
+                    - np.sin(2.0 * k * low_edge)
+                )
+                / (4.0 * k * bin_width)
+            )
+
+        # Protect against tiny floating-point excursions.
+        if avg_sin2 < -1e-12 or avg_sin2 > 1.0 + 1e-12:
+            raise RuntimeError(
+                "Invalid averaged sin^2={} for dm2={}, q={}, L/E bin={}".format(
+                    avg_sin2,
+                    dm2,
+                    q,
+                    b,
+                )
+            )
+
+        avg_sin2 = min(max(avg_sin2, 0.0), 1.0)
+
+        weighted_sum += N_bin * avg_sin2
+        total_N += N_bin
+
+    if total_N == 0:
+        return 0.0
+
+    result = weighted_sum / total_N
+
+    if not np.isfinite(result):
+        raise RuntimeError(
+            "Nonfinite sin_average result for q={}, dm2={}".format(
+                q,
+                dm2,
+            )
+        )
+
+    return float(result)
+# def sin_average(q=0,dm2=0,template=None,yaxis=True):
+#     avgsin = 0
+#     total_N = 0
+
+#     if yaxis:
+#         length = template.GetNbinsY()+1
+#         axis = template.GetYaxis()
+#     else:
+#         length = template.GetNbinsX()+1
+#         axis = template.GetXaxis()
+
+#     for b in range(length):
+#         lowEdge = axis.GetBinLowEdge(b)
+#         upEdge = axis.GetBinUpEdge(b)
+#         bin_width = upEdge-lowEdge
+#         bin_center = (upEdge+lowEdge)/2
+#         N_bin = template.GetBinContent(q,b)
+#         total_N+=N_bin
+#         if N_bin == 0:
+#             continue
+#         nue_sin = np.sin(1.27*dm2*bin_center)**2
+#         avgsin += nue_sin * N_bin
+#     if total_N != 0:
+#         avgsin = avgsin / total_N
+#     return(avgsin)
 
 def plot_osc_side_by_side(mc_hists,null_hists,osc_hists,data_hists,titles,plot_text,MNVPLOTTER,narrow_pads=None,narrow_factor=0.5):
     if len(osc_hists) != 8:

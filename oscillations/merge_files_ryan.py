@@ -4,77 +4,37 @@ import numpy as np
 def MergeAsimovs():
     while True:
         print("Type the path of the directory that contains the Asimov delta chi2 files")
-        path = input().strip()
-
+        path = input()
         if len(path) == 0:
             print("Type a valid path")
             continue
 
-        if not os.path.isdir(path):
+        if os.path.isdir(path):
+            results = []
+            for f in os.listdir(path):
+                f_path = path+'/'+f
+                print(f_path)
+                if os.path.isdir(f_path):
+                    for f_ in os.listdir(f_path):
+                        file = f_path+'/'+f_
+                        res = np.loadtxt(file,delimiter=',')
+                        if np.isnan(res).any() or np.isinf(res).any():
+                            print("Bad delta chi2 computed in {}".format(file))
+                            continue
+                        results.append(res)
+                else:
+                    res = np.loadtxt(f_path,delimiter=',')
+                    if np.isnan(res).any() or np.isinf(res).any():
+                        print("Bad delta chi2 computed in {}".format(f_path))
+                        continue
+                    results.append(res)
+            results = np.array(results).flatten()
+            print('saving asimov_deltachi2s.npy with {} entries'.format(results.shape[0]))
+            np.save("asimov_deltachi2s",results)
+            break
+        else:
             print("Not a valid path")
             break
-
-        csv_files = [
-            f for f in os.listdir(path)
-            if f.startswith("sample_dchi2s_") and f.endswith(".csv")
-        ]
-
-        if len(csv_files) == 0:
-            print("No sample_dchi2s_*.csv files found in {}".format(path))
-            break
-
-        # Detect mode from filenames:
-        #   sample_dchi2s_noFluxProfile_0.csv
-        #   sample_dchi2s_profiledFlux_1.csv
-        modes = []
-        for f in csv_files:
-            tmp = f.replace("sample_dchi2s_", "")
-            mode = tmp.rsplit("_", 1)[0]
-            modes.append(mode)
-
-        modes = sorted(list(set(modes)))
-        print("Found modes:", modes)
-
-        for mode in modes:
-            results = []
-            files_used = []
-
-            mode_files = [
-                f for f in csv_files
-                if f.startswith("sample_dchi2s_{}_".format(mode))
-            ]
-
-            for f in sorted(mode_files):
-                f_path = os.path.join(path, f)
-                print("Reading", f_path)
-
-                res = np.loadtxt(f_path, delimiter=",")
-                res = np.atleast_1d(res)
-
-                if np.isnan(res).any() or np.isinf(res).any():
-                    print("Bad delta chi2 computed in {}".format(f_path))
-                    continue
-
-                results.append(res)
-                files_used.append(f_path)
-
-            if len(results) == 0:
-                print("No valid dchi2 CSV files found for mode:", mode)
-                continue
-
-            results = np.concatenate(results)
-
-            print("\nMerged mode:", mode)
-            print("  files used:", len(files_used))
-            print("  total toys:", results.shape[0])
-            print("  min/max/mean:", np.nanmin(results), np.nanmax(results), np.nanmean(results))
-
-            outname = "asimov_deltachi2s_{}.npy".format(mode)
-            print("  saving:", outname)
-            np.save(outname, results)
-
-        print("Done saving Asimov delta chi2 files")
-        break
 
 def MergeChi2s():
     while True:
@@ -156,7 +116,7 @@ def MergeChi2s():
 
         break
 
-if __name__ == "__main__":
+if __name__ in "__main__":
     print("Do you want to merge the chi2 contour files? (y/n)")
     ans = input().lower()
     if ans == 'y':

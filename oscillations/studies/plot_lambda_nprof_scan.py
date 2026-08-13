@@ -20,10 +20,17 @@ import matplotlib.pyplot as plt
 #     "noRatio": "prodNueel_noRatio",
 # }
 CASE_PATTERNS = {
-    "excludeRatio": r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
-    "includeAll_ratioConfig": r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
-    "profileOnlyRatio": r"Profile only CC ratios",
-    "directCC_includeAll": r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
+    "excludeRatio_maskRatio":
+        r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
+
+    "prodNueel_noRatio_p8_profileAll":
+        r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
+
+    "profileOnlyRatio":
+        r"Profile only CC ratios",
+
+    "prodNueel_p8_profileAll":
+        r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
 }
 CASE_SAFE_NAMES = {
     r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling":

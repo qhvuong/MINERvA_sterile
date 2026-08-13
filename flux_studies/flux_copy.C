@@ -1,10 +1,10 @@
 {
   TH1::AddDirectory(kFALSE);
 
-  const char* dir = "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8";
+  const char* dir = "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE";
 
-  // std::vector<int> playlists = {1, 5, 13};
-  std::vector<int> playlists = {5};
+  std::vector<int> playlists = {1, 5, 13};
+  // std::vector<int> playlists = {5};
 
   struct Species {
     int pdg;

@@ -363,10 +363,10 @@ def GetNeutrinoTravelledLength(enu_gev, pdg,
 def GetNeutrinoTravelledLengthPDF(
     enu_gev,
     pdg,
-    nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_trueEL_MAD.root",
-    numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_trueEL_MAD.root",
-    nuebar_file="/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_trueEL_MAD.root",
-    numubar_file="/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_trueEL_MAD.root",
+    nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_trueEL_updatedFluxes_MAD.root",
+    numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_trueEL_updatedFluxes_MAD.root",
+    nuebar_file="/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_trueEL_updatedFluxes_MAD.root",
+    numubar_file="/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_trueEL_updatedFluxes_MAD.root",
     nue_hname="ETrue_Length_CCNuE",
     numu_hname="ETrue_Length_CCNuMu",
 ):
@@ -672,7 +672,6 @@ class CVPythonUniverse():
         # # ---- END DEBUG ----
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
-        # weight *= get_flux_cv_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
         # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
 
         # weight *= self.GetLowRecoil2p2hWeight()

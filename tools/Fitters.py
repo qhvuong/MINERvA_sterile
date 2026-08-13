@@ -379,25 +379,68 @@ class OscillationFitter():
                     )
                 )
 
-        best_name, best = min(candidates, key=lambda item: float(item[1].fun))
-        chi2 = float(best.fun)
+        valid_candidates = []
+
+        for candidate_name, candidate in candidates:
+            if not np.isfinite(candidate.fun):
+                print(
+                    "Skipping candidate {}: nonfinite chi2 {}".format(
+                        candidate_name,
+                        candidate.fun,
+                    )
+                )
+                continue
+
+            if not np.all(np.isfinite(candidate.x)):
+                print(
+                    "Skipping candidate {}: nonfinite x {}".format(
+                        candidate_name,
+                        candidate.x,
+                    )
+                )
+                continue
+
+            valid_candidates.append((candidate_name, candidate))
+
+        if len(valid_candidates) == 0:
+            raise RuntimeError("No finite oscillation-fit candidates were found.")
+
+        best_name, best = min(
+            valid_candidates,
+            key=lambda item: float(item[1].fun),
+        )
+
+        best_x = np.array(best.x, dtype=float)
+        stored_chi2 = float(best.fun)
+
+        # This also leaves self.hist oscillated at the selected BF.
+        recomputed_chi2 = float(self.CalChi2(best_x))
+
+        best_dm2 = best_x[0] * 100.0
+        best_ue4 = best_x[1]
+        best_umu4 = best_x[2]
+        best_utau4 = best_x[3]
 
         print("\n===== selected best fit candidate =====")
-        print("best candidate =", best_name)
-        print("best chi2      =", chi2)
-        print("best x         =", best.x)
-        print("best dm2       =", best.x[0] * 100.0)
-        print("best Ue4       =", best.x[1])
-        print("best Umu4      =", best.x[2])
-        print("best Utau4     =", best.x[3])
+        print("best candidate       =", best_name)
+        print("best success         =", best.success)
+        print("best message         =", best.message)
+        print("stored best chi2     =", stored_chi2)
+        print("recomputed best chi2 =", recomputed_chi2)
+        print("chi2 difference      =", recomputed_chi2 - stored_chi2)
+        print("best x               =", best_x)
+        print("best dm2             =", best_dm2)
+        print("best Ue4             =", best_ue4)
+        print("best Umu4            =", best_umu4)
+        print("best Utau4           =", best_utau4)
 
         return (
-            chi2,
+            recomputed_chi2,
             {
-                "m": best.x[0] * 100.0,
-                "ue4": best.x[1],
-                "umu4": best.x[2],
-                "utau4": best.x[3],
+                "m": best_dm2,
+                "ue4": best_ue4,
+                "umu4": best_umu4,
+                "utau4": best_utau4,
             },
         )
 

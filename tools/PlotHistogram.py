@@ -593,6 +593,37 @@ class PlottingContainer:
         name = ntuple_tag
 
 
+        h_stored_before_reset = histogram.GetOscillatedHistogram().Clone(
+            "h_stored_before_reset"
+        )
+
+        histogram.OscillateHistogram(
+            parameters["m"],
+            parameters["ue4"],
+            parameters["umu4"],
+            parameters["utau4"],
+            False,
+            False,
+        )
+
+        h_recomputed_bf = histogram.GetOscillatedHistogram()
+
+        stored = np.array(h_stored_before_reset)[1:-1]
+        recomputed = np.array(h_recomputed_bf)[1:-1]
+
+        ratio = np.divide(
+            stored,
+            recomputed,
+            out=np.ones_like(stored),
+            where=np.abs(recomputed) > 1e-12,
+        )
+
+        print("\n===== stored oscillation vs explicitly recomputed BF =====")
+        print("max |stored/recomputed - 1| =", np.max(np.abs(ratio - 1.0)))
+        print("mean |stored/recomputed - 1| =", np.mean(np.abs(ratio - 1.0)))
+
+
+
         # statistic = Statistics(histogram, exclude=exclude, lam=lam)
         statistic = Statistics(
             histogram,

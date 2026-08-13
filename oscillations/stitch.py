@@ -6,6 +6,22 @@ import shutil
 import json
 import numpy as np
 
+SIGNAL_DEFINITION = [
+    "CCNuEQE",
+    "CCNuEDelta",
+    "CCNuEDIS",
+    "CCNuE",
+    "CCNuE2p2h",
+    "CCNuEWrongSign",
+]
+
+# POT normalization
+# Published MINERvA nu+e paper exposure
+PAPER_NUE_ELASTIC_POT = 3.43e20
+
+# FHC exposure used by your current FHC CCnue/CCnumu samples
+FHC_ANALYSIS_POT = 3.323050142731963e20
+
 # Parse stitch-only args before ANY analysis/config imports see sys.argv.
 _stitch_parser = argparse.ArgumentParser(add_help=False)
 _stitch_parser.add_argument(
@@ -105,11 +121,6 @@ PAPER_ELASTIC_FILE = (
     "paper_nue_elastic_decomposed_with2D.root"
 )
 
-LELIKE_4BIN_ELASTIC_TEMPLATE_FILE = (
-    "/exp/minerva/data/users/qvuong/elastic_nue/"
-    "kin_dist_mcmeFHC_p6_scattering_LElike_MAD.root"
-)
-
 LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
     "/exp/minerva/data/users/qvuong/elastic_nue/"
     "kin_dist_mcmeFHC_p8_scattering_LElike_Jaewon6bins_MAD.root"
@@ -150,12 +161,290 @@ def check_1d_edges(h, expected_edges, label, tol=1e-8):
                 )
             )
 
-# POT normalization
-# Published MINERvA nu+e paper exposure
-PAPER_NUE_ELASTIC_POT = 3.43e20
+def check_1d_component_closure(
+    h_total,
+    components,
+    label,
+    tol=1e-8,
+    raise_on_failure=False,
+):
+    """
+    Check whether a list of 1D component histograms reproduces h_total
+    bin by bin.
 
-# FHC exposure used by your current FHC CCnue/CCnumu samples
-FHC_ANALYSIS_POT = 3.323050142731963e20
+    The check includes regular bins only. It reports both absolute and
+    fractional differences and optionally raises on failed closure.
+    """
+    if not components:
+        raise RuntimeError(
+            "{}: no component histograms were provided".format(label)
+        )
+
+    n_bins = h_total.GetNbinsX()
+
+    for component in components:
+        if component.GetNbinsX() != n_bins:
+            raise RuntimeError(
+                "{}: bin-count mismatch: total has {} bins, "
+                "component {} has {} bins".format(
+                    label,
+                    n_bins,
+                    component.GetName(),
+                    component.GetNbinsX(),
+                )
+            )
+
+    print("\n===== 1D COMPONENT CLOSURE: {} =====".format(label))
+
+    max_abs_diff = 0.0
+    max_frac_diff = 0.0
+    failed_bins = []
+
+    for i in range(1, n_bins + 1):
+        total = h_total.GetBinContent(i)
+        component_values = [
+            component.GetBinContent(i)
+            for component in components
+        ]
+        component_sum = sum(component_values)
+
+        diff = component_sum - total
+        frac = (
+            diff / total
+            if abs(total) > 1e-12
+            else float("nan")
+        )
+
+        max_abs_diff = max(max_abs_diff, abs(diff))
+
+        if np.isfinite(frac):
+            max_frac_diff = max(max_frac_diff, abs(frac))
+
+        print(
+            "bin {:2d}: total={:12.6g} "
+            "components={} sum={:12.6g} "
+            "diff={:12.6g} frac={:12.6g}".format(
+                i,
+                total,
+                ["{:.6g}".format(value) for value in component_values],
+                component_sum,
+                diff,
+                frac,
+            )
+        )
+
+        scale = max(1.0, abs(total))
+
+        if abs(diff) > tol * scale:
+            failed_bins.append(i)
+
+    print("max absolute difference =", max_abs_diff)
+    print("max fractional difference =", max_frac_diff)
+    print("failed bins =", failed_bins)
+
+    if failed_bins and raise_on_failure:
+        raise RuntimeError(
+            "{} failed component closure in bins {}".format(
+                label,
+                failed_bins,
+            )
+        )
+
+    return failed_bins
+
+def check_flux_universe_component_closure(
+    h_total,
+    components,
+    label,
+    band_name="Flux",
+    tol=1e-8,
+    max_universes_to_print=5,
+    raise_on_failure=False,
+):
+    """
+    Check whether component histograms reproduce h_total bin by bin
+    for every universe in a vertical error band.
+
+    Expected:
+        sum_k component_k^(u)(i) == total^(u)(i)
+
+    for every universe u and regular bin i.
+    """
+
+    print(
+        "\n===== FLUX UNIVERSE COMPONENT CLOSURE: {} =====".format(
+            label
+        )
+    )
+
+    # Make sure the requested band exists everywhere.
+    hists = [h_total] + list(components)
+
+    for h in hists:
+        band_names = [str(x) for x in h.GetVertErrorBandNames()]
+
+        if band_name not in band_names:
+            raise RuntimeError(
+                "{} does not contain vertical error band '{}'. "
+                "Available bands = {}".format(
+                    h.GetName(),
+                    band_name,
+                    band_names,
+                )
+            )
+
+    total_band = h_total.GetVertErrorBand(band_name)
+    component_bands = [
+        h.GetVertErrorBand(band_name)
+        for h in components
+    ]
+
+    n_universes = total_band.GetNHists()
+
+    print("band       =", band_name)
+    print("universes  =", n_universes)
+
+    for component, band in zip(components, component_bands):
+        if band.GetNHists() != n_universes:
+            raise RuntimeError(
+                "{} has {} {} universes; total has {}".format(
+                    component.GetName(),
+                    band.GetNHists(),
+                    band_name,
+                    n_universes,
+                )
+            )
+
+    failed = []
+    max_abs_diff = 0.0
+    max_frac_diff = 0.0
+
+    for u in range(n_universes):
+        h_total_u = total_band.GetHist(u)
+        component_u = [
+            band.GetHist(u)
+            for band in component_bands
+        ]
+
+        universe_failed = False
+        universe_max_abs = 0.0
+        universe_max_frac = 0.0
+
+        for i in range(1, h_total.GetNbinsX() + 1):
+            total = h_total_u.GetBinContent(i)
+
+            component_values = [
+                h.GetBinContent(i)
+                for h in component_u
+            ]
+
+            component_sum = sum(component_values)
+
+            diff = component_sum - total
+
+            frac = (
+                diff / total
+                if abs(total) > 1e-12
+                else float("nan")
+            )
+
+            universe_max_abs = max(
+                universe_max_abs,
+                abs(diff),
+            )
+
+            max_abs_diff = max(
+                max_abs_diff,
+                abs(diff),
+            )
+
+            if np.isfinite(frac):
+                universe_max_frac = max(
+                    universe_max_frac,
+                    abs(frac),
+                )
+
+                max_frac_diff = max(
+                    max_frac_diff,
+                    abs(frac),
+                )
+
+            scale = max(1.0, abs(total))
+
+            if abs(diff) > tol * scale:
+                universe_failed = True
+
+                failed.append(
+                    {
+                        "universe": u,
+                        "bin": i,
+                        "total": total,
+                        "components": component_values,
+                        "sum": component_sum,
+                        "diff": diff,
+                        "frac": frac,
+                    }
+                )
+
+        if (
+            u < max_universes_to_print
+            or universe_failed
+        ):
+            print(
+                "univ {:4d}: max_abs_diff={:12.6g} "
+                "max_frac_diff={:12.6g} {}".format(
+                    u,
+                    universe_max_abs,
+                    universe_max_frac,
+                    "FAIL" if universe_failed else "OK",
+                )
+            )
+
+    print("")
+    print("overall max absolute difference =", max_abs_diff)
+    print("overall max fractional difference =", max_frac_diff)
+    print("failed universe/bin pairs =", len(failed))
+
+    if failed:
+        print("\nFirst failed entries:")
+
+        for entry in failed[:10]:
+            print(
+                "  univ {:4d} bin {:2d}: "
+                "total={:12.6g} components={} "
+                "sum={:12.6g} diff={:12.6g} "
+                "frac={:12.6g}".format(
+                    entry["universe"],
+                    entry["bin"],
+                    entry["total"],
+                    [
+                        "{:.6g}".format(x)
+                        for x in entry["components"]
+                    ],
+                    entry["sum"],
+                    entry["diff"],
+                    entry["frac"],
+                )
+            )
+
+        if raise_on_failure:
+            raise RuntimeError(
+                "{} failed {} universe closure in {} "
+                "universe/bin pairs".format(
+                    label,
+                    band_name,
+                    len(failed),
+                )
+            )
+
+    else:
+        print(
+            "{} universes close exactly within tolerance.".format(
+                band_name
+            )
+        )
+
+    return failed
 
 def get_pot_from_meta(fin):
     meta = fin.Get("Meta")
@@ -193,6 +482,34 @@ def clone_total(holder, name):
     h = holder.hists["Total"].Clone(name)
     h.SetDirectory(0)
     return h
+
+def clone_category_sum(hist_holder, categories, name):
+    output = hist_holder.hists["Total"].Clone(name)
+    output.Reset()
+    output.SetDirectory(0)
+
+    used_categories = []
+
+    for category in categories:
+        if category not in hist_holder.hists:
+            raise RuntimeError(
+                "Missing required signal category '{}' while building {}. "
+                "Available categories: {}".format(
+                    category,
+                    name,
+                    sorted(hist_holder.hists.keys()),
+                )
+            )
+
+        output.Add(hist_holder.hists[category])
+        used_categories.append(category)
+
+    print("")
+    print("===== SIGNAL CATEGORY SUM: {} =====".format(name))
+    print("used categories =", used_categories)
+    print("integral        =", output.Integral())
+
+    return output
 
 def get_hist_checked(root_file, names, label):
     """
@@ -433,37 +750,104 @@ def load_nue_elastic_fhc():
     print_integral_change("FHC elastic electron flavor", h_electron_raw, h_electron)
     print_integral_change("FHC elastic muon flavor",     h_muon_raw,     h_muon)
 
-    # Match electron+muon components to tuned prediction.
+    # -------------------------------------------------
+    # Check whether the production flavor decomposition
+    # reproduces the tuned elastic signal bin by bin.
+    # Do not modify the components yet.
+    # -------------------------------------------------
     h_sum = h_electron.Clone("fhc_elastic_flavor_sum")
     h_sum.SetDirectory(0)
     h_sum.Add(h_muon)
 
-    if h_sum.Integral() > 0:
-        flavor_scale = h_mc.Integral() / h_sum.Integral()
-        print("FHC elastic flavor scale to tuned prediction =", flavor_scale)
-
-        h_electron.Scale(flavor_scale)
-        h_muon.Scale(flavor_scale)
-    else:
-        raise RuntimeError("FHC elastic electron+muon flavor sum is zero.")
-
-    # -------------------------------------------------
-    # 2D flavor templates from already-FHC-scaled LElike templates
-    # stored in PAPER_ELASTIC_FILE.
-    # -------------------------------------------------
-    # template_file_2d = ROOT.TFile.Open(LELIKE_4BIN_ELASTIC_TEMPLATE_FILE)
-    template_file_2d = ROOT.TFile.Open(
-        stitch_path("fhc_elastic", "template_2d")
+    print("\n===== FHC ELASTIC FLAVOR INTEGRAL CLOSURE =====")
+    print("tuned MC integral       =", h_mc.Integral())
+    print("electron integral       =", h_electron.Integral())
+    print("muon integral           =", h_muon.Integral())
+    print("electron + muon         =", h_sum.Integral())
+    print(
+        "flavor sum - tuned MC  =",
+        h_sum.Integral() - h_mc.Integral(),
     )
+
+    elastic_closure_failed_bins = check_1d_component_closure(
+        h_mc,
+        [h_electron, h_muon],
+        "FHC elastic tuned MC vs electron+muon",
+        tol=1e-8,
+        raise_on_failure=False,
+    )
+
+    if elastic_closure_failed_bins:
+        print(
+            "\nWARNING: FHC elastic flavor components do not close "
+            "to the tuned MC bin by bin."
+        )
+        print(
+            "No correction has been applied. Inspect the differences "
+            "before deciding whether to normalize the components."
+        )
+    else:
+        print(
+            "\nFHC elastic flavor components close to the tuned MC "
+            "bin by bin. No additional normalization is needed."
+        )
+
+    # -------------------------------------------------
+    # Check the same electron+muon decomposition in every
+    # Flux universe.
+    # -------------------------------------------------
+    elastic_flux_closure_failures = (
+        check_flux_universe_component_closure(
+            h_mc,
+            [h_electron, h_muon],
+            "FHC elastic tuned MC vs electron+muon",
+            band_name="Flux",
+            tol=1e-8,
+            max_universes_to_print=5,
+            raise_on_failure=False,
+        )
+    )
+
+    if elastic_flux_closure_failures:
+        print(
+            "\nWARNING: FHC elastic electron+muon components do not "
+            "reproduce the tuned MC Flux universes exactly."
+        )
+        print(
+            "Do not modify them yet; inspect the size/pattern of the "
+            "differences first."
+        )
+    else:
+        print(
+            "\nFHC elastic electron+muon components also close to the "
+            "tuned MC for every Flux universe."
+        )
+
+    # -------------------------------------------------
+    # 2D flavor templates used only to obtain the
+    # conditional L/E distribution in each reco-energy bin.
+    # The path is selected through stitch_input_files.json.
+    # Overall template normalization cancels in the
+    # relative oscillation weighting.
+    # -------------------------------------------------
+    template_2d_path = stitch_path(
+        "fhc_elastic",
+        "template_2d",
+    )
+
+    template_file_2d = ROOT.TFile.Open(
+        template_2d_path
+    )
+
     if not template_file_2d or template_file_2d.IsZombie():
         raise RuntimeError(
             "Could not open LElike 4-bin elastic template file: {}".format(
-                LELIKE_4BIN_ELASTIC_TEMPLATE_FILE
+                template_2d_path
             )
         )
 
     print("\nLoading FHC elastic 2D templates from LElike 4-bin file")
-    print("  file =", LELIKE_4BIN_ELASTIC_TEMPLATE_FILE)
+    print("  file =", template_2d_path)
 
     h2_nue = get_hist_checked(
         template_file_2d,
@@ -1328,12 +1712,40 @@ def load_ccnue_fhc():
         standPOT
     )
 
-    h_template_raw = clone_total(template_holder, "fhc_ccnue_template_raw")
+    # Full nominal template before scaling, for diagnostics.
+    h_template_total_raw = clone_total(
+        template_holder,
+        "fhc_ccnue_template_total_raw",
+    )
+
+    # Apply POT/bin-width scaling once.
     template_holder.POTScale(binwidthScale)
-    h_template = clone_total(template_holder, "fhc_ccnue_template")
+
+    # Full nominal template after scaling, for diagnostics.
+    h_template_total = clone_total(
+        template_holder,
+        "fhc_ccnue_template_total",
+    )
+
+    # Physics template: signal categories only.
+    h_template = clone_category_sum(
+        template_holder,
+        SIGNAL_DEFINITION,
+        "fhc_ccnue_template_signal",
+    )
+
     h_template.SetDirectory(0)
 
-    print_integral_change("FHC CCnue template", h_template_raw, h_template)
+    print_integral_change(
+        "FHC CCnue template total",
+        h_template_total_raw,
+        h_template_total,
+    )
+
+    print("")
+    print("===== FHC NOMINAL TEMPLATE TOTAL VS SIGNAL =====")
+    print("total selected integral =", h_template_total.Integral())
+    print("signal-only integral    =", h_template.Integral())
 
     # Swapped sample.
     # swap_type_path_map = {
@@ -1374,20 +1786,79 @@ def load_ccnue_fhc():
         standPOT
     )
 
-    h_swap_raw = clone_total(swap_hist_holder, "fhc_ccnue_swap_raw")
-    h_swap_template_raw = clone_total(swap_template_holder, "fhc_ccnue_swap_template_raw")
+    # Diagnostic full selected swap before scaling.
+    h_swap_total_raw = clone_total(
+        swap_hist_holder,
+        "fhc_ccnue_swap_total_raw",
+    )
+
+    h_swap_template_total_raw = clone_total(
+        swap_template_holder,
+        "fhc_ccnue_swap_template_total_raw",
+    )
 
     swap_hist_holder.POTScale(binwidthScale)
     swap_template_holder.POTScale(binwidthScale)
 
-    h_swap = clone_total(swap_hist_holder, "fhc_ccnue_swap")
-    h_swap_template = clone_total(swap_template_holder, "fhc_ccnue_swap_template")
+    # Diagnostic full selected swap after scaling.
+    h_swap_total = clone_total(
+        swap_hist_holder,
+        "fhc_ccnue_swap_total",
+    )
+
+    h_swap_template_total = clone_total(
+        swap_template_holder,
+        "fhc_ccnue_swap_template_total",
+    )
+
+    # Physics objects: signal categories only.
+    h_swap = clone_category_sum(
+        swap_hist_holder,
+        SIGNAL_DEFINITION,
+        "fhc_ccnue_swap_signal",
+    )
+
+    h_swap_template = clone_category_sum(
+        swap_template_holder,
+        SIGNAL_DEFINITION,
+        "fhc_ccnue_swap_template_signal",
+    )
+
+    print("")
+    print("===== FHC SWAP TOTAL VS SIGNAL =====")
+    print("total selected integral =", h_swap_total.Integral())
+    print("signal-only integral    =", h_swap.Integral())
+
+    for i in range(1, h_swap.GetNbinsX() + 1):
+        total = h_swap_total.GetBinContent(i)
+        signal = h_swap.GetBinContent(i)
+
+        fraction = signal / total if abs(total) > 1e-12 else float("nan")
+
+        print(
+            "bin {:2d}: total={:12.6g} signal={:12.6g} "
+            "signal/total={:10.6f}".format(
+                i,
+                total,
+                signal,
+                fraction,
+            )
+        )
 
     h_swap.SetDirectory(0)
     h_swap_template.SetDirectory(0)
 
-    print_integral_change("FHC CCnue swap 1D", h_swap_raw, h_swap)
-    print_integral_change("FHC CCnue swap template", h_swap_template_raw, h_swap_template)
+    print_integral_change(
+        "FHC CCnue swap total 1D",
+        h_swap_total_raw,
+        h_swap_total,
+    )
+
+    print_integral_change(
+        "FHC CCnue swap total template",
+        h_swap_template_total_raw,
+        h_swap_template_total,
+    )
 
     compare_1d_2d_template(
         "FHC CCnue nominal",
@@ -1471,12 +1942,40 @@ def load_ccnuebar_rhc():
         standPOT
     )
 
-    h_template_raw = clone_total(template_holder, "rhc_ccnuebar_template_raw")
+    # Full nominal template before scaling, for diagnostics.
+    h_template_total_raw = clone_total(
+        template_holder,
+        "rhc_ccnuebar_template_total_raw",
+    )
+
+    # Apply POT/bin-width scaling once.
     template_holder.POTScale(binwidthScale)
-    h_template = clone_total(template_holder, "rhc_ccnuebar_template")
+
+    # Full nominal template after scaling, for diagnostics.
+    h_template_total = clone_total(
+        template_holder,
+        "rhc_ccnuebar_template_total",
+    )
+
+    # Physics template: signal categories only.
+    h_template = clone_category_sum(
+        template_holder,
+        SIGNAL_DEFINITION,
+        "rhc_ccnuebar_template_signal",
+    )
+
     h_template.SetDirectory(0)
 
-    print_integral_change("RHC CCnuebar template", h_template_raw, h_template)
+    print_integral_change(
+        "RHC CCnuebar template total",
+        h_template_total_raw,
+        h_template_total,
+    )
+
+    print("")
+    print("===== RHC NOMINAL TEMPLATE TOTAL VS SIGNAL =====")
+    print("total selected integral =", h_template_total.Integral())
+    print("signal-only integral    =", h_template.Integral())
 
     # Swapped sample.
     # swap_type_path_map = {
@@ -1517,20 +2016,47 @@ def load_ccnuebar_rhc():
         standPOT
     )
 
-    h_swap_raw = clone_total(swap_hist_holder, "rhc_ccnuebar_swap_raw")
-    h_swap_template_raw = clone_total(swap_template_holder, "rhc_ccnuebar_swap_template_raw")
+    # Full selected swap before POT scaling.
+    h_swap_total_raw = clone_total(
+        swap_hist_holder,
+        "rhc_ccnuebar_swap_total_raw",
+    )
 
+    h_swap_template_total_raw = clone_total(
+        swap_template_holder,
+        "rhc_ccnuebar_swap_template_total_raw",
+    )
+
+    # Apply POT/bin-width scaling exactly once.
     swap_hist_holder.POTScale(binwidthScale)
     swap_template_holder.POTScale(binwidthScale)
 
-    h_swap = clone_total(swap_hist_holder, "rhc_ccnuebar_swap")
-    h_swap_template = clone_total(swap_template_holder, "rhc_ccnuebar_swap_template")
+    # Full selected swap after scaling, for diagnostics.
+    h_swap_total = clone_total(
+        swap_hist_holder,
+        "rhc_ccnuebar_swap_total",
+    )
+
+    h_swap_template_total = clone_total(
+        swap_template_holder,
+        "rhc_ccnuebar_swap_template_total",
+    )
+
+    # Signal-only physics objects.
+    h_swap = clone_category_sum(
+        swap_hist_holder,
+        SIGNAL_DEFINITION,
+        "rhc_ccnuebar_swap_signal",
+    )
+
+    h_swap_template = clone_category_sum(
+        swap_template_holder,
+        SIGNAL_DEFINITION,
+        "rhc_ccnuebar_swap_template_signal",
+    )
 
     h_swap.SetDirectory(0)
     h_swap_template.SetDirectory(0)
-
-    print_integral_change("RHC CCnuebar swap 1D", h_swap_raw, h_swap)
-    print_integral_change("RHC CCnuebar swap template", h_swap_template_raw, h_swap_template)
 
     compare_1d_2d_template(
         "RHC CCnuebar nominal",
@@ -2015,8 +2541,8 @@ if __name__ == "__main__":
 
     # print("Wrote stitched CSV outputs to", csv_dir)
 
-    stitched.Write(OUTROOT)
-    print("Wrote stitched file to", OUTROOT)
+    # stitched.Write(OUTROOT)
+    # print("Wrote stitched file to", OUTROOT)
 
     # c = ROOT.TCanvas("c", "c", 900, 700)
     # c.SetLogy()

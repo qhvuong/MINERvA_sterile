@@ -304,7 +304,7 @@ HISTS_TO_MAKE = [
 	# "Lepton Energy",
 	# "E Theta Squared",
 	# "True E Theta Squared",
-    # "Reco Energy vs L/E",
+    "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
     "Biased Neutrino Energy",
 	# "True Signal True Energy vs Neutrino Length Travelled",

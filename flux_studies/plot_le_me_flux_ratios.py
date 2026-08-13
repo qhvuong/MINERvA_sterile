@@ -21,12 +21,16 @@ def get_hist(path, hname="flux_E_cvweighted"):
     return h
 
 
+# def make_ratio(num, den, name):
+#     r = num.Clone(name)
+#     r.SetDirectory(0)
+#     r.Divide(num, den, 1.0, 1.0, "B")
+#     return r
 def make_ratio(num, den, name):
     r = num.Clone(name)
     r.SetDirectory(0)
-    r.Divide(num, den, 1.0, 1.0, "B")
+    r.Divide(num, den, 1.0, 1.0)
     return r
-
 
 def flux_path(flux_dir, pdg, tag):
     return "{}/flux-gen2thin-pdg{}-{}.root".format(flux_dir, pdg, tag)
