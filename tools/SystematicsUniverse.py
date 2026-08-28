@@ -586,11 +586,6 @@ class CVPythonUniverse():
         self.__dict__["_cached_new_true_l_over_e"] = val
         return val
 
-    # def New_True_L_Over_E(self):
-    #     enu_gev = self.mc_incomingE * 1e-3
-    #     L = GetNeutrinoTravelledLength(enu_gev, self.mc_incoming)
-    #     return L / enu_gev if enu_gev > 0 else 0.0
-
     @property
     def nsigma(self):
         return self.GetSigma() if self.mc else None

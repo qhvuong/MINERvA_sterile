@@ -778,18 +778,88 @@ def MakePlotProcessors(**kwargs):
             print("cant't make signal only plots for data")
             return plots
 
+    # if "truth_class" in tags and kwargs["mc"]:
+    #     name_func = {}
+    #     for cate in list(TRUTH_CATEGORIES.keys())+["Other"]:
+    #         if cate in EXTRA_OTHER:
+    #             continue
+    #         name_func[cate] = MakePlotProcessors.func.setdefault(cate,partial(lambda universe,_: universe.classifier.truth_class == _, _=cate))
+
+
+    #     tmp = []
+    #     for plot in plots:
+    #         tmp.extend(PlotProcessorProliferater(plot,name_func))
+    #     plots.extend(tmp)
     if "truth_class" in tags and kwargs["mc"]:
         name_func = {}
-        for cate in list(TRUTH_CATEGORIES.keys())+["Other"]:
+
+        for cate in list(TRUTH_CATEGORIES.keys()) + ["Other"]:
             if cate in EXTRA_OTHER:
                 continue
-            name_func[cate] = MakePlotProcessors.func.setdefault(cate,partial(lambda universe,_: universe.classifier.truth_class == _, _=cate))
 
+            name_func[cate] = MakePlotProcessors.func.setdefault(
+                cate,
+                partial(
+                    lambda universe, _:
+                        universe.classifier.truth_class == _,
+                    _=cate
+                )
+            )
 
         tmp = []
+
+        # Make the normal truth-category histograms.
         for plot in plots:
-            tmp.extend(PlotProcessorProliferater(plot,name_func))
+            tmp.extend(
+                PlotProcessorProliferater(
+                    plot,
+                    name_func
+                )
+            )
+
         plots.extend(tmp)
+
+
+        # ------------------------------------------------------------
+        # TEMPORARY DIAGNOSTIC:
+        # split EN4_CCNuEQE by true incoming neutrino PDG
+        # ------------------------------------------------------------
+
+        pdg_map = {
+            "PDG12":   12,
+            "PDGm12": -12,
+            "PDG14":   14,
+            "PDGm14": -14,
+        }
+
+        pdg_plots = []
+
+        for plot in plots:
+
+            # Only operate on the already-created CCNuEQE EN4 histogram.
+            if plot.histwrapper.name != "EN4_CCNuEQE":
+                continue
+
+            for pdg_name, pdg in pdg_map.items():
+
+                new_name = "{}_{}".format(
+                    plot.histwrapper.name,
+                    pdg_name
+                )
+
+                p = plot.Clone(new_name)
+
+                # plot already carries the CCNuEQE cut.
+                # Add true incoming-PDG requirement.
+                p.AddCut(
+                    lambda universe, pdg=pdg:
+                        universe.mc_incoming == pdg
+                )
+
+                pdg_plots.append(p)
+
+        plots.extend(pdg_plots)
+
 
     return plots
 

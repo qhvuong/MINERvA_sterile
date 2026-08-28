@@ -1,10 +1,18 @@
 {
   TH1::AddDirectory(kFALSE);
 
-  const char* dir = "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE";
+  const char* dir = "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_FV";
 
-  std::vector<int> playlists = {1, 5, 13};
-  // std::vector<int> playlists = {5};
+  struct Playlist {
+    const char* input_label;
+    int output_label;
+  };
+
+  std::vector<Playlist> playlists = {
+    {"1",   1},
+    {"5",   5},
+    {"13C", 13}
+  };
 
   struct Species {
     int pdg;
@@ -18,19 +26,28 @@
     {-14, "numubar"}
   };
 
-  for (int playlist : playlists) {
+  for (const auto& pl : playlists) {
     for (const auto& sp : species_list) {
 
-      TString input = Form("%s/LE%d_%s.root", dir, playlist, sp.name);
+      TString input = Form(
+        "%s/LE%s_%s.root",
+        dir,
+        pl.input_label,
+        sp.name
+      );
 
       TString output_unweighted = Form(
         "%s/flux-g4numiv5-pdg%d-minerva%d.root",
-        dir, sp.pdg, playlist
+        dir,
+        sp.pdg,
+        pl.output_label
       );
 
       TString output_cvweighted = Form(
         "%s/flux-gen2thin-pdg%d-minerva%d.root",
-        dir, sp.pdg, playlist
+        dir,
+        sp.pdg,
+        pl.output_label
       );
 
       std::cout << "\n==================================================\n";

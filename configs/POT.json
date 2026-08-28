@@ -337,6 +337,20 @@
             }
         }
     },
+    "me5A_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme5Ap8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame5Ap8.txt"
+            }
+        }
+    },
     "me6A_p4": {
         "mc": {
             "MAD": {
@@ -352,6 +366,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame6Ap4.txt"
+            }
+        }
+    },
+    "me6A_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Ap8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Ap8.txt"
             }
         }
     },
@@ -373,6 +401,20 @@
             }
         }
     },
+    "me6B_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Bp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Bp8.txt"
+            }
+        }
+    },
     "me6C_p4": {
         "mc": {
             "MAD": {
@@ -388,6 +430,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame6Cp4.txt"
+            }
+        }
+    },
+    "me6C_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Cp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Cp8.txt"
             }
         }
     },
@@ -409,6 +465,20 @@
             }
         }
     },
+    "me6D_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Dp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Dp8.txt"
+            }
+        }
+    },
     "me6E_p4": {
         "mc": {
             "MAD": {
@@ -424,6 +494,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame6Ep4.txt"
+            }
+        }
+    },
+    "me6E_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Ep8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Ep8.txt"
             }
         }
     },
@@ -445,6 +529,20 @@
             }
         }
     },
+    "me6F_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Fp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Fp8.txt"
+            }
+        }
+    },
     "me6G_p4": {
         "mc": {
             "MAD": {
@@ -460,6 +558,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame6Gp4.txt"
+            }
+        }
+    },
+    "me6G_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Gp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Gp8.txt"
             }
         }
     },
@@ -481,6 +593,20 @@
             }
         }
     },
+    "me6H_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Hp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Hp8.txt"
+            }
+        }
+    },
     "me6I_p4": {
         "mc": {
             "MAD": {
@@ -499,6 +625,20 @@
             }
         }
     },
+    "me6I_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Ip8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Ip8.txt"
+            }
+        }
+    },
     "me6J_p4": {
         "mc": {
             "MAD": {
@@ -514,6 +654,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame6Jp4.txt"
+            }
+        }
+    },
+    "me6J_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme6Jp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame6Jp8.txt"
             }
         }
     },
@@ -649,6 +803,20 @@
             }
         }
     },
+    "me1A_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ap8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Ap8.txt"
+            }
+        }
+    },
     "me1B_p4": {
         "mc": {
             "MAD": {
@@ -660,6 +828,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame1Bp4.txt"
+            }
+        }
+    },
+    "me1B_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Bp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Bp8.txt"
             }
         }
     },
@@ -677,6 +859,20 @@
             }
         }
     },
+    "me1C_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Cp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Cp8.txt"
+            }
+        }
+    },
     "me1D_p4": {
         "mc": {
             "MAD": {
@@ -688,6 +884,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame1Dp4.txt"
+            }
+        }
+    },
+    "me1D_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Dp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Dp8.txt"
             }
         }
     },
@@ -705,6 +915,20 @@
             }
         }
     },
+    "me1E_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Ep8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Ep8.txt"
+            }
+        }
+    },
     "me1F_p4": {
         "mc": {
             "MAD": {
@@ -716,6 +940,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame1Fp4.txt"
+            }
+        }
+    },
+    "me1F_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Fp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Fp8.txt"
             }
         }
     },
@@ -733,6 +971,20 @@
             }
         }
     },
+    "me1G_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Gp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Gp8.txt"
+            }
+        }
+    },
     "me1L_p4": {
         "mc": {
             "MAD": {
@@ -747,6 +999,20 @@
             }
         }
     },
+    "me1L_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Lp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Lp8.txt"
+            }
+        }
+    },
     "me1M_p4": {
         "mc": {
             "MAD": {
@@ -758,6 +1024,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame1Mp4.txt"
+            }
+        }
+    },
+    "me1M_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Mp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Mp8.txt"
             }
         }
     },
@@ -781,6 +1061,12 @@
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_mcme1Np8.txt"
             }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Np8.txt"
+            }
         }
     },
     "me1O_p4": {
@@ -797,6 +1083,20 @@
             }
         }
     },
+    "me1O_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Op8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Op8.txt"
+            }
+        }
+    },
     "me1P_p4": {
         "mc": {
             "MAD": {
@@ -808,6 +1108,20 @@
             "MAD": {
                 "tree": "MasterAnaDev",
                 "playlist_location": "file_option/playlist_datame1Pp4.txt"
+            }
+        }
+    },
+    "me1P_p8": {
+        "mc": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_mcme1Pp8.txt"
+            }
+        },
+        "data": {
+            "MAD": {
+                "tree": "MasterAnaDev",
+                "playlist_location": "file_option/playlist_datame1Pp8.txt"
             }
         }
     },

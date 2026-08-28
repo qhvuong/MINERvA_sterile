@@ -121,7 +121,14 @@ if __name__ == "__main__":
 
 
     sample_histogram = StitchedHistogram("sample")
+    sample_histogram.SetHistConfig(hist_config)
     sample_histogram.Load(file_path)
+
+    CheckElasticPredictionInput(
+        sample_histogram,
+        hist_config=hist_config,
+        verbose=True,
+    )
 
     # mc = np.array(sample_histogram.GetMCHistogram())[1:-1]
 
@@ -346,6 +353,7 @@ if __name__ == "__main__":
         mask_spec=mask_spec,
         profile_only=profile_only,
         profile_n_universes=profile_n_universes,
+        hist_config=hist_config,
     )
 
 
@@ -360,6 +368,7 @@ if __name__ == "__main__":
         mask_spec=mask_spec,
         profile_only=profile_only,
         profile_n_universes=profile_n_universes,
+        hist_config=hist_config,
     )
 
 
@@ -377,13 +386,11 @@ if __name__ == "__main__":
     sample_histogram.OscillateHistogram(res["m"], res["ue4"], res["umu4"], res["utau4"])
     sample_histogram.SetPlottingStyle()
 
-    # plot_tag = os.path.basename(filename)
-    # plot_tag = plot_tag.replace("NuE_stitched_hists_", "")
-    # plot_tag = plot_tag.replace(".root", "")
-
-    # print("plot_tag =", plot_tag)
-
-    plotter = PlottingContainer("fitted_histogram_{}".format(plot_tag), sample_histogram)
+    plotter = PlottingContainer(
+        "fitted_histogram_{}".format(plot_tag),
+        sample_histogram,
+        hist_config=hist_config,
+    )
     plotter.SetExclude(exclude_samples)
     plotter.SetLambda(lambda_value)
     plotter.SetMaskSpec(mask_spec)

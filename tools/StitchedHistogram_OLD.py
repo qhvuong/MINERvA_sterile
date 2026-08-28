@@ -101,8 +101,6 @@ class StitchedHistogram:
 
         self.n_flux_universes = 1000
 
-        self.hist_config = "HIST_CONFIG.json"
-
         # self.use_1000_flux_universes = True
 
     def __del__(self):
@@ -118,9 +116,6 @@ class StitchedHistogram:
         self.mc_hist = None
         self.data_hist = None
         self.pseudo_hist = None
-
-    def SetHistConfig(self, hist_config):
-        self.hist_config = hist_config
 
     def SetNFluxUniverses(self,n):
         self.n_flux_universes = n
@@ -290,30 +285,17 @@ class StitchedHistogram:
         # else:
         #     print("No external covariance matrix found for fhc_elastic.")
 
-    def GetExternalCovarianceBinIndices(
-        self,
-        sample_name,
-        hist_config=None,
-    ):
+    def GetExternalCovarianceBinIndices(self, sample_name):
         """
-        Return zero-based stitched-bin indices for a sample.
-        """
-        if hist_config is None:
-            hist_config = self.hist_config
+        Return numpy indices for the bins of a sample inside the stitched histogram.
 
+        Uses HIST_CONFIG.json, which is written by TranslateBins().
+        The JSON stores zero-based start/end indices, matching numpy indexing.
+        """
         try:
-            inds = GetSliceIndices(
-                hist_config,
-                "",
-                [sample_name],
-            )
+            inds = GetSliceIndices("HIST_CONFIG.json", "", [sample_name])
         except Exception as e:
-            print(
-                "WARNING: could not read {} for external covariance: {}".format(
-                    hist_config,
-                    e,
-                )
-            )
+            print("WARNING: could not read HIST_CONFIG.json for external covariance:", e)
             inds = []
 
         return inds
@@ -402,79 +384,65 @@ class StitchedHistogram:
 
 
     def SetCovarianceMatrices(self):
-        if (
-            type(self.mc_hist) == type(self.data_hist)
-            and type(self.mc_hist) == type(self.pseudo_hist)
-            and type(self.mc_hist) == PlotUtils.MnvH1D
-        ):
+        if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
             h_test = self.data_hist.Clone()
             h_test.Add(self.mc_hist, -1)
 
-            # Full covariance from all error bands before any external replacement.
-            covariance_raw = TMatrix_to_Numpy(
-                h_test.GetTotalErrorMatrix(True, False, False)
-            )[1:-1, 1:-1]
+            covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True, False, False))[1:-1, 1:-1]
+            flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1, 1:-1]
+            cov_sans_flux = covariance - flux_covariance
 
-            # Global flux covariance, including:
-            #   elastic-elastic
-            #   elastic-other
-            #   other-elastic
-            #   other-other
-            flux_covariance = TMatrix_to_Numpy(
-                h_test.GetSysErrorMatrix("Flux")
-            )[1:-1, 1:-1]
+            # Diagnostic: check stat/sys decomposition before external replacement
+            stat = TMatrix_to_Numpy(h_test.GetStatErrorMatrix())[1:-1, 1:-1]
 
-            # Remove the internally generated flux covariance.
-            cov_sans_flux = covariance_raw - flux_covariance
+            stat = TMatrix_to_Numpy(h_test.GetStatErrorMatrix())[1:-1, 1:-1]
 
-            # -------------------------------------------------
-            # External covariance treatment
-            # -------------------------------------------------
-            #
-            # The published nu+e covariance is NON-FLUX covariance.
-            #
-            # Replace the corresponding block only in cov_sans_flux.
-            # Do NOT replace the block in the full covariance, because
-            # doing so would erase the elastic-elastic P8 flux covariance.
-            #
-            cov_sans_flux = self.ApplyExternalCovariances(
-                cov_sans_flux,
-                label="sans-flux covariance",
-            )
+            # print("\n===== covariance stat check before external replacement =====")
+            # print("trace stat      =", np.trace(stat))
+            # print("trace total     =", np.trace(covariance))
+            # print("trace sansFlux  =", np.trace(cov_sans_flux))
+            # print("trace flux      =", np.trace(flux_covariance))
+            # print("trace total-stat =", np.trace(covariance - stat))
+            # print("trace sans-stat  =", np.trace(cov_sans_flux - stat))
+            # print("trace full - sans - flux =", np.trace(covariance - cov_sans_flux - flux_covariance))
+            # print("max |full-sans-flux| =", np.max(np.abs(covariance - cov_sans_flux - flux_covariance)))
 
-            # Reconstruct the full covariance:
-            #
-            #   V_full = V_nonflux(corrected) + V_flux(global)
-            #
-            # This preserves the complete P8 flux covariance, including
-            # correlations between nu+e and the other samples.
-            covariance = cov_sans_flux + flux_covariance
-
-            # -------------------------------------------------
-            # Consistency diagnostic
-            # -------------------------------------------------
-            residual = covariance - cov_sans_flux - flux_covariance
-
-            if np.max(np.abs(residual)) > 1e-8:
-                raise RuntimeError(
-                    "Covariance decomposition failed: "
-                    "max |full - sansFlux - flux| = {}".format(
-                        np.max(np.abs(residual))
-                    )
-                )
+            # Replace external covariance blocks, e.g. published FHC nu+e table covariance.
+            covariance = self.ApplyExternalCovariances(covariance, label="full covariance")
+            cov_sans_flux = self.ApplyExternalCovariances(cov_sans_flux, label="sans-flux covariance")
 
             self.covariance = covariance
             self.covariance_sans_flux = cov_sans_flux
 
             self.inv_covariance = np.linalg.inv(covariance)
             self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
-
         else:
-            raise ValueError(
-                "MC and Data histograms must be defined before "
-                "setting inv_covariance matrix"
-            )
+            raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
+    # def SetCovarianceMatrices(self):
+    #     if type(self.mc_hist) == type(self.data_hist) and type(self.mc_hist) == type(self.pseudo_hist) and type(self.mc_hist) == PlotUtils.MnvH1D:
+    #         h_test = self.data_hist.Clone()
+    #         h_test.Add(self.mc_hist,-1)
 
+    #         covariance = TMatrix_to_Numpy(h_test.GetTotalErrorMatrix(True,False,False))[1:-1,1:-1]
+    #         flux_covariance = TMatrix_to_Numpy(h_test.GetSysErrorMatrix("Flux"))[1:-1,1:-1]
+    #         cov_sans_flux = covariance - flux_covariance
+
+    #         # Replace external covariance blocks, e.g. published FHC nu+e table covariance.
+    #         covariance = self.ApplyExternalCovariances(covariance, label="full covariance")
+    #         cov_sans_flux = self.ApplyExternalCovariances(cov_sans_flux, label="sans-flux covariance")
+
+    #         self.covariance = covariance
+    #         self.covariance_sans_flux = cov_sans_flux
+
+    #         self.inv_covariance = np.linalg.inv(covariance)
+    #         self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
+    #         # self.covariance = covariance
+    #         # self.covariance_sans_flux = cov_sans_flux
+
+    #         # self.inv_covariance = np.linalg.inv(covariance)
+    #         # self.inv_covariance_sans_flux = np.linalg.inv(cov_sans_flux)
+    #     else:
+    #         raise ValueError("MC and Data histograms must be defined before setting inv_covariance matrix")
 
     def GetInverseCovarianceMatrix(self,sansFlux=False):
         if sansFlux:
@@ -1201,74 +1169,18 @@ class StitchedHistogram:
         self.keys = loaded_keys
         self.stitchKeys = loaded_keys.copy()
 
-        for ratio_name in ["fhc_ratio", "rhc_ratio"]:
-            mc_ratio = f.Get("mc_" + ratio_name)
-            data_ratio = f.Get("data_" + ratio_name)
+        test_hist = f.Get("mc_fhc_ratio")
+        if type(test_hist) == PlotUtils.MnvH1D:
+            self.mc_hists["fhc_ratio"] = test_hist
+            self.mc_hists["rhc_ratio"] = f.Get("mc_rhc_ratio")
+            self.data_hists["fhc_ratio"] = f.Get("data_fhc_ratio")
+            self.data_hists["rhc_ratio"] = f.Get("data_rhc_ratio")
 
-            if (
-                type(mc_ratio) != PlotUtils.MnvH1D
-                or type(data_ratio) != PlotUtils.MnvH1D
-            ):
-                continue
+            self.keys.extend(["fhc_ratio", "rhc_ratio"])
+            self.stitchKeys = self.keys.copy()
 
-            self.mc_hists[ratio_name] = mc_ratio
-            self.data_hists[ratio_name] = data_ratio
-
-            # Flavor components used by OscillateSubHistogram().
-            nue_h = f.Get("nue_" + ratio_name)
-            numu_h = f.Get("numu_" + ratio_name)
-            swap_h = f.Get("swap_" + ratio_name)
-
-            if type(nue_h) != PlotUtils.MnvH1D:
-                raise RuntimeError(
-                    "Missing nue_{} in stitched file".format(ratio_name)
-                )
-
-            if type(numu_h) != PlotUtils.MnvH1D:
-                raise RuntimeError(
-                    "Missing numu_{} in stitched file".format(ratio_name)
-                )
-
-            if type(swap_h) != PlotUtils.MnvH1D:
-                raise RuntimeError(
-                    "Missing swap_{} in stitched file".format(ratio_name)
-                )
-
-            self.nue_hists[ratio_name] = nue_h
-            self.numu_hists[ratio_name] = numu_h
-            self.swap_hists[ratio_name] = swap_h
-
-            # L/E templates used to recompute the oscillated ratio.
-            nue_temp = f.Get("nue_temp_" + ratio_name)
-            numu_temp = f.Get("numu_temp_" + ratio_name)
-            swap_temp = f.Get("swap_temp_" + ratio_name)
-
-            if not nue_temp:
-                raise RuntimeError(
-                    "Missing nue_temp_{} in stitched file".format(ratio_name)
-                )
-
-            if not numu_temp:
-                raise RuntimeError(
-                    "Missing numu_temp_{} in stitched file".format(ratio_name)
-                )
-
-            if not swap_temp:
-                raise RuntimeError(
-                    "Missing swap_temp_{} in stitched file".format(ratio_name)
-                )
-
-            self.nue_templates[ratio_name] = nue_temp
-            self.numu_templates[ratio_name] = numu_temp
-            self.swap_templates[ratio_name] = swap_temp
-
-            self.keys.append(ratio_name)
-
-            self.titles[ratio_name] = "{} Ratio".format(
-                ratio_name[:3].upper()
-            )
-
-        self.stitchKeys = self.keys.copy()
+            self.titles["fhc_ratio"] = "FHC Ratio"
+            self.titles["rhc_ratio"] = "RHC Ratio"
 
         # print("Loaded stitched samples:")
         # for h in self.keys:

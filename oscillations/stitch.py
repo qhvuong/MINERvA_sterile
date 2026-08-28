@@ -5,6 +5,7 @@ import copy
 import shutil
 import json
 import numpy as np
+from array import array
 
 SIGNAL_DEFINITION = [
     "CCNuEQE",
@@ -19,8 +20,9 @@ SIGNAL_DEFINITION = [
 # Published MINERvA nu+e paper exposure
 PAPER_NUE_ELASTIC_POT = 3.43e20
 
-# FHC exposure used by your current FHC CCnue/CCnumu samples
-FHC_ANALYSIS_POT = 3.323050142731963e20
+# Full FHC data exposure:
+# Minerva1 + 7 + 9 + 13A + 13B + 13C + 13D + 13E
+FHC_ANALYSIS_POT = 3.331982991676675e20
 
 # Parse stitch-only args before ANY analysis/config imports see sys.argv.
 _stitch_parser = argparse.ArgumentParser(add_help=False)
@@ -35,7 +37,7 @@ _stitch_parser.add_argument(
     "--stitch_input_set",
     dest="stitch_input_set",
     default="p6",
-    choices=["p6", "p8"],
+    choices=["p6", "p8", "p8_onlyPPFX", "p8_onlyBeamFocus"],
 )
 
 _stitch_args, _remaining_argv = _stitch_parser.parse_known_args()
@@ -116,22 +118,17 @@ for k, v in CONSOLIDATED_ERROR_GROUPS.items():
 errsToRemove = ["LowQ2Pi","elETracker"]
 ROOT.TH1.AddDirectory(False)
 
-PAPER_ELASTIC_FILE = (
-    "/exp/minerva/data/users/qvuong/elastic_nue/"
-    "paper_nue_elastic_decomposed_with2D.root"
-)
+JAEWON_INPUT_FILE = "jaewon_nue_elastic_data.json"
 
 LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
-    "/exp/minerva/data/users/qvuong/elastic_nue/"
-    "kin_dist_mcmeFHC_p8_scattering_LElike_Jaewon6bins_MAD.root"
+    "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_MAD.root"
 )
 
 PREDICTED_ELASTIC_FILE = (
-    "/exp/minerva/data/users/qvuong/elastic_nue/"
-    "nue_elastic_prediction_Jaewon6bins.root"
+    "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_higherOrderXS_mnv_FHC.root"
 )
 
-JAEWON_ELEP_EDGES = [0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 120.0]
+JAEWON_ELEP_EDGES = [0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 100.0]
 
 
 def check_1d_edges(h, expected_edges, label, tol=1e-8):
@@ -1052,13 +1049,28 @@ def check_template_projection(
     tol=1e-8,
 ):
     if reco_axis == "y":
+        # x = oscillation variable (true L/E)
+        # y = reconstructed energy
+        #
+        # Use regular x bins only, matching
+        # normalize_template_reco_slices().
         projection = h2.ProjectionY(
-            label + "_reco_projection"
+            label + "_reco_projection",
+            1,
+            h2.GetNbinsX(),
         )
+
     elif reco_axis == "x":
+        # y = oscillation variable
+        # x = reconstructed energy
+        #
+        # Use regular y bins only.
         projection = h2.ProjectionX(
-            label + "_reco_projection"
+            label + "_reco_projection",
+            1,
+            h2.GetNbinsY(),
         )
+
     else:
         raise RuntimeError(
             "Unknown reco_axis: {}".format(reco_axis)
@@ -1146,55 +1158,231 @@ def check_2d_reco_edges(
                 )
             )
 
-# This is my flux-folded v+e prediction and Jaewon's result
-def load_nue_elastic_fhc_prediction():
+
+
+def load_jaewon_data_json(path):
     """
-    Construct the FHC nu+e sample using:
+    Load Jaewon's published nu+e elastic data and non-flux covariance
+    directly from JSON.
 
-      data/covariance:
-        Jaewon's published result
-
-      nominal MC and flavor decomposition:
-        flux-folded nu+e prediction
-
-      oscillation templates:
-        ME high-statistics nu+e sample weighted to LE
-
-    The 2D templates are normalized reco-bin by reco-bin to the
-    flux-folded prediction.
+    Returns:
+        h_data : TH1D
+        cov    : TMatrixD
+        config : decoded JSON dictionary
     """
 
-    # -------------------------------------------------
-    # Published data and covariance
-    # -------------------------------------------------
-    paper_file = ROOT.TFile.Open(PAPER_ELASTIC_FILE)
+    with open(path, "r") as f:
+        config = json.load(f)
 
-    if not paper_file or paper_file.IsZombie():
+    edges = config["binning"]["analysis_edges"]
+    data = config["data"]
+    errors = config["data_errors"]
+    covariance = config["covariance"]
+
+    n_bins = len(data)
+
+    if len(edges) != n_bins + 1:
         raise RuntimeError(
-            "Could not open paper elastic file: {}".format(
-                PAPER_ELASTIC_FILE
+            "Jaewon JSON has {} data bins but {} edges".format(
+                n_bins,
+                len(edges),
             )
         )
 
-    h_data = get_hist_checked(
-        paper_file,
-        ["paper_total_nue_elastic"],
+    if len(errors) != n_bins:
+        raise RuntimeError(
+            "Jaewon JSON data_errors length {} does not match "
+            "{} data bins".format(
+                len(errors),
+                n_bins,
+            )
+        )
+
+    if len(covariance) != n_bins:
+        raise RuntimeError(
+            "Jaewon JSON covariance has {} rows, expected {}".format(
+                len(covariance),
+                n_bins,
+            )
+        )
+
+    for i, row in enumerate(covariance):
+        if len(row) != n_bins:
+            raise RuntimeError(
+                "Jaewon JSON covariance row {} has {} entries, "
+                "expected {}".format(
+                    i,
+                    len(row),
+                    n_bins,
+                )
+            )
+
+    # -------------------------------------------------
+    # Data histogram
+    # -------------------------------------------------
+    h_data = PlotUtils.MnvH1D(
         "fhc_elastic_data",
+        "Published #nu-e elastic data",
+        n_bins,
+        array("d", edges),
+    )
+    h_data.SetDirectory(0)
+
+    for i in range(n_bins):
+        h_data.SetBinContent(
+            i + 1,
+            float(data[i]),
+        )
+        h_data.SetBinError(
+            i + 1,
+            float(errors[i]),
+        )
+
+    # -------------------------------------------------
+    # Published non-flux covariance
+    # -------------------------------------------------
+    cov = ROOT.TMatrixD(
+        n_bins,
+        n_bins,
     )
 
-    cov = paper_file.Get("paper_covariance_matrix")
+    for i in range(n_bins):
+        for j in range(n_bins):
+            cov[i][j] = float(
+                covariance[i][j]
+            )
 
-    if not cov:
-        raise RuntimeError("paper_covariance_matrix not found")
+    print("\n===== JAEWON NUE ELASTIC INPUT =====")
+    print("file =", path)
+    print("POT  =", config["pot"])
+    print("edges =", edges)
+    print("data  =", data)
+    print("errors =", errors)
 
-    cov = cov.Clone("fhc_elastic_paper_covariance_matrix")
+    print("\nCovariance:")
+    for i in range(n_bins):
+        print(
+            "  " +
+            " ".join(
+                "{:12.6g}".format(cov[i][j])
+                for j in range(n_bins)
+            )
+        )
 
-    # -------------------------------------------------
+    return h_data, cov, config
+
+
+# This is my flux-folded v+e prediction and Jaewon's result
+def load_nue_elastic_fhc_prediction():
+    """
+    Construct the FHC nu+e elastic sample using:
+
+    data/covariance:
+        Jaewon's published 6-bin result from JSON,
+        rescaled from the paper POT to the full FHC analysis POT.
+        The covariance is the published non-flux covariance.
+
+    nominal MC and flavor decomposition:
+        Our flux-folded higher-order P8 nu+e prediction,
+        already normalized to the full FHC analysis data POT.
+
+    oscillation templates:
+        High-statistics nu+e 2D templates providing the true-L/E
+        distribution within each reconstructed electron-energy bin.
+
+    The 2D templates are normalized reco-bin by reco-bin to the
+    corresponding flux-folded flavor prediction.
+    """
+
+    # =================================================
+    # Jaewon published data + non-flux covariance
+    # =================================================
+
+    h_data, cov, jaewon_config = load_jaewon_data_json(
+        JAEWON_INPUT_FILE
+    )
+
+    jaewon_pot = float(
+        jaewon_config["pot"]
+    )
+
+    print("\n===== JAEWON POT CHECK =====")
+    print("JSON POT     =", jaewon_pot)
+    print("Expected POT =", PAPER_NUE_ELASTIC_POT)
+
+    if abs(
+        jaewon_pot - PAPER_NUE_ELASTIC_POT
+    ) > 1e-6 * PAPER_NUE_ELASTIC_POT:
+        raise RuntimeError(
+            "Jaewon JSON POT mismatch: "
+            "JSON={} expected={}".format(
+                jaewon_pot,
+                PAPER_NUE_ELASTIC_POT,
+            )
+        )
+
+    # =================================================
+    # Scale Jaewon's published data and covariance
+    # from the paper POT to the FHC analysis POT.
+    #
+    # Counts/errors:  x r
+    # Covariance:     x r^2
+    # =================================================
+
+    jaewon_pot_scale = FHC_ANALYSIS_POT / jaewon_pot
+
+    print("\n===== JAEWON POT RESCALING =====")
+    print("paper POT        =", jaewon_pot)
+    print("analysis POT     =", FHC_ANALYSIS_POT)
+    print("data scale       =", jaewon_pot_scale)
+    print("covariance scale =", jaewon_pot_scale ** 2)
+
+    print("data integral before =", h_data.Integral())
+
+    # ROOT histogram scaling scales both contents and bin errors.
+    h_data.Scale(jaewon_pot_scale)
+
+    # Published covariance is absolute covariance in events^2.
+    scale_tmatrix(
+        cov,
+        jaewon_pot_scale,
+    )
+
+    print("\nScaled Jaewon covariance:")
+    for i in range(cov.GetNrows()):
+        print(
+            "  " +
+            " ".join(
+                "{:12.6g}".format(cov[i][j])
+                for j in range(cov.GetNcols())
+            )
+        )
+
+    print("data integral after  =", h_data.Integral())
+
+    check_1d_edges(
+        h_data,
+        JAEWON_ELEP_EDGES,
+        "Jaewon data",
+    )
+
+    print_hist_bins(
+        h_data,
+        "Jaewon published nu+e data",
+    )
+
+    # =================================================
     # New flux-folded prediction
-    # -------------------------------------------------
-    prediction_file = ROOT.TFile.Open(PREDICTED_ELASTIC_FILE)
+    # =================================================
 
-    if not prediction_file or prediction_file.IsZombie():
+    prediction_file = ROOT.TFile.Open(
+        PREDICTED_ELASTIC_FILE
+    )
+
+    if (
+        not prediction_file
+        or prediction_file.IsZombie()
+    ):
         raise RuntimeError(
             "Could not open predicted elastic file: {}".format(
                 PREDICTED_ELASTIC_FILE
@@ -1231,8 +1419,11 @@ def load_nue_elastic_fhc_prediction():
         "fhc_elastic_component_numubar",
     )
 
+    # =================================================
+    # Check prediction binning
+    # =================================================
+
     for label, hist in [
-        ("Jaewon data", h_data),
         ("total prediction", h_mc),
         ("nue prediction", h_nue),
         ("nuebar prediction", h_nuebar),
@@ -1245,42 +1436,129 @@ def load_nue_elastic_fhc_prediction():
             label,
         )
 
-    h_electron = h_nue.Clone("electron_fhc_elastic")
+    # =================================================
+    # Check P8 Flux error bands
+    # =================================================
+
+    print("\n===== NUE ELASTIC FLUX BAND CHECK =====")
+
+    prediction_hists = [
+        ("total", h_mc),
+        ("nue", h_nue),
+        ("nuebar", h_nuebar),
+        ("numu", h_numu),
+        ("numubar", h_numubar),
+    ]
+
+    for label, hist in prediction_hists:
+
+        band_names = [
+            str(x)
+            for x in hist.GetVertErrorBandNames()
+        ]
+
+        if "Flux" not in band_names:
+            raise RuntimeError(
+                "{} prediction has no Flux band. "
+                "Available bands = {}".format(
+                    label,
+                    band_names,
+                )
+            )
+
+        n_flux = (
+            hist
+            .GetVertErrorBand("Flux")
+            .GetNHists()
+        )
+
+        print(
+            "{:8s}: {} Flux universes".format(
+                label,
+                n_flux,
+            )
+        )
+
+        if n_flux != 1000:
+            raise RuntimeError(
+                "{} prediction has {} Flux universes; "
+                "expected 1000".format(
+                    label,
+                    n_flux,
+                )
+            )
+
+    # =================================================
+    # Build electron- and muon-flavor groups
+    #
+    # electron:
+    #     nue + nuebar
+    #
+    # muon:
+    #     numu + numubar
+    # =================================================
+
+    h_electron = h_nue.Clone(
+        "electron_fhc_elastic"
+    )
     h_electron.SetDirectory(0)
     h_electron.Add(h_nuebar)
 
-    h_muon = h_numu.Clone("muon_fhc_elastic")
+    h_muon = h_numu.Clone(
+        "muon_fhc_elastic"
+    )
     h_muon.SetDirectory(0)
     h_muon.Add(h_numubar)
 
-    # Explicit closure check.
+    # =================================================
+    # CV component closure
+    # =================================================
+
     h_prediction_sum = h_electron.Clone(
         "fhc_elastic_prediction_sum_check"
     )
     h_prediction_sum.SetDirectory(0)
     h_prediction_sum.Add(h_muon)
 
-    print("\n===== NEW NUE ELASTIC PREDICTION CLOSURE =====")
+    print(
+        "\n===== NEW NUE ELASTIC PREDICTION CLOSURE ====="
+    )
+
     print("total prediction =", h_mc.Integral())
     print("nue              =", h_nue.Integral())
     print("nuebar           =", h_nuebar.Integral())
     print("numu             =", h_numu.Integral())
     print("numubar          =", h_numubar.Integral())
+    print("electron         =", h_electron.Integral())
+    print("muon             =", h_muon.Integral())
     print("flavor sum       =", h_prediction_sum.Integral())
     print(
         "flavor sum-total =",
-        h_prediction_sum.Integral() - h_mc.Integral(),
+        h_prediction_sum.Integral()
+        - h_mc.Integral(),
     )
 
-    print("\n===== PREDICTION BIN-BY-BIN CLOSURE =====")
+    print(
+        "\n===== PREDICTION BIN-BY-BIN CLOSURE ====="
+    )
 
-    for i in range(1, h_mc.GetNbinsX() + 1):
+    for i in range(
+        1,
+        h_mc.GetNbinsX() + 1,
+    ):
+
         total = h_mc.GetBinContent(i)
-        flavor_sum = h_prediction_sum.GetBinContent(i)
+
+        flavor_sum = (
+            h_prediction_sum.GetBinContent(i)
+        )
+
         diff = flavor_sum - total
 
         print(
-            "bin {:2d}: total={:12.6g} flavor_sum={:12.6g} diff={:12.6g}".format(
+            "bin {:2d}: total={:12.6g} "
+            "flavor_sum={:12.6g} "
+            "diff={:12.6g}".format(
                 i,
                 total,
                 flavor_sum,
@@ -1288,19 +1566,63 @@ def load_nue_elastic_fhc_prediction():
             )
         )
 
-        if abs(diff) > 1e-8 * max(1.0, abs(total)):
+        if (
+            abs(diff)
+            > 1e-8 * max(1.0, abs(total))
+        ):
             raise RuntimeError(
-                "Prediction flavor closure failed in bin {}".format(i)
+                "Prediction flavor closure failed "
+                "in bin {}".format(i)
             )
 
-    # -------------------------------------------------
-    # ME high-statistics templates weighted to LE
-    # -------------------------------------------------
+    # =================================================
+    # Flux-universe component closure
+    #
+    # These should close by construction because the
+    # total prediction was made from the same four
+    # flavor predictions universe by universe.
+    # =================================================
+
+    check_flux_universe_component_closure(
+        h_mc,
+        [
+            h_nue,
+            h_nuebar,
+            h_numu,
+            h_numubar,
+        ],
+        "FHC elastic total vs four flavors",
+        band_name="Flux",
+        tol=1e-8,
+        max_universes_to_print=5,
+        raise_on_failure=True,
+    )
+
+    check_flux_universe_component_closure(
+        h_mc,
+        [
+            h_electron,
+            h_muon,
+        ],
+        "FHC elastic total vs electron+muon",
+        band_name="Flux",
+        tol=1e-8,
+        max_universes_to_print=5,
+        raise_on_failure=True,
+    )
+
+    # =================================================
+    # Load high-statistics 2D oscillation templates
+    # =================================================
+
     template_file = ROOT.TFile.Open(
         LELIKE_6BIN_ELASTIC_TEMPLATE_FILE
     )
 
-    if not template_file or template_file.IsZombie():
+    if (
+        not template_file
+        or template_file.IsZombie()
+    ):
         raise RuntimeError(
             "Could not open 6-bin elastic template file: {}".format(
                 LELIKE_6BIN_ELASTIC_TEMPLATE_FILE
@@ -1331,12 +1653,37 @@ def load_nue_elastic_fhc_prediction():
         "fhc_elastic_template_numubar_raw",
     )
 
-    # Verify these before fixing reco_axis.
-    print("\nElastic template axes:")
-    print("x =", h2_nue_raw.GetXaxis().GetTitle())
-    print("y =", h2_nue_raw.GetYaxis().GetTitle())
+    # =================================================
+    # Identify reconstructed-energy axis
+    # =================================================
 
+    print("\nElastic template axes:")
+    print(
+        "x =",
+        h2_nue_raw.GetXaxis().GetTitle(),
+    )
+    print(
+        "y =",
+        h2_nue_raw.GetYaxis().GetTitle(),
+    )
+
+    # Current template definition:
+    #
+    # x = true L/E
+    # y = reconstructed electron energy
+    #
     reco_axis = "y"
+
+    # =================================================
+    # Match numerical final-bin edge
+    #
+    # The published final bin is physically 9-inf.
+    #
+    # Older templates used 120 GeV as the numerical
+    # endpoint, while the new P8 flux prediction uses
+    # 100 GeV.  We only change the numerical axis edge;
+    # no bin content is changed.
+    # =================================================
 
     for label, hist in [
         ("nue template", h2_nue_raw),
@@ -1350,6 +1697,11 @@ def load_nue_elastic_fhc_prediction():
             label,
             reco_axis,
         )
+
+    # =================================================
+    # Normalize each reco-energy slice of each flavor's
+    # L/E template to the new flux-folded prediction.
+    # =================================================
 
     h2_nue = normalize_template_reco_slices(
         h2_nue_raw,
@@ -1379,30 +1731,42 @@ def load_nue_elastic_fhc_prediction():
         reco_axis,
     )
 
+    # =================================================
+    # Check that each normalized template projects back
+    # exactly to its 1D prediction.
+    # =================================================
+
     check_template_projection(
         h2_nue,
         h_nue,
         "nue",
         reco_axis,
     )
+
     check_template_projection(
         h2_nuebar,
         h_nuebar,
         "nuebar",
         reco_axis,
     )
+
     check_template_projection(
         h2_numu,
         h_numu,
         "numu",
         reco_axis,
     )
+
     check_template_projection(
         h2_numubar,
         h_numubar,
         "numubar",
         reco_axis,
     )
+
+    # =================================================
+    # Group 2D templates for the oscillation machinery
+    # =================================================
 
     h_template_electron = h2_nue.Clone(
         "fhc_elastic_template_electron"
@@ -1416,246 +1780,106 @@ def load_nue_elastic_fhc_prediction():
     h_template_muon.SetDirectory(0)
     h_template_muon.Add(h2_numubar)
 
-    # MC display errors are not the covariance used in chi2.
-    for i in range(0, h_mc.GetNbinsX() + 2):
-        h_mc.SetBinError(i, h_data.GetBinError(i))
+    # Final grouped-template projection checks.
+    check_template_projection(
+        h_template_electron,
+        h_electron,
+        "electron flavor",
+        reco_axis,
+    )
 
-    paper_file.Close()
+    check_template_projection(
+        h_template_muon,
+        h_muon,
+        "muon flavor",
+        reco_axis,
+    )
+
+    print("\n===== NUE ELASTIC EXPOSURE CHECK =====")
+    print("Jaewon original POT =", jaewon_pot)
+    print("analysis POT        =", FHC_ANALYSIS_POT)
+    print("Jaewon scale        =", jaewon_pot_scale)
+    print("prediction POT      =", FHC_ANALYSIS_POT)
+
+    # =================================================
+    # Final diagnostic summary
+    # =================================================
+
+    print("\n===== FINAL FHC NUE ELASTIC INPUT =====")
+
+    print(
+        "Jaewon data integral      =",
+        h_data.Integral(),
+    )
+
+    print(
+        "P8 prediction integral    =",
+        h_mc.Integral(),
+    )
+
+    print(
+        "electron component        =",
+        h_electron.Integral(),
+    )
+
+    print(
+        "muon component            =",
+        h_muon.Integral(),
+    )
+
+    print(
+        "electron + muon            =",
+        h_electron.Integral()
+        + h_muon.Integral(),
+    )
+
+    print(
+        "electron template integral =",
+        h_template_electron.Integral(),
+    )
+
+    print(
+        "muon template integral     =",
+        h_template_muon.Integral(),
+    )
+
+    print(
+        "external covariance size   = "
+        "{} x {}".format(
+            cov.GetNrows(),
+            cov.GetNcols(),
+        )
+    )
+
+    # Histograms were cloned/detached above, so the files
+    # can now safely be closed.
     prediction_file.Close()
     template_file.Close()
 
     return {
         "mc": h_mc,
         "data": h_data,
+
         "electron": h_electron,
         "muon": h_muon,
+
         "nue": h_nue,
         "nuebar": h_nuebar,
         "numu": h_numu,
         "numubar": h_numubar,
+
         "template_electron": h_template_electron,
         "template_muon": h_template_muon,
+
         "template_nue": h2_nue,
         "template_nuebar": h2_nuebar,
         "template_numu": h2_numu,
         "template_numubar": h2_numubar,
+
         "cov": cov,
     }
 
 
-# def load_nue_elastic_fhc_jaewon():
-#     """
-#     Load FHC nu+e elastic sample from the paper-normalized decomposition file.
-
-#     The returned objects are:
-#       mc/data:
-#         total paper-normalized 1D spectra
-
-#       electron/muon:
-#         nue+nuebar and numu+numubar components
-
-#       template_electron/template_muon:
-#         corresponding reco Ee vs true L/E templates
-
-#       cov:
-#         published 6x6 paper covariance matrix
-#     """
-
-#     paper_file = ROOT.TFile.Open(PAPER_ELASTIC_FILE)
-#     if not paper_file or paper_file.IsZombie():
-#         raise RuntimeError("Could not open paper decomposed elastic file: {}".format(PAPER_ELASTIC_FILE))
-
-#     print("\n===== Loading FHC nu+e elastic from paper decomposition =====")
-#     print("  file =", PAPER_ELASTIC_FILE)
-
-#     h_data = get_hist_checked(
-#         paper_file,
-#         ["paper_total_nue_elastic"],
-#         "fhc_elastic_data_paper",
-#     )
-
-#     h_mc = get_hist_checked(
-#         paper_file,
-#         ["paper_decomp_sum"],
-#         "fhc_elastic_mc_paper_decomp_sum",
-#     )
-
-#     # # Use the paper total diagonal errors on the nominal/reference total.
-#     # # The full bin-to-bin covariance is stored separately in cov.
-#     # for i in range(0, h_mc.GetNbinsX() + 2):
-#     #     h_mc.SetBinError(i, h_data.GetBinError(i))
-
-#     h_nue = get_hist_checked(
-#         paper_file,
-#         ["paper_decomp_nue"],
-#         "fhc_elastic_component_nue",
-#     )
-#     h_nuebar = get_hist_checked(
-#         paper_file,
-#         ["paper_decomp_nuebar"],
-#         "fhc_elastic_component_nuebar",
-#     )
-#     h_numu = get_hist_checked(
-#         paper_file,
-#         ["paper_decomp_numu"],
-#         "fhc_elastic_component_numu",
-#     )
-#     h_numubar = get_hist_checked(
-#         paper_file,
-#         ["paper_decomp_numubar"],
-#         "fhc_elastic_component_numubar",
-#     )
-
-#     h_electron = h_nue.Clone("electron_fhc_elastic")
-#     h_electron.SetDirectory(0)
-#     h_electron.Add(h_nuebar)
-
-#     h_muon = h_numu.Clone("muon_fhc_elastic")
-#     h_muon.SetDirectory(0)
-#     h_muon.Add(h_numubar)
-
-#     h2_nue = get_hist_checked(
-#         paper_file,
-#         ["source_fhc_2d_nue"],
-#         "fhc_elastic_template_nue",
-#     )
-#     h2_nuebar = get_hist_checked(
-#         paper_file,
-#         ["source_fhc_2d_nuebar"],
-#         "fhc_elastic_template_nuebar",
-#     )
-#     h2_numu = get_hist_checked(
-#         paper_file,
-#         ["source_fhc_2d_numu"],
-#         "fhc_elastic_template_numu",
-#     )
-#     h2_numubar = get_hist_checked(
-#         paper_file,
-#         ["source_fhc_2d_numubar"],
-#         "fhc_elastic_template_numubar",
-#     )
-
-#     h_template_electron = h2_nue.Clone("fhc_elastic_template_electron")
-#     h_template_electron.SetDirectory(0)
-#     h_template_electron.Add(h2_nuebar)
-
-#     h_template_muon = h2_numu.Clone("fhc_elastic_template_muon")
-#     h_template_muon.SetDirectory(0)
-#     h_template_muon.Add(h2_numubar)
-
-#     cov = paper_file.Get("paper_covariance_matrix")
-#     if cov:
-#         cov = cov.Clone("fhc_elastic_paper_covariance_matrix")
-#         print("\nLoaded paper covariance matrix.")
-#         print("  Nrows =", cov.GetNrows())
-#         print("  Ncols =", cov.GetNcols())
-#     else:
-#         print("\nWARNING: paper_covariance_matrix not found in paper file.")
-#         cov = None
-
-#     # print_hist_bins(h_data, "FHC elastic paper total data")
-#     # print_hist_bins(h_mc, "FHC elastic paper decomposed MC sum")
-#     # print_hist_bins(h_electron, "FHC elastic electron = nue+nuebar")
-#     # print_hist_bins(h_muon, "FHC elastic muon = numu+numubar")
-
-#     # # -------------------------------------------------
-#     # # POT-scale paper nu+e result to the FHC exposure
-#     # # used by the other FHC samples in the stitched fit.
-#     # # -------------------------------------------------
-#     # pot_scale = PAPER_TO_FHC_POT_SCALE
-
-#     # print("\nScaling paper nu+e elastic sample to FHC analysis POT")
-#     # print("  paper POT        =", PAPER_NUE_ELASTIC_POT)
-#     # print("  FHC analysis POT =", FHC_ANALYSIS_POT)
-#     # print("  scale            =", pot_scale)
-
-#     # scale_hist_list(
-#     #     [
-#     #         h_data,
-#     #         h_mc,
-#     #         h_nue,
-#     #         h_nuebar,
-#     #         h_numu,
-#     #         h_numubar,
-#     #         h_electron,
-#     #         h_muon,
-#     #         h_template_electron,
-#     #         h_template_muon,
-#     #         h2_nue,
-#     #         h2_nuebar,
-#     #         h2_numu,
-#     #         h2_numubar,
-#     #     ],
-#     #     pot_scale,
-#     # )
-
-#     # # The covariance is in event-count units^2, so scale by POT^2.
-#     # cov = scale_tmatrix(cov, pot_scale)
-
-#     print("\nPaper decomposition file is already scaled to FHC analysis POT.")
-#     # print("  target FHC POT =", FHC_ANALYSIS_POT)
-#     # print("  No additional POT scaling applied in stitch_quinn.py.")
-
-#     # Make sure the nominal/reference total uses the same diagonal errors as data.
-#     # This is just for display/default histogram errors; full covariance is separate.
-#     for i in range(0, h_mc.GetNbinsX() + 2):
-#         h_mc.SetBinError(i, h_data.GetBinError(i))
-
-#     # Closure check must be built AFTER scaling.
-#     h_flavor_sum = h_electron.Clone("fhc_elastic_flavor_sum_check")
-#     h_flavor_sum.SetDirectory(0)
-#     h_flavor_sum.Add(h_muon)
-
-#     print_hist_bins(h_data, "FHC elastic paper total data, already FHC POT scaled")
-#     print_hist_bins(h_mc, "FHC elastic paper decomposed MC sum, already FHC POT scaled")
-#     print_hist_bins(h_electron, "FHC elastic electron = nue+nuebar, already FHC POT scaled")
-#     print_hist_bins(h_muon, "FHC elastic muon = numu+numubar, already FHC POT scaled")
-
-#     print("\nFHC elastic closure check:")
-#     print("  paper data integral    =", h_data.Integral())
-#     print("  paper MC integral      =", h_mc.Integral())
-#     print("  electron integral      =", h_electron.Integral())
-#     print("  muon integral          =", h_muon.Integral())
-#     print("  electron+muon integral =", h_flavor_sum.Integral())
-#     print("  e+mu - paper data      =", h_flavor_sum.Integral() - h_data.Integral())
-
-#     compare_1d_2d_template(
-#         "FHC elastic electron paper-decomp",
-#         h_electron,
-#         h_template_electron,
-#     )
-#     compare_1d_2d_template(
-#         "FHC elastic muon paper-decomp",
-#         h_muon,
-#         h_template_muon,
-#     )
-
-#     paper_file.Close()
-
-#     return {
-#         "mc": h_mc,
-#         "data": h_data,
-#         "electron": h_electron,
-#         "muon": h_muon,
-#         "template_electron": h_template_electron,
-#         "template_muon": h_template_muon,
-#         "nue": h_nue,
-#         "nuebar": h_nuebar,
-#         "numu": h_numu,
-#         "numubar": h_numubar,
-#         "template_nue": h2_nue,
-#         "template_nuebar": h2_nuebar,
-#         "template_numu": h2_numu,
-#         "template_numubar": h2_numubar,
-#         "cov": cov,
-#     }
-
-
-# def load_ccnue_fhc():
-#     type_path_map = {
-#         "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
-#         "mc":   "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
-#     }
 def load_ccnue_fhc():
     type_path_map = {
         "data": stitch_path("fhc_ccnue", "data"),
@@ -1671,9 +1895,6 @@ def load_ccnue_fhc():
 
     print_pot_scale_check("FHC CCnue", data_pot, mc_pot, standPOT)
 
-    # tuned_file = ROOT.TFile.Open(
-    #     "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_allSystematics_fullStatsFluxes_MAD.root"
-    # )
     tuned_file = ROOT.TFile.Open(
         stitch_path("fhc_ccnue", "bkgfit")
     )
@@ -1696,9 +1917,6 @@ def load_ccnue_fhc():
     print_hist_bins(h_data, "FHC CCnue bkg-subtracted data from bkgfit")
 
     # Nominal nue L/E template.
-    # template_file = ROOT.TFile.Open(
-    #     "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root"
-    # )
     template_file = ROOT.TFile.Open(
         stitch_path("fhc_ccnue", "mc")
     )
@@ -1747,10 +1965,6 @@ def load_ccnue_fhc():
     print("total selected integral =", h_template_total.Integral())
     print("signal-only integral    =", h_template.Integral())
 
-    # Swapped sample.
-    # swap_type_path_map = {
-    #     "mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_allSystematics_fullStatsFluxes_MAD.root"
-    # }
     swap_type_path_map = {
         "mc": stitch_path("fhc_ccnue", "swap_mc")
     }
@@ -1761,9 +1975,6 @@ def load_ccnue_fhc():
 
     print_pot_scale_check("FHC CCnue swap", None, swap_mc_pot, standPOT)
 
-    # swap_file = ROOT.TFile.Open(
-    #     "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_allSystematics_fullStatsFluxes_MAD.root"
-    # )
     swap_file = ROOT.TFile.Open(
         stitch_path("fhc_ccnue", "swap_mc")
     )
@@ -1881,11 +2092,6 @@ def load_ccnue_fhc():
     }
 
 
-# def load_ccnuebar_rhc():
-#     type_path_map = {
-#         "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
-#         "mc":   "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
-#     }
 def load_ccnuebar_rhc():
     type_path_map = {
         "data": stitch_path("rhc_ccnuebar", "data"),
@@ -1901,9 +2107,6 @@ def load_ccnuebar_rhc():
 
     print_pot_scale_check("RHC CCnuebar", data_pot, mc_pot, standPOT)
 
-    # tuned_file = ROOT.TFile.Open(
-    #     "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_allSystematics_fullStatsFluxes_MAD.root"
-    # )
     tuned_file = ROOT.TFile.Open(
         stitch_path("rhc_ccnuebar", "bkgfit")
     )
@@ -1925,10 +2128,6 @@ def load_ccnuebar_rhc():
     print_hist_bins(h_mc,   "RHC CCnuebar tuned MC from bkgfit")
     print_hist_bins(h_data, "RHC CCnuebar bkg-subtracted data from bkgfit")
 
-    # Nominal nuebar L/E template.
-    # template_file = ROOT.TFile.Open(
-    #     "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root"
-    # )
     template_file = ROOT.TFile.Open(
         stitch_path("rhc_ccnuebar", "mc")
     )
@@ -1977,10 +2176,6 @@ def load_ccnuebar_rhc():
     print("total selected integral =", h_template_total.Integral())
     print("signal-only integral    =", h_template.Integral())
 
-    # Swapped sample.
-    # swap_type_path_map = {
-    #     "mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_allSystematics_fullStatsFluxes_MAD.root"
-    # }
     swap_type_path_map = {
         "mc": stitch_path("rhc_ccnuebar", "swap_mc")
     }
@@ -1991,9 +2186,6 @@ def load_ccnuebar_rhc():
 
     print_pot_scale_check("RHC CCnuebar swap", None, swap_mc_pot, standPOT)
 
-    # swap_file = ROOT.TFile.Open(
-    #     "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_allSystematics_fullStatsFluxes_MAD.root"
-    # )
     swap_file = ROOT.TFile.Open(
         stitch_path("rhc_ccnuebar", "swap_mc")
     )
@@ -2079,11 +2271,6 @@ def load_ccnuebar_rhc():
     }
 
 
-# def load_ccnumu_fhc():
-#     type_path_map = {
-#         "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root",
-#         "mc":   "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root",
-#     }
 def load_ccnumu_fhc():
     type_path_map = {
         "data": stitch_path("fhc_ccnumu", "data"),
@@ -2160,11 +2347,6 @@ def load_ccnumu_fhc():
     }
 
 
-# def load_ccnumubar_rhc():
-#     type_path_map = {
-#         "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root",
-#         "mc":   "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root",
-#     }
 def load_ccnumubar_rhc():
     type_path_map = {
         "data": stitch_path("rhc_ccnumubar", "data"),
@@ -2334,6 +2516,8 @@ if __name__ == "__main__":
     n_flux_universes = {
         "p6": 100,
         "p8": 1000,
+        "p8_onlyPPFX": 1000,
+        "p8_onlyBeamFocus": 1000,
     }[input_set]
 
     sample_histogram.SetNFluxUniverses(n_flux_universes)
@@ -2541,12 +2725,12 @@ if __name__ == "__main__":
 
     # print("Wrote stitched CSV outputs to", csv_dir)
 
-    # stitched.Write(OUTROOT)
-    # print("Wrote stitched file to", OUTROOT)
+    stitched.Write(OUTROOT)
+    print("Wrote stitched file to", OUTROOT)
 
     # c = ROOT.TCanvas("c", "c", 900, 700)
     # c.SetLogy()
     # stitched.mc_hist.SetLineWidth(2)
     # stitched.mc_hist.Draw("HIST")
     # stitched.data_hist.Draw("E1 SAME")
-    # c.Print("stitched_test.png")
+    # c.Print("stitched_{}.png".format(hist_config_tag))

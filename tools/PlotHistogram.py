@@ -38,9 +38,10 @@ ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 legend_text_size = .035
 
 class PlottingContainer:
-    def __init__(self,tag,histogram):
+    def __init__(self, tag, histogram, hist_config="HIST_CONFIG.json"):
         self.tag = tag
         self.histogram = histogram
+        self.hist_config = hist_config
         self.exclude = ""
         self.lam = 1
         self.flux_solution = None
@@ -92,14 +93,19 @@ class PlottingContainer:
 
         import json
 
-        with open("HIST_CONFIG.json", "r") as f:
+        with open(self.hist_config, "r") as f:
             cfg = json.load(f)
 
         masked = []
 
         for sample, local_bins in mask_spec.items():
             if sample not in cfg:
-                print("WARNING: mask sample {} not found in HIST_CONFIG.json".format(sample))
+                print(
+                    "WARNING: sample {} not found in {}".format(
+                        sample,
+                        self.hist_config,
+                    )
+                )
                 continue
 
             start = cfg[sample]["start"]  # zero-based
@@ -147,7 +153,10 @@ class PlottingContainer:
             if root_cov is None:
                 continue
 
-            inds = self.histogram.GetExternalCovarianceBinIndices(sample_name)
+            inds = self.histogram.GetExternalCovarianceBinIndices(
+                sample_name,
+                hist_config=self.hist_config,
+            )
             if len(inds) == 0:
                 continue
 
@@ -234,7 +243,6 @@ class PlottingContainer:
         mg.Add(g4)
 
         histogram = copy.deepcopy(self.histogram)
-        # statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
         statistic = Statistics(
             histogram,
             exclude=self.exclude,
@@ -242,7 +250,8 @@ class PlottingContainer:
             mask_spec=self.mask_spec,
             profile_only=self.profile_only,
             profile_n_universes=self.profile_n_universes,
-        )        
+            hist_config=self.hist_config,
+        )      
         statistic.Chi2DataMC(marginalize=True)
 
         #for i,exclude in enumerate(self.exclude_samples):
@@ -322,7 +331,6 @@ class PlottingContainer:
         nue_fluxes = []
 
         histogram = copy.deepcopy(self.histogram)
-        # statistic = Statistics(histogram,exclude=self.exclude,lam=self.lam)
         statistic = Statistics(
             histogram,
             exclude=self.exclude,
@@ -330,17 +338,10 @@ class PlottingContainer:
             mask_spec=self.mask_spec,
             profile_only=self.profile_only,
             profile_n_universes=self.profile_n_universes,
-        )        
+            hist_config=self.hist_config,
+        )    
         statistic.Chi2DataMC(marginalize=True)
 
-        #for i,exclude in enumerate(self.exclude_samples):
-        #    new_numu = numu.Clone()
-        #    new_nue = nue.Clone()
-        #    statistic.GetFluxFitter().ReweightToFluxSolution(new_numu)
-        #    statistic.GetFluxFitter().ReweightToFluxSolution(new_nue)
-
-        #    nue_fluxes.append(new_nue)
-        #    numu_fluxes.append(new_numu)
         new_numu = numu.Clone()
         new_nue = nue.Clone()
         statistic.GetFluxFitter().ReweightToFluxSolution(new_numu)
@@ -511,7 +512,7 @@ class PlottingContainer:
         def print_sample_ratio(label, h_ref, h_test):
             print("\n===== {} =====".format(label))
 
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             for sample, info in cfg.items():
@@ -534,7 +535,7 @@ class PlottingContainer:
         def print_flux_shift_by_sample(label, h_before, h_after):
             print("\n===== {} =====".format(label))
 
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             for sample, info in cfg.items():
@@ -623,15 +624,14 @@ class PlottingContainer:
         print("mean |stored/recomputed - 1| =", np.mean(np.abs(ratio - 1.0)))
 
 
-
-        # statistic = Statistics(histogram, exclude=exclude, lam=lam)
         statistic = Statistics(
             histogram,
-            exclude=exclude,
-            lam=lam,
+            exclude=self.exclude,
+            lam=self.lam,
             mask_spec=self.mask_spec,
             profile_only=self.profile_only,
             profile_n_universes=self.profile_n_universes,
+            hist_config=self.hist_config,
         )
 
 
@@ -698,38 +698,6 @@ class PlottingContainer:
             )
             plot_texts.append(mask_label)
 
-        # statistic = Statistics(histogram, exclude=exclude, lam=lam)
-
-        # chi2_model, model_pen = statistic.Chi2DataMC(
-        #     marginalize=useMarg,
-        #     useOsc=True,
-        #     usePseudo=usePseudo
-        # )
-        # chi2_null, null_pen = statistic.Chi2DataMC(
-        #     marginalize=useMarg,
-        #     usePseudo=usePseudo
-        # )
-
-        # if useMarg:
-        #     null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f} + {:.2f}".format(
-        #         chi2_null - null_pen, null_pen
-        #     )
-        #     osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f} + {:.2f}".format(
-        #         chi2_model - model_pen, model_pen
-        #     )
-        # else:
-        #     null_chi2_text = "Null Hyp. #chi^{{2}} = {:.2f}".format(chi2_null)
-        #     osc_chi2_text = "Osc. Model #chi^{{2}} = {:.2f}".format(chi2_model)
-
-        # plot_texts = [
-        #     null_chi2_text,
-        #     osc_chi2_text,
-        #     "#Delta m^{2} = " + "{}".format(parameters["m"]) + " eV^{2}",
-        #     "|U_{e4}|^{2} = " + "{}".format(parameters["ue4"]),
-        #     "|U_{#mu4}|^{2} = " + "{:.6f}".format(parameters["umu4"]),
-        #     "|U_{#tau4}|^{2} = " + "{}".format(parameters["utau4"]),
-        # ]
-
         h_null = histogram.GetMCHistogram()
         h_osc = histogram.GetOscillatedHistogram()
         h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
@@ -739,13 +707,6 @@ class PlottingContainer:
         h_osc_raw.SetLineColor(ROOT.kOrange + 7)
         h_osc_raw.SetLineStyle(2)
         h_osc_raw.SetLineWidth(3)
-
-
-        # print_sample_ratio(
-        #     "RAW BF oscillated / RAW null",
-        #     h_null,
-        #     h_osc_raw
-        # )
 
 
         def build_A_from_hist_flux_band(hist, band_name="Flux"):
@@ -770,7 +731,7 @@ class PlottingContainer:
             ))
 
             import json
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             # Map global zero-based bin -> position inside sliced A
@@ -825,12 +786,13 @@ class PlottingContainer:
             # Need same bin selection used inside the flux solve.
             # If your FluxFitter has a getter for sliceInds, use that.
             # Otherwise reconstruct it exactly the same way as FluxFitter.
-            sliceInds = GetSliceIndices("HIST_CONFIG.json", exclude, histogram.keys)
-
-            # If you have masking implemented in Statistics/FluxFitter, apply the same mask here.
-            if self.mask_spec is not None:
-                masked = set(self.mask_bins)
-                sliceInds = [i for i in sliceInds if i not in masked]
+            sliceInds = GetFluxSolveBinIndices(
+                histogram.keys,
+                exclude,
+                profile_only=self.profile_only,
+                mask_bins=self.mask_bins,
+                hist_config=self.hist_config,
+            )
 
             A_stored = histogram.GetAMatrix()
 
@@ -889,23 +851,6 @@ class PlottingContainer:
                 }
             )
 
-
-
-
-        # data = np.array(h_data)[1:-1]
-        # mc_null = np.array(h_prof)[1:-1]
-        # mc_bf = np.array(h_osc)[1:-1]
-
-        # invCov = histogram.GetInverseCovarianceMatrix(sansFlux=True)
-
-        # diff_null = data - mc_null
-        # diff_bf = data - mc_bf
-
-        # q_null = diff_null * (invCov @ diff_null)
-        # q_bf = diff_bf * (invCov @ diff_bf)
-
-        # dq = q_null - q_bf
-
         def print_bf_pull_bins(label, h_data, h_null_model, h_bf_model, invCov, max_bins=20):
             data = np.array(h_data)[1:-1]
             mc_null = np.array(h_null_model)[1:-1]
@@ -921,7 +866,7 @@ class PlottingContainer:
             import json
             sample_ranges = []
             try:
-                with open("HIST_CONFIG.json", "r") as f:
+                with open(self.hist_config, "r") as f:
                     cfg = json.load(f)
                 for sample, info in cfg.items():
                     sample_ranges.append((sample, info["start"], info["end"]))
@@ -976,7 +921,7 @@ class PlottingContainer:
         def print_ratio_bins_table(label, h_data, h_raw_null, h_prof_null, h_raw_bf, h_prof_bf):
             print("\n===== {} =====".format(label))
 
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             ratio_samples = [s for s in cfg.keys() if "ratio" in s]
@@ -1104,7 +1049,7 @@ class PlottingContainer:
             cov = np.linalg.pinv(invCov)
             sigma = np.sqrt(np.maximum(np.diag(cov), 0.0))
 
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             for sample in ["fhc_ratio", "rhc_ratio"]:
@@ -1141,7 +1086,7 @@ class PlottingContainer:
             import json
             import numpy as np
 
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             # Use diagonal errors from the covariance being used for the plotted/profiled comparison.
@@ -1162,7 +1107,12 @@ class PlottingContainer:
 
             for sample in samples_to_print:
                 if sample not in cfg:
-                    print("WARNING: sample {} not found in HIST_CONFIG.json".format(sample))
+                    print(
+                        "WARNING: sample {} not found in {}".format(
+                            sample,
+                            self.hist_config,
+                        )
+                    )
                     continue
 
                 start = cfg[sample]["start"] + 1  # ROOT bin index
@@ -1207,69 +1157,6 @@ class PlottingContainer:
                         )
                     )
 
-
-
-        # print_bf_pull_bins(
-        #     "raw BF vs raw null",
-        #     h_data,
-        #     h_null,
-        #     h_osc_raw,
-        #     histogram.GetInverseCovarianceMatrix(sansFlux=False),
-        #     max_bins=20
-        # )
-
-        # if useMarg and h_prof is not None:
-        #     print_sample_ratio(
-        #         "PROFILED null / RAW null",
-        #         h_null,
-        #         h_prof
-        #     )
-
-        #     print_sample_ratio(
-        #         "PROFILED BF / RAW null",
-        #         h_null,
-        #         h_osc
-        #     )
-
-        #     print_sample_ratio(
-        #         "PROFILED BF / PROFILED null",
-        #         h_prof,
-        #         h_osc
-        #     )
-
-        #     print_flux_shift_by_sample(
-        #         "NULL flux shift: profiled null - raw null",
-        #         h_null,
-        #         h_prof
-        #     )
-
-        #     print_flux_shift_by_sample(
-        #         "BF flux shift: profiled BF - raw BF",
-        #         h_osc_raw,
-        #         h_osc
-        #     )
-
-        #     null_a = statistic.GetFluxFitter(useOsc=False).GetFluxSolution()
-        #     osc_a  = statistic.GetFluxFitter(useOsc=True).GetFluxSolution()
-
-        #     print("\n===== flux solution comparison =====")
-        #     print("lambda          =", lam)
-        #     print("null penalty    =", np.dot(null_a, null_a) * lam)
-        #     print("BF penalty      =", np.dot(osc_a, osc_a) * lam)
-        #     print("|null a|        =", np.linalg.norm(null_a))
-        #     print("|BF a|          =", np.linalg.norm(osc_a))
-        #     print("|BF-null a|     =", np.linalg.norm(osc_a - null_a))
-        #     print("max |BF-null a| =", np.max(np.abs(osc_a - null_a)))
-
-
-        #     print_bf_pull_bins(
-        #         "profiled BF vs profiled null",
-        #         h_data,
-        #         h_prof,
-        #         h_osc,
-        #         histogram.GetInverseCovarianceMatrix(sansFlux=True),
-        #         max_bins=20
-        #     )
         if useMarg and h_prof is not None:
             print_ratio_bins_table(
                 "all ratio bins: data, raw null, green profiled null, raw BF, blue profiled BF",
@@ -1382,20 +1269,6 @@ class PlottingContainer:
         h_osc.Draw("hist same")
         h_data.Draw("same")
 
-
-
-        # top_text = "#Delta m^{2}=" + "{:.1f}".format(parameters["m"]) + " |U_{e4}|^{2}=" + "{:.4f}".format(parameters["ue4"])
-        # bot_text = "|U_{#mu4}|^{2}=" + "{:.5f}".format(parameters["umu4"]) + " |U_{#tau4}|^{2}=" + "{:.1f}".format(parameters["utau4"])
-        # header = "#splitline{%s}{%s}" % (top_text, bot_text)
-        # MNVPLOTTER.AddPlotLabel(header, .35, .25)
-
-        # profile_label = "Flux profile: include ratio" if exclude in [None, "", "none"] else "Flux profile: exclude {}".format(exclude)
-        # MNVPLOTTER.AddPlotLabel(profile_label, .68, .30, 0.03)
-        # if self.mask_spec is not None:
-        #     mask_label = "Masked bins: " + ", ".join(
-        #         ["{} {}".format(k, v) for k, v in self.mask_spec.items()]
-        #     )
-        #     MNVPLOTTER.AddPlotLabel(mask_label, .68, .25, 0.03)
         bf_label = (
             "#Delta m^{{2}} = {:.1f} eV^{{2}}, "
             "|U_{{e4}}|^{{2}} = {:.3f}, "
@@ -1455,44 +1328,6 @@ class PlottingContainer:
         leg.AddEntry(h_osc, leg_text, "l")
 
         leg.Draw()
-        # leg = ROOT.TLegend(.28, .35)
-        # # # Legend in top-right corner of the top pad
-        # # leg = ROOT.TLegend(0.55, 0.6, 0.9, 0.9)
-        # # leg.SetBorderSize(0)
-        # # leg.SetFillStyle(0)
-        # # leg.SetTextSize(0.028)
-        # leg.AddEntry(h_data, "Data", "p")
-
-        # top_text = "Null Hypothesis"
-        # if useMarg:
-        #     bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
-        #         chi2_null - null_pen, null_pen
-        #     )
-        # else:
-        #     bot_text = "#chi^{{2}}={:.2f}".format(chi2_null)
-        # leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
-        # leg.AddEntry(h_null, leg_text, "l")
-
-        # if useMarg and h_prof is not None:
-        #     top_text = "Null Hypothesis Profiled"
-        #     bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
-        #         chi2_null - null_pen, null_pen
-        #     )
-        #     leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
-        #     leg.AddEntry(h_prof, leg_text, "l")
-
-        # top_text = "Best Osc. Fit"
-        # if useMarg:
-        #     bot_text = "#chi^{{2}}={:.2f} + {:.2f} penalty".format(
-        #         chi2_model - model_pen, model_pen
-        #     )
-        # else:
-        #     bot_text = "#chi^{{2}}={:.2f}".format(chi2_model)
-
-        # leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
-        # leg.AddEntry(h_osc, leg_text, "l")
-
-        # leg.Draw()
 
         nullRatio = h_data.Clone()
         oscRatio = h_osc.Clone()
@@ -1528,10 +1363,6 @@ class PlottingContainer:
             ratio_mode=True,
             set_content_to_one=True,
         )
-        # nullErrors = h_null.GetTotalError(False, True, False)
-        # for whichBin in range(0, nullErrors.GetXaxis().GetNbins() + 1):
-        #     nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
-        #     nullErrors.SetBinContent(whichBin, 1)
 
         nullRatio.SetLineColor(ROOT.kBlack)
         nullRatio.SetLineWidth(3)
@@ -1568,21 +1399,6 @@ class PlottingContainer:
         straightLine.SetLineWidth(2)
         straightLine.SetFillColor(0)
         straightLine.Draw("HIST SAME")
-        # nullRatio.Draw("same")
-        # oscRawRatio.Draw("same hist l")
-        # oscRatio.Draw("same hist l")
-        # if profRatio is not None:
-        #     profRatio.Draw("same hist l")
-
-        # straightLine = nullErrors.Clone()
-        # straightLine.SetLineColor(ROOT.kRed)
-        # straightLine.SetLineWidth(2)
-        # straightLine.SetFillColor(0)
-        # straightLine.Draw("HIST SAME")
-
-        # mask_boxes = []
-        # if len(self.mask_bins) > 0:
-        #     mask_boxes = draw_masked_bin_boxes(self.mask_bins, nullErrors, 0.5, 1.5)
 
         top.cd()
         tag = "_{}".format(plot_tag) if plot_tag else ""
@@ -1615,7 +1431,7 @@ class PlottingContainer:
             print("WARNING: plotSamples=True currently expects flux fitters. Skipping sample plots because useMarg=False.")
             return
 
-        plots = histogram.keys
+
         histogram = copy.deepcopy(self.histogram)
 
         nullSolution = statistic.GetFluxFitter(useOsc=False).GetFluxSolution()
@@ -1627,8 +1443,27 @@ class PlottingContainer:
         data_hists = []
         titles = []
 
-        plots = [item for item in plots if "nue" not in item]
-        plots.insert(3, plots.pop(6))
+        if "fhc_ratio" in histogram.keys:
+            desired_plots = [
+                "fhc_elastic",
+                "fhc_ratio",
+                "rhc_ratio",
+                "fhc_numu_selection",
+                "rhc_numu_selection",
+            ]
+        else:
+            desired_plots = [
+                "fhc_elastic",
+                "fhc_nue_selection",
+                "rhc_nue_selection",
+                "fhc_numu_selection",
+                "rhc_numu_selection",
+            ]
+
+        plots = [
+            plot for plot in desired_plots
+            if plot in histogram.keys
+        ]
 
         for i, plot in enumerate(plots):
             title = histogram.titles[plot]
@@ -1777,524 +1612,3 @@ class PlottingContainer:
                 name, tag, parameters["m"], parameters["ue4"], parameters["umu4"]
             )
         )
-    # def PlotFluxMarginalizationEffects(self,parameters,name="",plotSamples=False,usePseudo=False):
-    #     histogram = copy.deepcopy(self.histogram)
-    #     histogram.SetPlottingStyle()
-        
-    #     invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
-
-    #     nullSolution,nullPen = FluxSolution(histogram,invCov=invCov,usePseudo=usePseudo)
-    #     oscSolution,oscPen   = FluxSolution(histogram,invCov=invCov,useOsc=True,usePseudo=usePseudo)
-
-    #     nullSols = ROOT.TH1D("null_solutions","Null Solutions",20,-1,1)
-    #     oscSols = ROOT.TH1D("osc_solutions","Best Fit Solutions",20,-1,1)
-    #     for i in range(len(nullSolution)):
-    #         nullSols.Fill(nullSolution[i])
-    #         oscSols.Fill(oscSolution[i])
-
-    #     nullSolution = nullSolution/np.max(nullSolution)
-    #     oscSolution = oscSolution/np.max(oscSolution)
-
-    #     chi2_null_marg,null_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,usePseudo=usePseudo)
-    #     chi2_model_marg,model_pen = Chi2DataMC(histogram,invCov=invCov,marginalize=True,useOsc=True,usePseudo=usePseudo)
-    #     chi2_null,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,usePseudo=usePseudo)
-    #     chi2_model,_ = Chi2DataMC(histogram,invCov=invCov,marginalize=False,useOsc=True,usePseudo=usePseudo)
-    #     h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
-
-    #     h_osc = histogram.GetOscillatedHistogram()
-    #     _,_ = Chi2DataMC(histogram,invCov=invCov,useOsc=True,setHists=True,marginalize=True,usePseudo=usePseudo)
-    #     h_osc_marg = histogram.GetOscillatedHistogram()
-    #     h_null = histogram.GetMCHistogram()
-    #     _,_ = Chi2DataMC(histogram,invCov=invCov,setHists=True,marginalize=True,usePseudo=usePseudo)
-    #     h_null_marg = histogram.GetMCHistogram()
-
-    #     c1 = ROOT.TCanvas("CMarg", "canvas", 1024, 640)
-    #     c1.SetFillStyle(4000)
-
-    #     lMargin = 0.12
-    #     rMargin = 0.05
-    #     bMargin = 0.15
-    #     tMargin = 0.05
-
-    #     c1.Divide(1,3)
-
-    #     # ------------------------------------ First Pad -----------------------------------------
-    #     c1.cd(1)
-    #     pad = ROOT.gPad
-    #     pad.SetMargin(lMargin, rMargin, bMargin, tMargin)
-
-    #     nullSols.GetYaxis().SetTitle("Frequency")
-    #     nullSols.GetXaxis().SetTitle("Marginalization Solution Pulls")
-    #     RatioAxis(nullSols,MNVPLOTTER)
-
-    #     nullSols.SetLineWidth(2)
-    #     nullSols.SetLineColor(ROOT.kRed)
-    #     oscSols.SetLineWidth(2)
-    #     oscSols.SetLineColor(ROOT.kBlue)
-
-    #     nullSols.Draw("hist")
-    #     oscSols.Draw("hist same")
-
-    #     leg1 = ROOT.TLegend(.3,.2)
-    #     leg1.AddEntry(nullSols,"Null Hypothesis Pulls","l")
-    #     leg1.AddEntry(oscSols,"Osc. Model Pulls","l")
-    #     leg1.Draw()
-
-    #     # ------------------------------------ Second Pad -----------------------------------------
-    #     # plot mc - flux universe / mc
-
-    #     c1.cd(2)
-    #     pad = ROOT.gPad
-    #     pad.SetMargin(lMargin, rMargin, bMargin, tMargin)
-
-    #     straightLine = h_null.Clone()
-    #     for whichBin in range(0, straightLine.GetXaxis().GetNbins()+1): 
-    #         straightLine.SetBinContent(whichBin, 0)
-
-    #     RatioAxis(straightLine,MNVPLOTTER)
-    #     straightLine.SetMinimum(-.3)
-    #     straightLine.SetMaximum(.3)
-    #     straightLine.GetYaxis().SetTitle("#frac{Universe - CV}{CV}")
-
-    #     straightLine.Draw("hist l")
-
-    #     cv = h_null.GetCVHistoWithError()
-    #     h_test = h_null.Clone()
-    #     errband = h_test.GetVertErrorBand("Flux")
-    #     for i in range(errband.GetNHists()):
-    #         universe = errband.GetHist(i)
-    #         universe.Add(cv,-1)
-    #         universe.Divide(universe,cv)
-    #         universe.SetMarkerSize(0)
-    #         universe.DrawClone("same hist l")
-
-    #     straightLine.Draw("hist l same")
-
-    #     leg2 = ROOT.TLegend(.3,.2)
-    #     leg2.AddEntry(straightLine,"Central Value","l")
-    #     #leg2.Draw()
-
-    #     # ------------------------------------ Third Pad -----------------------------------------
-    #     # plot solution *  [mc - flux universe / mc ]
-
-    #     c1.cd(3)
-    #     pad = ROOT.gPad
-    #     pad.SetMargin(lMargin, rMargin, bMargin, tMargin)
-
-    #     line = straightLine.Clone()
-    #     line.GetYaxis().SetTitle("#frac{solution#times(Universe - CV)}{CV}")
-    #     line.Draw("hist l")
-
-    #     cv = h_null.GetCVHistoWithError()
-    #     errband = h_null.GetVertErrorBand("Flux")
-    #     for i in range(errband.GetNHists()):
-    #         universe = errband.GetHist(i)
-    #         universe.Add(cv,-1)
-    #         universe.Scale(nullSolution[i])
-    #         universe.Divide(universe,cv)
-    #         universe.SetMarkerSize(0)
-    #         universe.DrawClone("same hist l")
-
-    #     line.Draw("hist l same")
-
-    #     leg3 = ROOT.TLegend(.3,.2)
-    #     leg3.AddEntry(straightLine,"Central Value","l")
-    #     leg3.Draw()
-
-    #     c1.Print("plots/{}_marg_effects_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
-
-    # def PlotFluxProfilingEffects(self,name=""):
-    #     histogram = copy.deepcopy(self.histogram)
-    #     exclude = self.exclude
-    #     lam = self.lam
-
-    #     statistic = Statistics(histogram,exclude=exclude,lam=lam)
-    #     chi2_model,model_pen = statistic.Chi2DataMC(marginalize=True)
-    #     chi2_null,null_pen = statistic.Chi2DataMC(marginalize=False)
-
-    #     h_null = histogram.GetMCHistogram()
-    #     h_data = histogram.GetDataHistogram()
-
-    #     h_prof = histogram.GetMCHistogram()
-    #     statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(h_prof)
-
-    #     c1 = ROOT.TCanvas()
-    #     margin = .12
-    #     bottomFraction = .2
-    #     overall = ROOT.TCanvas("Data/MC")
-    #     top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-    #     bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
-
-    #     top.Draw()
-    #     bottom.Draw()
-
-    #     top.cd()
-    #     top.SetLogy()
-        
-    #     h_null.SetTitle(name)
-    #     h_prof.SetLineColor(ROOT.kBlue)
-        
-    #     h_null.Draw("hist")
-    #     h_prof.Draw("hist same")
-    #     h_data.Draw("same")
-
-    #     null = h_null.GetCVHistoWithError()
-    #     null.SetLineColor(ROOT.kRed)
-    #     null.SetLineWidth(2)
-    #     null.SetMarkerStyle(0)
-    #     null.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
-    #     null.Draw("E2 SAME")
-
-    #     h_prof.PopVertErrorBand("Flux")
-    #     prof = h_prof.GetCVHistoWithError()
-    #     prof.SetLineColor(ROOT.kBlue)
-    #     prof.SetLineWidth(2)
-    #     prof.SetMarkerStyle(0)
-    #     prof.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
-    #     prof.Draw("E2 SAME")
-
-    #     leg = ROOT.TLegend(.28,.35)
-    #     leg.AddEntry(h_data,"Data","p")
-    #     top_text = "Null Hypothesis"
-    #     bot_text = "#chi^{2}="+"{:.2f}".format(chi2_null)
-    #     leg_text = "#splitline{%s}{%s}" % (top_text,bot_text)
-    #     leg.AddEntry(h_null,leg_text,"l")
-    #     top_text = "Profiled Flux"
-    #     bot_text = "#chi^{2}="+"{:.2f} + {:.2f} penalty".format(chi2_model-model_pen,model_pen)
-    #     leg_text = "#splitline{%s}{%s}" % (top_text,bot_text)
-    #     leg.AddEntry(h_prof,leg_text,"l")
-    #     leg.Draw()
-
-    #     nullRatio =  h_data.Clone()
-    #     profRatio =  h_prof.Clone()
-
-    #     nullRatio.Divide(nullRatio,h_null)
-    #     profRatio.Divide(profRatio, h_null)
-
-    #     bottom.cd()
-    #     bottom.SetTopMargin(0)
-    #     bottom.SetBottomMargin(0.3)
-
-    #     nullErrors = h_null.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-    #     for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
-    #         nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
-    #         nullErrors.SetBinContent(whichBin, 1)
-    #     profErrors = h_prof.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-    #     for whichBin in range(0, profErrors.GetXaxis().GetNbins()+1): 
-    #         profErrors.SetBinError(whichBin, max(profErrors.GetBinContent(whichBin), 1e-9))
-    #         profErrors.SetBinContent(whichBin,profRatio.GetBinContent(whichBin))
-
-    #     nullRatio.SetLineColor(ROOT.kBlack)
-    #     nullRatio.SetLineWidth(3)
-
-    #     #Error envelope for the MC
-    #     nullErrors.SetLineWidth(0)
-    #     nullErrors.SetMarkerStyle(0)
-    #     nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
-    #     nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
-    #     RatioAxis(nullErrors,MNVPLOTTER)
-    #     nullErrors.GetXaxis().SetTitle("Bin Number")
-    #     nullErrors.SetMinimum(.7)
-    #     nullErrors.SetMaximum(1.3)
-    #     profErrors.SetLineWidth(0)
-    #     profErrors.SetMarkerStyle(0)
-    #     profErrors.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
-    #     nullErrors.Draw("E2")
-    #     profErrors.Draw("E2 same")
-
-    #     #Draw the data ratios
-    #     nullRatio.Draw("same")
-    #     profRatio.Draw('same hist l')
-
-    #     #Draw a flat line at 1 for profRatio of MC to itself
-    #     straightLine = nullErrors.Clone()
-    #     straightLine.SetLineColor(ROOT.kRed)
-    #     straightLine.SetLineWidth(2)
-    #     straightLine.SetFillColor(0)
-    #     straightLine.Draw("HIST SAME")
-
-    #     top.cd()
-
-    #     overall.Print("plots/{}_stitched.png".format(name))
-
-    # def PlotOscillationEffects(self,parameters,name="",useMarg=True,plotSamples=False,usePseudo=False):
-    #     histogram = copy.deepcopy(self.histogram)
-    #     exclude = self.exclude
-    #     lam = self.lam
-
-    #     statistic = Statistics(histogram,exclude=exclude,lam=lam)
-    #     chi2_model,model_pen = statistic.Chi2DataMC(marginalize=useMarg,useOsc=True,usePseudo=usePseudo)
-    #     chi2_null,null_pen = statistic.Chi2DataMC(marginalize=useMarg,usePseudo=usePseudo)
-
-    #     plot_texts = ["Null Hyp. #chi^{2} = "+"{:.2f} + {:.2f}".format(chi2_null-null_pen,null_pen),
-    #             "Osc. Model #chi^{2} = "+"{:.2f} + {:.2f}".format(chi2_model-model_pen,model_pen),
-    #             "#Delta m^{2} = "+"{}".format(parameters["m"])+" eV^{2}",
-    #             "|U_{e4}|^{2} = "+"{}".format(parameters["ue4"]),
-    #             "|U_{#mu4}|^{2} = "+"{:.6f}".format(parameters["umu4"]),
-    #             "|U_{#tau4}|^{2} = "+"{}".format(parameters["utau4"])
-    #             ]
-
-    #     h_null = histogram.GetMCHistogram()
-    #     h_osc = histogram.GetOscillatedHistogram()
-    #     h_data = histogram.GetPseudoHistogram() if usePseudo else histogram.GetDataHistogram()
-    #     h_prof = h_null.Clone()
-    #     h_prof.SetLineColor(ROOT.kGreen)
-    #     statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(h_prof)
-    #     statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(h_osc)
-
-    #     c1 = ROOT.TCanvas()
-    #     margin = .12
-    #     bottomFraction = .2
-    #     overall = ROOT.TCanvas("Data/MC")
-    #     top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-    #     bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
-
-    #     top.Draw()
-    #     bottom.Draw()
-
-    #     top.cd()
-    #     top.SetLogy()
-        
-    #     h_null.SetTitle(name)
-        
-    #     h_null.Draw("hist")
-    #     h_prof.Draw("hist")
-    #     h_osc.Draw("hist same")
-    #     h_data.Draw("same")
-
-    #     h_null.PopVertErrorBand("Flux")
-    #     null = h_null.GetCVHistoWithError()
-    #     null.SetLineColor(ROOT.kRed)
-    #     null.SetLineWidth(2)
-    #     null.SetMarkerStyle(0)
-    #     null.SetFillColorAlpha(ROOT.kPink + 1, 0.3)
-    #     null.Draw("E2 SAME")
-
-    #     h_osc.PopVertErrorBand("Flux")
-    #     osc = h_osc.GetCVHistoWithError()
-    #     osc.SetLineColor(ROOT.kBlue)
-    #     osc.SetLineWidth(2)
-    #     osc.SetMarkerStyle(0)
-    #     osc.SetFillColorAlpha(ROOT.kBlue + 1, 0.3)
-    #     osc.Draw("E2 SAME")
-
-    #     top_text = "#Delta m^{2}="+"{:.1f}".format(parameters["m"])+" |U_{e4}|^{2}="+"{:.4f}".format(parameters["ue4"])
-    #     bot_text = "|U_{#mu4}|^{2}="+"{:.5f}".format(parameters["umu4"])+" |U_{#tau4}|^{2}="+"{:.1f}".format(parameters["utau4"])
-    #     header = "#splitline{%s}{%s}" % (top_text,bot_text)
-    #     MNVPLOTTER.AddPlotLabel(header,.35,.25)
-
-    #     leg = ROOT.TLegend(.28,.35)
-
-    #     leg.AddEntry(h_data,"Data","p")
-    #     top_text = "Null Hypothesis"
-    #     bot_text = "#chi^{2}="+"{:.2f} + {:.2f} penalty".format(chi2_null-null_pen,null_pen)
-    #     leg_text = "#splitline{%s}{%s}" % (top_text,bot_text)
-    #     leg.AddEntry(h_null,leg_text,"l")
-    #     top_text = "Best Osc. Fit"
-    #     bot_text = "#chi^{2}="+"{:.2f} + {:.2f} penalty".format(chi2_model-model_pen,model_pen)
-    #     leg_text = "#splitline{%s}{%s}" % (top_text,bot_text)
-    #     leg.AddEntry(h_osc,leg_text,"l")
-    #     leg.Draw()
-
-    #     nullRatio =  h_data.Clone()
-    #     oscRatio =  h_osc.Clone()
-    #     profRatio = h_prof.Clone()
-
-    #     nullRatio.Divide(nullRatio,h_null)
-    #     oscRatio.Divide(oscRatio, h_null)
-    #     profRatio.Divide(profRatio, h_null)
-
-    #     bottom.cd()
-    #     bottom.SetTopMargin(0)
-    #     bottom.SetBottomMargin(0.3)
-
-    #     nullErrors = h_null.GetTotalError(False, True, False) #The second "true" makes this fractional error, the third "true" makes this cov area normalized
-    #     for whichBin in range(0, nullErrors.GetXaxis().GetNbins()+1): 
-    #         nullErrors.SetBinError(whichBin, max(nullErrors.GetBinContent(whichBin), 1e-9))
-    #         nullErrors.SetBinContent(whichBin, 1)
-
-    #     nullRatio.SetLineColor(ROOT.kBlack)
-    #     nullRatio.SetLineWidth(3)
-
-    #     profRatio.SetLineWidth(3)
-
-    #     #Error envelope for the MC
-    #     nullErrors.SetLineWidth(0)
-    #     nullErrors.SetMarkerStyle(0)
-    #     nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
-    #     nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
-    #     RatioAxis(nullErrors,MNVPLOTTER)
-    #     nullErrors.GetXaxis().SetTitle("Bin Number")
-    #     nullErrors.SetMinimum(.7)
-    #     nullErrors.SetMaximum(1.3)
-    #     nullErrors.Draw("E2")
-
-    #     #Draw the data ratios
-    #     nullRatio.Draw("same")
-    #     oscRatio.Draw('same hist l')
-    #     profRatio.Draw("same hist l")
-
-    #     #Draw a flat line at 1 for oscRatio of MC to itself
-    #     straightLine = nullErrors.Clone()
-    #     straightLine.SetLineColor(ROOT.kRed)
-    #     straightLine.SetLineWidth(2)
-    #     straightLine.SetFillColor(0)
-    #     straightLine.Draw("HIST SAME")
-
-    #     top.cd()
-
-    #     overall.Print("plots/{}_stitched_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))
-
-    #     if not plotSamples:
-    #         return
-
-    #     plots = histogram.keys
-    #     histogram = copy.deepcopy(self.histogram)
-    #     nullSolution = statistic.GetFluxFitter(useOsc=False).GetFluxSolution()
-    #     oscSolution = statistic.GetFluxFitter(useOsc=True).GetFluxSolution()
-    #     #plots.append("fhc_ratio")
-    #     #plots.append("rhc_ratio")
-    #     #histogram.titles["fhc_ratio"] = "FHC CC #nu_{#mu}/#nu_{e} Ratio"
-    #     #histogram.titles["rhc_ratio"] = "RHC CC anti #nu_{#mu}/#nu_{e} Ratio"
-
-    #     mc_hists = []
-    #     null_hists = []
-    #     osc_hists = []
-    #     data_hists = []
-    #     titles = []
-
-    #     plots = [item for item in plots if "nue" not in item]
-    #     plots.insert(3, plots.pop(6))
-
-    #     for i,plot in enumerate(plots):
-    #         title = histogram.titles[plot]
-    #         titles.append(title)
-    #         margin = .12
-    #         bottomFraction = .2
-    #         overall = ROOT.TCanvas(plot)
-    #         top = ROOT.TPad("DATAMC", "DATAMC", 0, bottomFraction, 1, 1)
-    #         bottom = ROOT.TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction+margin)
-
-    #         top.Draw()
-    #         bottom.Draw()
-
-    #         top.cd()
-
-    #         hists = []
-    #         if 'ratio' in plot:
-    #             numu_hists,numu_total_hist = histogram.OscillateSubHistogram(plot[:3]+'_numu_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
-    #             nue_hists,nue_total_hist = histogram.OscillateSubHistogram(plot[:3]+'_nue_selection',parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
-
-    #             total_hist = numu_total_hist.Clone()
-    #             total_hist.Divide(total_hist,nue_total_hist)
-    #             swap_fraction = total_hist.Clone()
-    #             norm_fraction = total_hist.Clone()
-    #             numu_rat_hist = numu_total_hist.Clone()
-    #             nue_rat_hist = nue_total_hist.Clone()
-
-    #             for m in range(numu_total_hist.GetNbinsX()+1):
-    #                 frac = total_hist.GetBinContent(m)/numu_rat_hist.GetBinContent(m) if numu_rat_hist.GetBinContent(m) != 0 else 0
-    #                 numu_rat_hist.SetBinContent(m,frac*total_hist.GetBinContent(m))
-    #                 nue_rat_hist.SetBinContent(m,(1-frac)*total_hist.GetBinContent(m))
-    #                 for u in range(nue_rat_hist.GetVertErrorBand("Flux").GetNHists()):
-    #                     numu_rat_hist.GetVertErrorBand("Flux").GetHist(u).SetBinContent(m,numu_rat_hist.GetBinContent(m)*frac)
-    #                     nue_rat_hist.GetVertErrorBand("Flux").GetHist(u).SetBinContent(m,nue_rat_hist.GetBinContent(m)*(1-frac))
-
-    #             numu_rat_hist.SetTitle("numu")
-    #             nue_rat_hist.SetTitle("nue")
-    #             hists.append(numu_rat_hist)
-    #             hists.append(nue_rat_hist)
-
-    #             """
-    #             for j,nue in enumerate(nue_hists):
-    #                 if "#mu" in nue.GetTitle():
-    #                     swap_fraction.Divide(nue,swap_fraction)
-    #                     norm_fraction.Add(swap_fraction,-1)
-
-    #                     norm_fraction.SetTitle("#nu_{#mu}/#nu_{e}")
-    #                     norm_fraction.SetFillStyle(3244)
-    #                     norm_fraction.SetLineColor(ROOT.kRed)
-    #                     norm_fraction.SetFillColor(ROOT.kRed)
-
-    #                     swap_fraction.SetTitle("#nu_{#mu}/"+nue.GetTitle())
-    #                     swap_fraction.SetFillStyle(3244)
-    #                     swap_fraction.SetLineColor(ROOT.kBlue)
-    #                     swap_fraction.SetFillColor(ROOT.kBlue)
-
-    #                     hists.append(norm_fraction)
-    #                     hists.append(swap_fraction)
-    #             """
-    #             h_data = histogram.data_hists[plot[:3]+'_numu_selection'].Clone()
-    #             h_data.Divide(h_data,histogram.data_hists[plot[:3]+'_nue_selection'])
-    #             subSample = histogram.mc_hists[plot[:3]+'_numu_selection'].Clone()
-    #             subSample.Divide(subSample,histogram.mc_hists[plot[:3]+'_nue_selection'])
-    #         else:
-    #             hists,total_hist = histogram.OscillateSubHistogram(plot,parameters["m"],parameters['ue4'],parameters['umu4'],parameters['utau4'])
-    #             h_data = histogram.data_hists[plot].Clone()
-    #             subSample = histogram.mc_hists[plot].Clone()
-
-    #         cv = np.array(subSample)[1:-1]
-    #         mc = np.array(total_hist)[1:-1]
-
-    #         null_hist = histogram.mc_hists[plot].Clone()
-
-    #         statistic.GetFluxFitter(useOsc=False).ReweightToFluxSolution(null_hist)
-    #         null_hist.PopVertErrorBand("Flux")
-
-    #         statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(total_hist)
-    #         total_hist.PopVertErrorBand("Flux")
-    #         total_hist.AddMissingErrorBandsAndFillWithCV(h_data)
-
-    #         TArray = []
-    #         for hist in hists:
-    #             if hist.Integral() <= 0:
-    #                 continue
-    #             statistic.GetFluxFitter(useOsc=True).ReweightToFluxSolution(hist)
-    #             if 'elastic' in plot:
-    #                 hist.Scale(2,'width')
-    #             elif 'ratio' not in plot:
-    #                 hist.Scale(1,'width')
-
-    #             if "tau" in hist.GetTitle():
-    #                 hist.SetFillColorAlpha(ROOT.kGray, 0.6)
-    #             elif "ratio" in plot:
-    #                 hist.SetFillColorAlpha(ROOT.kViolet,0.6)
-    #             elif "mu" in hist.GetTitle():
-    #                 hist.SetFillColorAlpha(ROOT.kBlue, 0.6)
-    #             else:
-    #                 hist.SetFillColorAlpha(ROOT.kRed, 0.6)
-    #             hist.SetLineWidth(0)
-    #             TArray.append(hist)
-
-    #         if "elastic" in plot:
-    #             h_data.Scale(2,'width')
-    #             total_hist.Scale(2,'width')
-    #             null_hist.Scale(2,'width')
-    #         elif 'ratio' not in plot:
-    #             h_data.Scale(1,'width')
-    #             total_hist.Scale(1,'width')
-    #             null_hist.Scale(1,'width')
-
-    #         if "elastic" in plot:
-    #             total_hist.SetTitle("#nu+e")
-    #         elif "imd" in plot:
-    #             total_hist.SetTitle("#nu_{#mu}+e^{-}#rightarrow #mu^{-}+#nu_{e}")
-    #         elif "mu" in plot:
-    #             total_hist.SetTitle("CC #nu_{#mu}")
-    #         elif "ratio" in plot:
-    #             total_hist.SetTitle("CC #nu_{#mu}/#nu_{e}")
-    #         else:
-    #             total_hist.SetTitle("CC #nu_{e}")
-
-    #         if "fhc" in plot:
-    #             total_hist.GetYaxis().SetTitle("#nu-mode    Events/GeV")
-    #         else:
-    #             total_hist.GetYaxis().SetTitle("#bar{#nu}-mode    Events/GeV")
-
-    #         mc_hists.append(TArray)
-    #         osc_hists.append(total_hist)
-    #         null_hists.append(null_hist)
-    #         data_hists.append(h_data)
-        
-    #     overall = plot_osc_side_by_side(mc_hists,null_hists,osc_hists,data_hists,titles,plot_texts,MNVPLOTTER,narrow_pads=[1,4])
-    #     overall.Print("plots/{}_oscillated_{:.1f}_{:.3f}_{:.4f}.png".format(name,parameters["m"],parameters['ue4'],parameters['umu4']))

@@ -23,13 +23,13 @@ CASE_PATTERNS = {
     "excludeRatio_maskRatio":
         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
 
-    "prodNueel_noRatio_p8_profileAll":
+    "noRatio_p8_profileAll":
         r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
 
     "profileOnlyRatio":
         r"Profile only CC ratios",
 
-    "prodNueel_p8_profileAll":
+    "_p8_profileAll":
         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
 }
 CASE_SAFE_NAMES = {

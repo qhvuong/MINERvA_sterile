@@ -125,31 +125,34 @@ DefaultMeanPOTPerFile = { "FHC" : 2.192000E+20 / 440 , "RHC" : 8.975000E+20 / 18
 
 
 # This is LE flux binning
-STANDARD_FLUX_BINNING = [
+LE_FLUX_BINNING = [
     0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
     5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5,
     10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,
     20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0,
 ]
 
-# # This is ME flux binning
-# STANDARD_FLUX_BINNING = [
-#     0.0, 0.5, 1.0, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 
-#     2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 
-#     3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 
-#     4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 
-#     5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 6.0, 6.1, 
-#     6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.0, 7.1, 
-#     7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 8.0, 8.1, 
-#     8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.1, 
-#     9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 10.0, 10.5, 
-#     11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5, 
-#     16.0, 16.5, 17.0, 17.5, 18.0, 18.5, 19.0, 19.5, 20.0, 21.0, 
-#     22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 35.0, 
-#     40.0, 45.0, 50.0, 55.0, 60.0, 70.0, 80.0, 90.0, 100.0 
-# ]
+# This is ME flux binning
+ME_FLUX_BINNING = [
+    0.0, 0.5, 1.0, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 
+    2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 
+    3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 
+    4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 
+    5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 6.0, 6.1, 
+    6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.0, 7.1, 
+    7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 8.0, 8.1, 
+    8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.1, 
+    9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 10.0, 10.5, 
+    11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5, 
+    16.0, 16.5, 17.0, 17.5, 18.0, 18.5, 19.0, 19.5, 20.0, 21.0, 
+    22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 35.0, 
+    40.0, 45.0, 50.0, 55.0, 60.0, 70.0, 80.0, 90.0, 100.0 
+]
 
-
+XSEC_FILES = {
+    "LE": "$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root",
+    "ME": "$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root",
+}
 
 
 
@@ -259,16 +262,23 @@ def load_flat_beamfocus_weights(filename, pdg, n_universes):
 
 
 
+def infer_beam_era(filelist):
+    name = os.path.basename(filelist).lower()
 
+    if "mcle" in name or "datale" in name:
+        return "LE"
+
+    if "mcme" in name or "datame" in name:
+        return "ME"
+
+    raise ValueError(
+        "Could not infer beam era from filelist name: {}".format(filelist)
+    )
 
 
 
 
 class FluxCalculator(object):
-        E_BINNING = array.array("d", STANDARD_FLUX_BINNING)
-        N_E_BINS = len(STANDARD_FLUX_BINNING) - 1
-        E_MIN = STANDARD_FLUX_BINNING[0]   # in GeV
-        E_MAX = STANDARD_FLUX_BINNING[-1]  # in GeV
         
         def __init__(self,
                 hc=HornCurrent.FHC,
@@ -280,8 +290,7 @@ class FluxCalculator(object):
                 nu_helicity=None,
                 qgsp=False,
                 testing=False,
-                # xsec_file="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root",            # This is ME splines
-                xsec_file="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root",
+                xsec_file=None,
                 filelist=None,
                 pot_per_file=None,
                 use_meta_tree=False,
@@ -302,7 +311,31 @@ class FluxCalculator(object):
                 
                 self._qgsp = qgsp
                 self._testing = testing
-                self._xsec_filename = xsec_file
+
+                self._ntuple_filelist = filelist
+
+                if self._ntuple_filelist is None:
+                        raise ValueError(
+                                "A filelist is required so that the LE/ME beam era "
+                                "can be inferred."
+                        )
+
+                self._era = infer_beam_era(self._ntuple_filelist)
+
+                if self._era == "LE":
+                        self._flux_binning = LE_FLUX_BINNING
+                elif self._era == "ME":
+                        self._flux_binning = ME_FLUX_BINNING
+                else:
+                        raise ValueError(
+                                "Unsupported beam era: {}".format(self._era)
+                        )
+
+                if xsec_file is None:
+                        self._xsec_filename = XSEC_FILES[self._era]
+                else:
+                        self._xsec_filename = xsec_file
+
                 self._xsec_file = None
                 
                 self._ntuple_filelist = filelist
@@ -394,28 +427,58 @@ class FluxCalculator(object):
                 self._params.update(selection_cuts)
 
                 incoming_pdg = self.GetIncomingPDG()
-                right_sign_pdg = 14 if self._horn_current == HornCurrent.FHC else -14
+                right_sign_pdg = (
+                        14
+                        if self._horn_current == HornCurrent.FHC
+                        else -14
+                )
+
+                is_right_sign = (incoming_pdg == right_sign_pdg)
+
+                # ME tuples contain valid BeamFocus variations for all species.
+                # LE tuples use native BeamFocus only for the right-sign muon
+                # species; other LE species may use externally derived flat
+                # BeamFocus weights.
                 use_flat_beamfocus = (
-                        self._flat_beamfocus_csv is not None and
-                        incoming_pdg != right_sign_pdg
+                        self._era == "LE"
+                        and not is_right_sign
+                        and self._flat_beamfocus_csv is not None
                 )
 
                 flat_beamfocus_weights = ROOT.std.vector("double")()
+
                 if use_flat_beamfocus:
                         flat_beamfocus_weights = load_flat_beamfocus_weights(
                                 self._flat_beamfocus_csv,
                                 incoming_pdg,
                                 self._n_universes
                         )
-                        print("Using flat BeamFocus weights for PDG {}".format(incoming_pdg))
-                elif incoming_pdg == right_sign_pdg:
-                        print("Using tuple BeamFocus weights for right-sign PDG {}".format(incoming_pdg))
-                else:
+
                         print(
-                                "WARNING: No flat BeamFocus CSV supplied for non-right-sign "
-                                "PDG {}. Falling back to tuple BeamFocus weights.".format(
+                                "Using flat BeamFocus weights for LE PDG {}".format(
                                         incoming_pdg
                                 )
+                        )
+
+                elif self._era == "ME":
+                        print(
+                                "Using tuple BeamFocus weights for ME PDG {}".format(
+                                        incoming_pdg
+                                )
+                        )
+
+                elif is_right_sign:
+                        print(
+                                "Using tuple BeamFocus weights for LE right-sign PDG {}".format(
+                                        incoming_pdg
+                                )
+                        )
+
+                else:
+                        print(
+                                "WARNING: LE non-right-sign PDG {} has no flat "
+                                "BeamFocus CSV. Falling back to tuple BeamFocus "
+                                "weights.".format(incoming_pdg)
                         )
                 
                 # step 2: loop over the events to calculate the event rates and error bands.
@@ -585,10 +648,10 @@ class FluxCalculator(object):
                 # Use the standard 1D flux binning.
                 # This should match flux-gen2thin-pdg12-minervame1D.root
                 # and flux-gen2thin-pdg14-minervame1D.root.
-                self._params["n_E_bins"] = FluxCalculator.N_E_BINS
-                self._params["E_min"] = FluxCalculator.E_MIN
-                self._params["E_max"] = FluxCalculator.E_MAX
-                self._params["E_bin_edges"] = FluxCalculator.E_BINNING
+                self._params["n_E_bins"] = len(self._flux_binning) - 1
+                self._params["E_min"] = self._flux_binning[0]
+                self._params["E_max"] = self._flux_binning[-1]
+                self._params["E_bin_edges"] = array.array("d", self._flux_binning)
 
                 # These parameters must match the fiducial region used in GetFiducialCut.
 #                self._params["area"] = 2.503   # area (in m^2) of hexagon apothem 0.85 m
@@ -777,6 +840,8 @@ class FluxCalculator(object):
         #         return total_pot
         def PrintConfig(self):
                 print(("  Horn current mode:", HornCurrent[self._horn_current]))
+                print(("  Beam era:", self._era))
+                print(("  Flux binning:", "{} bins".format( len(self._flux_binning) - 1 )))
                 print(("  Interaction current:", InteractionCurrent[self._int_current]))
                 print(("  Interaction channel:", InteractionChannel[self._int_channel]))
                 print(("  Target nucleus:", TargetNucleus[self._target_nucleus]))
@@ -932,9 +997,12 @@ def Bootstrap():
                 "-f",
                 "--xsec_file",
                 dest="xsec_file",
-                help="The input ROOT file containing GENIE's cross-sections.  Default: '%default'.",
-                # default="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v2126.root"
-                default="$MPARAMFILES/GENIE/spline_files/gxspl-nuclear-MINERVA_Full_v284.root"
+                help=(
+                        "Input ROOT file containing GENIE cross-sections. "
+                        "If omitted, select automatically from the inferred "
+                        "LE/ME beam era."
+                ),
+                default=None
         )
         
         parser.add_option(

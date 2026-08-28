@@ -2,35 +2,141 @@
 
 import argparse
 import ROOT
+from array import array
 
+
+# ------------------------------------------------------------------
+# Jaewon paper values
+# ------------------------------------------------------------------
+
+# Actual published acceptance-corrected counts:
+#
+# bins   = [0.8-2, 2-3, 3-5, 5-7, 7-9, 9-inf]
+# counts = [48.7, 14.4, 20.5, 18.1, 11.9, 21.6]
+#
+# For VISUALIZATION ONLY, we approximate the plotted 9-20 GeV
+# paper bin as 15 events.
+#
+# The prediction's displayed 9-20 GeV bin is then obtained by
+# preserving the prediction/data ratio from the actual 9-inf bin:
+#
+#   N_pred_plot(9-20)
+#       = 15 * N_pred(9-inf) / 21.6
+#
+# This approximation must NOT be used in the fit.
+
+PAPER_LAST_BIN_ACTUAL = 21.6
+PAPER_LAST_BIN_PLOT = 15.0
+
+PLOT_EDGES = [0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 
 PAPER_DATA_COUNTS = {
-    # Acceptance-corrected MINERvA nu-e event counts from the paper table.
-    # Bins: 0.8-2, 2-3, 3-5, 5-7, 7-9, 9-inf
-    "edges": [0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 120.0],
-    "counts": [48.7, 14.4, 20.5, 18.1, 11.9, 21.6],
+    "edges": PLOT_EDGES,
+    "counts": [48.7, 14.4, 20.5, 18.1, 11.9, PAPER_LAST_BIN_PLOT],
 }
 
 
 def get_hist(root_file, hist_name):
     f = ROOT.TFile.Open(root_file)
+
     if not f or f.IsZombie():
         raise RuntimeError(f"Could not open file: {root_file}")
 
     h = f.Get(hist_name)
+
     if not h:
-        raise RuntimeError(f"Could not find histogram {hist_name} in {root_file}")
+        raise RuntimeError(
+            f"Could not find histogram {hist_name} in {root_file}"
+        )
 
     h.SetDirectory(0)
     f.Close()
+
     return h
+
+
+def make_jaewon_style_prediction_hist(
+    h,
+    name_suffix="_jaewon_plot",
+    last_bin_scale=None,
+):
+    """
+    Construct a plotting-only histogram with edges
+
+        [0.8, 2, 3, 5, 7, 9, 20] GeV.
+
+    Bins 1-5 are copied directly from the physical prediction.
+
+    Bin 6 of the physical prediction represents 9-inf
+    numerically as 9-100 GeV.
+
+    For visualization only, the final displayed bin is interpreted
+    as 9-20 GeV.
+
+    For the total prediction:
+
+        N_plot(9-20)
+          = 15 * N_pred(9-inf) / 21.6
+
+    For flavor components, pass the corresponding scale factor so
+    the flavor fractions in the last bin are preserved and the stack
+    sums exactly to the displayed total.
+
+    This transformation is for plotting only and must never be used
+    as a fit prediction.
+    """
+
+    h_plot = ROOT.TH1D(
+        h.GetName() + name_suffix,
+        h.GetTitle(),
+        len(PLOT_EDGES) - 1,
+        array("d", PLOT_EDGES),
+    )
+
+    h_plot.SetDirectory(0)
+
+    # First five bins are unchanged.
+    for i in range(1, 6):
+        h_plot.SetBinContent(i, h.GetBinContent(i))
+        h_plot.SetBinError(i, h.GetBinError(i))
+
+    # Sixth physical bin = 9-inf (numerically 9-100).
+    old_last = h.GetBinContent(6)
+    old_last_err = h.GetBinError(6)
+
+    if last_bin_scale is None:
+        # Total prediction:
+        #
+        # preserve ratio relative to paper's actual 9-inf count.
+        target_last = (
+            PAPER_LAST_BIN_PLOT
+            * old_last
+            / PAPER_LAST_BIN_ACTUAL
+        )
+
+        if old_last != 0.0:
+            last_bin_scale = target_last / old_last
+        else:
+            last_bin_scale = 0.0
+
+    h_plot.SetBinContent(
+        6,
+        old_last * last_bin_scale,
+    )
+
+    h_plot.SetBinError(
+        6,
+        old_last_err * last_bin_scale,
+    )
+
+    return h_plot, last_bin_scale
 
 
 def scale_to_per_2gev(h, name_suffix="_per2gev"):
     """
     Clone histogram and scale each bin to events / 2 GeV:
 
-      N_i_plot = N_i * 2 / bin_width
+        N_i_plot = N_i * 2 / bin_width
     """
 
     h_scaled = h.Clone(h.GetName() + name_suffix)
@@ -43,8 +149,16 @@ def scale_to_per_2gev(h, name_suffix="_per2gev"):
 
         if width > 0:
             scale = 2.0 / width
-            h_scaled.SetBinContent(i, content * scale)
-            h_scaled.SetBinError(i, error * scale)
+
+            h_scaled.SetBinContent(
+                i,
+                content * scale,
+            )
+
+            h_scaled.SetBinError(
+                i,
+                error * scale,
+            )
 
     return h_scaled
 
@@ -60,20 +174,34 @@ def make_paper_data_graph():
     for i in range(n):
         x_low = edges[i]
         x_high = edges[i + 1]
+
         width = x_high - x_low
         x = 0.5 * (x_low + x_high)
 
         y = counts[i] * 2.0 / width
 
-        # Only x-widths here. No paper uncertainty included in this quick overlay.
         ex_low = x - x_low
         ex_high = x_high - x
 
         g.SetPoint(i, x, y)
-        g.SetPointError(i, ex_low, ex_high, 0.0, 0.0)
+
+        # Only horizontal bin widths are shown.
+        # Paper uncertainties are not included in this quick overlay.
+        g.SetPointError(
+            i,
+            ex_low,
+            ex_high,
+            0.0,
+            0.0,
+        )
 
     g.SetName("g_paper_data_per2gev")
-    g.SetTitle("Paper data;E_{l}^{true} [GeV];Events / 2 GeV")
+    g.SetTitle(
+        "Paper data;"
+        "E_{l}^{true} [GeV];"
+        "Events / 2 GeV"
+    )
+
     g.SetMarkerStyle(20)
     g.SetMarkerSize(1.1)
     g.SetLineWidth(2)
@@ -81,7 +209,13 @@ def make_paper_data_graph():
     return g
 
 
-def style_hist(h, color, width=2, linestyle=1, fill=False):
+def style_hist(
+    h,
+    color,
+    width=2,
+    linestyle=1,
+    fill=False,
+):
     h.SetLineColor(color)
     h.SetLineWidth(width)
     h.SetLineStyle(linestyle)
@@ -94,13 +228,20 @@ def style_hist(h, color, width=2, linestyle=1, fill=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Plot nu-e elastic prediction as events / 2 GeV."
+        description=(
+            "Plot nu-e elastic prediction as events / 2 GeV "
+            "using a visualization-only Jaewon-style 9-20 GeV "
+            "last bin."
+        )
     )
 
     parser.add_argument(
         "--input",
         required=True,
-        help="Input ROOT file from make_nue_elastic_from_flux_root.py.",
+        help=(
+            "Input ROOT file from "
+            "make_nue_elastic_from_flux_root*.py."
+        ),
     )
 
     parser.add_argument(
@@ -118,13 +259,20 @@ def main():
     parser.add_argument(
         "--overlay-flavors",
         action="store_true",
-        help="Overlay nue, nuebar, numu, numubar components if present.",
+        help=(
+            "Overlay nue, nuebar, numu, numubar "
+            "components if present."
+        ),
     )
 
     parser.add_argument(
         "--overlay-paper-data",
         action="store_true",
-        help="Overlay paper acceptance-corrected event counts, scaled to events / 2 GeV.",
+        help=(
+            "Overlay paper acceptance-corrected event counts, "
+            "using the visualization-only ~15-event "
+            "9-20 GeV last bin."
+        ),
     )
 
     parser.add_argument(
@@ -145,14 +293,72 @@ def main():
     ROOT.gROOT.SetBatch(True)
     ROOT.gStyle.SetOptStat(0)
 
-    h_total = get_hist(args.input, args.total_hist)
-    h_total = scale_to_per_2gev(h_total)
+    # --------------------------------------------------------------
+    # Total prediction
+    # --------------------------------------------------------------
 
-    h_total.GetXaxis().SetTitle("True lepton energy E_{l}^{true} [GeV]")
-    h_total.GetYaxis().SetTitle("Predicted events / 2 GeV")
+    h_total_physical = get_hist(
+        args.input,
+        args.total_hist,
+    )
+
+    physical_last = h_total_physical.GetBinContent(6)
+
+    h_total_plot, last_bin_scale = (
+        make_jaewon_style_prediction_hist(
+            h_total_physical
+        )
+    )
+
+    visual_last = h_total_plot.GetBinContent(6)
+
+    print()
+    print("Visualization-only last-bin treatment:")
+    print(
+        f"  physical prediction 9-inf = "
+        f"{physical_last:.6f}"
+    )
+    print(
+        f"  paper 9-inf count         = "
+        f"{PAPER_LAST_BIN_ACTUAL:.6f}"
+    )
+    print(
+        f"  assumed paper 9-20 count  = "
+        f"{PAPER_LAST_BIN_PLOT:.6f}"
+    )
+    print(
+        f"  displayed pred 9-20       = "
+        f"{visual_last:.6f}"
+    )
+    print(
+        f"  last-bin scale factor      = "
+        f"{last_bin_scale:.6f}"
+    )
+    print()
+
+    h_total = scale_to_per_2gev(
+        h_total_plot
+    )
+
+    h_total.GetXaxis().SetTitle(
+        "True lepton energy E_{l}^{true} [GeV]"
+    )
+
+    h_total.GetYaxis().SetTitle(
+        "Events / 2 GeV"
+    )
+
     h_total.SetTitle("")
 
-    style_hist(h_total, ROOT.kBlack, width=3)
+    style_hist(
+        h_total,
+        ROOT.kBlack,
+        width=3,
+    )
+
+    # --------------------------------------------------------------
+    # Flavor components
+    # --------------------------------------------------------------
 
     flavor_hists = {}
 
@@ -168,16 +374,52 @@ def main():
             hname = f"h_nue_elastic_{flavor}"
 
             try:
-                h = get_hist(args.input, hname)
+                h_physical = get_hist(
+                    args.input,
+                    hname,
+                )
+
             except RuntimeError:
-                print(f"Warning: could not find {hname}, skipping.")
+                print(
+                    f"Warning: could not find "
+                    f"{hname}, skipping."
+                )
                 continue
 
-            h = scale_to_per_2gev(h)
-            style_hist(h, color, width=1, fill=True)
+            # Apply the same last-bin scaling as the total.
+            # This preserves the flavor composition.
+            h_plot, _ = (
+                make_jaewon_style_prediction_hist(
+                    h_physical,
+                    name_suffix="_jaewon_plot",
+                    last_bin_scale=last_bin_scale,
+                )
+            )
+
+            h = scale_to_per_2gev(
+                h_plot
+            )
+
+            style_hist(
+                h,
+                color,
+                width=1,
+                fill=True,
+            )
+
             flavor_hists[flavor] = h
 
-    c = ROOT.TCanvas("c", "c", 900, 700)
+    # --------------------------------------------------------------
+    # Canvas
+    # --------------------------------------------------------------
+
+    c = ROOT.TCanvas(
+        "c",
+        "c",
+        900,
+        700,
+    )
+
     c.SetLeftMargin(0.13)
     c.SetRightMargin(0.05)
     c.SetBottomMargin(0.12)
@@ -189,63 +431,111 @@ def main():
     xmin = 0.0
     xmax = args.xmax
 
-    # Only use visible bins for ymax.
+    # --------------------------------------------------------------
+    # Determine y range
+    # --------------------------------------------------------------
+
     ymax = 0.0
-    for i in range(1, h_total.GetNbinsX() + 1):
+
+    for i in range(
+        1,
+        h_total.GetNbinsX() + 1,
+    ):
         x1 = h_total.GetBinLowEdge(i)
         x2 = x1 + h_total.GetBinWidth(i)
 
         if x2 <= xmin or x1 >= xmax:
             continue
 
-        ymax = max(ymax, h_total.GetBinContent(i))
-
-    for h in flavor_hists.values():
-        ymax = max(ymax, h.GetMaximum())
+        ymax = max(
+            ymax,
+            h_total.GetBinContent(i),
+        )
 
     paper_graph = None
+
     if args.overlay_paper_data:
         paper_graph = make_paper_data_graph()
-        for i in range(paper_graph.GetN()):
+
+        for i in range(
+            paper_graph.GetN()
+        ):
             y = paper_graph.GetPointY(i)
-            ymax = max(ymax, y)
+
+            ymax = max(
+                ymax,
+                y,
+            )
 
     if args.logy:
-        h_total.SetMinimum(0.01)
-        h_total.SetMaximum(ymax * 20.0)
+        ymin = 0.01
+        ymax_plot = ymax * 20.0
+
     else:
-        h_total.SetMinimum(0.0)
-        h_total.SetMaximum(ymax * 1.35)
+        ymin = 0.0
+        ymax_plot = ymax * 1.35
+
+    # --------------------------------------------------------------
+    # Draw
+    # --------------------------------------------------------------
 
     frame = c.DrawFrame(
         xmin,
-        h_total.GetMinimum(),
+        ymin,
         xmax,
-        h_total.GetMaximum(),
-        ";True lepton energy E_{l}^{true} [GeV];Predicted events / 2 GeV"
+        ymax_plot,
+        (
+            ";True lepton energy "
+            "E_{l}^{true} [GeV];"
+            "Events / 2 GeV"
+        ),
     )
 
-    stack = ROOT.THStack("stack_components", "")
+    stack = ROOT.THStack(
+        "stack_components",
+        "",
+    )
 
-    # Draw largest/most dominant components first or choose your preferred order.
-    for flavor in ["numu", "nue", "numubar", "nuebar"]:
+    for flavor in [
+        "numu",
+        "nue",
+        "numubar",
+        "nuebar",
+    ]:
         if flavor in flavor_hists:
-            stack.Add(flavor_hists[flavor])
+            stack.Add(
+                flavor_hists[flavor]
+            )
 
-    stack.Draw("hist same")
+    if len(flavor_hists) > 0:
+        stack.Draw("hist same")
 
-    # Draw total prediction as black outline on top.
+    # Total prediction as black outline.
     h_total.Draw("hist same")
 
     if paper_graph:
         paper_graph.Draw("P same")
 
-    leg = ROOT.TLegend(0.55, 0.62, 0.88, 0.88)
+    # --------------------------------------------------------------
+    # Legend
+    # --------------------------------------------------------------
+
+    leg = ROOT.TLegend(
+        0.55,
+        0.62,
+        0.88,
+        0.88,
+    )
+
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextSize(0.035)
 
-    leg.AddEntry(h_total, "Total prediction", "l")
+    leg.AddEntry(
+        h_total,
+        "Total prediction",
+        "l",
+    )
 
     flavor_labels = {
         "numu": "#nu_{#mu} e",
@@ -254,25 +544,69 @@ def main():
         "nuebar": "#bar{#nu}_{e} e",
     }
 
-    for flavor in ["numu", "nue", "numubar", "nuebar"]:
+    for flavor in [
+        "numu",
+        "nue",
+        "numubar",
+        "nuebar",
+    ]:
         if flavor in flavor_hists:
-            leg.AddEntry(flavor_hists[flavor], flavor_labels[flavor], "f")
+            leg.AddEntry(
+                flavor_hists[flavor],
+                flavor_labels[flavor],
+                "f",
+            )
 
     if paper_graph:
-        leg.AddEntry(paper_graph, "Paper data, acc.-corrected", "p")
+        leg.AddEntry(
+            paper_graph,
+            "Paper data, acc.-corrected",
+            "p",
+        )
 
     leg.Draw()
+
+    # --------------------------------------------------------------
+    # Labels
+    # --------------------------------------------------------------
 
     label = ROOT.TLatex()
     label.SetNDC()
     label.SetTextSize(0.038)
-    label.DrawLatex(0.16, 0.86, "#nu e^{-} #rightarrow #nu e^{-}")
-    label.DrawLatex(0.16, 0.81, "Truth-level prediction")
-    label.DrawLatex(0.16, 0.76, "Bin contents scaled to events / 2 GeV")
 
-    c.SaveAs(args.output)
+    label.DrawLatex(
+        0.16,
+        0.86,
+        "#nu e^{-} #rightarrow #nu e^{-}",
+    )
 
-    print(f"Wrote plot to {args.output}")
+    label.DrawLatex(
+        0.16,
+        0.81,
+        "Truth-level prediction",
+    )
+
+    label.DrawLatex(
+        0.16,
+        0.76,
+        "Bin contents scaled to events / 2 GeV",
+    )
+
+    label.SetTextSize(0.028)
+
+    label.DrawLatex(
+        0.16,
+        0.71,
+        "9-20 GeV bin approximated for visualization only",
+    )
+
+    c.SaveAs(
+        args.output
+    )
+
+    print(
+        f"Wrote plot to {args.output}"
+    )
 
 
 if __name__ == "__main__":

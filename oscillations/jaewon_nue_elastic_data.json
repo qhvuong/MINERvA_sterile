@@ -1,0 +1,58 @@
+{
+    "source": "MINERvA, Measurement of Neutrino Flux from Neutrino-Electron Elastic Scattering, Table II",
+    "pot": 3.43e20,
+    "number_of_target_electrons": 1.98e30,
+  
+    "binning": {
+      "observable": "electron_energy",
+      "units": "GeV",
+      "published_bins": [
+        [0.8, 2.0],
+        [2.0, 3.0],
+        [3.0, 5.0],
+        [5.0, 7.0],
+        [7.0, 9.0],
+        [9.0, "inf"]
+      ],
+      "analysis_edges": [
+        0.8,
+        2.0,
+        3.0,
+        5.0,
+        7.0,
+        9.0,
+        100.0
+      ],
+      "analysis_last_bin_note": "Published bin is 9 GeV to infinity; 100 GeV is the numerical upper edge used because the P8 flux ends at 100 GeV."
+    },
+  
+    "data": [
+      48.7,
+      14.4,
+      20.5,
+      18.1,
+      11.9,
+      21.6
+    ],
+  
+    "data_errors": [
+      9.9,
+      5.2,
+      6.3,
+      5.9,
+      4.3,
+      7.7
+    ],
+  
+    "covariance": [
+      [98.7,   1.22,  1.72,  1.38,  0.420, -0.269],
+      [1.22,  27.3,   1.63,  1.14,  0.340,  0.755],
+      [1.72,   1.63, 40.1,   1.88,  0.596,  1.35],
+      [1.38,   1.14,  1.88, 34.7,   0.448,  0.968],
+      [0.420,  0.340, 0.596, 0.448, 18.9,    0.778],
+      [-0.269, 0.755, 1.35,  0.968,  0.778,  59.5]
+    ],
+  
+    "covariance_units": "events^2",
+    "covariance_note": "Table II covariance excludes uncertainties due to the flux model. Flux uncertainty is supplied separately by the P8 Flux universes."
+  }

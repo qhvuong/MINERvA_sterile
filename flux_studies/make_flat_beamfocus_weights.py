@@ -33,6 +33,31 @@ def add_filelist_to_chain(chain, filelist):
     return nfiles
 
 
+def passes_compute_flux_fv(vtx):
+    x = vtx[0]
+    y = vtx[1]
+    z = vtx[2]
+
+    if z <= 6117.0 or z >= 8193.0:
+        return False
+
+    ax = abs(x)
+    ay = abs(y)
+
+    if ax >= 850.0:
+        return False
+
+    sqrt3 = math.sqrt(3.0)
+
+    inside_hexagon = (
+        ay < 850.0 / sqrt3
+        or
+        ay < 850.0 * 2.0 / sqrt3 - ax / sqrt3
+    )
+
+    return inside_hexagon
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=(
@@ -105,6 +130,10 @@ def main():
 
     required_branches = [
         "mc_incoming",
+        "mc_current",
+        "mc_intType",
+        "mc_targetZ",
+        "mc_vtx",
         "mc_cvweight_total",
         "mc_hornCurrent_cvweight",
         "mc_wgt_Flux_BeamFocus",
@@ -122,11 +151,21 @@ def main():
         chain.SetBranchStatus(branch_name, 1)
 
     incoming = array.array("i", [0])
+    current = array.array("i", [0])
+    int_type = array.array("i", [0])
+    target_z = array.array("i", [0])
+    vtx = array.array("d", [0.0, 0.0, 0.0])
+
     event_cv = array.array("d", [0.0])
     beam_cv = array.array("d", [0.0])
     beam_weights_int = array.array("i", [0] * args.n_universes)
 
     chain.SetBranchAddress("mc_incoming", incoming)
+    chain.SetBranchAddress("mc_current", current)
+    chain.SetBranchAddress("mc_intType", int_type)
+    chain.SetBranchAddress("mc_targetZ", target_z)
+    chain.SetBranchAddress("mc_vtx", vtx)
+
     chain.SetBranchAddress("mc_cvweight_total", event_cv)
     chain.SetBranchAddress("mc_hornCurrent_cvweight", beam_cv)
     chain.SetBranchAddress(
@@ -171,6 +210,19 @@ def main():
         pdg = incoming[0]
 
         if pdg not in PDG_NAMES:
+            continue
+
+        # Match compute_flux truth selection
+        if current[0] != 1:
+            continue
+
+        if int_type[0] == 8:
+            continue
+
+        if target_z[0] != 6:
+            continue
+
+        if not passes_compute_flux_fv(vtx):
             continue
 
         event_counts[pdg] += 1

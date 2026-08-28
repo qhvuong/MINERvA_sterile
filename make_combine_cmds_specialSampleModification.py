@@ -212,7 +212,34 @@ def handle_block(block: dict, dry_run: bool, log_sink: Optional[List[str]] = Non
             else:
                 special_input = "\n"
 
-            subprocess.run(cmd, input=special_input, text=True)
+            # subprocess.run(cmd, input=special_input, text=True)
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+
+            proc.stdin.write(special_input)
+            proc.stdin.close()
+
+            for line in proc.stdout:
+                print(line, end="")
+                if log_sink is not None:
+                    log_sink.append(line.rstrip("\n"))
+
+            returncode = proc.wait()
+
+            if returncode != 0:
+                msg = f"[ERROR] combine_file_specialSampleModification.py exited with code {returncode}"
+                print(msg)
+                if log_sink is not None:
+                    log_sink.append(msg)
+                    log_sink.append("")
+
+
         else:
             print("[SKIP] Not running combine_file_specialSampleModification.py because counts did not match for MC and/or DATA")
             if log_sink is not None:

@@ -457,7 +457,7 @@ parser.add_argument("--hist-config-tag",
 parser.add_argument("--elastic-source",
                     dest="elastic_source",
                     default="paper",
-                    choices=["paper", "jaewon", "production", "prod", "mine"],
+                    choices=["paper", "jaewon", "prediction", "production", "prod", "mine"],
 )
 
 options = parser.parse_args()

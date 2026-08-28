@@ -64,24 +64,37 @@ def write_rows_csv(rows, out_csv):
         for row in rows:
             writer.writerow(row)
 
-def parse_mask(mask_name):
+def parse_mask(mask_name, hist_config):
     """
     Predefined masks for stress tests.
+    Bin counts are determined from the selected HIST_CONFIG.
     """
     if mask_name in [None, "", "none", "None"]:
         return None
 
+    import json
+
+    with open(hist_config, "r") as f:
+        cfg = json.load(f)
+
+    def all_local_bins(sample):
+        if sample not in cfg:
+            return []
+
+        n_bins = cfg[sample]["end"] - cfg[sample]["start"] + 1
+        return list(range(1, n_bins + 1))
+
     if mask_name == "nonratio":
         return {
-            "fhc_elastic": list(range(1, 5)),
-            "fhc_numu_selection": list(range(1, 13)),
-            "rhc_numu_selection": list(range(1, 13)),
+            "fhc_elastic": all_local_bins("fhc_elastic"),
+            "fhc_numu_selection": all_local_bins("fhc_numu_selection"),
+            "rhc_numu_selection": all_local_bins("rhc_numu_selection"),
         }
 
     if mask_name == "ratio":
         return {
-            "fhc_ratio": list(range(1, 13)),
-            "rhc_ratio": list(range(1, 13)),
+            "fhc_ratio": all_local_bins("fhc_ratio"),
+            "rhc_ratio": all_local_bins("rhc_ratio"),
         }
 
     if mask_name == "bin1":
@@ -139,6 +152,7 @@ def run_one_lambda(
     lam,
     exclude_samples,
     mask_spec,
+    hist_config,
     skip_bf=False,
     profile_only=None,
     profile_n_universes=None,
@@ -155,6 +169,7 @@ def run_one_lambda(
         mask_spec=mask_spec,
         profile_only=profile_only,
         profile_n_universes=profile_n_universes,
+        hist_config=hist_config,
     )
 
     chi2_null, resid_null, pen_null, norm_null, max_null = get_residual_and_penalty(
@@ -198,6 +213,7 @@ def run_one_lambda(
         mask_spec=mask_spec,
         profile_only=profile_only,
         profile_n_universes=profile_n_universes,
+        hist_config=hist_config,
     )
 
     chi2_bf_fit, res = fitter.DoFit()
@@ -217,6 +233,7 @@ def run_one_lambda(
         mask_spec=mask_spec,
         profile_only=profile_only,
         profile_n_universes=profile_n_universes,
+        hist_config=hist_config,
     )
 
     chi2_bf, resid_bf, pen_bf, norm_bf, max_bf = get_residual_and_penalty(
@@ -267,8 +284,6 @@ def main():
         if exclude_samples.strip().lower() in ["none", ""]:
             exclude_samples = ""
 
-    mask_spec = parse_mask(args.mask)
-
     filename = "rootfiles/NuE_stitched_hists_{}.root".format(plot_tag)
     file_path = "{}/oscillations/{}".format(ccnueroot, filename)
 
@@ -276,6 +291,8 @@ def main():
     if not os.path.exists(hist_config):
         raise RuntimeError("Missing requested hist config file: {}".format(hist_config))
 
+    mask_spec = parse_mask(args.mask, hist_config)
+    
     shutil.copyfile(hist_config, "HIST_CONFIG.json")
 
     lambda_values = [float(x) for x in args.lambdas.split(",")]
@@ -317,6 +334,7 @@ def main():
 
         # Reload fresh histogram for each lambda to avoid stale oscillated state.
         sample_histogram = StitchedHistogram("sample")
+        sample_histogram.SetHistConfig(hist_config)
         sample_histogram.Load(file_path)
 
         row = run_one_lambda(
@@ -324,6 +342,7 @@ def main():
             lam=lam,
             exclude_samples=exclude_samples,
             mask_spec=mask_spec,
+            hist_config=hist_config,
             skip_bf=args.skip_bf,
             profile_only=args.profile_only,
             profile_n_universes=args.profile_n_universes,

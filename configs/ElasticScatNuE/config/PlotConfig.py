@@ -110,7 +110,7 @@ NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 # NEUTRINO4_EE_BINNING = [0.0, 1.8, 3.0, 5.0, 9.0, 20.0]				#testBinning_5bins
 # NEUTRINO4_EE_BINNING = [0.0, 1.8, 3.0, 6.0, 20.0]				#testBinning_4bins
 NEUTRINO4_EE_BINNING = [0.8, 2.0, 4.0, 8.0, 20.0]						# MY v+e selected sample binning
-# NEUTRINO4_EE_BINNING = 		[0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]		# Jaewons binning
+# NEUTRINO4_EE_BINNING = 		[0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 100.0]		# Jaewons binning
 # NEUTRINO4_EE_BINNING = [0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.5, 6.0, 6.5, 7.2, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0, 18.0, 20.0]				#standardME
 # NEUTRINO4_EE_BINNING = [0.0, 1.8, 5.0, 20.0]				#testBinning_3bins
 NEUTRINO4_EE_BINNING_DIAGNOSTICS = 	[i*0.5 for i in range(41)]
@@ -319,27 +319,27 @@ HISTS_TO_MAKE = [
 
 
 ### MY PLOTS ###
-	# "Lepton Energy",
-    # "Reco Lepton Energy vs L/E",
+	"Lepton Energy",
+    "Reco Lepton Energy vs L/E",
 	# "True Lepton Energy",
 	# "Biased Neutrino Energy",
 
 
 
 
-	"True Lepton Energy",
-	"True Neutrino Energy",
-	"Neutrino Length Travelled",
-	"Drawn-L Neutrino Length Travelled",
+	# "True Lepton Energy",
+	# "True Neutrino Energy",
+	# "Neutrino Length Travelled",
+	# "Drawn-L Neutrino Length Travelled",
 
-    "Reco Energy vs L/E",
-	"Drawn-L Reco Energy vs L/E",
-	"True Energy vs L/E",
+    # "Reco Energy vs L/E",
+	# "Drawn-L Reco Energy vs L/E",
+	# "True Energy vs L/E",
 
-	"Drawn-L Reco Lepton Energy vs L/E",
-	"Drawn-L Reco Lepton Energy vs L/E from pion parent",
-	"Drawn-L Reco Lepton Energy vs L/E from muon parent",
-	"Drawn-L Reco Lepton Energy vs L/E from kaon parent",
+	# "Drawn-L Reco Lepton Energy vs L/E",
+	# "Drawn-L Reco Lepton Energy vs L/E from pion parent",
+	# "Drawn-L Reco Lepton Energy vs L/E from muon parent",
+	# "Drawn-L Reco Lepton Energy vs L/E from kaon parent",
 	
 
 

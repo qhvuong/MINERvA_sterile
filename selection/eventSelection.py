@@ -49,8 +49,8 @@ def plotRecoKin(mc, chainwrapper, outfile):
     debug_prints = 0
 
     print(f"Total number of events RECO: ", {nEvents})
-    if AnalysisConfig.testing and nEvents > 1000:
-        nEvents = 1000
+    if AnalysisConfig.testing and nEvents > 2000:
+        nEvents = 2000
     print("plotRecoKin, mc ",mc)
     setAlarm = AnalysisConfig.grid
     for counter in range(nEvents):

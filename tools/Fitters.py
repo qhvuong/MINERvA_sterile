@@ -71,7 +71,12 @@ def GetMaskedBinIndices(mask_spec, hist_config="HIST_CONFIG.json", verbose=False
 
     for sample, local_bins in mask_spec.items():
         if sample not in cfg:
-            print("WARNING: sample {} not found in HIST_CONFIG.json".format(sample))
+            print(
+                "WARNING: sample {} not found in {}".format(
+                    sample,
+                    hist_config,
+                )
+            )
             continue
 
         start = cfg[sample]["start"]  # zero-based global start
@@ -110,7 +115,7 @@ def GetProfileOnlyBinIndices(profile_only, hist_keys, hist_config="HIST_CONFIG.j
 
     for sample in keep_samples:
         if sample not in cfg:
-            print("WARNING: profile_only sample {} not found in HIST_CONFIG.json".format(sample))
+            print("WARNING: profile_only sample {} not found in {}".format(sample,hist_config,))
             continue
 
         if sample not in hist_keys:
@@ -134,30 +139,41 @@ def GetProfileOnlyBinIndices(profile_only, hist_keys, hist_config="HIST_CONFIG.j
 
     return keep
 
-def GetFluxSolveBinIndices(hist_keys, exclude, profile_only=None, mask_bins=None):
-    """
-    Return the zero-based global bin indices used in the flux solve.
-    """
+def GetFluxSolveBinIndices(
+    hist_keys,
+    exclude,
+    profile_only=None,
+    mask_bins=None,
+    hist_config="HIST_CONFIG.json",
+):
     profile_only_inds = GetProfileOnlyBinIndices(
         profile_only,
         hist_keys,
-        hist_config="HIST_CONFIG.json",
+        hist_config=hist_config,
         verbose=False,
     )
 
     if profile_only_inds is None:
-        solve_inds = GetSliceIndices("HIST_CONFIG.json", exclude, hist_keys)
+        solve_inds = GetSliceIndices(
+            hist_config,
+            exclude,
+            hist_keys,
+        )
     else:
         solve_inds = profile_only_inds
 
     if mask_bins is not None and len(mask_bins) > 0:
-        solve_inds = [i for i in solve_inds if i not in mask_bins]
+        solve_inds = [
+            i for i in solve_inds
+            if i not in mask_bins
+        ]
 
     solve_inds = sorted(set(solve_inds))
 
     if len(solve_inds) == 0:
         raise RuntimeError(
-            "No bins selected for flux solve. exclude={}, profile_only={}, mask_bins={}".format(
+            "No bins selected for flux solve. "
+            "exclude={}, profile_only={}, mask_bins={}".format(
                 exclude,
                 profile_only,
                 mask_bins,
@@ -192,6 +208,257 @@ def GetSampleBinRanges(hist_keys, hist_config="HIST_CONFIG.json"):
 
     return ranges
 
+def CheckElasticPredictionInput(
+    histogram,
+    hist_config="HIST_CONFIG.json",
+    verbose=True,
+):
+    import json
+
+    with open(hist_config, "r") as f:
+        cfg = json.load(f)
+
+    if "fhc_elastic" not in cfg:
+        print(
+            "CheckElasticPredictionInput: fhc_elastic not found in {}".format(
+                hist_config
+            )
+        )
+        return
+
+    start = int(cfg["fhc_elastic"]["start"])
+    end = int(cfg["fhc_elastic"]["end"])
+
+    inds = np.arange(start, end + 1, dtype=int)
+
+    mc = np.asarray(
+        histogram.GetMCHistogram(),
+        dtype=float,
+    )[1:-1]
+
+    data = np.asarray(
+        histogram.GetDataHistogram(),
+        dtype=float,
+    )[1:-1]
+
+    cov_full = np.asarray(
+        histogram.GetCovarianceMatrix(sansFlux=False),
+        dtype=float,
+    )
+
+    cov_sans = np.asarray(
+        histogram.GetCovarianceMatrix(sansFlux=True),
+        dtype=float,
+    )
+
+    A = np.asarray(
+        histogram.GetAMatrix(),
+        dtype=float,
+    )
+
+    universes = histogram.GetFluxUniverses()
+
+    # -------------------------------------------------
+    # Basic dimension checks
+    # -------------------------------------------------
+    n_bins = len(mc)
+
+    if len(data) != n_bins:
+        raise RuntimeError(
+            "Elastic input check: MC has {} bins but data has {}".format(
+                n_bins,
+                len(data),
+            )
+        )
+
+    if cov_full.shape != (n_bins, n_bins):
+        raise RuntimeError(
+            "Elastic input check: full covariance shape {} "
+            "does not match {} stitched bins".format(
+                cov_full.shape,
+                n_bins,
+            )
+        )
+
+    if cov_sans.shape != (n_bins, n_bins):
+        raise RuntimeError(
+            "Elastic input check: sansFlux covariance shape {} "
+            "does not match {} stitched bins".format(
+                cov_sans.shape,
+                n_bins,
+            )
+        )
+
+    if A.ndim != 2:
+        raise RuntimeError(
+            "Elastic input check: A matrix is not 2D; shape={}".format(
+                A.shape
+            )
+        )
+
+    if A.shape[1] != n_bins:
+        raise RuntimeError(
+            "Elastic input check: A has {} columns but stitched histogram "
+            "has {} bins".format(
+                A.shape[1],
+                n_bins,
+            )
+        )
+
+    if len(universes) != A.shape[0]:
+        raise RuntimeError(
+            "Elastic input check: GetFluxUniverses returned {} universes "
+            "but A has {} rows".format(
+                len(universes),
+                A.shape[0],
+            )
+        )
+
+    if start < 0 or end >= n_bins or end < start:
+        raise RuntimeError(
+            "Elastic input check: invalid elastic range [{}, {}] "
+            "for {} stitched bins".format(
+                start,
+                end,
+                n_bins,
+            )
+        )
+
+    # -------------------------------------------------
+    # Elastic covariance blocks
+    # -------------------------------------------------
+    full_block = cov_full[np.ix_(inds, inds)]
+    sans_block = cov_sans[np.ix_(inds, inds)]
+    flux_block = full_block - sans_block
+
+    elastic_A = A[:, inds]
+
+    # All non-elastic bins.
+    elastic_set = set(inds.tolist())
+
+    other_inds = np.array(
+        [
+            i
+            for i in range(n_bins)
+            if i not in elastic_set
+        ],
+        dtype=int,
+    )
+
+    print("")
+    print("===== FHC ELASTIC FITTER INPUT CHECK =====")
+    print("hist config             =", hist_config)
+    print("global zero-based bins  =", inds.tolist())
+    print("global one-based bins   =", [i + 1 for i in inds])
+    print("nbins                   =", len(inds))
+    print("MC integral             =", float(np.sum(mc[inds])))
+    print("data integral           =", float(np.sum(data[inds])))
+    print("total A shape           =", A.shape)
+    print("elastic A shape         =", elastic_A.shape)
+    print("flux universes          =", len(universes))
+
+    print("")
+    print("===== ELASTIC COVARIANCE =====")
+    print(
+        "trace full elastic      =",
+        float(np.trace(full_block)),
+    )
+    print(
+        "trace sansFlux elastic  =",
+        float(np.trace(sans_block)),
+    )
+    print(
+        "trace flux elastic      =",
+        float(np.trace(flux_block)),
+    )
+
+    print(
+        "max |elastic flux cov|  =",
+        float(np.max(np.abs(flux_block))),
+    )
+
+    # -------------------------------------------------
+    # Elastic <-> other sample covariance
+    # -------------------------------------------------
+    if len(other_inds) > 0:
+        full_cross = cov_full[np.ix_(inds, other_inds)]
+        sans_cross = cov_sans[np.ix_(inds, other_inds)]
+        flux_cross = full_cross - sans_cross
+
+        print("")
+        print("===== ELASTIC-OTHER CROSS COVARIANCE =====")
+
+        print(
+            "max |elastic-other full covariance| =",
+            float(np.max(np.abs(full_cross))),
+        )
+
+        print(
+            "max |elastic-other sansFlux covariance| =",
+            float(np.max(np.abs(sans_cross))),
+        )
+
+        print(
+            "max |elastic-other flux covariance| =",
+            float(np.max(np.abs(flux_cross))),
+        )
+
+        print(
+            "nonzero elastic-other sansFlux elements =",
+            int(
+                np.count_nonzero(
+                    np.abs(sans_cross) > 1e-12
+                )
+            ),
+        )
+
+        print(
+            "nonzero elastic-other flux elements =",
+            int(
+                np.count_nonzero(
+                    np.abs(flux_cross) > 1e-12
+                )
+            ),
+        )
+
+    # -------------------------------------------------
+    # P8 expectation
+    # -------------------------------------------------
+    if A.shape[0] != 1000:
+        print(
+            "WARNING: stitched flux A has {} universes; "
+            "expected 1000 for P8.".format(
+                A.shape[0]
+            )
+        )
+
+    # -------------------------------------------------
+    # Optional detailed matrices
+    # -------------------------------------------------
+    if verbose:
+        print("")
+        print("Elastic sansFlux covariance:")
+        print(sans_block)
+
+        print("")
+        print("Elastic flux covariance:")
+        print(flux_block)
+
+        print("")
+        print("Elastic A matrix summary:")
+        print(
+            "  max |A| =",
+            float(np.max(np.abs(elastic_A))),
+        )
+        print(
+            "  mean |A| =",
+            float(np.mean(np.abs(elastic_A))),
+        )
+
+    print("")
+    print("===== END FHC ELASTIC FITTER INPUT CHECK =====")
+    print("")
+
 
 class OscillationFitter():
     def __init__(
@@ -203,6 +470,7 @@ class OscillationFitter():
         mask_spec=None,
         profile_only=None,
         profile_n_universes=None,
+        hist_config="HIST_CONFIG.json",
     ):
         self.hist = histogram
         self.tol = 1e-12
@@ -212,6 +480,7 @@ class OscillationFitter():
         self.mask_spec = mask_spec
         self.profile_only = profile_only
         self.profile_n_universes = profile_n_universes
+        self.hist_config = hist_config
 
         self.statistic = Statistics(
             self.hist,
@@ -220,6 +489,7 @@ class OscillationFitter():
             mask_spec=self.mask_spec,
             profile_only=self.profile_only,
             profile_n_universes=self.profile_n_universes,
+            hist_config=self.hist_config,
         )
 
 
@@ -470,6 +740,7 @@ class FluxFitter():
         mask_bins=None,
         profile_only=None,
         profile_n_universes=None,
+        hist_config="HIST_CONFIG.json",
     ):
         self.hist = histogram
         self.exclude = exclude
@@ -479,6 +750,7 @@ class FluxFitter():
         self.mask_bins = mask_bins if mask_bins is not None else []
         self.profile_only = profile_only
         self.profile_n_universes = profile_n_universes
+        self.hist_config = hist_config
 
         if usePseudo:
             self.dataHist = histogram.GetPseudoHistogram()
@@ -524,6 +796,14 @@ class FluxFitter():
             self.hist.GetAMatrix(),
             dtype=float,
         )
+
+        if len(universes) != A_abs.shape[0]:
+            raise RuntimeError(
+                "Flux universe count {} does not match A-matrix rows {}".format(
+                    len(universes),
+                    A_abs.shape[0],
+                )
+            )
 
         use_relative_A = (
             os.environ.get("USE_RELATIVE_FLUX_A", "0") == "1"
@@ -665,27 +945,12 @@ class FluxFitter():
         # A = self.hist.GetAMatrix()
         universes, A = self.GetProfileAMatrixAndUniverses()
 
-        profile_only_inds = GetProfileOnlyBinIndices(
-            self.profile_only,
-            self.hist.keys,
-            hist_config="HIST_CONFIG.json",
-            verbose=False,
-        )
-
-        # if profile_only_inds is None:
-        #     sliceInds = GetSliceIndices("HIST_CONFIG.json", self.exclude, self.hist.keys)
-        # else:
-        #     # profile_only overrides exclude for the flux solve.
-        #     sliceInds = profile_only_inds
-
-        # if len(self.mask_bins) > 0:
-        #     sliceInds = [i for i in sliceInds if i not in self.mask_bins]
-
         sliceInds = GetFluxSolveBinIndices(
             self.hist.keys,
             self.exclude,
             profile_only=self.profile_only,
             mask_bins=self.mask_bins,
+            hist_config=self.hist_config,
         )
 
         if len(sliceInds) == 0:
@@ -1053,11 +1318,33 @@ class FluxFitter():
     def ReweightToFluxSolutionStoredA(self, histogram):
         mc = np.array(histogram)[1:-1]
         universes, A = self.GetProfileAMatrixAndUniverses()
+
+        if A.shape[1] != len(mc):
+            raise RuntimeError(
+                "Stored A has {} bins but histogram has {} bins".format(
+                    A.shape[1],
+                    len(mc),
+                )
+            )
+
+        if len(self.fluxSolution) != A.shape[0]:
+            raise RuntimeError(
+                "Flux solution has {} parameters but A has {} rows".format(
+                    len(self.fluxSolution),
+                    A.shape[0],
+                )
+            )
+
         new_cv = mc + self.fluxSolution @ A
 
         weights = histogram.GetCVHistoWithStatError()
+
         for j in range(1, weights.GetNbinsX() + 1):
-            weight = weights.GetBinContent(j) / new_cv[j-1] if new_cv[j-1] != 0 else weights.GetBinContent(j)
+            weight = (
+                weights.GetBinContent(j) / new_cv[j - 1]
+                if new_cv[j - 1] != 0
+                else weights.GetBinContent(j)
+            )
             weights.SetBinContent(j, weight)
             weights.SetBinError(j, 0)
 
@@ -1073,6 +1360,7 @@ class Statistics():
         mask_spec=None,
         profile_only=None,
         profile_n_universes=None,
+        hist_config="HIST_CONFIG.json",
     ):
         self.hist = histogram
         self.exclude = exclude
@@ -1080,7 +1368,18 @@ class Statistics():
         self.mask_spec = mask_spec
         self.profile_only = profile_only
         self.profile_n_universes = profile_n_universes
-        self.mask_bins = GetMaskedBinIndices(mask_spec, verbose=False) if mask_spec is not None else []
+        self.hist_config = hist_config
+
+        self.mask_bins = (
+            GetMaskedBinIndices(
+                mask_spec,
+                hist_config=self.hist_config,
+                verbose=False,
+            )
+            if mask_spec is not None
+            else []
+        )
+
         self.nulFluxFitter = None
         self.oscFluxFitter = None
         self._printed_chi2_by_sample = False
@@ -1134,7 +1433,7 @@ class Statistics():
         import json
         sample_ranges = []
         try:
-            with open("HIST_CONFIG.json", "r") as f:
+            with open(self.hist_config, "r") as f:
                 cfg = json.load(f)
 
             for sample, info in cfg.items():
@@ -1172,7 +1471,10 @@ class Statistics():
         This is not expected to add exactly to the full chi2 because the full
         covariance has off-diagonal correlations between samples.
         """
-        ranges = GetSampleBinRanges(self.hist.keys)
+        ranges = GetSampleBinRanges(
+            self.hist.keys,
+            hist_config=self.hist_config,
+        )
 
         print("")
         print("===== Chi2-by-sample diagnostic {} =====".format(label))
@@ -1229,6 +1531,7 @@ class Statistics():
             self.exclude,
             profile_only=self.profile_only,
             mask_bins=self.mask_bins,
+            hist_config=self.hist_config,
         )
 
         solve_set = set(solve_inds)
@@ -1304,6 +1607,7 @@ class Statistics():
             self.exclude,
             profile_only=self.profile_only,
             mask_bins=self.mask_bins,
+            hist_config=self.hist_config,
         )
 
         solve_set = set(solve_inds)
@@ -1368,6 +1672,7 @@ class Statistics():
                 mask_bins=self.mask_bins,
                 profile_only=self.profile_only,
                 profile_n_universes=self.profile_n_universes,
+                hist_config=self.hist_config,
             )
             mc, penalty = fluxFitter.MarginalizeFlux()
             # cov = cov_sans

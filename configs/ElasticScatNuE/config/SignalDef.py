@@ -153,6 +153,15 @@ TRUTH_CATEGORIES["NCPi0"]    = lambda event: IsNC(event) and IsPi0InFinalState(e
 TRUTH_CATEGORIES["NCPi"]     = lambda event: IsNC(event) and IsChargedPionInFinalState(event)
 TRUTH_CATEGORIES["NCOther"]  = lambda event: IsNC(event)
 
+# My signal is one or more of the listed categories.
+SIGNAL_DEFINITION = [
+    "NuEElasticE",
+    "NuEElasticMu",
+    "NuEElasticOther",
+]
+
+
+
 
 # # These are categories for weighting ME to LE
 # TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNue(event) 
@@ -160,12 +169,13 @@ TRUTH_CATEGORIES["NCOther"]  = lambda event: IsNC(event)
 # TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNumu(event)
 # TRUTH_CATEGORIES["NuEElasticMuBar"] = lambda event: IsElastic(event) and IsNumuBar(event)
 
-# My signal is one or more of the listed categories.
-SIGNAL_DEFINITION = [
-    "NuEElasticE",
-    "NuEElasticMu",
-    "NuEElasticOther",
-]
+# SIGNAL_DEFINITION = [
+#     "NuEElasticE",
+#     "NuEElasticEBar",
+#     "NuEElasticMu",
+#     "NuEElasticMuBar",
+#     "NuEElasticOther",
+# ]
 
 EXTRA_OTHER = [
 ]

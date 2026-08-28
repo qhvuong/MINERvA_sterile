@@ -111,28 +111,62 @@
       },
   
       "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_onlyPPFX_MAD.root",
+        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_updatedFluxes_MAD.root",
         "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_onlyPPFX_MAD.root",
         "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_onlyPPFX_MAD.root",
         "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_updatedFluxes_MAD.root"
       },
   
       "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_onlyPPFX_MAD.root",
+        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
         "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_onlyPPFX_MAD.root",
         "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_onlyPPFX_MAD.root",
         "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_updatedFluxes_MAD.root"
       },
   
       "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_onlyPPFX_MAD.root",
+        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_updatedFluxes_MAD.root",
         "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_onlyPPFX_MAD.root"
       },
   
       "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_onlyPPFX_MAD.root",
+        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_updatedFluxes_MAD.root",
         "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_onlyPPFX_MAD.root"
       }
-    }        
+    },
+    
+    "p8_onlyBeamFocus": {
+      "fhc_elastic": {
+        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_updatedFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_updatedFluxes_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_updatedFluxes_MAD.root",
+        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
+        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+      },
+  
+      "fhc_ccnue": {
+        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_updatedFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_onlyBeamFocus_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_onlyBeamFocus_MAD.root",
+        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_updatedFluxes_MAD.root"
+      },
+  
+      "rhc_ccnuebar": {
+        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_onlyBeamFocus_MAD.root",
+        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_onlyBeamFocus_MAD.root",
+        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_updatedFluxes_MAD.root"
+      },
+  
+      "fhc_ccnumu": {
+        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_updatedFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_onlyBeamFocus_MAD.root"
+      },
+  
+      "rhc_ccnumubar": {
+        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_updatedFluxes_MAD.root",
+        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_onlyBeamFocus_MAD.root"
+      }
+    }          
 
   }
