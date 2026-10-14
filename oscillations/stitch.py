@@ -37,7 +37,7 @@ _stitch_parser.add_argument(
     "--stitch_input_set",
     dest="stitch_input_set",
     default="p6",
-    choices=["p6", "p8", "p8_onlyPPFX", "p8_onlyBeamFocus"],
+    choices=["p6", "p8", "p8_onlyPPFX", "p8_onlyBeamFocus", "p8_oldResponse"],
 )
 
 _stitch_args, _remaining_argv = _stitch_parser.parse_known_args()
@@ -125,7 +125,7 @@ LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
 )
 
 PREDICTED_ELASTIC_FILE = (
-    "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_higherOrderXS_mnv_FHC.root"
+    "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_TomalakXS_fixedTotalNorm_newElectronResponse_mnv_FHC.root"
 )
 
 JAEWON_ELEP_EDGES = [0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 100.0]
@@ -2518,6 +2518,7 @@ if __name__ == "__main__":
         "p8": 1000,
         "p8_onlyPPFX": 1000,
         "p8_onlyBeamFocus": 1000,
+        "p8_oldResponse": 1000,
     }[input_set]
 
     sample_histogram.SetNFluxUniverses(n_flux_universes)

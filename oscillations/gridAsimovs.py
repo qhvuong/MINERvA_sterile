@@ -203,7 +203,7 @@ if __name__ == '__main__':
   # njobs = 500
   njobs = 2000
 
-  expected_lifetime = 24
+  expected_lifetime = 30
 
   processingID = '%s_%s_%s_%s-%s' % (
     "Asimovs",

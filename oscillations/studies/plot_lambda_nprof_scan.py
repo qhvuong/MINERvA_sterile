@@ -338,7 +338,8 @@ def main():
     parser.add_argument(
         "--glob",
         # default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/nprof/*Nprof*_fixedFlux.csv",
-        default="/exp/minerva/data/users/qvuong/surfaces/csvs/p8_lambda_scans/*Nprof*.csv",
+        # default="/exp/minerva/data/users/qvuong/surfaces/csvs/p8_lambda_scans/*Nprof*.csv",
+        default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/p8_fixedFluxCV/nprof/*Nprof*.csv",
     )
     parser.add_argument(
         "--outdir",

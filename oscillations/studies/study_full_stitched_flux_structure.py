@@ -1179,50 +1179,50 @@ def main():
         beam_direct,
     )
 
-    # # --------------------------------------------------
-    # # Complete studies for each flux source
-    # # --------------------------------------------------
+    # --------------------------------------------------
+    # Complete studies for each flux source
+    # --------------------------------------------------
 
-    # run_pair_study(
-    #     "Total Flux",
-    #     total_ratio,
-    #     total_direct,
-    #     args.out_prefix + "_total",
-    # )
+    run_pair_study(
+        "Total Flux",
+        total_ratio,
+        total_direct,
+        args.out_prefix + "_total",
+    )
 
-    # run_pair_study(
-    #     "PPFX only",
-    #     ppfx_ratio,
-    #     ppfx_direct,
-    #     args.out_prefix + "_ppfx",
-    # )
+    run_pair_study(
+        "PPFX only",
+        ppfx_ratio,
+        ppfx_direct,
+        args.out_prefix + "_ppfx",
+    )
 
-    # run_pair_study(
-    #     "BeamFocus only",
-    #     beam_ratio,
-    #     beam_direct,
-    #     args.out_prefix + "_beamfocus",
-    # )
+    run_pair_study(
+        "BeamFocus only",
+        beam_ratio,
+        beam_direct,
+        args.out_prefix + "_beamfocus",
+    )
 
-    # # --------------------------------------------------
-    # # Special three-way ratio comparison
-    # # --------------------------------------------------
+    # --------------------------------------------------
+    # Special three-way ratio comparison
+    # --------------------------------------------------
 
-    # plot_ratio_component_comparison(
-    #     total_ratio,
-    #     ppfx_ratio,
-    #     beam_ratio,
-    #     args.out_prefix + "_ratio_total_ppfx_beamfocus.png",
-    #     sample_labels=SAMPLE_LABELS_RATIO,
-    # )
+    plot_ratio_component_comparison(
+        total_ratio,
+        ppfx_ratio,
+        beam_ratio,
+        args.out_prefix + "_ratio_total_ppfx_beamfocus.png",
+        sample_labels=SAMPLE_LABELS_RATIO,
+    )
 
-    # plot_ratio_component_comparison(
-    #     total_direct,
-    #     ppfx_direct,
-    #     beam_direct,
-    #     args.out_prefix + "_direct_total_ppfx_beamfocus.png",
-    #     sample_labels=SAMPLE_LABELS_DIRECT,
-    # )
+    plot_ratio_component_comparison(
+        total_direct,
+        ppfx_direct,
+        beam_direct,
+        args.out_prefix + "_direct_total_ppfx_beamfocus.png",
+        sample_labels=SAMPLE_LABELS_DIRECT,
+    )
 
     f_total_ratio.Close()
     f_total_direct.Close()

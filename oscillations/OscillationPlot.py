@@ -814,27 +814,24 @@ def GetFCSlice(dchi2s,achi2s,results,index,slc):
 
 def GetContinuousBestFitChi2(mode):
     """
-    Continuous best-fit chi2 values from the nominal no-throw fits.
+    Continuous best-fit chi2 values from the full oscillation minimization.
 
-    These are the values analogous to Ryan's hard-coded best_fit values,
-    but for our updated configurations.
+    These are used as the reference chi2 for the observed-data
+    Delta-chi2 surface. The grid minimum is retained only as a
+    diagnostic of the surface resolution.
     """
 
     best_fit_chi2 = {
-        # prodNueel_noRatio, --profile-flux
-        "prodNueel_noRatio_profiledFlux": 35.139265,
-
-        # prodNueel, --profile-flux --exclude ratio
-        # The merged surface mode name does not include excludeRatio unless
-        # you added it to the gridSurfaces/makeSurface output naming.
-        "prodNueel_profiledFlux": 38.769660,
-
-        # Optional alias if you later encode exclude ratio in the mode name
-        "prodNueel_profiledFlux_excluderatio": 38.769660,
-        "prodNueel_profiledFlux_excludeRatio": 38.769660,
+        "predNueel_p8_profiledFlux_includeAll_Nprof45": 42.93,
     }
 
-    return best_fit_chi2.get(mode, None)
+    if mode not in best_fit_chi2:
+        raise ValueError(
+            "No continuous best-fit chi2 configured for mode '{}'. "
+            "Add this mode to GetContinuousBestFitChi2().".format(mode)
+        )
+
+    return best_fit_chi2[mode]
 
 
 def LoadMergedSurfaces(input_dir, mode, use_fc=True):
@@ -875,22 +872,52 @@ def LoadMergedSurfaces(input_dir, mode, use_fc=True):
     print("  asimov_penalties max   =", np.nanmax(asimov_penalties))
     print("  delta_m_values shape   =", delta_m_values.shape)
 
-    # Data delta-chi2 relative to the scanned grid minimum.
+    # # Data delta-chi2 relative to the scanned grid minimum.
+    # data_grid_min = np.nanmin(data_chi2s)
+    # data_grid_idx = np.unravel_index(np.nanargmin(data_chi2s), data_chi2s.shape)
+    # data_dchi2s = data_chi2s - data_grid_min
+
+    # --------------------------------------------------
+    # Data Delta-chi2
+    # --------------------------------------------------
+
+    # Smallest point actually sampled by the surface grid.
+    # Keep this for diagnostics only.
     data_grid_min = np.nanmin(data_chi2s)
-    data_grid_idx = np.unravel_index(np.nanargmin(data_chi2s), data_chi2s.shape)
-    data_dchi2s = data_chi2s - data_grid_min
+    data_grid_idx = np.unravel_index(
+        np.nanargmin(data_chi2s),
+        data_chi2s.shape
+    )
+
+    # True best-fit chi2 obtained from the continuous oscillation minimization.
+    data_best_fit_chi2 = GetContinuousBestFitChi2(mode)
+
+    # Observed null-vs-best-fit test statistic.
+    data_null_chi2 = 54.17
+    data_obs_dchi2 = data_null_chi2 - data_best_fit_chi2
+
+    # Delta-chi2 used for the exclusion:
+    #
+    #   Delta chi2(x) = chi2(x) - chi2(best fit)
+    #
+    data_dchi2s = data_chi2s - data_best_fit_chi2
+
 
     # Asimov delta-chi2 relative to the scanned grid minimum.
     asimov_grid_min = np.nanmin(asimov_chi2s)
     asimov_grid_idx = np.unravel_index(np.nanargmin(asimov_chi2s), asimov_chi2s.shape)
     asimov_dchi2s = asimov_chi2s - asimov_grid_min
 
-    print("  data grid min chi2    =", data_grid_min)
-    print("  data grid min index   =", data_grid_idx)
-    print("  data grid min dm2     =", delta_m_values[data_grid_idx[0]])
-    print("  data grid min umu4    =", str_to_axis["umu4"][data_grid_idx[1]])
-    print("  data grid min ue4     =", str_to_axis["ue4"][data_grid_idx[2]])
-    print("  data dchi2 min/max    =", np.nanmin(data_dchi2s), np.nanmax(data_dchi2s))
+    print("  data grid min chi2       =", data_grid_min)
+    print("  continuous best-fit chi2 =", data_best_fit_chi2)
+    print("  observed null dchi2      =", data_obs_dchi2)
+    print("  grid - continuous BF     =", data_grid_min - data_best_fit_chi2)
+
+    print("  data grid min index      =", data_grid_idx)
+    print("  data grid min dm2        =", delta_m_values[data_grid_idx[0]])
+    print("  data grid min umu4       =", str_to_axis["umu4"][data_grid_idx[1]])
+    print("  data grid min ue4        =", str_to_axis["ue4"][data_grid_idx[2]])
+    print("  data dchi2 min/max       =", np.nanmin(data_dchi2s), np.nanmax(data_dchi2s))
 
     print("  asimov grid min chi2  =", asimov_grid_min)
     print("  asimov grid min index =", asimov_grid_idx)
@@ -1224,26 +1251,19 @@ if __name__ == "__main__":
     )
 
     fc_levels = None
-    fc1sigma = np.percentile(results, 68.27)
-    fc2sigma = np.percentile(results, 95.45)
-    fc3sigma = np.percentile(results, 99.73)
 
-    # fc_levels = [
-    #     fc1sigma,
-    #     fc2sigma,
-    #     fc3sigma,
-    # ]
+    if results is not None:
+        fc90 = np.percentile(results, 90.0)
+        fc95 = np.percentile(results, 95.0)
 
-    fc_levels = [
-        # fc1sigma,
-        fc2sigma,
-        # fc3sigma,
-    ]
+        fc_levels = [
+            fc90,
+            fc95,
+        ]
 
-    print("\nFC sigma-equivalent critical dchi2 levels:")
-    print("  1 sigma (68.27%) =", fc1sigma)
-    print("  2 sigma (95.45%) =", fc2sigma)
-    print("  3 sigma (99.73%) =", fc3sigma)
+        print("\nNull-pseudoexperiment critical dchi2 levels:")
+        print("  90% CL =", fc90)
+        print("  95% CL =", fc95)
 
     # --------------------------------------------------
     # 1. Raw surface plots
