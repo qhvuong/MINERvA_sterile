@@ -95,8 +95,13 @@ class KinematicsCalculator(object):
         self.reco_thetaY_lep_rad_det = None
         self.reco_thetaY_lep_rad = None
         # self.reco_theta2D_lep_rad = None
-        # self.reco_phi_lep_rad = None
+        self.reco_phi_lep_rad_det = None
+        self.reco_phi_lep_rad = None
+        self.reco_phi_lep_det = None
+        self.reco_phi_lep = None
         self.reco_cos_theta_lep = None
+        self.reco_minos_proj_x = None
+        self.reco_minos_proj_y = None
 
         self.reco_E_lep = None
         self.reco_E_nu_cal = None
@@ -125,6 +130,8 @@ class KinematicsCalculator(object):
             self.true_q0 = None
             self.true_q3 = None
             self.true_q2 = None
+            self.true_W = None
+            self.true_W_exp = None
             self.true_visE = None
             self.true_LeptonP3D = None
             self.true_LeptonP3D_det = None
@@ -176,6 +183,26 @@ class KinematicsCalculator(object):
             if abs(reco_det_mag - reco_beam_mag) > 1e-6:
                 print(f"[WARN] reco |p| mismatch: det={reco_det_mag:.6f}, beam={reco_beam_mag:.6f}, diff={reco_det_mag-reco_beam_mag:.6e}")
 
+            # rel_diff = (
+            #     abs(reco_det_mag - reco_beam_mag) / reco_det_mag
+            #     if reco_det_mag != 0 else 0.0
+            # )
+
+            # if reco_det_mag > 1e6:
+            #     print("\n[WARN] HUGE reco lepton momentum")
+            #     print(f"  ShortName = {self.event.ShortName()}")
+            #     print(f"  det  = ({self.reco_LeptonP3D_det.X():.12g}, "
+            #         f"{self.reco_LeptonP3D_det.Y():.12g}, "
+            #         f"{self.reco_LeptonP3D_det.Z():.12g})")
+            #     print(f"  beam = ({self.reco_LeptonP3D.X():.12g}, "
+            #         f"{self.reco_LeptonP3D.Y():.12g}, "
+            #         f"{self.reco_LeptonP3D.Z():.12g})")
+            #     print(f"  |p| det  = {reco_det_mag:.12g}")
+            #     print(f"  |p| beam = {reco_beam_mag:.12g}")
+            #     print(f"  LeptonEnergy = {self.event.LeptonEnergy():.12g}")
+            #     print(f"  abs diff = {reco_det_mag-reco_beam_mag:.12g}")
+            #     print(f"  rel diff = {rel_diff:.12g}")
+
         self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
         self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()
         self.reco_thetaX_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.X(), self.reco_LeptonP3D_det.Z())
@@ -191,6 +218,32 @@ class KinematicsCalculator(object):
         self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
         self.reco_Pt_lep = self.reco_P_lep*math.sin(self.reco_theta_lep_rad)
+
+        self.reco_phi_lep_rad_det = self.reco_LeptonP3D_det.Phi()
+        self.reco_phi_lep_rad     = self.reco_LeptonP3D.Phi()
+
+        self.reco_phi_lep_det = math.degrees(self.reco_phi_lep_rad_det)
+        self.reco_phi_lep     = math.degrees(self.reco_phi_lep_rad)
+
+        # Project reconstructed lepton direction to the front face of MINOS
+        MINOS_FRONT_Z = 12087.301  # mm
+
+        self.reco_minos_proj_x = None
+        self.reco_minos_proj_y = None
+
+        x0 = event.vtx[0]
+        y0 = event.vtx[1]
+        z0 = event.vtx[2]
+
+        px = self.reco_LeptonP3D_det.X()
+        py = self.reco_LeptonP3D_det.Y()
+        pz = self.reco_LeptonP3D_det.Z()
+
+        if abs(pz) > 1e-10:
+            dz = MINOS_FRONT_Z - z0
+
+            self.reco_minos_proj_x = x0 + dz * px / pz
+            self.reco_minos_proj_y = y0 + dz * py / pz
 
         #get appearance or disappearance probabilities
         #self.reco_appearance = sin_ue_sqr*np.sin(1.27*delta_m_sqr*L/E)**2
@@ -266,23 +319,80 @@ class KinematicsCalculator(object):
         self.true_visE = self.CalculateVisibleE()
         self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
 
-        lep_pdg = abs(int(self.event.GetVecElem("mc_FSPartPDG", 0)))
+        Mn_GeV = M_n / 1e3
+
+        # ---------------------------------------------------------
+        # Generator true W
+        #
+        # For ordinary interactions, use GENIE mc_w directly.
+        # For 2p2h (mc_intType == 8), mc_w corresponds to the
+        # invariant mass of the two-nucleon system, so subtract
+        # one nucleon mass for comparison with the 1N W scale.
+        # ---------------------------------------------------------
+        self.true_W = self.event.mc_w / 1e3
+
+        if self.event.mc_intType == 8:
+            self.true_W -= Mn_GeV
+
+
+        # ---------------------------------------------------------
+        # W_exp from true leptonic kinematics
+        #
+        # Defined assuming scattering from one stationary nucleon:
+        #   W_exp^2 = M_N^2 + 2 M_N nu - Q^2
+        # with nu = q0.
+        # ---------------------------------------------------------
+        true_W_exp2 = (
+            Mn_GeV**2
+            + 2.0 * Mn_GeV * self.true_q0
+            - self.true_q2
+        )
+
+        self.true_W_exp = (
+            math.sqrt(true_W_exp2)
+            if true_W_exp2 >= 0
+            else -1
+        )
+
+
+        ### WRONG ASSUMPTIONS
+        # lep_pdg = abs(int(self.event.GetVecElem("mc_FSPartPDG", 0)))
+
+        # px = self.event.GetVecElem("mc_primFSLepton", 0)
+        # py = self.event.GetVecElem("mc_primFSLepton", 1)
+        # pz = self.event.GetVecElem("mc_primFSLepton", 2)
+
+        # if lep_pdg == 13:
+        #     # muon truth momentum stored in BEAM
+        #     p_beam = ROOT.TVector3(px, py, pz)
+        #     p_det = ROOT.TVector3(p_beam)
+        #     p_det.RotateX(-SystematicsConfig.BEAM_ANGLE)
+
+        # else:
+        #     # electron & other particles truth momentum stored in DET
+        #     p_det = ROOT.TVector3(px, py, pz)
+        #     p_beam = ROOT.TVector3(p_det)
+        #     p_beam.RotateX(+SystematicsConfig.BEAM_ANGLE)
+
+
+
 
         px = self.event.GetVecElem("mc_primFSLepton", 0)
         py = self.event.GetVecElem("mc_primFSLepton", 1)
         pz = self.event.GetVecElem("mc_primFSLepton", 2)
 
-        if lep_pdg == 13:
-            # muon truth momentum stored in BEAM
-            p_beam = ROOT.TVector3(px, py, pz)
-            p_det = ROOT.TVector3(p_beam)
-            p_det.RotateX(-SystematicsConfig.BEAM_ANGLE)
+        # Truth momentum is stored in detector coordinates.
+        p_det = ROOT.TVector3(px, py, pz)
 
-        else:
-            # electron & other particles truth momentum stored in DET
-            p_det = ROOT.TVector3(px, py, pz)
-            p_beam = ROOT.TVector3(p_det)
-            p_beam.RotateX(+SystematicsConfig.BEAM_ANGLE)
+        # Convert detector -> beam coordinates.
+        p_beam = ROOT.TVector3(p_det)
+        p_beam.RotateX(SystematicsConfig.BEAM_ANGLE)
+
+        self.true_LeptonP3D_det = ROOT.TVector3(p_det)
+        self.true_LeptonP3D     = ROOT.TVector3(p_beam)
+
+
+
 
 
 

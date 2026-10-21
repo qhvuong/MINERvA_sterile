@@ -25,8 +25,12 @@ public:
         double additionalWeight = 1.0,
         bool cvWeighted = false,
         unsigned int beamUniverseOffset = 0,
-        bool useFlatBeamFocus = false,
+        int beamFocusMode = 0,
         const std::vector<double>& flatBeamFocusWeights =
+            std::vector<double>(),
+        const std::vector<double>& beamFocusEnergyEdges =
+            std::vector<double>(),
+        const std::vector<double>& beamFocusResponseWeights =
             std::vector<double>()
     );
 };

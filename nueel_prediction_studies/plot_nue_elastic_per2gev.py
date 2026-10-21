@@ -594,11 +594,11 @@ def main():
 
     label.SetTextSize(0.028)
 
-    label.DrawLatex(
-        0.16,
-        0.71,
-        "9-20 GeV bin approximated for visualization only",
-    )
+    # label.DrawLatex(
+    #     0.16,
+    #     0.71,
+    #     "9-20 GeV bin approximated for visualization only",
+    # )
 
     c.SaveAs(
         args.output

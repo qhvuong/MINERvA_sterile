@@ -265,7 +265,7 @@ PLOT_SETTINGS= {
     "Biased Neutrino Energy":
     {
         "name" : "EN4",
-        "title" : "E_{e}+E_{avail} (GeV)",
+        "title" : "E_{e}+E_{avail} (GeV); Energy_{Estimator} (GeV); NEvents",
         #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
         "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
@@ -390,7 +390,7 @@ PLOT_SETTINGS= {
     "Q2" :
     {
         "name" : "Q2",
-        "title": "q2 ; Q2 (GeV^{2}); dNEvents/dq2",
+        "title": "True q2 ; Q2 (GeV^{2}); dNEvents/dq2",
         "binning" : [[i/10 for i in range(40)]],
         "value_getter" : [lambda event: event.mc_Q2/1e6],
         "tags": truth_tags
@@ -402,6 +402,31 @@ PLOT_SETTINGS= {
         "binning" : [PlotConfig.LOW_RECOIL_BIN_Q3],
         "value_getter" : [lambda event: event.kin_cal.reco_q3],
         "tags": reco_tags
+    },
+    # "True W":
+    # {
+    #     "name" : "trueW",
+    #     "title": "True W; True W (GeV); NEvents",
+    #     "binning" : [PlotConfig.W_BINNING],
+    #     "value_getter" : [lambda event: event.mc_w/1e3],
+    #     "tags": truth_tags,
+    # },
+    "True W":
+    {
+        "name" : "trueW",
+        "title": "True W; True W (GeV); NEvents",
+        "binning" : [PlotConfig.W_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_W],
+        "tags": truth_tags,
+    },
+
+    "True W Exp":
+    {
+        "name" : "trueWExp",
+        "title": "W_{exp}; W_{exp} (GeV); NEvents",
+        "binning" : [PlotConfig.W_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_W_exp],
+        "tags": truth_tags,
     },
     "E Theta Squared":
     {
@@ -416,10 +441,35 @@ PLOT_SETTINGS= {
     "Lepton Angle":
     {
         "name" : "Lep_Angle",
-        "title" : "Lepton Angle ; Lepton Angle (deg) ; NEvents",
+        "title" : "Reconstructed Lepton Angle ; Lepton Angle (deg) ; NEvents",
         "binning" : [PlotConfig.LEPTON_ANGLE_BINNING],
         "value_getter" : [lambda event: event.kin_cal.reco_theta_lep],
         "tags":reco_tags
+    },
+    "Lepton Phi":
+    {
+        "name" : "Lep_Phi",
+        "title" : "Reconstructed Lepton #phi; #phi (deg); NEvents",
+        "binning" : [[-180 + 10*i for i in range(37)]],
+        "value_getter" : [lambda event: event.kin_cal.reco_phi_lep_det],
+        "tags" : reco_tags
+    },
+    "Lepton MINOS Projected X":
+    {
+        "name": "Lep_MINOSProjX",
+        "title": "Projected Lepton Position at MINOS Front; x_{proj} (mm); NEvents",
+        "binning": [[-2000 + 100*i for i in range(41)]],
+        "value_getter": [lambda event: event.kin_cal.reco_minos_proj_x],
+        "tags": reco_tags
+    },
+
+    "Lepton MINOS Projected Y":
+    {
+        "name": "Lep_MINOSProjY",
+        "title": "Projected Lepton Position at MINOS Front; y_{proj} (mm); NEvents",
+        "binning": [[-2000 + 100*i for i in range(41)]],
+        "value_getter": [lambda event: event.kin_cal.reco_minos_proj_y],
+        "tags": reco_tags
     },
      "Estimator vs Front dEdX":
     {
@@ -962,6 +1012,11 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_E_lep],
         "tags":reco_tags
     },
+
+
+    # ==========================================================================
+    # Energy / momentum response diagnostics
+    # ==========================================================================
     "True vs Reconstructed Lepton Energy":
     {
         "name" : "TrueVsRecoLeptonEnergy",
@@ -973,8 +1028,119 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.reco_E_lep],
         "tags": reco_tags   
     },
+    "True vs Reconstructed Lepton Momentum":
+    {
+        "name": "TrueVsRecoLeptonMomentum",
+        "title": (
+            "True vs Reconstructed Lepton Momentum;"
+            "True p_{lep} (GeV);"
+            "Reco p_{lep} (GeV);"
+            "NEvents"
+        ),
+        "binning": [
+            PlotConfig.LEPTON_MOMENTUM_RESPONSE_BINNING,
+            PlotConfig.LEPTON_MOMENTUM_RESPONSE_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.true_LeptonP3D.Mag() / 1000.,
+            lambda event: event.kin_cal.reco_P_lep
+        ],
+        "tags": truth_tags
+    },
 
+    "Lepton Momentum Fractional Resolution":
+    {
+        "name": "LeptonMomentumFracResolution",
+        "title": (
+            "Lepton Momentum Resolution;"
+            "(p_{lep}^{reco}-p_{lep}^{true})/p_{lep}^{true};"
+            "NEvents"
+        ),
+        "binning": [
+            PlotConfig.LEPTON_MOMENTUM_FRAC_RESID_BINNING
+        ],
+        "value_getter": [
+            lambda event: (
+                (
+                    event.kin_cal.reco_LeptonP3D.R()
+                    - event.kin_cal.true_LeptonP3D.Mag()
+                )
+                / event.kin_cal.true_LeptonP3D.Mag()
+                if (
+                    event.kin_cal.reco_LeptonP3D is not None
+                    and event.kin_cal.true_LeptonP3D is not None
+                    and event.kin_cal.true_LeptonP3D.Mag() > 0
+                )
+                else None
+            )
+        ],
+        "tags": truth_tags
+    },
 
+    "Lepton Energy Fractional Resolution":
+    {
+        "name": "LeptonEnergyFracResolution",
+        "title": (
+            "Lepton Energy Resolution;"
+            "(E_{lep}^{reco}-E_{lep}^{true})/E_{lep}^{true};"
+            "NEvents"
+        ),
+        "binning": [
+            PlotConfig.LEPTON_ENERGY_FRAC_RESID_BINNING
+        ],
+        "value_getter": [
+            lambda event: (
+                (
+                    event.kin_cal.reco_E_lep
+                    - event.kin_cal.true_E_lep
+                )
+                / event.kin_cal.true_E_lep
+                if event.kin_cal.true_E_lep > 0
+                else None
+            )
+        ],
+        "tags": truth_tags
+    },
+
+    "True vs Reconstructed Available Energy":
+    {
+        "name": "TrueVsRecoAvailableEnergy",
+        "title": (
+            "True vs Reconstructed Available Energy;"
+            "True E_{avail} (GeV);"
+            "Reco E_{avail} (GeV);"
+            "NEvents"
+        ),
+        "binning": [
+            PlotConfig.E_AVAILABLE_BINNING,
+            PlotConfig.E_AVAILABLE_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.true_visE,
+            lambda event: event.kin_cal.reco_visE
+        ],
+        "tags": truth_tags
+    },
+
+    "True q0 vs Reconstructed Available Energy":
+    {
+        "name": "TrueQ0VsRecoAvailableEnergy",
+        "title": (
+            "True Energy Transfer vs Reconstructed Available Energy;"
+            "True q_{0} (GeV);"
+            "Reco E_{avail} (GeV);"
+            "NEvents"
+        ),
+        "binning": [
+            PlotConfig.E_AVAILABLE_BINNING,
+            PlotConfig.E_AVAILABLE_BINNING
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.true_q0,
+            lambda event: event.kin_cal.reco_visE
+        ],
+        "tags": truth_tags
+    },
 
 
     #### These are angle diagnostics
@@ -2443,6 +2609,15 @@ PLOT_SETTINGS= {
         "value_getter": [lambda event: event.HasNoBackExitingTracks],
         "tags":reco_tags
     },
+    "HasMINOSMatch":
+    {
+        "name": "HasMINOSMatch",
+        "title": "HasMINOSMatch; HasMINOSMatch; NEvents",
+        "binning": [[-0.5, 0.5, 1.5]],
+        "value_getter": [lambda event: event.IsMinosMatchMuon()],
+        "tags": reco_tags
+    },
+
 }
 
 for i in PlotConfig.LOW_RECOIL_BIN_Q0:

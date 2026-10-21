@@ -1,7 +1,7 @@
 {
   TH1::AddDirectory(kFALSE);
 
-  const char* dir = "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_FV";
+  const char* dir = "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_newElectronResponse";
 
   struct Playlist {
     const char* input_label;

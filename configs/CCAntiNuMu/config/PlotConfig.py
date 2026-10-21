@@ -196,7 +196,24 @@ QSQUARED_BINNING = QSQUARED_BINNING_INC
 
 QSQUARED_SLICE_EDGES = [0.2, 0.75, 2,]
 
-W_BINNING = [0.1*i for i in range(21)]
+# W_BINNING = [0.1*i for i in range(21)]
+W_BINNING = [0.8 + 0.1*i for i in range(23)]
+
+# Response / resolution plots
+LEPTON_MOMENTUM_RESPONSE_BINNING = [
+    0.0, 0.25, 0.5, 0.75,
+    1.0, 1.5, 2.0, 2.5,
+    3.0, 4.0, 5.0, 6.0,
+    8.0, 10.0, 12.0, 15.0, 20.0
+]
+
+LEPTON_MOMENTUM_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
+
+LEPTON_ENERGY_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
 
 PSI_BINNING = [0.05*i for i in range(41)]
 PSI_TAIL_BINNING = [0.05*i for i in range(4,15)]
@@ -302,7 +319,8 @@ def Printvar(event):
 
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
-    # "Reco Energy vs L/E",
+    "Biased Neutrino Energy",
+    "Reco Energy vs L/E",
     # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
     # "Estimator vs Front dEdX",
@@ -311,9 +329,10 @@ HISTS_TO_MAKE = [
     # "Biased Neutrino Energy",
 	# "Lepton Energy",
 	# "E Theta Squared",
-    "Reco Energy vs L/E",
+    # "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
+	# "Q2",
+	# "True W",
 	# "True Lepton Energy",
 	# "True Neutrino Energy",
 	# "True Signal True Energy vs Neutrino Length Travelled",
@@ -324,4 +343,16 @@ HISTS_TO_MAKE = [
 	# "Available Energy vs Lepton Pt",
 	# "Front dEdX",
 	# "Q2",
+
+    # "Biased Neutrino Energy",
+	# "Lepton Energy",
+	# "Visible Energy",
+	# "Lepton Angle",
+	# "Lepton Pt",
+	# "E Theta Squared",
+	# "HasNoBackExitingTracks",
+	# "HasMINOSMatch",
+	# "Lepton MINOS Projected X",
+	# "Lepton MINOS Projected Y",
+
 ]

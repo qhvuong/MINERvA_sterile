@@ -6,10 +6,23 @@ from array import array
 import PlotUtils.LoadPlotUtilsLib
 
 
-INPUT_LE1 = "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_TomalakXS_mnv_LE1.root"
-INPUT_LE13 = "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_TomalakXS_mnv_LE13.root"
+INPUT_LE1 = (
+    "/exp/minerva/data/users/qvuong/nueel_prediction_studies/"
+    "nue_elastic_prediction_TomalakXS_fixedTotalNorm_"
+    "newElectronResponse_mnv_LE1.root"
+)
 
-OUTPUT = "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_TomalakXS_mnv_FHC.root"
+INPUT_LE13 = (
+    "/exp/minerva/data/users/qvuong/nueel_prediction_studies/"
+    "nue_elastic_prediction_TomalakXS_fixedTotalNorm_"
+    "newElectronResponse_mnv_LE13.root"
+)
+
+OUTPUT = (
+    "/exp/minerva/data/users/qvuong/nueel_prediction_studies/"
+    "nue_elastic_prediction_TomalakXS_fixedTotalNorm_"
+    "newElectronResponse_mnv_FHC.root"
+)
 
 FLUX_BAND = "Flux"
 

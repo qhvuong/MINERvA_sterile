@@ -37,7 +37,7 @@ _stitch_parser.add_argument(
     "--stitch_input_set",
     dest="stitch_input_set",
     default="p6",
-    choices=["p6", "p8", "p8_onlyPPFX", "p8_onlyBeamFocus", "p8_oldResponse"],
+    # choices=["p6", "p8", "p8_onlyPPFX", "p8_onlyBeamFocus", "p8_oldResponse"],
 )
 
 _stitch_args, _remaining_argv = _stitch_parser.parse_known_args()
@@ -121,7 +121,8 @@ ROOT.TH1.AddDirectory(False)
 JAEWON_INPUT_FILE = "jaewon_nue_elastic_data.json"
 
 LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
-    "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_MAD.root"
+    # "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_MAD.root"
+    "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcme1N_p8_scattering_LElike_6bins_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root"
 )
 
 PREDICTED_ELASTIC_FILE = (
@@ -2513,13 +2514,14 @@ if __name__ == "__main__":
 
     input_set = getattr(AnalysisConfig, "stitch_input_set", "p6")
 
-    n_flux_universes = {
-        "p6": 100,
-        "p8": 1000,
-        "p8_onlyPPFX": 1000,
-        "p8_onlyBeamFocus": 1000,
-        "p8_oldResponse": 1000,
-    }[input_set]
+    if input_set == "p6":
+        n_flux_universes = 100
+    elif input_set.startswith("p8"):
+        n_flux_universes = 1000
+    else:
+        raise RuntimeError(
+            "Unknown stitch_input_set for flux universes: {}".format(input_set)
+        )
 
     sample_histogram.SetNFluxUniverses(n_flux_universes)
 

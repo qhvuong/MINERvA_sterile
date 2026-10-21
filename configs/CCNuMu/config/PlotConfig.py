@@ -194,7 +194,24 @@ QSQUARED_BINNING = QSQUARED_BINNING_INC
 
 QSQUARED_SLICE_EDGES = [0.2, 0.75, 2,]
 
-W_BINNING = [0.1*i for i in range(21)]
+# W_BINNING = [0.1*i for i in range(21)]
+W_BINNING = [0.8 + 0.1*i for i in range(23)]
+
+# Response / resolution plots
+LEPTON_MOMENTUM_RESPONSE_BINNING = [
+    0.0, 0.25, 0.5, 0.75,
+    1.0, 1.5, 2.0, 2.5,
+    3.0, 4.0, 5.0, 6.0,
+    8.0, 10.0, 12.0, 15.0, 20.0
+]
+
+LEPTON_MOMENTUM_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
+
+LEPTON_ENERGY_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
 
 PSI_BINNING = [0.05*i for i in range(41)]
 PSI_TAIL_BINNING = [0.05*i for i in range(4,15)]
@@ -300,27 +317,62 @@ def Printvar(event):
 
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
+    # "Biased Neutrino Energy",
     # "Reco Energy vs L/E",
+	# "Lepton Energy",
     # "True Energy vs L/E",
     # "True Energy vs Biased Neutrino Energy",
     # "Estimator vs Front dEdX",
     # "Biased Neutrino Energy",
 
 	# "Visible Energy",
+	# "Lepton Angle",
 	# "Lepton Pt",
+	# "E Theta Squared",
+	# "HasNoBackExitingTracks",
+	# "HasMINOSMatch",
+
+	# "Lepton MINOS Projected X",
+	# "Lepton MINOS Projected Y",
+
+
+    # # Coordinate / angular-bias sanity checks
+    # "Reco ThetaX vs Vertex X",
+    # "True ThetaX vs Vertex X",
+    # "dThetaX vs Vertex X",
+
+    # "Reco ThetaY vs Vertex Y",
+    # "True ThetaY vs Vertex Y",
+    # "dThetaY vs Vertex Y",
+
+    # # Momentum-magnitude bias checks
+    # "dPmag_frac vs Vertex X In Det Coordinate",
+    # "dPmag_frac vs Vertex Y In Det Coordinate",
+
+    # # Optional cross-checks
+    # "True vs Reconstructed Lepton Momentum",
+
+
+
+
+	
 	# "Available Energy vs Lepton Energy",
 	# "Available Energy vs Lepton Pt",
 	# "Front dEdX",
 	# "Q2",
-
-	# "Lepton Energy",
-	# "E Theta Squared",
-    "Reco Energy vs L/E",
+	# "True W",
+	# "True W Exp",
+	# "True vs Reconstructed Lepton Energy",
+	# "True vs Reconstructed Lepton Momentum",
+	# "Lepton Momentum Fractional Resolution",
+	# "Lepton Energy Fractional Resolution",
+	# "True vs Reconstructed Available Energy",
+	# "True q0 vs Reconstructed Available Energy",
+    # "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
 	# "True Lepton Energy",
 	# "True Neutrino Energy",
-	# "True Signal True Energy vs Neutrino Length Travelled",
+	"True Signal True Energy vs Neutrino Length Travelled",
 	# "Visible Energy",
 	# "HasNoBackExitingTracks",
 	# "Neutrino Vertex Z",
@@ -329,8 +381,6 @@ HISTS_TO_MAKE = [
 	# "Reco Q2",
 	# "Cone Outside Energy",
 	# "Neighborhood Energy",
-	# "Lepton Angle",
-	# "Lepton Pt",
 
 	# "Reco ThetaX vs Vertex X",
 	# "True ThetaX vs Vertex X",

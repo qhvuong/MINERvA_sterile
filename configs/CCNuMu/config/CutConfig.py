@@ -31,10 +31,15 @@ EUV_CUT = 0.3
 DEDX_PLANES = [5,9]
 HELICITY= 1
 
+#OLD
 FIDUCIAL_APOTHEM = 850
-FIDUCIAL_Z_RANGE = [5980,8422]
+FIDUCIAL_Z_RANGE = [5980,8422]        # This is Ryan's ME Z range
+# FIDUCIAL_Z_RANGE = [5991.29,8422]       # This is standard inclusive CC selection FV
+
 # FIDUCIAL_APOTHEM = 881.25
-# FIDUCIAL_Z_RANGE = [5840,8422]
+# FIDUCIAL_Z_RANGE = [5980,8422]
+
+
 
 # Kinematics cutoffs
 ELECTRON_ENERGY_RANGE = [2.5, float('inf')] # in GeV
@@ -50,24 +55,30 @@ RECO_VTX_ZDIFF_RANGE= [-20,20]
 RECO_PROTON_END = 8500
 WEXP_CUT = 1.4
 visE_RANGE = [0.0,0.7]
-visE_FHCRANGE = [0.0,0.7]
-RECO_ANGLE = [20,90]
-FRONT_DEDX_PI0_UPPERBOUND = 5
-PsiEe_CUT = 0.5
+
 Ethetasquared_CUT = .0032
+FRONT_DEDX_PI0_UPPERBOUND = 5
+
+EAVAIL_LOW = [0.0,0.05]
+EAVAIL_HIGH = [0.0,0.2]
+ELECTRON_ENERGY_CUTOFF = 2.5
 
 ############################################################################
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-    "Signal" : [
-        "InverseHasNoBackExitingTracks",
+    "Signal" : [ 
+        "NoCut",
         "Vertex_Z",
         "Vertex_Apothem",
-        "Etheta",
-        "Eavail",
-        "LeptonAngle",
-        "Pt",
+        # "InverseHasNoBackExitingTracks",
+        # "Etheta",
+        # "Eavail",
+        # "LeptonAngle",
+        # "Pt",
+
+        # "HasNoBackExitingTracks",
+        # "HasMINOSMatch",
 
         # Removed Cuts
         #"ZDifference",

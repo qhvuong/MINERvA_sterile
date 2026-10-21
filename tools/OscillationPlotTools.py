@@ -37,6 +37,110 @@ ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 legend_text_size = .025
 
+import json
+
+SAMPLE_LABELS = {
+    "fhc_elastic": "#nu+e",
+    "fhc_nue_selection": "CC #nu_{e}",
+    "rhc_nue_selection": "CC #bar{#nu}_{e}",
+    "fhc_ratio": "CC #nu_{#mu}/#nu_{e}",
+    "rhc_ratio": "CC #bar{#nu}_{#mu}/#bar{#nu}_{e}",
+    "fhc_numu_selection": "CC #nu_{#mu}",
+    "rhc_numu_selection": "CC #bar{#nu}_{#mu}",
+}
+
+
+def GetStitchedSampleLayout(hist_config):
+    with open(hist_config, "r") as f:
+        config = json.load(f)
+
+    samples = sorted(
+        config.items(),
+        key=lambda item: item[1]["start"]
+    )
+
+    layout = []
+
+    for key, bins in samples:
+        start = bins["start"]
+        end = bins["end"]
+
+        layout.append({
+            "key": key,
+            "label": SAMPLE_LABELS.get(key, key),
+            "start": start,
+            "end": end,
+            "left": start,
+            "right": end + 1,
+            "center": 0.5 * (start + end + 1),
+        })
+
+    return layout
+
+def DrawStitchedSampleDivisions(pad, layout, draw_labels=False):
+    """
+    Draw vertical separators between stitched samples.
+
+    If draw_labels=True, also draw the sample name centered over
+    each stitched region.
+    """
+
+    pad.cd()
+    pad.Update()
+
+    ymin = pad.GetUymin()
+    ymax = pad.GetUymax()
+
+    lines = []
+    labels = []
+
+    # --------------------------------------------------------
+    # Vertical lines between samples
+    # --------------------------------------------------------
+    for sample in layout[1:]:
+        x = sample["left"]
+
+        line = ROOT.TLine(x, ymin, x, ymax)
+        line.SetLineColor(ROOT.kGray + 2)
+        line.SetLineStyle(2)
+        line.SetLineWidth(2)
+        line.Draw("same")
+
+        lines.append(line)
+
+    # --------------------------------------------------------
+    # Sample labels on upper pad
+    # --------------------------------------------------------
+    if draw_labels:
+        x_min = layout[0]["left"]
+        x_max = layout[-1]["right"]
+        x_range = float(x_max - x_min)
+
+        for sample in layout:
+            # Convert sample center from histogram coordinates
+            # to NDC so the vertical placement is independent
+            # of the log-y axis.
+            x_frac = (sample["center"] - x_min) / x_range
+
+            left_margin = pad.GetLeftMargin()
+            right_margin = pad.GetRightMargin()
+
+            x_ndc = (
+                left_margin
+                + x_frac * (1.0 - left_margin - right_margin)
+            )
+
+            text = ROOT.TLatex()
+            text.SetNDC()
+            text.SetTextAlign(22)
+            text.SetTextSize(0.032)
+            text.SetTextFont(42)
+            text.DrawLatex(x_ndc, 0.93, sample["label"])
+
+            labels.append(text)
+
+    return lines, labels
+
 def UndoBinWidthNorm(histogram):
     for i in range(0,histogram.GetNbinsX()+1):
         width = histogram.GetBinWidth(i)
@@ -652,8 +756,23 @@ def PlotOscillationGrid(sample_histogram,parameters,name="",exclude="",lam=1):
     overall = plot_osc_side_by_side(mc_hists, osc_hists, data_hists, titles,MNVPLOTTER)
     overall.Print("plots/grid_oscillated_{:.1f}_{:.3f}_{:.4f}.png".format(parameters["m"],parameters['ue4'],parameters['umu4']))
 
-def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False,usePseudo=False,exclude="",lam=1):
+def PlotOscillationEffects(
+    sample_histogram,
+    parameters,
+    name="",
+    plotSamples=False,
+    usePseudo=False,
+    exclude="",
+    lam=1,
+    hist_config=None
+):
     histogram = copy.deepcopy(sample_histogram)
+
+    stitched_layout = None
+
+    if hist_config is not None:
+        stitched_layout = GetStitchedSampleLayout(hist_config)
+
     invCov=histogram.GetInverseCovarianceMatrix(sansFlux=True)
 
     h_null = histogram.GetMCHistogram()
@@ -748,6 +867,21 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
     leg.AddEntry(h_osc_marg,leg_text,"l")
     leg.Draw()
 
+    # --------------------------------------------------------
+    # Stitched sample divisions and labels
+    # --------------------------------------------------------
+    top_lines = []
+    sample_labels = []
+
+    if stitched_layout is not None:
+        top.Update()
+
+        top_lines, sample_labels = DrawStitchedSampleDivisions(
+            top,
+            stitched_layout,
+            draw_labels=True,
+        )
+
     nullRatio =  h_data.Clone()
     nullMargRatio =  h_null_marg.Clone()
     oscRatio =  h_osc.Clone()
@@ -793,6 +927,17 @@ def PlotOscillationEffects(sample_histogram,parameters,name="",plotSamples=False
     straightLine.SetLineWidth(2)
     straightLine.SetFillColor(0)
     straightLine.Draw("HIST SAME")
+
+    bottom_lines = []
+
+    if stitched_layout is not None:
+        bottom.Update()
+
+        bottom_lines, _ = DrawStitchedSampleDivisions(
+            bottom,
+            stitched_layout,
+            draw_labels=False,
+        )
 
     top.cd()
 

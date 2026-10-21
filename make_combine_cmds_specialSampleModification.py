@@ -170,7 +170,7 @@ def handle_block(block: dict, dry_run: bool, log_sink: Optional[List[str]] = Non
         log_sink.extend(format_block_log(block, file_counts))
 
     cmd = [
-        "python", "combine_file_specialSampleModification.py",
+        "python", "-u", "combine_file_specialSampleModification.py",
         "--playlist", playlist,
         "--i", in_dir,
         "--cal_POT",

@@ -154,7 +154,7 @@ SignalDecomposition = {
         "color": COLORS[1]
     },
     "CCNuMu": {
-        "title" : "CC #nu_{#mu}-Res", 
+        "title" : "CC #nu_{#mu} Others", 
         "color": COLORS[4]
     },
     "CCNuMuDIS" : {
@@ -165,11 +165,11 @@ SignalDecomposition = {
         "title" : "CC #nu_{#mu} wrong sign", 
         "color": COLORS[7]
     },
-    "Background" : {
-        "title" : "Backgrounds",
-        "cate" : {"NCDiff", "NuEElastic", "NC", "CC"}, 
-        "color": COLORS[8]
-    }
+    # "Background" : {
+    #     "title" : "Backgrounds",
+    #     "cate" : {"NCDiff", "NuEElastic", "NC", "CC"}, 
+    #     "color": COLORS[8]
+    # }
 }
 
 SIGNAL_DEFINITION = SignalDecomposition
@@ -323,6 +323,8 @@ DefaultPlotters={
             "args":(SignalDecomposition,True,False)},
     "stacked":{"func":PlotTools.PrepareStack,
         "args": (SignalDecomposition,)},
+    "stackedSignalDecomp":{"func":PlotTools.PrepareStack,
+               "args": (SignalDecomposition,)},
     "diff":{"func":PlotTools.PrepareDiff},
     "migration":{"func":PlotTools.PrepareMigration,
         "args": (SignalDecomposition,)},
@@ -587,15 +589,13 @@ PLOTS_TO_MAKE = [
     #      "plot_type" : "err"},
     # {"name":"True Energy vs Biased Neutrino Energy",
     #         "plot_type" : 'migration'},
-    # {"name":"Biased Neutrino Energy",
+
+
+    {"name":"Biased Neutrino Energy",
+        "plot_type" : "stacked"},
+    # {"name":"Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"Visible Energy",
-    #     "plot_type" : "stacked"},
-    # {"name":"HasNoBackExitingTracks",
-    #     "plot_type" : "stacked"},
-    # {"name":"Neutrino Vertex Z",
-    #     "plot_type" : "stacked"},
-    # {"name":"Neutrino Vertex Apothem",
     #     "plot_type" : "stacked"},
     # {"name":"E Theta Squared",
     #     "plot_type" : "stacked"},
@@ -603,22 +603,59 @@ PLOTS_TO_MAKE = [
     #     "plot_type" : "stacked"},
     # {"name":"Lepton Pt",
     #     "plot_type" : "stacked"},
+    # {"name":"HasNoBackExitingTracks",
+    #     "plot_type" : "stacked"},
+    # {"name":"HasMINOSMatch",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton MINOS Projected X",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton MINOS Projected Y",
+    #     "plot_type" : "stacked"},
+
+
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Apothem",
+    #     "plot_type" : "stacked"},
+    # {"name":"E Theta Squared",
+    #     "plot_type" : "stacked"},
     # {"name":"Reco Energy vs L/E",
     #    "plot_type" : "migration"},
 
 
-    # {"name":"Lepton Energy",
-    #     "plot_type" : "stacked"},
-    # {"name":"E Theta Squared",
-    #     "plot_type" : "stacked"},
     # {"name":"True E Theta Squared",
     #     "plot_type" : "stacked"},
     # {"name":"Reco Energy vs L/E",
     #    "plot_type" : "migration"},
     # {"name":"Estimator vs Front dEdX",
     #     "plot_type" : "stacked"},
-    {"name":"Biased Neutrino Energy",
-        "plot_type" : "stacked"},
+
+    # {"name":"Q2",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"True W",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"True W",
+    #     "plot_type" : "stacked"},
+    # {"name":"True W Exp",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"True W Exp",
+    #     "plot_type" : "stacked"},
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
+
+	# {"name":"True vs Reconstructed Lepton Energy",
+    #     "plot_type" : "category_hist"},
+	# {"name":"True vs Reconstructed Lepton Momentum",
+    #     "plot_type" : "category_hist"},
+	# {"name":"Lepton Momentum Fractional Resolution",
+    #     "plot_type" : "stackedSignalDecomp"},
+	# {"name":"Lepton Energy Fractional Resolution",
+    #     "plot_type" : "stackedSignalDecomp"},
+	# {"name":"True vs Reconstructed Available Energy",
+    #     "plot_type" : "category_hist"},
+	# {"name":"True q0 vs Reconstructed Available Energy",
+    #     "plot_type" : "category_hist"},
+
     # {"name":"Biased Neutrino Energy Background Fit",
     #     "plot_type" : "stacked"},        
     # {"name":"Visible Energy",

@@ -76,6 +76,15 @@ class EventClassifier(object):
         #self.Apothem = ROOT.reco.Apothem(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)(850)
         #self.HasMINOSMatch = ROOT.reco.HasMINOSMatch(ROOT.PythonMinervaUniverse,ROOT.PlotUtils.detail.empty)()
 
+        self.minos_compare = {
+            "both_pass": 0,
+            "current_only": 0,
+            "inclusive_only": 0,
+            "both_fail": 0,
+        }
+
+        self.minos_disagree_printed = 0
+
 
     def Classify(self,entry):
         """ Actually do the classification.  Should be called only once per event.
@@ -122,6 +131,79 @@ class EventClassifier(object):
                 # this value wasn't defined because the reco didn't get this far.
                 # don't crash, just assume this cut failed.
                 continue
+
+        # ------------------------------------------------------------
+        # DEBUG: compare current MINOS requirement with inclusive CC
+        # definition, for events passing all OTHER Signal cuts.
+        # Count CV only so systematic universes do not duplicate events.
+        # ------------------------------------------------------------
+        try:
+            is_cv = (self.tree.ShortName() == "cv")
+        except AttributeError:
+            is_cv = True
+
+        if is_cv and "InverseHasNoBackExitingTracks" in SAMPLE_CUTS["Signal"]:
+
+            # Require every Signal cut EXCEPT the current MINOS-related cut.
+            pass_other_signal_cuts = True
+
+            for cut_name in SAMPLE_CUTS["Signal"]:
+
+                if cut_name == "InverseHasNoBackExitingTracks":
+                    continue
+
+                if cut_name.startswith("Inverse"):
+                    pass_other_signal_cuts = (
+                        pass_other_signal_cuts
+                        and not self.reco_cuts_passed[cut_name[7:]]
+                    )
+                else:
+                    pass_other_signal_cuts = (
+                        pass_other_signal_cuts
+                        and self.reco_cuts_passed[cut_name]
+                    )
+
+            if pass_other_signal_cuts:
+
+                # Current CCnumu requirement:
+                # InverseHasNoBackExitingTracks
+                current_pass = not self.reco_cuts_passed["HasNoBackExitingTracks"]
+
+                # Inclusive CC requirement:
+                # isMinosMatchTrack == 1
+                inclusive_pass = self.tree.HasInclusiveMINOSMatch()
+
+                if current_pass and inclusive_pass:
+                    self.minos_compare["both_pass"] += 1
+
+                elif current_pass and not inclusive_pass:
+                    self.minos_compare["current_only"] += 1
+
+                elif not current_pass and inclusive_pass:
+                    self.minos_compare["inclusive_only"] += 1
+
+                else:
+                    self.minos_compare["both_fail"] += 1
+
+                if (
+                    current_pass != inclusive_pass
+                    and self.minos_disagree_printed < 20
+                ):
+                    self.minos_disagree_printed += 1
+
+                    print(
+                        "[MINOS DISAGREE]",
+                        "HasNoBackExitingTracks =",
+                        self.reco_cuts_passed["HasNoBackExitingTracks"],
+                        "isMinosMatchTrack =",
+                        self.tree.GetInt("isMinosMatchTrack"),
+                        "current_pass =",
+                        current_pass,
+                        "inclusive_pass =",
+                        inclusive_pass,
+                    )
+
+
         # return classification result by selected cuts.
         for sample in self.samples:
             passed = all(self.reco_cuts_passed[cut_name] for cut_name in SAMPLE_CUTS[sample]
@@ -136,6 +218,13 @@ class EventClassifier(object):
                 self.side_band = sample
                 break #samples are exclusive
         return True
+
+    def PrintMINOSComparison(self):
+        print("\n===== MINOS MATCH COMPARISON =====")
+        print("both pass      :", self.minos_compare["both_pass"])
+        print("current only   :", self.minos_compare["current_only"])
+        print("inclusive only :", self.minos_compare["inclusive_only"])
+        print("both fail      :", self.minos_compare["both_fail"])
 
     def _ClassifyTruth(self):
         if not self.new_truth:

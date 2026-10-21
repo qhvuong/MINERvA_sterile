@@ -35,7 +35,10 @@ UPSTREAM_OD_ENERGY_CUT = 5000
 
 #OLD
 FIDUCIAL_APOTHEM = 850
-FIDUCIAL_Z_RANGE = [5980,8422]
+FIDUCIAL_Z_RANGE = [5980,8422]        # This is Ryan's ME Z range
+# FIDUCIAL_Z_RANGE = [5991.29,8422]       # This is standard inclusive CC selection FV
+
+
 # FIDUCIAL_APOTHEM = 881.25
 # FIDUCIAL_Z_RANGE = [5980,8422]
 
@@ -51,7 +54,12 @@ TRUE_Q3_RANGE = [0,4]
 
 PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
+
+# Ryans ME Eavail range
 visE_RANGE = [0.0,0.7]
+# # My LE Eavail range
+# visE_RANGE = [0.0,0.65]
+
 Ethetasquared_CUT = .0032
 FRONT_DEDX_PI0_UPPERBOUND = 5
 
@@ -65,23 +73,23 @@ ELECTRON_ENERGY_CUTOFF = 2.5
 SAMPLE_CUTS = {
     "Signal" : [ 
         "NoCut",
-        "HasNoBackExitingTracks",
-        "HasTracks",
-        "HasNoVertexMismatch", 
-        "StartPointVertexMultiplicity",
-        "VertexTrackMultiplicity",
         "Vertex_Z",
         "Vertex_Apothem",
-        "DeadTime",
-        "Afterpulsing",
-        "DSCalVisE",
-        "ODCalVisE",
-        "EMLikeTrackScore",
-        "MeanFrontdEdX",
-        "Etheta",
-        "Eavail",
-        "Pt",
-        "LeptonAngle",
+        # "HasNoBackExitingTracks",
+        # "HasTracks",
+        # "DeadTime",
+        # "Afterpulsing",
+        # "HasNoVertexMismatch", 
+        # "StartPointVertexMultiplicity",
+        # "VertexTrackMultiplicity",
+        # "DSCalVisE",
+        # "ODCalVisE",
+        # "EMLikeTrackScore",
+        # "MeanFrontdEdX",
+        # "Etheta",
+        # "Eavail",
+        # "Pt",
+        # "LeptonAngle",
 
         ## REMOVED CUTS
         # "NonMIPClusFrac",

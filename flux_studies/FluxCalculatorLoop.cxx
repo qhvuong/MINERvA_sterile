@@ -11,24 +11,38 @@
 #include "PlotUtils/MnvH1D.h"
 #include "FluxCalculatorLoop.h"
 
-
+namespace
+{
+  const int kBeamFocusTuple    = 0;
+  const int kBeamFocusFlat     = 1;
+  const int kBeamFocusResponse = 2;
+}
 
 /*
  * P8 CHANGES:
  *
  * beamUniverseOffset:
- *   Cyclically shifts only the BeamFocus universe index. This is used
- *   to decorrelate the BeamFocus uncertainties between FHC and RHC
- *   while leaving the PPFX universe ordering unchanged.
+ *   Cyclically shifts only the BeamFocus universe index while leaving
+ *   the PPFX universe ordering unchanged.
  *
- * useFlatBeamFocus:
- *   Selects externally supplied flat BeamFocus weights instead of the
- *   event-dependent tuple BeamFocus weights.
+ * beamFocusMode:
+ *   Selects the BeamFocus source:
+ *
+ *     0 = native tuple BeamFocus
+ *     1 = externally supplied flat BeamFocus weights
+ *     2 = externally supplied energy-dependent BeamFocus response
  *
  * flatBeamFocusWeights:
- *   Contains one relative BeamFocus weight per universe for species
- *   whose LE tuples do not contain the appropriate focusing variation.
+ *   One relative BeamFocus weight per universe for LE wrong-sign
+ *   species.
+ *
+ * beamFocusEnergyEdges / beamFocusResponseWeights:
+ *   Energy-dependent relative BeamFocus weights for the LE right-sign
+ *   electron species. The flattened response is stored as
+ *
+ *     response[energyBin * nUniverses + universe].
  */
+
 void FluxCalculatorLoop::EventLoop(
   TChain* chain,
   const TEventList* evtList,
@@ -37,8 +51,10 @@ void FluxCalculatorLoop::EventLoop(
   double additionalWeight,
   bool cvWeighted,
   unsigned int beamUniverseOffset,
-  bool useFlatBeamFocus,
-  const std::vector<double>& flatBeamFocusWeights
+  int beamFocusMode,
+  const std::vector<double>& flatBeamFocusWeights,
+  const std::vector<double>& beamFocusEnergyEdges,
+  const std::vector<double>& beamFocusResponseWeights
 )
 {
   double cvVal;
@@ -141,33 +157,155 @@ void FluxCalculatorLoop::EventLoop(
 
 
   /*
-  * Flat BeamFocus mode requires exactly one externally supplied
-  * relative weight for every histogram universe.
-  */
-  if (useFlatBeamFocus && flatBeamFocusWeights.size() != nCombinedUniv) {
-    std::cerr << "ERROR: Flat BeamFocus vector contains "
-              << flatBeamFocusWeights.size()
-              << " weights, but the histogram contains "
-              << nCombinedUniv << " universes." << std::endl;
+   * Validate BeamFocus mode.
+   */
+  if (
+    beamFocusMode != kBeamFocusTuple &&
+    beamFocusMode != kBeamFocusFlat &&
+    beamFocusMode != kBeamFocusResponse
+  ) {
+    std::cerr
+      << "ERROR: Unknown BeamFocus mode: "
+      << beamFocusMode
+      << std::endl;
 
     for (auto& it : universeWeightsInt) { delete[] it.second; }
-
     for (auto& it : universeWeights) { delete[] it.second; }
 
     delete[] combinedWeights;
     return;
   }
 
-  std::cout << "Using BeamFocus universe offset: " << normalizedBeamOffset
-            << " out of " << nCombinedUniv << " universes" << std::endl;
 
-  std::cout << "BeamFocus source: "
-            << (
-                useFlatBeamFocus
-                  ? "flat species-dependent weights"
-                  : "event-dependent tuple weights"
-              )
-            << std::endl;
+  /*
+   * Flat BeamFocus mode requires exactly one relative weight
+   * per universe.
+   */
+  if (
+    beamFocusMode == kBeamFocusFlat &&
+    flatBeamFocusWeights.size() != nCombinedUniv
+  ) {
+    std::cerr
+      << "ERROR: Flat BeamFocus vector contains "
+      << flatBeamFocusWeights.size()
+      << " weights, but the histogram contains "
+      << nCombinedUniv
+      << " universes."
+      << std::endl;
+
+    for (auto& it : universeWeightsInt) { delete[] it.second; }
+    for (auto& it : universeWeights) { delete[] it.second; }
+
+    delete[] combinedWeights;
+    return;
+  }
+
+
+  /*
+   * Energy-dependent BeamFocus response mode requires:
+   *
+   *   Nenergy bins = Nedges - 1
+   *
+   * and one response weight for every
+   *
+   *   energy bin x universe.
+   */
+  if (beamFocusMode == kBeamFocusResponse) {
+
+    if (beamFocusEnergyEdges.size() < 2) {
+      std::cerr
+        << "ERROR: BeamFocus response requires at least "
+        << "two energy edges."
+        << std::endl;
+
+      for (auto& it : universeWeightsInt) { delete[] it.second; }
+      for (auto& it : universeWeights) { delete[] it.second; }
+
+      delete[] combinedWeights;
+      return;
+    }
+
+    const unsigned int nBeamEnergyBins =
+      beamFocusEnergyEdges.size() - 1;
+
+    const unsigned long long expectedResponseSize =
+      static_cast<unsigned long long>(nBeamEnergyBins) *
+      static_cast<unsigned long long>(nCombinedUniv);
+
+    if (
+      beamFocusResponseWeights.size() != expectedResponseSize
+    ) {
+      std::cerr
+        << "ERROR: BeamFocus response contains "
+        << beamFocusResponseWeights.size()
+        << " weights, but expected "
+        << expectedResponseSize
+        << " = "
+        << nBeamEnergyBins
+        << " energy bins x "
+        << nCombinedUniv
+        << " universes."
+        << std::endl;
+
+      for (auto& it : universeWeightsInt) { delete[] it.second; }
+      for (auto& it : universeWeights) { delete[] it.second; }
+
+      delete[] combinedWeights;
+      return;
+    }
+
+    /*
+     * Require strictly increasing energy edges.
+     */
+    for (
+      unsigned int i = 1;
+      i < beamFocusEnergyEdges.size();
+      ++i
+    ) {
+      if (
+        beamFocusEnergyEdges[i] <=
+        beamFocusEnergyEdges[i - 1]
+      ) {
+        std::cerr
+          << "ERROR: BeamFocus response energy edges "
+          << "are not strictly increasing."
+          << std::endl;
+
+        for (auto& it : universeWeightsInt) { delete[] it.second; }
+        for (auto& it : universeWeights) { delete[] it.second; }
+
+        delete[] combinedWeights;
+        return;
+      }
+    }
+  }
+
+
+  std::cout
+    << "Using BeamFocus universe offset: "
+    << normalizedBeamOffset
+    << " out of "
+    << nCombinedUniv
+    << " universes"
+    << std::endl;
+
+
+  std::string beamFocusSourceName;
+
+  if (beamFocusMode == kBeamFocusTuple) {
+    beamFocusSourceName = "event-dependent tuple weights";
+  }
+  else if (beamFocusMode == kBeamFocusFlat) {
+    beamFocusSourceName = "flat species-dependent weights";
+  }
+  else {
+    beamFocusSourceName = "energy-dependent response weights";
+  }
+
+  std::cout
+    << "BeamFocus source: "
+    << beamFocusSourceName
+    << std::endl;
 
 
   /*
@@ -205,6 +343,54 @@ void FluxCalculatorLoop::EventLoop(
 
   if (N < 10) { std::cout << "  0/" << N << std::flush; }
   else        { std::cout << "  0%" << std::flush; }
+
+  /*
+   * Return the zero-based BeamFocus response bin for a neutrino
+   * energy in GeV.
+   *
+   * Bins follow:
+   *
+   *   [edge_i, edge_{i+1})
+   *
+   * with the final upper edge included in the last bin.
+   *
+   * Return -1 outside the response range.
+   */
+  const auto getBeamFocusEnergyBin =
+    [&](double energyGeV) -> int
+    {
+      if (beamFocusEnergyEdges.size() < 2) {
+        return -1;
+      }
+
+      if (
+        energyGeV < beamFocusEnergyEdges.front() ||
+        energyGeV > beamFocusEnergyEdges.back()
+      ) {
+        return -1;
+      }
+
+      if (energyGeV == beamFocusEnergyEdges.back()) {
+        return static_cast<int>(
+          beamFocusEnergyEdges.size() - 2
+        );
+      }
+
+      for (
+        unsigned int ibin = 0;
+        ibin + 1 < beamFocusEnergyEdges.size();
+        ++ibin
+      ) {
+        if (
+          energyGeV >= beamFocusEnergyEdges[ibin] &&
+          energyGeV <  beamFocusEnergyEdges[ibin + 1]
+        ) {
+          return static_cast<int>(ibin);
+        }
+      }
+
+      return -1;
+    };
 
   for (unsigned long long i = 0; i < N; ++i) {
     if (N < 10) { std::cout << "  " << i + 1 << "/" << N << std::flush; }
@@ -274,8 +460,8 @@ void FluxCalculatorLoop::EventLoop(
       * component weights and are divided by their matching CV
       * contribution.
       *
-      * Flat BeamFocus CSV values are already relative weights and
-      * are used directly.
+      * Flat BeamFocus CSV and regenerated response values are already
+      * relative weights and are used directly.
     */
     double ppfxCVContr = 1.0;
     double beamCVContr = 1.0;
@@ -308,33 +494,75 @@ void FluxCalculatorLoop::EventLoop(
     }
 
     /*
-    * Return the relative BeamFocus weight for one output universe.
-    *
-    * The BeamFocus source universe is shifted cyclically:
-    *
-    *   source = (output + offset) % N.
-    *
-    * In tuple mode, used for the right-sign species, the BeamFocus
-    * weight comes from the event tuple. The tuple value is an absolute
-    * component weight, so divide it by mc_hornCurrent_cvweight.
-    *
-    * In flat mode, used for the other species, use the corresponding
-    * species-dependent CSV weight. The CSV values are already relative
-    * and must not be divided again.
-    */
+     * Return the relative BeamFocus weight for one output universe.
+     *
+     * BeamFocus universe ordering is shifted cyclically:
+     *
+     *   source = (output + offset) % N.
+     *
+     * Three possible BeamFocus sources are supported:
+     *
+     *   tuple:
+     *     Native P8 BeamFocus weight. This is an absolute component
+     *     weight, so divide by mc_hornCurrent_cvweight.
+     *
+     *   flat:
+     *     Externally supplied relative weight for LE wrong-sign
+     *     species. Use directly.
+     *
+     *   response:
+     *     Externally supplied energy-dependent relative weight for
+     *     LE right-sign electron species. Use directly.
+     */
     const auto getBeamFocusRelative =
-      [&](unsigned int outputUniverse) -> double
+      [&](unsigned int outputUniverse, double energyGeV) -> double
       {
         const unsigned int sourceUniverse =
-          (outputUniverse + normalizedBeamOffset) % nCombinedUniv;
+          (outputUniverse + normalizedBeamOffset) %
+          nCombinedUniv;
 
-        if (useFlatBeamFocus) {
-          // CSV values are already relative BeamFocus weights.
+
+        /*
+         * Flat LE wrong-sign BeamFocus.
+         */
+        if (beamFocusMode == kBeamFocusFlat) {
           return flatBeamFocusWeights[sourceUniverse];
         }
 
-        // P8 tuple BeamFocus values are absolute component weights.
-        // Convert to relative by dividing by the BeamFocus CV component.
+
+        /*
+         * Energy-dependent LE right-sign electron BeamFocus.
+         */
+        if (beamFocusMode == kBeamFocusResponse) {
+
+          const int energyBin =
+            getBeamFocusEnergyBin(energyGeV);
+
+          /*
+           * The regenerated response covers 0--100 GeV.
+           * If an event nevertheless falls outside that range,
+           * leave its BeamFocus weight unchanged.
+           */
+          if (energyBin < 0) {
+            return 1.0;
+          }
+
+          const unsigned long long responseIndex =
+            static_cast<unsigned long long>(energyBin) *
+            static_cast<unsigned long long>(nCombinedUniv) +
+            sourceUniverse;
+
+          return beamFocusResponseWeights[responseIndex];
+        }
+
+
+        /*
+         * Native tuple BeamFocus.
+         *
+         * P8 tuple BeamFocus values are absolute component weights.
+         * Convert them to relative weights using the corresponding
+         * BeamFocus CV component.
+         */
         return
           universeWeights["Flux_BeamFocus"][sourceUniverse] /
           beamCVContr;
@@ -350,8 +578,8 @@ void FluxCalculatorLoop::EventLoop(
     *
     * Flux_BeamFocus:
     *   Apply the cyclic BeamFocus offset and obtain the relative weight
-    *   from getBeamFocusRelative(). This may use either the shifted tuple
-    *   weight or the shifted flat species-dependent CSV weight.
+    *   from getBeamFocusRelative(). This may use the shifted tuple,
+    *   flat species-dependent CSV, or energy-dependent response weight.
     */
     for (std::vector<std::string>::const_iterator it_band = vertErrorBandNames.begin();
                                                   it_band != vertErrorBandNames.end();
@@ -366,7 +594,7 @@ void FluxCalculatorLoop::EventLoop(
       for (unsigned int univ_idx = 0; univ_idx < nCombinedUniv; ++univ_idx) {
 
         if (*it_band == "Flux_BeamFocus") {
-          reorderedWeights[univ_idx] = getBeamFocusRelative(univ_idx);
+          reorderedWeights[univ_idx] = getBeamFocusRelative(univ_idx, cv);
         }
         else {
           reorderedWeights[univ_idx] = universeWeights["ppfx1_Total"][univ_idx] / ppfxCVContr;
@@ -400,13 +628,14 @@ void FluxCalculatorLoop::EventLoop(
     *   Flux[u] = PPFX_relative[u] * BeamFocus_relative[u].
     *
     * PPFX remains at universe u. BeamFocus uses the shifted source
-    * universe and may come either from the tuple or the flat CSV.
+    * universe and may come from the tuple, flat CSV, or regenerated
+    * energy-dependent response.
     */
     for (unsigned int univ_idx = 0; univ_idx < nCombinedUniv; ++univ_idx) {
 
       const double ppfxRelative = universeWeights["ppfx1_Total"][univ_idx] / ppfxCVContr;
 
-      const double beamRelative = getBeamFocusRelative(univ_idx);
+      const double beamRelative = getBeamFocusRelative(univ_idx, cv);
 
       combinedWeights[univ_idx] = ppfxRelative * beamRelative;
     }
@@ -425,11 +654,11 @@ void FluxCalculatorLoop::EventLoop(
 
       const double ppfxForDebug = universeWeights["ppfx1_Total"][ppfxIdx] / ppfxCVContr;
 
-      const double beamForDebug = getBeamFocusRelative(outIdx);
+      const double beamForDebug = getBeamFocusRelative(outIdx, cv);
 
       std::cout << "\nDEBUG combined Flux"
-                << " source="
-                << (useFlatBeamFocus ? "flat" : "tuple")
+                << " source=" << beamFocusSourceName
+                << " E=" << cv
                 << " outIdx=" << outIdx
                 << " ppfxIdx=" << ppfxIdx
                 << " beamIdx=" << beamIdx

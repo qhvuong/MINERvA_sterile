@@ -261,7 +261,15 @@ def main():
 
     args = parser.parse_args()
 
-    PAPER_LEPTON_ENERGY_EDGES = [0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 120.0]
+    PAPER_LEPTON_ENERGY_EDGES = [
+        0.8,
+        2.0,
+        3.0,
+        5.0,
+        7.0,
+        9.0,
+        100.0,
+    ]
 
     input_files = {
         "nue": args.nue,

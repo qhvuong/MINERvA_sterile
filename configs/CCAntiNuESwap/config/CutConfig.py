@@ -35,7 +35,9 @@ UPSTREAM_OD_ENERGY_CUT = 5000
 
 #OLD
 FIDUCIAL_APOTHEM = 850
-FIDUCIAL_Z_RANGE = [5980,8422]
+FIDUCIAL_Z_RANGE = [5980,8422]        # This is Ryan's ME Z range
+# FIDUCIAL_Z_RANGE = [5991.29,8422]       # This is standard inclusive CC selection FV
+
 # FIDUCIAL_APOTHEM = 881.25
 # FIDUCIAL_Z_RANGE = [5980,8422]
 
@@ -45,13 +47,25 @@ ELECTRON_ENERGY_RANGE = [1.5, float("inf")] # in GeV
 NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
+
+# Ryans ME PT range
 RECO_PT_RANGE= [.2,1.0]
 TRUE_PT_RANGE= [.2,1.0]
-TRUE_Q3_RANGE = [0,4]
 
+# # My LE PT range
+# RECO_PT_RANGE= [.2,1.2]
+# TRUE_PT_RANGE= [.2,1.2]
+
+
+TRUE_Q3_RANGE = [0,4]
 PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
+
+# Ryans ME Eavail range
 visE_RANGE = [0.0,0.3]
+# # My LE Eavail range
+# visE_RANGE = [0.0,0.5]
+
 Ethetasquared_CUT = .0032
 FRONT_DEDX_PI0_UPPERBOUND = 5
 

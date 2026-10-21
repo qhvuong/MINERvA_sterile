@@ -37,6 +37,323 @@ ROOT.TH1.AddDirectory(False)
 ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
 legend_text_size = .035
 
+def GetStitchedSampleLayout(hist_config):
+    """
+    Read the stitched histogram layout from HIST_CONFIG.
+
+    Returns a list sorted by stitched-bin position:
+        [
+            {
+                "name": ...,
+                "label": ...,
+                "start": ...,
+                "end": ...,
+                "xlow": ...,
+                "xhigh": ...,
+                "center": ...
+            },
+            ...
+        ]
+
+    HIST_CONFIG start/end values are zero-based and inclusive.
+    """
+
+    import json
+
+    SAMPLE_LABELS = {
+        "fhc_elastic": "#nue^{-} #rightarrow #nue^{-}",
+
+        "fhc_nue_selection": "CC #nu_{e}",
+        "rhc_nue_selection": "CC #bar{#nu}_{e}",
+
+        "fhc_ratio": "CC #nu_{#mu}/#nu_{e}",
+        "rhc_ratio": "CC #bar{#nu}_{#mu}/#bar{#nu}_{e}",
+
+        "fhc_numu_selection": "CC #nu_{#mu}",
+        "rhc_numu_selection": "CC #bar{#nu}_{#mu}",
+    }
+
+    with open(hist_config, "r") as f:
+        cfg = json.load(f)
+
+    layout = []
+
+    for sample, info in cfg.items():
+        start = info["start"]
+        end = info["end"]
+
+        # Config indices are inclusive.
+        # Example: bins 0--5 occupy stitched x range 0--6.
+        xlow = float(start)
+        xhigh = float(end + 1)
+
+        layout.append({
+            "name": sample,
+            "label": SAMPLE_LABELS.get(sample, sample),
+            "start": start,
+            "end": end,
+            "xlow": xlow,
+            "xhigh": xhigh,
+            "center": 0.5 * (xlow + xhigh),
+        })
+
+    layout.sort(key=lambda x: x["start"])
+
+    return layout
+
+
+def DrawStitchedSampleLayout(
+    pad,
+    axis_hist,
+    layout,
+    draw_labels=False,
+    label_y=0.94,
+):
+    """
+    Draw vertical separators between stitched samples.
+
+    If draw_labels=True, also draw sample names at the top of the pad.
+    Labels use NDC coordinates so they work correctly on a log-y pad.
+
+    Returns the ROOT objects so Python does not garbage-collect them
+    before the canvas is printed.
+    """
+
+    pad.cd()
+    pad.Update()
+
+    objects = []
+
+    axis = axis_hist.GetXaxis()
+    xmin = axis.GetXmin()
+    xmax = axis.GetXmax()
+
+    # ------------------------------------------------------------
+    # Vertical sample boundaries
+    # ------------------------------------------------------------
+    left = pad.GetLeftMargin()
+    right = pad.GetRightMargin()
+    bottom = pad.GetBottomMargin()
+    top = pad.GetTopMargin()
+
+    drawable_width = 1.0 - left - right
+
+    for sample in layout[1:]:
+        x = sample["xlow"]
+
+        # Convert histogram x coordinate to pad NDC coordinate.
+        xfrac = (x - xmin) / (xmax - xmin)
+        x_ndc = left + xfrac * drawable_width
+
+        line = ROOT.TLine(
+            x_ndc,
+            bottom,
+            x_ndc,
+            1.0 - top,
+        )
+        line.SetNDC(True)
+        line.SetLineColor(ROOT.kGray + 2)
+        line.SetLineStyle(2)
+        line.SetLineWidth(2)
+        line.Draw()
+
+        objects.append(line)
+
+    # ------------------------------------------------------------
+    # Sample labels
+    # ------------------------------------------------------------
+    if draw_labels:
+
+        left = pad.GetLeftMargin()
+        right = pad.GetRightMargin()
+
+        drawable_width = 1.0 - left - right
+
+        for sample in layout:
+            x = sample["center"]
+
+            # Convert histogram x coordinate to pad NDC coordinate.
+            xfrac = (x - xmin) / (xmax - xmin)
+            x_ndc = left + xfrac * drawable_width
+
+            text = ROOT.TLatex()
+            text.SetNDC(True)
+            text.SetTextAlign(22)
+            text.SetTextSize(0.032)
+            text.SetTextFont(62)
+
+            text.DrawLatex(
+                x_ndc,
+                label_y,
+                sample["label"],
+            )
+
+            objects.append(text)
+
+    return objects
+
+def DrawStitchedEnergyAxes(
+    pad,
+    axis_hist,
+    layout,
+):
+    """
+    Draw physical-energy annotations underneath the stitched histogram.
+
+    fhc_elastic:
+        lepton energy E_l
+
+    all CC / ratio samples:
+        neutrino energy E_nu
+
+    These are annotations of analysis-bin edges, NOT a continuous
+    physical-energy axis. Each stitched histogram bin has equal visual
+    width even though the corresponding energy bins are nonuniform.
+    """
+
+    pad.cd()
+    pad.Update()
+
+    objects = []
+
+    NUEEL_EDGES = [
+        0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 100.0
+    ]
+
+    CC_EDGES = [
+        0.8, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5,
+        6.5, 8.0, 10.0, 12.5, 16.0, 20.0
+    ]
+
+    axis = axis_hist.GetXaxis()
+    xmin = axis.GetXmin()
+    xmax = axis.GetXmax()
+
+    left = pad.GetLeftMargin()
+    right = pad.GetRightMargin()
+    drawable_width = 1.0 - left - right
+
+    def x_to_ndc(x):
+        xfrac = (x - xmin) / (xmax - xmin)
+        return left + xfrac * drawable_width
+
+    # ------------------------------------------------------------
+    # Selected labels.
+    #
+    # We deliberately do not label every CC edge because the
+    # 12-bin regions would become too crowded.
+    # ------------------------------------------------------------
+    nueel_labels = {
+        0: "0.8",
+        3: "5",
+        6: "100",
+    }
+
+    cc_labels = {
+        3: "3",
+        6: "5.5",
+        9: "10",
+        12: "20",
+    }
+
+    # NDC vertical positions inside bottom margin
+    tick_y1 = 0.285
+    tick_y2 = 0.255
+    number_y = 0.205
+    title_y = 0.105
+
+    for sample in layout:
+
+        start = sample["start"]
+        end = sample["end"]
+        n_bins = end - start + 1
+
+        if sample["name"] == "fhc_elastic":
+            edges = NUEEL_EDGES
+            labels = nueel_labels
+            # axis_title = "E_{l} [GeV]"
+        else:
+            edges = CC_EDGES
+            labels = cc_labels
+            # axis_title = "E_{#nu} [GeV]"
+
+        # Protect against accidental mismatch between the stitched
+        # region and the physical binning.
+        if len(edges) != n_bins + 1:
+            print(
+                "WARNING: energy binning mismatch for {}: "
+                "{} stitched bins but {} physical bins".format(
+                    sample["name"],
+                    n_bins,
+                    len(edges) - 1,
+                )
+            )
+            continue
+
+        # Horizontal local axis
+        x1_ndc = x_to_ndc(float(start))
+        x2_ndc = x_to_ndc(float(end + 1))
+
+        bar = ROOT.TLine(x1_ndc, tick_y1, x2_ndc, tick_y1)
+        bar.SetNDC(True)
+        bar.SetLineColor(ROOT.kBlack)
+        bar.SetLineWidth(1)
+        bar.Draw()
+        objects.append(bar)
+
+        # Selected edge ticks + numbers
+        for edge_index, label in labels.items():
+
+            # One stitched-bin width per physical analysis bin.
+            x = float(start + edge_index)
+            x_ndc = x_to_ndc(x)
+
+            tick = ROOT.TLine(
+                x_ndc,
+                tick_y1,
+                x_ndc,
+                tick_y2,
+            )
+            tick.SetNDC(True)
+            tick.SetLineColor(ROOT.kBlack)
+            tick.SetLineWidth(1)
+            tick.Draw()
+            objects.append(tick)
+
+            text = ROOT.TLatex()
+            text.SetNDC(True)
+            text.SetTextAlign(23)
+            text.SetTextFont(62)
+            text.SetTextSize(0.080)
+            text.DrawLatex(
+                x_ndc,
+                number_y,
+                label,
+            )
+            objects.append(text)
+
+        # Observable label centered underneath this sample.
+        center_ndc = x_to_ndc(
+            0.5 * (float(start) + float(end + 1))
+        )
+
+        # One common x-axis title
+        title = ROOT.TLatex()
+        title.SetNDC(True)
+        title.SetTextAlign(23)
+        title.SetTextFont(62)
+        title.SetTextSize(0.090)
+        title.DrawLatex(
+            0.5 * (left + (1.0 - right)),
+            title_y,
+            "Energy (GeV)",
+        )
+        objects.append(title)
+
+    return objects
+
+
+
 class PlottingContainer:
     def __init__(self, tag, histogram, hist_config="HIST_CONFIG.json"):
         self.tag = tag
@@ -487,6 +804,8 @@ class PlottingContainer:
         exclude = self.exclude
         lam = self.lam
 
+        # Get stitched-sample boundaries and labels from HIST_CONFIG.
+        stitched_layout = GetStitchedSampleLayout(self.hist_config)
 
         def make_mask_tag(mask_spec):
             if mask_spec is None:
@@ -1213,8 +1532,8 @@ class PlottingContainer:
         h_null.Draw("hist")
         if useMarg and h_prof is not None:
             h_prof.Draw("hist same")
-        # Raw BF before flux profiling, for visualization only.
-        h_osc_raw.Draw("hist same")
+        # # Raw BF before flux profiling, for visualization only.
+        # h_osc_raw.Draw("hist same")
         h_osc.Draw("hist same")
         h_data.Draw("same")
 
@@ -1265,9 +1584,21 @@ class PlottingContainer:
         h_null.Draw("hist same")
         if useMarg and h_prof is not None:
             h_prof.Draw("hist same")
-        h_osc_raw.Draw("hist same")
+        # h_osc_raw.Draw("hist same")
         h_osc.Draw("hist same")
         h_data.Draw("same")
+
+
+        # ------------------------------------------------------------
+        # Stitched-sample boundaries and labels
+        # ------------------------------------------------------------
+        top_stitched_objects = DrawStitchedSampleLayout(
+            top,
+            h_null,
+            stitched_layout,
+            draw_labels=True,
+            label_y=0.94,
+        )
 
         bf_label = (
             "#Delta m^{{2}} = {:.1f} eV^{{2}}, "
@@ -1310,10 +1641,10 @@ class PlottingContainer:
             leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
             leg.AddEntry(h_prof, leg_text, "l")
 
-        top_text = "Best Osc. Fit Raw"
-        bot_text = "#chi^{{2}}={:.2f}".format(chi2_model_raw)
-        leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
-        leg.AddEntry(h_osc_raw, leg_text, "l")
+        # top_text = "Best Osc. Fit Raw"
+        # bot_text = "#chi^{{2}}={:.2f}".format(chi2_model_raw)
+        # leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
+        # leg.AddEntry(h_osc_raw, leg_text, "l")
 
         # Blue curve: oscillated model.
         top_text = "Best Osc. Fit"
@@ -1379,7 +1710,10 @@ class PlottingContainer:
         nullErrors.SetFillColorAlpha(ROOT.kPink + 1, 0.4)
         nullErrors.GetYaxis().SetTitle("#splitline{Ratio to Null}{Hypothesis}")
         RatioAxis(nullErrors, MNVPLOTTER)
-        nullErrors.GetXaxis().SetTitle("Bin Number")
+        # nullErrors.GetXaxis().SetTitle("Bin Number")
+        nullErrors.GetXaxis().SetTitle("")
+        nullErrors.GetXaxis().SetLabelSize(0)
+        nullErrors.GetXaxis().SetTickLength(0)
         nullErrors.SetMinimum(.5)
         nullErrors.SetMaximum(1.5)
         nullErrors.Draw("E2")
@@ -1391,7 +1725,7 @@ class PlottingContainer:
         nullRatio.Draw("same")
         if profRatio is not None:
             profRatio.Draw("same hist l")
-        oscRawRatio.Draw("same hist l")
+        # oscRawRatio.Draw("same hist l")
         oscRatio.Draw("same hist l")
 
         straightLine = nullErrors.Clone()
@@ -1399,6 +1733,19 @@ class PlottingContainer:
         straightLine.SetLineWidth(2)
         straightLine.SetFillColor(0)
         straightLine.Draw("HIST SAME")
+
+        bottom_stitched_objects = DrawStitchedSampleLayout(
+            bottom,
+            nullErrors,
+            stitched_layout,
+            draw_labels=False,
+        )
+
+        bottom_energy_objects = DrawStitchedEnergyAxes(
+            bottom,
+            nullErrors,
+            stitched_layout,
+        )
 
         top.cd()
         tag = "_{}".format(plot_tag) if plot_tag else ""

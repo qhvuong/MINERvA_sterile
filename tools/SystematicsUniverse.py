@@ -30,6 +30,23 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
+USE_MNVTUNE_V1 = True
+
+V1_ADD_DEUTERIUM = True
+V1_ADD_ZEXP = False
+
+V1_ADD_LOWQ2PI = False
+V1_LOWQ2PI_CHANNEL = "JOINT"
+
+V1_ADD_COH = False
+V1_ADD_LE_COH = True
+V1_ADD_DIFFCOH = True
+
+
+TEST_TAG = "V1D2_LECOH_DiffCOH_noLowQ2"
+
+
+
 #Alias:
 #ROOT.PythonMinervaUniverse = PlotUtils.DefaultCVPythonUniverse
 
@@ -319,54 +336,13 @@ def GetNeutrinoTravelledLength(enu_gev, pdg,
 
     return hL.GetRandom()
 
-# def GetNeutrinoTravelledLengthPDF(enu_gev, pdg,
-#                             nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_fullStatsFluxes_MAD.root",
-#                             numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_fullStatsFluxes_MAD.root",
-#                             nue_hname="ETrue_Length_CCNuE",
-#                             numu_hname="ETrue_Length_CCNuMu"):
-#     """
-#     Return a normalized TH1 of P(L | Enu, pdg).
-#     X axis = true L (km), bin contents sum to 1.
-#     """
-
-#     apdg = abs(int(pdg))
-#     if apdg == 12:
-#         h2 = _get_trueEL_hist(nue_file, nue_hname)
-#     elif apdg == 14:
-#         h2 = _get_trueEL_hist(numu_file, numu_hname)
-#     else:
-#         raise ValueError(f"Unsupported PDG for GetNeutrinoTravelledLengthPDF: {pdg}")
-
-#     by = h2.GetYaxis().FindBin(enu_gev)
-#     by = max(1, min(by, h2.GetNbinsY()))
-
-#     hL = h2.ProjectionX(f"hL_pdf_{apdg}_{by}_{ROOT.TUUID().AsString()}", by, by)
-#     hL.SetDirectory(0)
-
-#     if hL.Integral() <= 0:
-#         by1 = max(1, by - 1)
-#         by2 = min(h2.GetNbinsY(), by + 1)
-#         hL = h2.ProjectionX(f"hL_pdf_wide_{apdg}_{by1}_{by2}_{ROOT.TUUID().AsString()}", by1, by2)
-#         hL.SetDirectory(0)
-
-#     if hL.Integral() <= 0:
-#         hL = h2.ProjectionX(f"hL_pdf_all_{apdg}_{ROOT.TUUID().AsString()}", 1, h2.GetNbinsY())
-#         hL.SetDirectory(0)
-
-#     integ = hL.Integral()
-#     if integ <= 0:
-#         raise RuntimeError(f"No valid L PDF found for pdg={pdg}, Enu={enu_gev}")
-
-#     hL.Scale(1.0 / integ)
-#     return hL
-
 def GetNeutrinoTravelledLengthPDF(
     enu_gev,
     pdg,
-    nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_trueEL_updatedFluxes_MAD.root",
-    numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_trueEL_updatedFluxes_MAD.root",
-    nuebar_file="/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_trueEL_updatedFluxes_MAD.root",
-    numubar_file="/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_trueEL_updatedFluxes_MAD.root",
+    nue_file=f"/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_{TEST_TAG}_MAD.root",
+    numu_file=f"/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_{TEST_TAG}_MAD.root",
+    nuebar_file=f"/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_trueEL_{TEST_TAG}_MAD.root",
+    numubar_file=f"/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_trueEL_{TEST_TAG}_MAD.root",
     nue_hname="ETrue_Length_CCNuE",
     numu_hname="ETrue_Length_CCNuMu",
 ):
@@ -498,6 +474,16 @@ class CVPythonUniverse():
         except Exception:
             return False
 
+    def HasInclusiveMINOSMatch(self):
+        """
+        Inclusive CC MINOS matching definition.
+        Matches MINERvA-101-Cross-Section:
+            IsMinosMatchMuon()
+            -> GetIsMinosMatchTrack()
+            -> isMinosMatchTrack == 1
+        """
+        return self.GetInt("isMinosMatchTrack") == 1
+
     # magic function that allow direct access to TBranch by Universe.TBranch, but prohibit any python magic variable being generated.
     def __getattr__(self,attrName):
         def makelist(x):
@@ -604,6 +590,10 @@ class CVPythonUniverse():
             return self.weight
 
     def GetStandardWeight(self):
+
+        if USE_MNVTUNE_V1:
+            return self.GetStandardWeightV1()
+
         weight = 1.0
         weight *= self.GetGenieWeight()
 
@@ -710,9 +700,97 @@ class CVPythonUniverse():
         return weight
 
 
-    def DebugStandardWeightPieces(self, label=""):
-        pdg0 = self.mc_incoming
-        pdg = pdg0
+    # def GetStandardWeightV1(self):
+
+    #     weight = 1.0
+
+    #     # Non-resonant pion suppression
+    #     rvn1pi = self.GetVecElem("truth_genie_wgt_Rvn1pi", 2)
+    #     rvp1pi = self.GetVecElem("truth_genie_wgt_Rvp1pi", 2)
+
+    #     is_nonrespi = (rvn1pi < 1.0) or (rvp1pi < 1.0)
+    #     weight *= 0.43 if is_nonrespi else 1.0
+
+    #     # Flux
+    #     pdg = self.mc_incoming
+
+    #     if SystematicsConfig.USE_SWAPPED:
+    #         if pdg == 12:
+    #             pdg = 14
+    #         elif pdg == -12:
+    #             pdg = -14
+    #         elif pdg == 14:
+    #             pdg = 12
+    #         elif pdg == -14:
+    #             pdg = -12
+    #         else:
+    #             print("Not neutrino PDG? {}".format(pdg))
+
+    #     weight *= self.GetFluxAndCVWeight(
+    #         self.mc_incomingE * 1e-3,
+    #         pdg
+    #     )
+
+    #     # Low-recoil 2p2h
+    #     w_2p2h = 1.0
+
+    #     q2_gev2 = self.mc_Q2 * 1e-6
+    #     w_gev = self.mc_w * 1e-3
+
+    #     valid_2p2h_kinematics = (
+    #         math.isfinite(q2_gev2)
+    #         and math.isfinite(w_gev)
+    #         and q2_gev2 >= 0.0
+    #         and abs(w_gev) < 90.0
+    #     )
+
+    #     if valid_2p2h_kinematics:
+    #         w_2p2h = self.GetLowRecoil2p2hWeight()
+
+    #         if not math.isfinite(w_2p2h):
+    #             w_2p2h = 1.0
+
+    #     weight *= w_2p2h
+
+    #     # RPA
+    #     weight *= self.GetRPAWeight()
+
+    #     # Detector / reconstruction corrections
+    #     weight *= self.GetGeantHadronWeight()
+    #     weight *= self.GetMyMinosEfficiencyWeight()
+
+    #     return weight
+    def GetStandardWeightV1(self):
+
+        weight = 1.0
+
+        # ------------------------------------------------------------
+        # GENIE / V1 pion tune
+        # ------------------------------------------------------------
+
+        if V1_ADD_DEUTERIUM:
+            # With:
+            #   NonResPi = ON
+            #   Deuterium = ON
+            #   z-exp = OFF
+            #
+            # GetGenieWeight() is exactly:
+            #   NonResPi * Deuterium
+            weight *= self.GetGenieWeight()
+
+        else:
+            # Original validated V1 baseline:
+            # Non-resonant pion suppression only.
+            rvn1pi = self.GetVecElem("truth_genie_wgt_Rvn1pi", 2)
+            rvp1pi = self.GetVecElem("truth_genie_wgt_Rvp1pi", 2)
+
+            is_nonrespi = (rvn1pi < 1.0) or (rvp1pi < 1.0)
+            weight *= 0.43 if is_nonrespi else 1.0
+
+        # ------------------------------------------------------------
+        # Flux
+        # ------------------------------------------------------------
+        pdg = self.mc_incoming
 
         if SystematicsConfig.USE_SWAPPED:
             if pdg == 12:
@@ -723,89 +801,116 @@ class CVPythonUniverse():
                 pdg = 12
             elif pdg == -14:
                 pdg = -12
+            else:
+                print("Not neutrino PDG? {}".format(pdg))
 
-        enu = self.mc_incomingE * 1e-3
+        weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
+        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
 
-        genie = self.GetGenieWeight()
-        flux = self.GetFluxAndCVWeight(enu, pdg)
-        lowrec2p2h = self.GetLowRecoil2p2hWeight()
-        rpa = self.GetRPAWeight()
-        lowq2pi = self.GetMyLowQ2PiWeight()
-        geant = self.GetGeantHadronWeight()
-        minos = self.GetMyMinosEfficiencyWeight()
-        coh = self.GetCOHPionWeight()
-        diffcoh = 1.4368 if self.mc_intType == 4 else 1.0
+        # ------------------------------------------------------------
+        # Low-recoil 2p2h
+        # ------------------------------------------------------------
+        w_2p2h = 1.0
 
-        total_manual = (
-            genie
-            * flux
-            * lowrec2p2h
-            * rpa
-            * lowq2pi
-            * geant
-            * minos
-            * coh
-            * diffcoh
+        q2_gev2 = self.mc_Q2 * 1e-6
+        w_gev = self.mc_w * 1e-3
+
+        valid_2p2h_kinematics = (
+            math.isfinite(q2_gev2)
+            and math.isfinite(w_gev)
+            and q2_gev2 >= 0.0
+            and abs(w_gev) < 90.0
         )
 
-        total_getweight = self.GetWeight()
+        if valid_2p2h_kinematics:
+            w_2p2h = self.GetLowRecoil2p2hWeight()
 
-        print(
-            "[WGTPIECES] {} class={} short={} sigma={} "
-            "pdg0={} pdgUsed={} Ev={:.6g} intType={} "
-            "genie={:.8g} flux={:.8g} 2p2h={:.8g} rpa={:.8g} "
-            "lowq2pi={:.8g} geant={:.8g} minos={:.8g} coh={:.8g} diffcoh={:.8g} "
-            "manual={:.8g} getWeight={:.8g}".format(
-                label,
-                type(self).__name__,
-                self.ShortName(),
-                self.GetSigma(),
-                pdg0,
-                pdg,
-                enu,
-                self.mc_intType,
-                genie,
-                flux,
-                lowrec2p2h,
-                rpa,
-                lowq2pi,
-                geant,
-                minos,
-                coh,
-                diffcoh,
-                total_manual,
-                total_getweight,
+            if not math.isfinite(w_2p2h):
+                w_2p2h = 1.0
+
+        weight *= w_2p2h
+
+        # ------------------------------------------------------------
+        # RPA
+        # ------------------------------------------------------------
+        weight *= self.GetRPAWeight()
+
+        # ------------------------------------------------------------
+        # Optional later tune components
+        # ------------------------------------------------------------
+        if V1_ADD_LOWQ2PI:
+            weight *= self.GetMyLowQ2PiWeight(
+                V1_LOWQ2PI_CHANNEL
             )
-        )
 
+        if V1_ADD_COH and V1_ADD_LE_COH:
+            raise RuntimeError(
+                "Choose either ME coherent weighting or LE coherent weighting, not both."
+            )
 
+        if V1_ADD_COH:
+            # ME theta_pi x E_pi coherent correction
+            weight *= self.GetCOHPionWeight()
 
+        if V1_ADD_LE_COH:
+            # LE prescription
+            weight *= self.GetLECOHPionWeight()
+
+        if V1_ADD_DIFFCOH and self.mc_intType == 4:
+            weight *= 1.4368
+
+        # ------------------------------------------------------------
+        # Detector / reconstruction corrections
+        # ------------------------------------------------------------
+        weight *= self.GetGeantHadronWeight()
+        weight *= self.GetMyMinosEfficiencyWeight()
+
+        return weight
 
 
     def GetMyMinosEfficiencyWeight(self):
-         if self._is_truth_mode():
-             return 1.0
-         if self.HasNoBackExitingTracks:
-             return 1
-         else:
-             return self.GetMinosEfficiencyWeight()
+        if self._is_truth_mode():
+            return 1.0
 
-    # def GetMyLowQ2PiWeight(self, channel = SystematicsConfig.LowQ2PiWeightChannel):
+        w_raw = self.GetMinosEfficiencyWeight()
+
+        if self.HasNoBackExitingTracks:
+            return 1.0
+        else:
+            return w_raw
+
+
+    # def GetMyLowQ2PiWeight(self):
+    #     channel = SystematicsConfig.LowQ2PiWeightChannel
     #     if channel is None:
-    #         return 1
-    #     else:
-    #         return self.GetLowQ2PiWeight(channel.upper())
-    def GetMyLowQ2PiWeight(self):
-        channel = SystematicsConfig.LowQ2PiWeightChannel
+    #         return 1.0
+
+    #     # Match the LowQ2Pi applicability: only CC resonance.
+    #     # From the debug, LowQ2Pi applies to CCNuEDelta:
+    #     #   current=1, intType=2
+    #     # and does not apply to QE, DIS, or NC.
+    #     if self.mc_current != 1:
+    #         return 1.0
+    #     if self.mc_intType != 2:
+    #         return 1.0
+
+    #     return ROOT.PlotUtils.weight_lowq2pi().getWeight(
+    #         self.mc_Q2 * 1e-6,
+    #         channel.upper(),
+    #         0
+    #     )
+    def GetMyLowQ2PiWeight(self, channel=None):
+
+        if channel is None:
+            channel = SystematicsConfig.LowQ2PiWeightChannel
+
         if channel is None:
             return 1.0
 
-        # Match the LowQ2Pi applicability: only CC resonance.
-        # From the debug, LowQ2Pi applies to CCNuEDelta:
-        #   current=1, intType=2
-        # and does not apply to QE, DIS, or NC.
+        # LowQ2Pi applies only to CC resonance
         if self.mc_current != 1:
             return 1.0
+
         if self.mc_intType != 2:
             return 1.0
 
@@ -815,9 +920,44 @@ class CVPythonUniverse():
             0
         )
 
+
     def GetModelWeight(self):
         w = GetModelWeight(self, 'Eel',"Pi0") # (Ee, Theta, ETh), (PCElectron, PCPhoton, PCPi0) 
         return w
+
+    def GetLECOHPionWeight(self):
+        """
+        LE coherent-pion prescription from the MINERvA tune documentation:
+
+        coherent event with true E_pi < 0.5 GeV -> weight 0.5
+        otherwise                              -> weight 1.0
+
+        E_pi is the true final-state pion total energy.
+        """
+
+        # Only coherent interactions
+        if self.mc_intType != 4:
+            return 1.0
+
+        # Find the charged final-state pion
+        for i in range(self.mc_nFSPart):
+            try:
+                pdg = self.mc_FSPartPDG[i]
+            except Exception:
+                continue
+
+            if abs(pdg) != 211:
+                continue
+
+            true_epi_gev = self.mc_FSPartE[i] / 1000.0
+
+            if true_epi_gev < 0.5:
+                return 0.5
+
+            return 1.0
+
+        # No charged pion found
+        return 1.0
 
     def GetCOHPionWeight(self):
         def GetTrueHighEpi():
@@ -936,12 +1076,18 @@ class CVPythonUniverse():
             vx, vy,
             # This is nu+e fit parameters
             # We use nu+e angle correction coefficients for both nu+e and CCnue
-            # OLD p6 coefficients
+            # # OLD p6 coefficients
             # t0x=0.0001289, t1x=1.402e-05,
             # t0y=0.001007,  t1y=1.87e-05,
-            # NEW p8 coefficients
-            t0x=0.000486, t1x=1.392e-05,
-            t0y=0.0008169,  t1y=1.969e-05,
+            # # p8 coefficients before hadron reweights
+            # t0x=0.000486, t1x=1.392e-05,
+            # t0y=0.0008169,  t1y=1.969e-05,
+            # # NEW p8 coefficients AFTER hadron reweight (ME FV)
+            # t0x=0.0005425, t1x=1.389e-05,
+            # t0y=0.0007356,  t1y=1.953e-05,
+            # NEW p8 coefficients AFTER hadron reweight (inclusive FV)
+            t0x=0.0005755, t1x=1.429e-05,
+            t0y=0.0007915,  t1y=1.951e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
@@ -968,12 +1114,18 @@ class CVPythonUniverse():
             vx, vy,
             # This is nu+e fit parameters
             # We use nu+e angle correction coefficients for both nu+e and CCnue
-            # OLD p6 coefficients
+            # # OLD p6 coefficients
             # t0x=0.0001289, t1x=1.402e-05,
             # t0y=0.001007,  t1y=1.87e-05,
-            # NEW p8 coefficients
-            t0x=0.000486, t1x=1.392e-05,
-            t0y=0.0008169,  t1y=1.969e-05,
+            # # p8 coefficients before hadron reweights
+            # t0x=0.000486, t1x=1.392e-05,
+            # t0y=0.0008169,  t1y=1.969e-05,
+            # # NEW p8 coefficients AFTER hadron reweight (ME FV)
+            # t0x=0.0005425, t1x=1.389e-05,
+            # t0y=0.0007356,  t1y=1.953e-05,
+            # NEW p8 coefficients AFTER hadron reweight (inclusive FV)
+            t0x=0.0005755, t1x=1.429e-05,
+            t0y=0.0007915,  t1y=1.951e-05,
             clamp_vtx=True,
             vtx_min_mm=-1200.0,
             vtx_max_mm=1200.0,
@@ -1008,6 +1160,8 @@ class CVPythonUniverse():
     @Utilities.decorator_ReLU
     def ElectronEnergy(self):
         return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
+
+
 
 
 
@@ -1432,7 +1586,6 @@ class CVPythonUniverse():
         return p_det
 
 
-
     @staticmethod
     def Scale4VectorMomentum(vet,scale):
         return vet
@@ -1603,51 +1756,6 @@ class Universe2p2h(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse), CVPy
         super(ROOT.PlotUtils.Universe2p2h(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,1)
         self.universe_number = universe_number
 
-    def DebugExtraWeight(self, label=""):
-        pdg0 = self.mc_incoming
-        pdg = pdg0
-
-        enu = self.mc_incomingE * 1e-3
-
-        genie = self.GetGenieWeight()
-        flux = self.GetFluxAndCVWeight(enu, pdg)
-        lowrec2p2h = self.GetLowRecoil2p2hWeight()
-        rpa = self.GetRPAWeight()
-        lowq2pi = self.GetMyLowQ2PiWeight()
-        geant = self.GetGeantHadronWeight()
-        minos = self.GetMyMinosEfficiencyWeight()
-        coh = self.GetCOHPionWeight()
-        diffcoh = 1.4368 if self.mc_intType == 4 else 1.0
-
-        # "base_without_2p2h" is the event weight if the 2p2h factor were removed.
-        total = self.GetStandardWeight()
-        base_without_2p2h = total / lowrec2p2h if lowrec2p2h else -999
-
-        print(
-            "[2P2H_EXTRA] {} universe_number={} "
-            "intType={} current={} Ev={:.6g} Q2={:.6g} W={:.6g} "
-            "genie={:.8g} flux={:.8g} 2p2h={:.8g} rpa={:.8g} lowq2pi={:.8g} "
-            "coh={:.8g} diffcoh={:.8g} "
-            "base_without_2p2h={:.8g} total={:.8g}".format(
-                label,
-                self.__dict__.get("universe_number", "NA"),
-                self.mc_intType,
-                self.mc_current,
-                enu,
-                self.mc_Q2 / 1e6,
-                self.mc_w / 1e3,
-                genie,
-                flux,
-                lowrec2p2h,
-                rpa,
-                lowq2pi,
-                coh,
-                diffcoh,
-                base_without_2p2h,
-                total,
-            )
-        )
-
     @staticmethod
     def GetSystematicsUniverses(chain ):
         return [Universe2p2h(chain, i) for i in SystematicsConfig.UNIVERSES_2P2H]
@@ -1688,11 +1796,23 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
         super(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUniverse),self).InitWithoutSuper(chain,nsigma)
         self.channel = channel.upper() if channel is not None else None
 
-    def GetMyLowQ2PiWeight(self):
-        if self.channel is None:
+    # def GetMyLowQ2PiWeight(self):
+    #     if self.channel is None:
+    #         return 1.0
+
+    #     return super(LowQ2PionUniverse, self).GetLowQ2PiWeight(self.channel)
+    def GetMyLowQ2PiWeight(self, channel=None):
+
+        if channel is None:
+            channel = self.channel
+
+        if channel is None:
             return 1.0
 
-        return super(LowQ2PionUniverse, self).GetLowQ2PiWeight(self.channel)
+        return super(LowQ2PionUniverse, self).GetLowQ2PiWeight(
+            channel.upper()
+        )
+
 
     # def GetMyLowQ2PiWeight(self):
     #     if self.nsigma == 0 or self.channel is None:
@@ -1700,56 +1820,27 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
     #     else :
     #         return super(LowQ2PionUniverse,self).GetLowQ2PiWeight(self.channel)
 
-    def DebugExtraWeight(self, label=""):
-        q2 = self.mc_Q2 * 1e-6
-        channel = SystematicsConfig.LowQ2PiWeightChannel
-
-        # Directly query the same low-Q2-pi weight object.
-        w_m1_default = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, -1)
-        w_cv_default = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 0)
-        w_p1_default = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 1)
-
-        w_m1_target = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, -1, self.mc_targetNucleon)
-        w_cv_target = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 0, self.mc_targetNucleon)
-        w_p1_target = ROOT.PlotUtils.weight_lowq2pi().getWeight(q2, channel, 1, self.mc_targetNucleon)
-
-        w_used = self.GetMyLowQ2PiWeight()
-
-        total = self.GetStandardWeight()
-        base_without = total / w_used if w_used else -999
-
-        print(
-            "[LOWQ2PI_EXTRA] {} sigma={} channel={} "
-            "intType={} current={} resID={} targetNucleon={} Ev={:.6g} Q2={:.6g} W={:.6g} "
-            "default: w(-1)={:.8g} wCV={:.8g} w(+1)={:.8g} "
-            "targetArg: w(-1)={:.8g} wCV={:.8g} w(+1)={:.8g} "
-            "wUsed={:.8g} total={:.8g}".format(
-                label,
-                self.GetSigma(),
-                channel,
-                self.mc_intType,
-                self.mc_current,
-                self.mc_resID,
-                self.mc_targetNucleon,
-                self.mc_incomingE * 1e-3,
-                q2,
-                self.mc_w * 1e-3,
-                w_m1_default,
-                w_cv_default,
-                w_p1_default,
-                w_m1_target,
-                w_cv_target,
-                w_p1_target,
-                w_used,
-                total,
-            )
-        )
-
+    # @staticmethod
+    # def GetSystematicsUniverses(chain):
+    #     cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
+    #     #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
+    #     return cvshifts
     @staticmethod
     def GetSystematicsUniverses(chain):
-        cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
-        #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
-        return cvshifts
+
+        if USE_MNVTUNE_V1:
+            channel = V1_LOWQ2PI_CHANNEL if V1_ADD_LOWQ2PI else None
+        else:
+            channel = SystematicsConfig.LowQ2PiWeightChannel
+
+        if channel is None:
+            return []
+
+        return [
+            LowQ2PionUniverse(chain, i, channel)
+            for i in OneSigmaShift
+        ]
+
 
 class LowQ2PionUniverseAlt(CVPythonUniverse):
     def __init__(self,chain,channel):
@@ -1860,6 +1951,7 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
         return [ElectronEnergyShiftUniverse(chain, i,region) for region in SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY for i in OneSigmaShift]
 
 ###########################################################################
+# # Ryan's electron energy scale class
 # class ElectronEnergyScaleUniverse(CVSystematicUniverse):
 #     def __init__(self,chain, nsigma):
 #         super(ElectronEnergyScaleUniverse,self).__init__(chain, nsigma)
@@ -1876,6 +1968,43 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
 #     @staticmethod
 #     def GetSystematicsUniverses(chain):
 #         return [ElectronEnergyScaleUniverse(chain, i)  for i in OneSigmaShift]
+
+# # My old electron energy scale class
+# class ElectronEnergyScaleUniverse(CVSystematicUniverse):
+#     def __init__(self, chain, nsigma):
+#         super(ElectronEnergyScaleUniverse, self).__init__(chain, nsigma)
+
+#     def _scale_factor(self):
+#         return 1.0 + self.nsigma * SystematicsConfig.ELECTRON_ENERGY_SCALE
+
+#     def ElectronP3D_det(self):
+#         """
+#         Apply a global ±1σ electron energy/momentum scale shift
+#         to the corrected detector-coordinate electron momentum.
+
+#         This makes ElectronEnergy(), ElectronP3D(), and EN4 all see
+#         the same shifted reconstructed lepton energy.
+#         """
+#         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det()
+#         return p * self._scale_factor()
+
+#     def ElectronP3D_det_noEMshift(self):
+#         """
+#         Apply the same global scale to the no-EM-shift momentum used by
+#         ElectronEnergyRaw() and leakage-related correction paths.
+#         """
+#         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det_noEMshift()
+#         return p * self._scale_factor()
+
+#     def ShortName(self):
+#         return "electron_scale"
+
+#     def LatexName(self):
+#         return "Electron Energy Scale"
+
+#     @staticmethod
+#     def GetSystematicsUniverses(chain):
+#         return [ElectronEnergyScaleUniverse(chain, i) for i in OneSigmaShift]
 class ElectronEnergyScaleUniverse(CVSystematicUniverse):
     def __init__(self, chain, nsigma):
         super(ElectronEnergyScaleUniverse, self).__init__(chain, nsigma)
@@ -1883,21 +2012,29 @@ class ElectronEnergyScaleUniverse(CVSystematicUniverse):
     def _scale_factor(self):
         return 1.0 + self.nsigma * SystematicsConfig.ELECTRON_ENERGY_SCALE
 
+    def ElectronEnergyRaw(self):
+        """
+        Apply the global ±1σ electron energy-scale shift
+        to the reconstructed electron energy.
+        """
+        e = super(ElectronEnergyScaleUniverse, self).ElectronEnergyRaw()
+        return e * self._scale_factor()
+
     def ElectronP3D_det(self):
         """
-        Apply a global ±1σ electron energy/momentum scale shift
-        to the corrected detector-coordinate electron momentum.
+        Apply the same global ±1σ scale shift to the magnitude of the
+        corrected detector-coordinate electron momentum.
 
-        This makes ElectronEnergy(), ElectronP3D(), and EN4 all see
-        the same shifted reconstructed lepton energy.
+        The direction is unchanged, so angular observables are unaffected
+        by this systematic while momentum-dependent observables shift
+        consistently with ElectronEnergy().
         """
         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det()
         return p * self._scale_factor()
 
     def ElectronP3D_det_noEMshift(self):
         """
-        Apply the same global scale to the no-EM-shift momentum used by
-        ElectronEnergyRaw() and leakage-related correction paths.
+        Apply the same global scale to the no-EM-shift momentum path.
         """
         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det_noEMshift()
         return p * self._scale_factor()
@@ -2161,15 +2298,64 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #Set nu_type
         CVSystematicUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
 
-        #Set NonResPi weight
+        # ------------------------------------------------------------
+        # GENIE tune configuration
+        # ------------------------------------------------------------
+
+        # NonResPi is part of both our V1 baseline and the current tune.
         CVSystematicUniverse.SetNonResPiReweight(True)
-        CVSystematicUniverse.SetDeuteriumGeniePiTune(True)
-        CVSystematicUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses)) 
-        CVSystematicUniverse.SetNFluxUniverses(SystematicsConfig.NUM_FLUX_UNIVERSE)
+
+        if USE_MNVTUNE_V1:
+            # Diagnostic V1-based configurations.
+            CVSystematicUniverse.SetDeuteriumGeniePiTune(
+                V1_ADD_DEUTERIUM
+            )
+
+            CVSystematicUniverse.SetZExpansionFaReweight(
+                V1_ADD_ZEXP
+            )
+
+        else:
+            # Current / V4 configuration.
+            CVSystematicUniverse.SetDeuteriumGeniePiTune(True)
+
+            CVSystematicUniverse.SetZExpansionFaReweight(
+                bool(SystematicsConfig.NumZExpansionUniverses)
+            )
+
+        CVSystematicUniverse.SetNFluxUniverses(
+            SystematicsConfig.NUM_FLUX_UNIVERSE
+        )
+
         CVSystematicUniverse.RPAMaterials(True)
 
-        if chain.GetTree().GetName() == "Truth":
-            CVSystematicUniverse.SetTruth(True)
+        # MHRW renorm directory
+        if not hasattr(CVPythonUniverse, "_mhrw_filename_set"):
+            mhrw_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "custom_mhrwKineRenorm",
+            )
+
+            CVSystematicUniverse.SetMHRWeightFilename(
+                "Renorm_Kine_Truth",
+                mhrw_dir,
+            )
+
+            CVPythonUniverse._mhrw_filename_set = True
+
+            # print("[MHRW CONFIG] directory =", mhrw_dir)
+
+        # if chain.GetTree().GetName() == "Truth":
+        #     CVSystematicUniverse.SetTruth(True)
+        tree_name = chain.GetTree().GetName()
+        is_truth_tree = (tree_name == "Truth")
+        CVSystematicUniverse.SetTruth(is_truth_tree)
+        # print(
+        #     "[UNIVERSE MODE]",
+        #     "tree =", tree_name,
+        #     "SetTruth =", is_truth_tree,
+        # )
+
 
         #append cv universe
         universes.append(CVSystematicUniverse(chain,0))
@@ -2225,8 +2411,11 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #Non resonant pion universe
             # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
-            #LowQ2PionUniverse
-            universes.extend(LowQ2PionUniverse.GetSystematicsUniverses(chain ))
+            # Low-Q2 pion systematic only when that tune component is active
+            if (not USE_MNVTUNE_V1) or V1_ADD_LOWQ2PI:
+                universes.extend(
+                    LowQ2PionUniverse.GetSystematicsUniverses(chain)
+                )
             #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
 
             # #birk shift universe
@@ -2241,8 +2430,8 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #SuSAValenciaUniverse
             universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
 
-            # #hadron reweight shifting universe
-            # universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
+            #hadron reweight shifting universe
+            universes.extend(GeantHadronUniverse.GetSystematicsUniverses(chain ))
 
             #leakage universe
             universes.extend(LeakageUniverse.GetSystematicsUniverses(chain ))

@@ -196,7 +196,24 @@ QSQUARED_BINNING = QSQUARED_BINNING_INC
 
 QSQUARED_SLICE_EDGES = [0.2, 0.75, 2,]
 
-W_BINNING = [0.1*i for i in range(21)]
+# W_BINNING = [0.1*i for i in range(21)]
+W_BINNING = [0.8 + 0.1*i for i in range(23)]
+
+# Response / resolution plots
+LEPTON_MOMENTUM_RESPONSE_BINNING = [
+    0.0, 0.25, 0.5, 0.75,
+    1.0, 1.5, 2.0, 2.5,
+    3.0, 4.0, 5.0, 6.0,
+    8.0, 10.0, 12.0, 15.0, 20.0
+]
+
+LEPTON_MOMENTUM_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
+
+LEPTON_ENERGY_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
 
 PSI_BINNING = [0.05*i for i in range(41)]
 PSI_TAIL_BINNING = [0.05*i for i in range(4,15)]
@@ -305,9 +322,9 @@ HISTS_TO_MAKE = [
 	# "Lepton Energy",
 	# "E Theta Squared",
 	# "True E Theta Squared",
+    "Biased Neutrino Energy",
     "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
     # "Biased Neutrino Energy Background Fit",
 	# "Visible Energy",
 	# "True Lepton Energy",

@@ -194,7 +194,24 @@ QSQUARED_BINNING = QSQUARED_BINNING_INC
 
 QSQUARED_SLICE_EDGES = [0.2, 0.75, 2,]
 
-W_BINNING = [0.1*i for i in range(21)]
+# W_BINNING = [0.1*i for i in range(21)]
+W_BINNING = [0.8 + 0.1*i for i in range(23)]
+
+# Response / resolution plots
+LEPTON_MOMENTUM_RESPONSE_BINNING = [
+    0.0, 0.25, 0.5, 0.75,
+    1.0, 1.5, 2.0, 2.5,
+    3.0, 4.0, 5.0, 6.0,
+    8.0, 10.0, 12.0, 15.0, 20.0
+]
+
+LEPTON_MOMENTUM_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
+
+LEPTON_ENERGY_FRAC_RESID_BINNING = [
+    -1.0 + 0.04*i for i in range(51)
+]
 
 PSI_BINNING = [0.05*i for i in range(41)]
 PSI_TAIL_BINNING = [0.05*i for i in range(4,15)]
@@ -315,13 +332,36 @@ HISTS_TO_MAKE = [
 	# "Ee Vs Theta",
 
 
+    # "Biased Neutrino Energy",
+	# "Lepton Energy",
+	# "Visible Energy",
+	# "Lepton Angle",
+	# "Lepton Pt",
+	# "E Theta Squared",
+	# "HasNoBackExitingTracks",
+	# "HasMINOSMatch",
+	# "Lepton MINOS Projected X",
+	# "Lepton MINOS Projected Y",
+	# "Neutrino Vertex Z",
+	# "Neutrino Vertex Apothem",
+
+
 ### MY PLOTS ###
 	# "Lepton Energy",
 	# "E Theta Squared",
 	# "True E Theta Squared",
+    "Biased Neutrino Energy",
     "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
-    "Biased Neutrino Energy",
+	# "Q2",
+	# "True W",
+	# "True W Exp",
+	# "True vs Reconstructed Lepton Energy",
+	# "True vs Reconstructed Lepton Momentum",
+	# "Lepton Momentum Fractional Resolution",
+	# "Lepton Energy Fractional Resolution",
+	# "True vs Reconstructed Available Energy",
+	# "True q0 vs Reconstructed Available Energy",
 	# "True Signal True Energy vs Neutrino Length Travelled",
     # "Biased Neutrino Energy Background Fit",
 	# "Visible Energy",
@@ -348,7 +388,7 @@ HISTS_TO_MAKE = [
 	# "Lepton Angle",
 	# "Lepton Pt",
 
-	## These are plots for testing angle and momentum bias
+	# # These are plots for testing angle and momentum bias
 	# "Reco ThetaX vs Vertex X",
 	# "True ThetaX vs Vertex X",
 

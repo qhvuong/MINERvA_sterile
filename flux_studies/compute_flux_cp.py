@@ -163,6 +163,9 @@ FLAT_BEAMFOCUS_COLUMNS = {
         -12: "nubar_e",
 }
 
+BEAMFOCUS_TUPLE = 0
+BEAMFOCUS_FLAT = 1
+BEAMFOCUS_RESPONSE = 2
 
 def load_flat_beamfocus_weights(filename, pdg, n_universes):
         if pdg not in FLAT_BEAMFOCUS_COLUMNS:
@@ -261,6 +264,167 @@ def load_flat_beamfocus_weights(filename, pdg, n_universes):
         return result
 
 
+def load_beamfocus_response(filename, n_universes):
+        """
+        Load the precomputed energy-dependent BeamFocus universe weights.
+
+        Expected ROOT object:
+            BeamFocusWeights
+
+        Convention:
+            x axis = neutrino energy
+            y axis = universe
+            content = relative BeamFocus weight
+        """
+
+        filename = os.path.expandvars(filename)
+
+        f = ROOT.TFile.Open(
+                filename,
+                "READ"
+        )
+
+        if not f or f.IsZombie():
+                raise OSError(
+                        "Could not open BeamFocus response file: {}".format(
+                                filename
+                        )
+                )
+
+        h = f.Get("BeamFocusWeights")
+
+        if not h:
+                f.Close()
+
+                raise ValueError(
+                        "Could not find TH2 'BeamFocusWeights' in {}".format(
+                                filename
+                        )
+                )
+
+        n_energy_bins = h.GetNbinsX()
+        n_response_universes = h.GetNbinsY()
+
+        if n_response_universes != n_universes:
+                f.Close()
+
+                raise ValueError(
+                        "BeamFocus response contains {} universes, "
+                        "but {} were requested".format(
+                                n_response_universes,
+                                n_universes
+                        )
+                )
+
+
+        # ------------------------------------------------------------
+        # Energy-bin edges
+        # ------------------------------------------------------------
+
+        energy_edges = ROOT.std.vector("double")()
+
+        for ibin in range(
+                1,
+                n_energy_bins + 1
+        ):
+                energy_edges.push_back(
+                        h.GetXaxis().GetBinLowEdge(
+                                ibin
+                        )
+                )
+
+        energy_edges.push_back(
+                h.GetXaxis().GetBinUpEdge(
+                        n_energy_bins
+                )
+        )
+
+
+        # ------------------------------------------------------------
+        # Flatten response as:
+        #
+        #   [energy bin][universe]
+        #
+        # index =
+        #
+        #   energy_bin * n_universes + universe
+        #
+        # ------------------------------------------------------------
+
+        response_weights = ROOT.std.vector("double")()
+
+        for ibin in range(
+                1,
+                n_energy_bins + 1
+        ):
+
+                for universe in range(
+                        n_universes
+                ):
+
+                        weight = float(
+                                h.GetBinContent(
+                                        ibin,
+                                        universe + 1
+                                )
+                        )
+
+                        if (
+                                not math.isfinite(weight)
+                                or weight <= 0.0
+                        ):
+                                f.Close()
+
+                                raise ValueError(
+                                        "Invalid BeamFocus response weight "
+                                        "at energy bin {}, universe {}: {}".format(
+                                                ibin,
+                                                universe,
+                                                weight
+                                        )
+                                )
+
+                        response_weights.push_back(
+                                weight
+                        )
+
+
+        print(
+                "Loaded energy-dependent BeamFocus response:"
+        )
+
+        print(
+                "  file      = {}".format(
+                        filename
+                )
+        )
+
+        print(
+                "  E bins    = {}".format(
+                        n_energy_bins
+                )
+        )
+
+        print(
+                "  universes = {}".format(
+                        n_universes
+                )
+        )
+
+        print(
+                "  edges     = {}".format(
+                        list(energy_edges)
+                )
+        )
+
+        f.Close()
+
+        return (
+                energy_edges,
+                response_weights
+        )
+
+
 
 def infer_beam_era(filelist):
     name = os.path.basename(filelist).lower()
@@ -280,7 +444,8 @@ def infer_beam_era(filelist):
 
 class FluxCalculator(object):
         
-        def __init__(self,
+        def __init__(
+                self,
                 hc=HornCurrent.FHC,
                 curr=InteractionCurrent.CC,
                 chan=InteractionChannel.Tot,
@@ -299,8 +464,9 @@ class FluxCalculator(object):
                 n_universes=None,
                 use_ppfx=False,
                 beam_universe_offset=0,
-                flat_beamfocus_csv=None
-):
+                flat_beamfocus_csv=None,
+                beamfocus_response_file=None,
+        ):
                 self._horn_current = hc
                 self._int_current = curr
                 self._int_channel = chan
@@ -353,6 +519,7 @@ class FluxCalculator(object):
                 self._use_ppfx = use_ppfx
                 self._beam_universe_offset = beam_universe_offset
                 self._flat_beamfocus_csv = flat_beamfocus_csv
+                self._beamfocus_response_file = beamfocus_response_file
                 
                 self._params = {}
                 
@@ -427,27 +594,113 @@ class FluxCalculator(object):
                 self._params.update(selection_cuts)
 
                 incoming_pdg = self.GetIncomingPDG()
-                right_sign_pdg = (
+
+                right_sign_muon_pdg = (
                         14
                         if self._horn_current == HornCurrent.FHC
                         else -14
                 )
 
-                is_right_sign = (incoming_pdg == right_sign_pdg)
-
-                # ME tuples contain valid BeamFocus variations for all species.
-                # LE tuples use native BeamFocus only for the right-sign muon
-                # species; other LE species may use externally derived flat
-                # BeamFocus weights.
-                use_flat_beamfocus = (
-                        self._era == "LE"
-                        and not is_right_sign
-                        and self._flat_beamfocus_csv is not None
+                right_sign_electron_pdg = (
+                        12
+                        if self._horn_current == HornCurrent.FHC
+                        else -12
                 )
+
+                # ============================================================
+                # BeamFocus source selection
+                # ============================================================
+
+                beamfocus_mode = None
 
                 flat_beamfocus_weights = ROOT.std.vector("double")()
 
-                if use_flat_beamfocus:
+                beamfocus_energy_edges = ROOT.std.vector("double")()
+                beamfocus_response_weights = ROOT.std.vector("double")()
+
+
+                if self._era == "ME":
+
+                        # Keep current ME behavior unchanged.
+                        beamfocus_mode = BEAMFOCUS_TUPLE
+
+                        print(
+                                "Using tuple BeamFocus weights for ME PDG {}".format(
+                                        incoming_pdg
+                                )
+                        )
+
+
+                elif incoming_pdg == right_sign_muon_pdg:
+
+                        # LE right-sign muon:
+                        #
+                        #   FHC -> numu
+                        #   RHC -> numubar
+                        #
+                        # Use the native tuple BeamFocus weights.
+                        beamfocus_mode = BEAMFOCUS_TUPLE
+
+                        print(
+                                "Using tuple BeamFocus weights for LE right-sign muon "
+                                "PDG {}".format(
+                                        incoming_pdg
+                                )
+                        )
+
+
+                elif incoming_pdg == right_sign_electron_pdg:
+
+                        # LE right-sign electron:
+                        #
+                        #   FHC -> nue
+                        #   RHC -> nuebar
+                        #
+                        # Use the regenerated energy-dependent BeamFocus response.
+                        if self._beamfocus_response_file is None:
+                                raise ValueError(
+                                        "LE right-sign electron PDG {} requires "
+                                        "--beamfocus_response_file".format(
+                                                incoming_pdg
+                                        )
+                                )
+
+                        beamfocus_mode = BEAMFOCUS_RESPONSE
+
+                        (
+                                beamfocus_energy_edges,
+                                beamfocus_response_weights,
+                        ) = load_beamfocus_response(
+                                self._beamfocus_response_file,
+                                self._n_universes
+                        )
+
+                        print(
+                                "Using regenerated energy-dependent BeamFocus response "
+                                "for LE right-sign electron PDG {}".format(
+                                        incoming_pdg
+                                )
+                        )
+
+
+                else:
+
+                        # LE wrong-sign species only:
+                        #
+                        # FHC -> numubar, nuebar
+                        # RHC -> numu, nue
+                        #
+                        # Keep the existing flat BeamFocus treatment.
+                        if self._flat_beamfocus_csv is None:
+                                raise ValueError(
+                                        "LE wrong-sign PDG {} requires "
+                                        "--flat_beamfocus_csv".format(
+                                                incoming_pdg
+                                        )
+                                )
+
+                        beamfocus_mode = BEAMFOCUS_FLAT
+
                         flat_beamfocus_weights = load_flat_beamfocus_weights(
                                 self._flat_beamfocus_csv,
                                 incoming_pdg,
@@ -455,30 +708,10 @@ class FluxCalculator(object):
                         )
 
                         print(
-                                "Using flat BeamFocus weights for LE PDG {}".format(
+                                "Using flat BeamFocus weights for LE wrong-sign "
+                                "PDG {}".format(
                                         incoming_pdg
                                 )
-                        )
-
-                elif self._era == "ME":
-                        print(
-                                "Using tuple BeamFocus weights for ME PDG {}".format(
-                                        incoming_pdg
-                                )
-                        )
-
-                elif is_right_sign:
-                        print(
-                                "Using tuple BeamFocus weights for LE right-sign PDG {}".format(
-                                        incoming_pdg
-                                )
-                        )
-
-                else:
-                        print(
-                                "WARNING: LE non-right-sign PDG {} has no flat "
-                                "BeamFocus CSV. Falling back to tuple BeamFocus "
-                                "weights.".format(incoming_pdg)
                         )
                 
                 # step 2: loop over the events to calculate the event rates and error bands.
@@ -521,8 +754,10 @@ class FluxCalculator(object):
                                 0.001,
                                 cvweighted,
                                 self._beam_universe_offset,
-                                use_flat_beamfocus,
+                                beamfocus_mode,
                                 flat_beamfocus_weights,
+                                beamfocus_energy_edges,
+                                beamfocus_response_weights,
                         )
                         # ... we'd like the event rate to be a true histogram,
                         # in which the bin size is irrelevant.
@@ -855,6 +1090,7 @@ class FluxCalculator(object):
                 print(("  Calculate errors:", self._calc_errors))
                 print(("  BeamFocus universe offset:", self._beam_universe_offset))
                 print(("  Flat BeamFocus CSV:", self._flat_beamfocus_csv if self._flat_beamfocus_csv is not None else "none"))
+                print(("  BeamFocus response file:", self._beamfocus_response_file if self._beamfocus_response_file is not None else "none"))
                 if self._calc_errors:
                         print(("  Number of universes for 'many universes' flux errors calculation:", self._n_universes))
                 print()
@@ -1066,7 +1302,19 @@ def Bootstrap():
                 dest="flat_beamfocus_csv",
                 help=(
                         "CSV containing flat species-dependent BeamFocus weights. "
-                        "Used only for non-right-sign species. Default: %default."
+                        "Used only for LE wrong-sign species. Default: %default."
+                ),
+                default=None,
+        )
+
+        parser.add_option(
+                "--beamfocus_response_file",
+                dest="beamfocus_response_file",
+                help=(
+                        "ROOT file containing energy-dependent BeamFocus "
+                        "weights for the LE right-sign electron species. "
+                        "Expected object: BeamFocusWeights. "
+                        "Default: %default."
                 ),
                 default=None,
         )
@@ -1118,7 +1366,8 @@ def Bootstrap():
                         n_universes=options.n_universes,
                         use_ppfx=options.use_ppfx,
                         beam_universe_offset=options.beam_universe_offset,
-                        flat_beamfocus_csv=options.flat_beamfocus_csv
+                        flat_beamfocus_csv=options.flat_beamfocus_csv,
+                        beamfocus_response_file=options.beamfocus_response_file,
                 )
         except OSError as e:
                 print("Couldn't open your cross-section file: '%s'" % options.xsec_file, file=sys.stderr)

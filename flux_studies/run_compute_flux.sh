@@ -11,6 +11,8 @@ RHC_OFFSET=811
 FHC_FLAT="/exp/minerva/data/users/qvuong/flux_studies/flat_beamfocus_outputs_FV/FHC/flat_beamfocus_FHC.csv"
 RHC_FLAT="/exp/minerva/data/users/qvuong/flux_studies/flat_beamfocus_outputs_FV/RHC/flat_beamfocus_RHC.csv"
 
+BEAMFOCUS_RESPONSE="/exp/minerva/app/users/qvuong/FluxAna/LE_BeamFocus_universes_nue.root"
+
 FILEDIR="../file_option"
 
 usage() {
@@ -46,7 +48,7 @@ case "${PLAYLIST}" in
         MODE_FLAG="--FHC"
         OFFSET="${FHC_OFFSET}"
         FLAT_CSV="${FHC_FLAT}"
-        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_FV"
+        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_newElectronResponse"
         ;;
 
     # -------------------------
@@ -58,7 +60,7 @@ case "${PLAYLIST}" in
         MODE_FLAG="--RHC"
         OFFSET="${RHC_OFFSET}"
         FLAT_CSV="${RHC_FLAT}"
-        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_FV"
+        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_LE_newElectronResponse"
         ;;
 
     # -------------------------
@@ -139,41 +141,62 @@ fi
 
 
 # ============================================================
-# Determine right-sign muon species
-#
-# FHC RS = nu_mu
-# RHC RS = nubar_mu
-# ============================================================
-
-if [ "${MODE}" = "FHC" ] && [ "${PDG}" -eq 14 ]; then
-    RIGHT_SIGN=true
-elif [ "${MODE}" = "RHC" ] && [ "${PDG}" -eq -14 ]; then
-    RIGHT_SIGN=true
-else
-    RIGHT_SIGN=false
-fi
-
-
-
-# ============================================================
 # Determine BeamFocus source
 #
-# LE right-sign muon:
-#   native tuple BeamFocus
+# LE:
+#   right-sign muon:
+#       FHC numu / RHC numubar
+#       -> native tuple BeamFocus
 #
-# LE non-right-sign:
-#   flat ME-derived BeamFocus
+#   right-sign electron:
+#       FHC nue / RHC nuebar
+#       -> regenerated energy-dependent BeamFocus response
 #
-# ME, all species:
-#   native tuple BeamFocus
+#   wrong-sign species:
+#       -> flat BeamFocus weights
+#
+# ME:
+#   all species
+#       -> native tuple BeamFocus
 # ============================================================
 
-USE_FLAT_BEAMFOCUS=false
+RIGHT_SIGN_MUON=false
+RIGHT_SIGN_ELECTRON=false
 
-if [ "${ERA}" = "LE" ] && [ "${RIGHT_SIGN}" = false ]; then
-    USE_FLAT_BEAMFOCUS=true
+if [ "${MODE}" = "FHC" ]; then
+
+    if [ "${PDG}" -eq 14 ]; then
+        RIGHT_SIGN_MUON=true
+    elif [ "${PDG}" -eq 12 ]; then
+        RIGHT_SIGN_ELECTRON=true
+    fi
+
+elif [ "${MODE}" = "RHC" ]; then
+
+    if [ "${PDG}" -eq -14 ]; then
+        RIGHT_SIGN_MUON=true
+    elif [ "${PDG}" -eq -12 ]; then
+        RIGHT_SIGN_ELECTRON=true
+    fi
+
 fi
 
+
+BEAMFOCUS_SOURCE="tuple"
+
+if [ "${ERA}" = "LE" ]; then
+
+    if [ "${RIGHT_SIGN_MUON}" = true ]; then
+        BEAMFOCUS_SOURCE="tuple"
+
+    elif [ "${RIGHT_SIGN_ELECTRON}" = true ]; then
+        BEAMFOCUS_SOURCE="response"
+
+    else
+        BEAMFOCUS_SOURCE="flat"
+    fi
+
+fi
 
 
 
@@ -217,18 +240,30 @@ echo "Flavor            : ${FLAVOR}"
 echo "Helicity          : ${HELICITY}"
 echo "PDG               : ${PDG}"
 echo "Beam offset       : ${OFFSET}"
-echo "Right-sign muon   : ${RIGHT_SIGN}"
+echo "Right-sign muon   : ${RIGHT_SIGN_MUON}"
+echo "Right-sign e      : ${RIGHT_SIGN_ELECTRON}"
 echo "Filelist          : ${FILELIST}"
 echo "Output            : ${OUTPUT}"
 
 echo "Era               : ${ERA}"
 
-if [ "${USE_FLAT_BEAMFOCUS}" = true ]; then
-    echo "BeamFocus         : flat ME-derived weights"
-    echo "Flat BF CSV       : ${FLAT_CSV}"
-else
-    echo "BeamFocus         : native tuple weights"
-fi
+case "${BEAMFOCUS_SOURCE}" in
+
+    tuple)
+        echo "BeamFocus         : native tuple weights"
+        ;;
+
+    flat)
+        echo "BeamFocus         : flat ME-derived weights"
+        echo "Flat BF CSV       : ${FLAT_CSV}"
+        ;;
+
+    response)
+        echo "BeamFocus         : regenerated energy-dependent response"
+        echo "BF response file  : ${BEAMFOCUS_RESPONSE}"
+        ;;
+
+esac
 
 echo "============================================"
 echo
@@ -248,20 +283,60 @@ CMD=(
     --calc_errors
     --n_universes "${NUNIV}"
     --beam_universe_offset "${OFFSET}"
+    --output_file "${OUTPUT}"
 )
 
-# Flat BeamFocus is used only for LE non-right-sign species.
-# All ME species use their native tuple BeamFocus weights.
-if [ "${USE_FLAT_BEAMFOCUS}" = true ]; then
-    CMD+=(
-        --flat_beamfocus_csv "${FLAT_CSV}"
-    )
+# LE BeamFocus:
+#   right-sign muon     -> native tuple
+#   right-sign electron -> regenerated energy-dependent response
+#   wrong-sign species  -> flat weights
+#
+# ME:
+#   all species -> native tuple
+case "${BEAMFOCUS_SOURCE}" in
+
+    tuple)
+        # No external BeamFocus input needed.
+        ;;
+
+    flat)
+        CMD+=(
+            --flat_beamfocus_csv "${FLAT_CSV}"
+        )
+        ;;
+
+    response)
+        CMD+=(
+            --beamfocus_response_file "${BEAMFOCUS_RESPONSE}"
+        )
+        ;;
+
+esac
+
+if [ "${BEAMFOCUS_SOURCE}" = "response" ]; then
+    if [ ! -f "${BEAMFOCUS_RESPONSE}" ]; then
+        echo "ERROR: BeamFocus response file not found:"
+        echo "  ${BEAMFOCUS_RESPONSE}"
+        exit 1
+    fi
 fi
 
-CMD+=(
-    -o "${OUTPUT}"
-)
+if [ "${BEAMFOCUS_SOURCE}" = "flat" ]; then
+    if [ ! -f "${FLAT_CSV}" ]; then
+        echo "ERROR: Flat BeamFocus CSV not found:"
+        echo "  ${FLAT_CSV}"
+        exit 1
+    fi
+fi
 
+case "${BEAMFOCUS_SOURCE}" in
+    tuple|flat|response)
+        ;;
+    *)
+        echo "ERROR: unknown BeamFocus source: ${BEAMFOCUS_SOURCE}"
+        exit 1
+        ;;
+esac
 
 # ============================================================
 # Run

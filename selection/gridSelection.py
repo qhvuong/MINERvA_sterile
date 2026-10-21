@@ -84,8 +84,8 @@ def submitJob(tupleName):
   
   os.system( "chmod 777 %s" % wrapper_name )
 
-  expected_lifetime = 8 if dataSwitch == "data" else 30
-  # expected_lifetime = 4 if dataSwitch == "data" else 8
+  # expected_lifetime = 8 if dataSwitch == "data" else 30
+  expected_lifetime = 4 if dataSwitch == "data" else 8
 
   cmd = "jobsub_submit -c has_avx2==True --group=minerva --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC --role=Analysis --memory %dMB -f %s -d HISTS %s -d LOGS %s -N %d --expected-lifetime=%dh  file://%s/%s" % (
       memory, outdir_tarball, outdir_hists, outdir_logs, njobs, expected_lifetime, os.environ["PWD"], wrapper_name
@@ -130,8 +130,8 @@ if __name__ == '__main__':
         continue
 
       if gridargs.memory is None:
-        # memory = 1000 if dataSwitch == "data" else 8000
-        memory = 1000 if dataSwitch == "data" else 15000
+        memory = 1000 if dataSwitch == "data" else 8000
+        # memory = 1000 if dataSwitch == "data" else 15000
       else:
         memory = gridargs.memory
     

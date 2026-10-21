@@ -8,7 +8,7 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GR
 
 
 Default_Plot_Type="stacked"
-Default_Scale = lambda histHolder:histHolder.POTScale(True)
+Default_Scale = lambda histHolder:histHolder.POTScale(False)
 DefaultSlicer = PlotTools.PrepareSlicer
 
 
@@ -156,7 +156,7 @@ SignalDecomposition = {
         "color": COLORS[1]
     },
     "CCNuE": {
-        "title" : "CC #nu_{e}-Res", 
+        "title" : "CC #nu_{e} Others", 
         "color": COLORS[4]
     },
     "CCNuEDIS" : {
@@ -529,8 +529,8 @@ PLOTS_TO_MAKE = [
     #    "plot_type" : "migration"},
     # {"name":"Estimator vs Front dEdX",
     #     "plot_type" : "stacked"},
-    {"name":"Biased Neutrino Energy",
-        "plot_type" : "stacked"},
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
     # {"name":"Biased Neutrino Energy Background Fit",
     #     "plot_type" : "stacked"},        
     # {"name":"Visible Energy",
@@ -542,11 +542,124 @@ PLOTS_TO_MAKE = [
     # {"name":"Biased Neutrino Energy Background Fit",
     #     "plot_type" : "stacked"},        
     # {"name":"Visible Energy",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Visible Energy",
     #     "plot_type" : "stacked"},
     # {"name":"True Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"Front dEdX",
     #     "plot_type" : "stacked"},
+
+    {"name":"Biased Neutrino Energy",
+        "plot_type" : "stacked"},
+    # {"name":"Lepton Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Visible Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"E Theta Squared",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton Angle",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton Pt",
+    #     "plot_type" : "stacked"},
+    # {"name":"HasNoBackExitingTracks",
+    #     "plot_type" : "stacked"},
+    # {"name":"HasMINOSMatch",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton MINOS Projected X",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton MINOS Projected Y",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Z",
+    #     "plot_type" : "stacked"},
+    # {"name":"Neutrino Vertex Apothem",
+    #     "plot_type" : "stacked"},
+
+    # {"name":"Reco ThetaX vs Vertex X",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"Reco ThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"True ThetaX vs Vertex X",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"True ThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"Reco ThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},    
+    # {"name":"Reco ThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"True ThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},
+    # {"name":"True ThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"dThetaX vs Vertex X",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex X",
+    #    "plot_type" : "category_hist"},  
+
+    # {"name":"dThetaX vs Vertex Y",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex Y",
+    #    "plot_type" : "category_hist"},  
+
+    # {"name":"dThetaX vs Vertex Z",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaX vs Vertex Z",
+    #    "plot_type" : "category_hist"},         
+
+
+    # {"name":"dThetaY vs Vertex X",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex X",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"dThetaY vs Vertex Y",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex Y",
+    #    "plot_type" : "category_hist"},  
+
+    # {"name":"dThetaY vs Vertex Z",
+    #    "plot_type" : "profileX"},  
+    # {"name":"dThetaY vs Vertex Z",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+    #    "plot_type" : "category_hist"}, 
+
+    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+    #    "plot_type" : "profileX"}, 
+    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+    #    "plot_type" : "category_hist"}, 
+
+
+    # {"name":"Q2",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"True W",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
+        
+	# {"name":"True vs Reconstructed Lepton Energy",
+    #     "plot_type" : "category_hist"},
+	# {"name":"True vs Reconstructed Lepton Momentum",
+    #     "plot_type" : "category_hist"},
+	# {"name":"Lepton Momentum Fractional Resolution",
+    #     "plot_type" : "category_hist"},
+	# {"name":"Lepton Energy Fractional Resolution",
+    #     "plot_type" : "category_hist"},
+	# {"name":"True vs Reconstructed Available Energy",
+    #     "plot_type" : "category_hist"},
+	# {"name":"True q0 vs Reconstructed Available Energy",
+    #     "plot_type" : "category_hist"},
+
     # {"name":"Reco Q2",
     #     "plot_type" : "stacked"},
     # {"name":"Cone Outside Energy",
@@ -582,7 +695,11 @@ PLOTS_TO_MAKE = [
     # # {"name":"HasNoBackExitingTracks",
     # #     "plot_type" : "stacked"},
     # {"name":"Lepton Angle",
+    #     "plot_type" : "stackedSignalDecomp"},
+    # {"name":"Lepton Angle",
     #     "plot_type" : "stacked"},
+    # {"name":"Lepton Pt",
+    #     "plot_type" : "stackedSignalDecomp"},
     # {"name":"Lepton Pt",
     #     "plot_type" : "stacked"},
 

@@ -38,9 +38,6 @@ def plotRecoKin(mc, chainwrapper, outfile):
     eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
     universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
 
-    # cv_universe = universes.get("cv", [None])[0]
-    # flux_universes = universes.get("Flux", [])
-
     for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal,eventClassifier)
 
@@ -84,48 +81,6 @@ def plotRecoKin(mc, chainwrapper, outfile):
         #print entry.histwrapper.name
         entry.Finalize()
 
-
-# def plotTruthKin(chainwrapper,outfile):
-#     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)
-#     eventClassifier = EventClassifier(classifiers=["Truth"],use_kin_cuts=True, use_sideband=[])
-
-#     universes = GetAllSystematicsUniverses(
-#         chainwrapper,
-#         False,
-#         AnalysisConfig.is_pc,
-#         AnalysisConfig.exclude_universes,
-#         AnalysisConfig.playlist,
-#     )
-
-#     for univ in chain.from_iterable(iter(universes.values())):
-#         univ.LoadTools(kin_cal,eventClassifier)
-
-#     nEvents = chainwrapper.GetEntries()
-#     print(f"Total number of events TRUTH: ", {nEvents})
-#     Plots = prepareTruthPlots(universes)
-#     print("plotTruthKin")
-#     if AnalysisConfig.testing and nEvents > 1000:
-#         nEvents = 1000
-
-#     for counter in range(nEvents):
-#         if counter %100000 == 0:
-#             print(counter)
-
-#         for universe in chain.from_iterable(iter(universes.values())):
-#             universe.SetEntry(counter)
-#             universe.ResetWeight()
-
-#             if not universe.IsVerticalOnly():
-#                 kin_cal.CalculateKinematics(universe)
-#                 eventClassifier.Classify(universe)
-
-#             if eventClassifier.is_true_signal:
-#                 for entry in Plots:
-#                     entry.Process(universe)
-
-#     outfile.cd()
-#     for entry in Plots:
-#         entry.Finalize()
 def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)
     eventClassifier = EventClassifier(classifiers=["Truth"],use_kin_cuts=True, use_sideband=[])
@@ -194,18 +149,6 @@ def prepareTruthPlots(universes):
         entry.AddErrorBands(universes)
 
     return plots
-# def prepareTruthPlots(universes):
-#     plots=[]
-#     for entry in HISTS_TO_MAKE:
-#         if not (isinstance(entry,str) and entry.startswith("True Signal")):
-#             continue
-#         settings = {"key":entry,"region":"Signal","mc":True}
-#         plots.extend(MakePlotProcessors(**settings))
-
-#     for entry in plots:
-#         entry.AddErrorBands(universes)
-
-#     return plots
 
 def CopyMetaTreeToOutPutFile(outfile):
     metatree = Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,"Meta",AnalysisConfig.count[0],AnalysisConfig.count[1])
@@ -230,23 +173,14 @@ if __name__ == "__main__":
     for st in AnalysisConfig.data_types:
         print(st)
         outputSelectionHistogram = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,"data" in st,True)
-        # print("DEBUG: about to open output file")
         output_file = ROOT.TFile.Open(outputSelectionHistogram,"RECREATE")
-
-        # print("DEBUG outputSelectionHistogram =", outputSelectionHistogram)
-        # print("DEBUG AnalysisConfig.count =", AnalysisConfig.count)
-        
-        # print("DEBUG: about to copy meta tree")
         CopyMetaTreeToOutPutFile(output_file)
-        # CopyMetaTreeToOutPutFile(output_file, st)
 
         if st=="mc" and Truth:
             print("selecting truth")
             plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
-            # print("DEBUG: finished truth loop")
         if Reco :
             print("selecting reco")
             plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
-            # print("DEBUG: finished reco loop")
         output_file.Close()
         print("selection is done for ", st, AnalysisConfig.playlist)
