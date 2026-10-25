@@ -190,6 +190,71 @@ def is_kaon_parent(event):
 def is_muon_parent(event):
     return abs(event.mc_fr_nuParentID) == 13
 
+
+def CountFSPDG(event, pdg):
+    n = event.GetInt("mc_nFSPart")
+    return sum(
+        1
+        for i in range(n)
+        if event.GetVecElem("mc_FSPartPDG", i) == pdg
+    )
+
+
+def CountBeamSignChargedPions(event):
+    incoming = event.GetInt("mc_incoming")
+
+    if incoming == 14:
+        return CountFSPDG(event, 211)   # pi+
+    elif incoming == -14:
+        return CountFSPDG(event, -211)  # pi-
+
+    return 0
+
+
+def IsCCResDiagnostic(event):
+    return (
+        event.GetInt("mc_current") == 1
+        and event.GetInt("mc_intType") == 2
+    )
+
+
+def IsCCNucleonPionDiagnostic(event):
+    """
+    Exact reproduction of PlotUtils::IsCCNucleonPion.
+    """
+    n_beam_sign_pions = CountBeamSignChargedPions(event)
+
+    return (
+        event.GetInt("mc_w") < 1400.0
+        and n_beam_sign_pions == 1
+        and event.GetInt("mc_current") == 1
+        and event.GetInt("mc_intType") in (2, 3)
+    )
+
+
+def GetDiagnosticLowQ2Weight(event, channel):
+    """
+    Reproduce the official CV LowQ2 application independently of
+    GetMyLowQ2PiWeight().
+    """
+
+    channel = channel.upper()
+
+    if channel == "MENU1PI":
+        if not IsCCNucleonPionDiagnostic(event):
+            return 1.0
+    else:
+        if not IsCCResDiagnostic(event):
+            return 1.0
+
+    return ROOT.PlotUtils.weight_lowq2pi().getWeight(
+        event.GetDouble("mc_Q2") * 1e-6,
+        channel,
+        0,
+        event.GetInt("mc_targetNucleus"),
+    )
+
+
 VARIABLE_DICT = {
     "Biased Neutrino Energy":
     {
@@ -391,7 +456,7 @@ PLOT_SETTINGS= {
     {
         "name" : "Q2",
         "title": "True q2 ; Q2 (GeV^{2}); dNEvents/dq2",
-        "binning" : [[i/10 for i in range(40)]],
+        "binning" : [[i/10 for i in range(21)]],
         "value_getter" : [lambda event: event.mc_Q2/1e6],
         "tags": truth_tags
     },
@@ -403,14 +468,19 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.reco_q3],
         "tags": reco_tags
     },
-    # "True W":
-    # {
-    #     "name" : "trueW",
-    #     "title": "True W; True W (GeV); NEvents",
-    #     "binning" : [PlotConfig.W_BINNING],
-    #     "value_getter" : [lambda event: event.mc_w/1e3],
-    #     "tags": truth_tags,
-    # },
+    "Raw True W":
+    {
+        "name": "mc_w_raw",
+        "title": "GENIE True W; W (GeV); NEvents",
+        "binning": [[
+            0.0, 0.2, 0.4, 0.6, 0.8,
+            1.0, 1.1, 1.2, 1.3, 1.4,
+            1.5, 1.6, 1.8, 2.0, 2.5,
+            3.0, 4.0, 5.0
+        ]],
+        "value_getter": [lambda event: event.GetDouble("mc_w") / 1000.0],
+        "tags": truth_tags
+    },
     "True W":
     {
         "name" : "trueW",
@@ -419,7 +489,6 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.true_W],
         "tags": truth_tags,
     },
-
     "True W Exp":
     {
         "name" : "trueWExp",
@@ -427,6 +496,218 @@ PLOT_SETTINGS= {
         "binning" : [PlotConfig.W_BINNING],
         "value_getter" : [lambda event: event.kin_cal.true_W_exp],
         "tags": truth_tags,
+    },
+    "True Pi Plus Multiplicity":
+    {
+        "name": "true_n_piplus",
+        "title": "True #pi^{+} Multiplicity; N_{#pi^{+}}; NEvents",
+        "binning": [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: CountFSPDG(event, 211)],
+        "tags": truth_tags
+    },
+
+    "True Pi Minus Multiplicity":
+    {
+        "name": "true_n_piminus",
+        "title": "True #pi^{-} Multiplicity; N_{#pi^{-}}; NEvents",
+        "binning": [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: CountFSPDG(event, -211)],
+        "tags": truth_tags
+    },
+
+    "True Pi0 Multiplicity":
+    {
+        "name": "true_n_pi0",
+        "title": "True #pi^{0} Multiplicity; N_{#pi^{0}}; NEvents",
+        "binning": [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: CountFSPDG(event, 111)],
+        "tags": truth_tags
+    },
+
+    "True Total Pion Multiplicity":
+    {
+        "name": "true_n_pions",
+        "title": "True Pion Multiplicity; N_{#pi}; NEvents",
+        "binning": [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]],
+        "value_getter": [
+            lambda event:
+                CountFSPDG(event, 211)
+                + CountFSPDG(event, -211)
+                + CountFSPDG(event, 111)
+        ],
+        "tags": truth_tags
+    },
+
+    "Beam Sign Charged Pion Multiplicity":
+    {
+        "name": "true_n_beamsign_pion",
+        "title": "Beam-Sign Charged Pion Multiplicity; N_{#pi^{beam-sign}}; NEvents",
+        "binning": [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "value_getter": [lambda event: CountBeamSignChargedPions(event)],
+        "tags": truth_tags
+    },
+    "Interaction Type":
+    {
+        "name": "mc_intType",
+        "title": "GENIE Interaction Type; mc_intType; NEvents",
+        "binning": [[i - 0.5 for i in range(0, 12)]],
+        "value_getter": [lambda event: event.GetInt("mc_intType")],
+        "tags": truth_tags
+    },
+    "MENU1PI Eligible":
+    {
+        "name": "MENU1PI_eligible",
+        "title": "MENU1PI Eligibility; IsCCNucleonPion; NEvents",
+        "binning": [[-0.5, 0.5, 1.5]],
+        "value_getter": [
+            lambda event: 1 if IsCCNucleonPionDiagnostic(event) else 0
+        ],
+        "tags": truth_tags
+    },
+
+    "JOINT Eligible":
+    {
+        "name": "JOINT_eligible",
+        "title": "JOINT Eligibility; IsCCRes; NEvents",
+        "binning": [[-0.5, 0.5, 1.5]],
+        "value_getter": [
+            lambda event: 1 if IsCCResDiagnostic(event) else 0
+        ],
+        "tags": truth_tags
+    },
+    "MENU1PI CV Weight":
+    {
+        "name": "MENU1PI_cv_weight",
+        "title": "MENU1PI CV Weight; w_{MENU1PI}; NEvents",
+        "binning": [[i / 50.0 for i in range(0, 101)]],   # 0 -> 2
+        "value_getter": [
+            lambda event: GetDiagnosticLowQ2Weight(event, "MENU1PI")
+        ],
+        "tags": truth_tags
+    },
+
+    "JOINT CV Weight":
+    {
+        "name": "JOINT_cv_weight",
+        "title": "JOINT CV Weight; w_{JOINT}; NEvents",
+        "binning": [[i / 50.0 for i in range(0, 101)]],   # 0 -> 2
+        "value_getter": [
+            lambda event: GetDiagnosticLowQ2Weight(event, "JOINT")
+        ],
+        "tags": truth_tags
+    },
+    "True Enu vs True Q2":
+    {
+        "name": "trueEnu_trueQ2",
+        "title": "True E_{#nu} vs True Q^{2}; True E_{#nu} (GeV); True Q^{2} (GeV^{2}); NEvents",
+        "binning": [
+            PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE,
+            [
+                0.0, 0.05, 0.10, 0.15, 0.20,
+                0.25, 0.30, 0.35, 0.40, 0.45,
+                0.50, 0.55, 0.60, 0.65, 0.70,
+                0.80, 0.90, 1.00, 1.20, 1.50,
+                2.0, 3.0, 5.0, 10.0
+            ]
+        ],
+        "value_getter": [
+            lambda event: event.GetDouble("mc_incomingE") / 1000.0,
+            lambda event: event.GetDouble("mc_Q2") / 1e6
+        ],
+        "tags": truth_tags
+    },
+    "True W vs True Q2":
+    {
+        "name": "trueW_trueQ2",
+        "title": "True W vs True Q^{2}; W (GeV); True Q^{2} (GeV^{2}); NEvents",
+        "binning": [
+            [
+                0.0, 0.2, 0.4, 0.6, 0.8,
+                1.0, 1.1, 1.2, 1.3, 1.4,
+                1.5, 1.6, 1.8, 2.0, 2.5,
+                3.0, 4.0, 5.0
+            ],
+            [
+                0.0, 0.05, 0.10, 0.15, 0.20,
+                0.25, 0.30, 0.35, 0.40, 0.45,
+                0.50, 0.55, 0.60, 0.65, 0.70,
+                0.80, 0.90, 1.00, 1.20, 1.50,
+                2.0, 3.0, 5.0, 10.0
+            ]
+        ],
+        "value_getter": [
+            lambda event: event.GetDouble("mc_w") / 1000.0,
+            lambda event: event.GetDouble("mc_Q2") / 1e6
+        ],
+        "tags": truth_tags
+    },
+    "MENU1PI Weight vs True Q2":
+    {
+        "name": "MENU1PIWeight_trueQ2",
+        "title": "MENU1PI Weight vs True Q^{2}; True Q^{2} (GeV^{2}); w_{MENU1PI}; NEvents",
+        "binning": [
+            [
+                0.0, 0.05, 0.10, 0.15, 0.20,
+                0.25, 0.30, 0.35, 0.40, 0.45,
+                0.50, 0.55, 0.60, 0.65, 0.70,
+                0.80, 0.90, 1.00, 1.20, 1.50,
+                2.0, 3.0, 5.0, 10.0
+            ],
+            [i / 50.0 for i in range(0, 101)]
+        ],
+        "value_getter": [
+            lambda event: event.GetDouble("mc_Q2") / 1e6,
+            lambda event: GetDiagnosticLowQ2Weight(event, "MENU1PI")
+        ],
+        "tags": truth_tags
+    },
+    "JOINT Weight vs True Q2":
+    {
+        "name": "JOINTWeight_trueQ2",
+        "title": "JOINT Weight vs True Q^{2}; True Q^{2} (GeV^{2}); w_{JOINT}; NEvents",
+        "binning": [
+            [
+                0.0, 0.05, 0.10, 0.15, 0.20,
+                0.25, 0.30, 0.35, 0.40, 0.45,
+                0.50, 0.55, 0.60, 0.65, 0.70,
+                0.80, 0.90, 1.00, 1.20, 1.50,
+                2.0
+            ],
+            [i / 50.0 for i in range(0, 101)]
+        ],
+        "value_getter": [
+            lambda event: event.GetDouble("mc_Q2") / 1e6,
+            lambda event: GetDiagnosticLowQ2Weight(event, "JOINT")
+        ],
+        "tags": truth_tags
+    },
+    "MENU1PI Weight vs True Enu":
+    {
+        "name": "MENU1PIWeight_trueEnu",
+        "title": "MENU1PI Weight vs True E_{#nu}; True E_{#nu} (GeV); w_{MENU1PI}; NEvents",
+        "binning": [
+            PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE,
+            [i / 50.0 for i in range(0, 101)]
+        ],
+        "value_getter": [
+            lambda event: event.GetDouble("mc_incomingE") / 1000.0,
+            lambda event: GetDiagnosticLowQ2Weight(event, "MENU1PI")
+        ],
+        "tags": truth_tags
+    },
+    "JOINT Weight vs True Enu":
+    {
+        "name": "JOINTWeight_trueEnu",
+        "title": "JOINT Weight vs True E_{#nu}; True E_{#nu} (GeV); w_{JOINT}; NEvents",
+        "binning": [
+            PlotConfig.NEUTRINO4_EE_BINNING_EL_TEMPLATE,
+            [i / 50.0 for i in range(0, 101)]
+        ],
+        "value_getter": [
+            lambda event: event.GetDouble("mc_incomingE") / 1000.0,
+            lambda event: GetDiagnosticLowQ2Weight(event, "JOINT")
+        ],
+        "tags": truth_tags
     },
     "E Theta Squared":
     {
@@ -2475,7 +2756,7 @@ PLOT_SETTINGS= {
     {
         "name" : "Q2_reco",
         "title": "Reco q2 ; Q2 (GeV^{2}); dNEvents/dq2",
-        "binning" : [[i/100 for i in range(20)]],
+        "binning" : [[i/10 for i in range(21)]],
         "value_getter" : [lambda event: event.kin_cal.reco_q2_cal],
         "tags": reco_tags
     },

@@ -30,16 +30,16 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
-USE_MNVTUNE_V1 = True
+USE_MNVTUNE_V1 = False
 
 V1_ADD_DEUTERIUM = True
 V1_ADD_ZEXP = False
 
-V1_ADD_LOWQ2PI = False
+V1_ADD_LOWQ2PI = True
 V1_LOWQ2PI_CHANNEL = "JOINT"
 
-V1_ADD_COH = False
-V1_ADD_LE_COH = True
+V1_ADD_COH = False          # ME coherent tune implementation
+V1_ADD_LE_COH = True        # LE coherent tune implementation
 V1_ADD_DIFFCOH = True
 
 
@@ -589,6 +589,7 @@ class CVPythonUniverse():
         else:
             return self.weight
 
+
     def GetStandardWeight(self):
 
         if USE_MNVTUNE_V1:
@@ -693,73 +694,28 @@ class CVPythonUniverse():
 
         ### MnvTune v4.3.1 block below ###
         #weight *= self.GetTargetMassWeight() # 
-        weight *= self.GetCOHPionWeight() # Alejandro Ramirez's Result
+        # weight *= self.GetCOHPionWeight() # Alejandro Ramirez's Result
+        if V1_ADD_COH and V1_ADD_LE_COH:
+            raise RuntimeError(
+                "Choose either ME coherent weighting or LE coherent weighting, not both."
+            )
+
+        if V1_ADD_COH:
+            # ME theta_pi x E_pi coherent correction
+            weight *= self.GetCOHPionWeight()
+
+        if V1_ADD_LE_COH:
+            # LE prescription
+            weight *= self.GetLECOHPionWeight()
+
+
+
         if self.mc_intType == 4:
             weight *= 1.4368 # diffractive coherent reweight from Aaron Mislivec
 
         return weight
 
 
-    # def GetStandardWeightV1(self):
-
-    #     weight = 1.0
-
-    #     # Non-resonant pion suppression
-    #     rvn1pi = self.GetVecElem("truth_genie_wgt_Rvn1pi", 2)
-    #     rvp1pi = self.GetVecElem("truth_genie_wgt_Rvp1pi", 2)
-
-    #     is_nonrespi = (rvn1pi < 1.0) or (rvp1pi < 1.0)
-    #     weight *= 0.43 if is_nonrespi else 1.0
-
-    #     # Flux
-    #     pdg = self.mc_incoming
-
-    #     if SystematicsConfig.USE_SWAPPED:
-    #         if pdg == 12:
-    #             pdg = 14
-    #         elif pdg == -12:
-    #             pdg = -14
-    #         elif pdg == 14:
-    #             pdg = 12
-    #         elif pdg == -14:
-    #             pdg = -12
-    #         else:
-    #             print("Not neutrino PDG? {}".format(pdg))
-
-    #     weight *= self.GetFluxAndCVWeight(
-    #         self.mc_incomingE * 1e-3,
-    #         pdg
-    #     )
-
-    #     # Low-recoil 2p2h
-    #     w_2p2h = 1.0
-
-    #     q2_gev2 = self.mc_Q2 * 1e-6
-    #     w_gev = self.mc_w * 1e-3
-
-    #     valid_2p2h_kinematics = (
-    #         math.isfinite(q2_gev2)
-    #         and math.isfinite(w_gev)
-    #         and q2_gev2 >= 0.0
-    #         and abs(w_gev) < 90.0
-    #     )
-
-    #     if valid_2p2h_kinematics:
-    #         w_2p2h = self.GetLowRecoil2p2hWeight()
-
-    #         if not math.isfinite(w_2p2h):
-    #             w_2p2h = 1.0
-
-    #     weight *= w_2p2h
-
-    #     # RPA
-    #     weight *= self.GetRPAWeight()
-
-    #     # Detector / reconstruction corrections
-    #     weight *= self.GetGeantHadronWeight()
-    #     weight *= self.GetMyMinosEfficiencyWeight()
-
-    #     return weight
     def GetStandardWeightV1(self):
 
         weight = 1.0
@@ -805,7 +761,7 @@ class CVPythonUniverse():
                 print("Not neutrino PDG? {}".format(pdg))
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
-        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1M")
 
         # ------------------------------------------------------------
         # Low-recoil 2p2h
@@ -880,43 +836,22 @@ class CVPythonUniverse():
             return w_raw
 
 
-    # def GetMyLowQ2PiWeight(self):
-    #     channel = SystematicsConfig.LowQ2PiWeightChannel
-    #     if channel is None:
-    #         return 1.0
-
-    #     # Match the LowQ2Pi applicability: only CC resonance.
-    #     # From the debug, LowQ2Pi applies to CCNuEDelta:
-    #     #   current=1, intType=2
-    #     # and does not apply to QE, DIS, or NC.
-    #     if self.mc_current != 1:
-    #         return 1.0
-    #     if self.mc_intType != 2:
-    #         return 1.0
-
-    #     return ROOT.PlotUtils.weight_lowq2pi().getWeight(
-    #         self.mc_Q2 * 1e-6,
-    #         channel.upper(),
-    #         0
-    #     )
     def GetMyLowQ2PiWeight(self, channel=None):
-
         if channel is None:
             channel = SystematicsConfig.LowQ2PiWeightChannel
 
         if channel is None:
             return 1.0
 
-        # LowQ2Pi applies only to CC resonance
-        if self.mc_current != 1:
-            return 1.0
+        return self.GetLowQ2PiWeight(channel.upper())
 
-        if self.mc_intType != 2:
+    def GetOldBroadMENU1PIWeight(self):
+        if self.mc_current != 1 or self.mc_intType != 2:
             return 1.0
 
         return ROOT.PlotUtils.weight_lowq2pi().getWeight(
             self.mc_Q2 * 1e-6,
-            channel.upper(),
+            "MENU1PI",
             0
         )
 
@@ -1027,6 +962,43 @@ class CVPythonUniverse():
                return weight
         else:
             return 1.0
+
+
+
+    def IsCCNucleonPion(self):
+        npion = 0
+
+        for i in range(self.mc_nFSPart):
+            pdg = self.mc_FSPartPDG[i]
+
+            if self.mc_incoming == 14 and pdg == 211:
+                npion += 1
+            elif self.mc_incoming == -14 and pdg == -211:
+                npion += 1
+
+        return (
+            self.mc_w < 1400.0
+            and npion == 1
+            and self.mc_current == 1
+            and self.mc_intType in (2, 3)
+        )
+
+    def GetDiagnosticLowQ2PiWeight(self, channel):
+        channel = channel.upper()
+
+        if channel == "MENU1PI":
+            if not self.IsCCNucleonPion():
+                return 1.0
+        else:
+            if not (self.mc_current == 1 and self.mc_intType == 2):
+                return 1.0
+
+        return ROOT.PlotUtils.weight_lowq2pi().getWeight(
+            self.mc_Q2 * 1e-6,
+            channel,
+            0,
+            self.mc_targetNucleus
+        )
 
     #################### functions to be overide in systematics shift universes #################
     # #### No correction
@@ -2311,17 +2283,14 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
                 V1_ADD_DEUTERIUM
             )
 
-            CVSystematicUniverse.SetZExpansionFaReweight(
-                V1_ADD_ZEXP
-            )
+            CVSystematicUniverse.SetZExpansionFaReweight(V1_ADD_ZEXP)
 
         else:
             # Current / V4 configuration.
             CVSystematicUniverse.SetDeuteriumGeniePiTune(True)
 
-            CVSystematicUniverse.SetZExpansionFaReweight(
-                bool(SystematicsConfig.NumZExpansionUniverses)
-            )
+            # CVSystematicUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses))
+            CVSystematicUniverse.SetZExpansionFaReweight(V1_ADD_ZEXP)
 
         CVSystematicUniverse.SetNFluxUniverses(
             SystematicsConfig.NUM_FLUX_UNIVERSE

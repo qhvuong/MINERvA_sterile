@@ -71,6 +71,7 @@ FRONT_DEDX_PI0_UPPERBOUND = 5
 
 SAMPLE_CUTS = {
     "Signal" : [
+        "NoCut",
         "Vertex_Z",
         "Vertex_Apothem",
         "InverseHasNoBackExitingTracks",
@@ -78,6 +79,17 @@ SAMPLE_CUTS = {
         "Eavail",
         "LeptonAngle",
         "Pt",
+
+        # "HasNoBackExitingTracks",
+        # "HasMINOSMatch",
+
+        # inclusive CC cuts
+        "Vertex_Z",
+        "Vertex_Apothem",
+        "HasMINOSMatch",        
+        "LeptonAngle",
+        "DeadTime",
+        # "IsNeutrino",
 
         # Removed Cuts
         #"ZDifference",

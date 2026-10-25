@@ -19,17 +19,30 @@ import matplotlib.pyplot as plt
 #     "profileOnlyRatio_maskNonRatio": "prodNueel only ratio",
 #     "noRatio": "prodNueel_noRatio",
 # }
+# CASE_PATTERNS = {
+#     "excludeRatio_maskRatio":
+#         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
+
+#     "noRatio_p8_profileAll":
+#         r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
+
+#     "profileOnlyRatio":
+#         r"Profile only CC ratios",
+
+#     "_p8_profileAll":
+#         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
+# }
 CASE_PATTERNS = {
-    "excludeRatio_maskRatio":
+    "excludeRatio":
         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
 
-    "noRatio_p8_profileAll":
+    "directCC_profileAll":
         r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
 
-    "profileOnlyRatio":
+    "ratioOnly":
         r"Profile only CC ratios",
 
-    "_p8_profileAll":
+    "ratio_profileAll":
         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
 }
 CASE_SAFE_NAMES = {
@@ -45,7 +58,12 @@ CASE_SAFE_NAMES = {
     r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled":
         "directCC_includeAll",
 }
-
+CASE_ORDER = [
+    r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
+    r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
+    r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
+    r"Profile only CC ratios",
+]
 
 def safe_case_name(case):
     if case not in CASE_SAFE_NAMES:
@@ -123,7 +141,12 @@ def plot_lcurves_by_case(grouped, outdir):
     """
     One L-curve plot per case. Curves are different Nprof values.
     """
-    for case, by_nprof in grouped.items():
+    # for case, by_nprof in grouped.items():
+    for case in CASE_ORDER:
+        if case not in grouped:
+            continue
+        by_nprof = grouped[case]
+
         plt.figure(figsize=(8, 6))
 
         for nprof in sorted(by_nprof):
@@ -180,7 +203,11 @@ def plot_lcurves_by_nprof(grouped, outdir):
 
         plotted_any = False
 
-        for case, by_nprof in grouped.items():
+        # for case, by_nprof in grouped.items():
+        for case in CASE_ORDER:
+            if case not in grouped:
+                continue
+            by_nprof = grouped[case]
             if nprof not in by_nprof:
                 continue
 
@@ -239,7 +266,11 @@ def plot_lambda1_vs_nprof(grouped, outdir):
     for key, ylabel, outname in metrics:
         plt.figure(figsize=(8, 5.5))
 
-        for case, by_nprof in grouped.items():
+        # for case, by_nprof in grouped.items():
+        for case in CASE_ORDER:
+            if case not in grouped:
+                continue
+            by_nprof = grouped[case]
             xs = []
             ys = []
 
@@ -277,7 +308,11 @@ def plot_vs_lambda_grid(grouped, outdir):
         ("max_abs_a_null", r"$\max |a_i|$", "max_abs_a_null"),
     ]
 
-    for case, by_nprof in grouped.items():
+    # for case, by_nprof in grouped.items():
+    for case in CASE_ORDER:
+        if case not in grouped:
+            continue
+        by_nprof = grouped[case]
         # safe = case.replace(" ", "_").replace(",", "").replace("/", "-")
         safe = safe_case_name(case)
 
@@ -314,7 +349,11 @@ def write_lambda1_summary(grouped, outpath):
     with open(outpath, "w") as f:
         f.write("case,nprof,lambda,chi2_null,resid_null,penalty_null,norm_a_null,max_abs_a_null\n")
 
-        for case, by_nprof in grouped.items():
+        # for case, by_nprof in grouped.items():
+        for case in CASE_ORDER:
+            if case not in grouped:
+                continue
+            by_nprof = grouped[case]
             for nprof in sorted(by_nprof):
                 r = get_lambda1_row(by_nprof[nprof])
                 f.write(

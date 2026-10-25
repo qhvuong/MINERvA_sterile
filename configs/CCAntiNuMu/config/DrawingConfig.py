@@ -223,8 +223,7 @@ SignalDecomposition = {
     },
     "Background" : {
         "title" : "Backgrounds",
-        "cate" : {"NCDiff", "NuEElastic", "NC"}, 
-        # "cate": ["NCDiff", "NuEElastic", "NC", "CC"],
+        "cate": ["NCDiff", "NuEElastic", "NC", "CC"],
         "color": COLORS[8]
     }
 }
@@ -233,52 +232,18 @@ SignalDecomposition = {
 
 SIGNAL_DEFINITION = SignalDecomposition
 
-#SignalDecomposition = {
-#    "NueBar" :
-#    {
-#        "title" : "Anti#nu_{e}", 
-#        "color": COLORS[0]
-#    },
-#    "Nue" :
-#    {
-#        "title" : "#nu_{e}", 
-#        "color": COLORS[1]
-#    },
-#    "Background" : {
-#        "title" : "Backgrounds",
-#        "cate": {"Other"},
-#        "color": COLORS[2]
-#    }
-#}
-#}
-
-
-#SignalDecomposition = {
-#    "CCNuE" :
-#    {
-#        "title" : "Signal",
-#        "color": COLORS[0]
-#    },
-#    "Background" : {
-#        "title" : "Backgrounds",
-#        "cate": {"NCDiff", "NuEElastic", "NonPhaseSpace", "NonFiducial", "CCPi0", "NCCohPi0", "NCPi0", "Other"},
-#        "color": COLORS[2]
-#    }
-#}
 
 SignalBackground = {
     "Signal" :
     {
-        "title" : "CC #nu_{e}",
-        "cate":{"CCNu","CCNuEQE","CCNuEDelta","CCNuE2p2h","CCNuEDIS","CCNuE"},
+        "title" : "Signal",
+        "cate":{"CCNuMuQE","CCNuMu2p2h","CCNuMuDelta","CCNuMu","CCNuMuDIS","CCNuMuWrongSign"},
         "color": COLORS[0]
     },
     "Background" : {
         "title" : "Backgrounds",
-        #"cate": {"CCPi0","Other","NCDiff","NuEElastic","NonPhaseSpace","NonFiducial","NCCohPi0","NCPi0","CCNu"},
-        #"cate": {"CCPi0","Other","NCDiff","NuEElastic","NCCohPi0","NCPi0","CCNu"},
-        "cate": {"CCPi0","CCPi","NCPi","NCOther","CCOther","NCDiff","NuEElastic","NCCohPi0","NCPi0"},
-        "color": COLORS[4]
+        "cate" : {"NCDiff", "NuEElastic", "NC", "CC"}, 
+        "color": COLORS[8]
     }
 }
 
@@ -601,8 +566,64 @@ PLOTS_TO_MAKE = [
     #{"name":"True Signal Biased Neutrino Energy"},
     #{"name":"Signal Biased Neutrino Energy"},
 
-    {"name":"Biased Neutrino Energy",
-        "plot_type" : "stacked"},
+
+    {"name":"Biased Neutrino Energy", "plot_type":"stacked"},
+    {"name":"True Neutrino Energy", "plot_type":"stacked"},
+    {"name":"Lepton Energy", "plot_type":"stacked"},
+    {"name":"True Lepton Energy", "plot_type":"stacked"},
+    {"name":"Visible Energy", "plot_type":"stacked"},
+    {"name":"Lepton Pt", "plot_type":"stacked"},
+    {"name":"Q2", "plot_type":"stacked"},
+    {"name":"Reco Q2", "plot_type":"stacked"},
+
+    {"name":"Raw True W", "plot_type":"stacked"},
+    {"name":"True W", "plot_type":"stacked"},
+    {"name":"True W Exp", "plot_type":"stacked"},
+
+    {"name":"True Pi Plus Multiplicity", "plot_type":"stacked"},
+    {"name":"True Pi Minus Multiplicity", "plot_type":"stacked"},
+    {"name":"True Pi0 Multiplicity", "plot_type":"stacked"},
+    {"name":"True Total Pion Multiplicity", "plot_type":"stacked"},
+    {"name":"Beam Sign Charged Pion Multiplicity", "plot_type":"stacked"},
+
+    {"name":"Interaction Type", "plot_type":"stacked"},
+    {"name":"MENU1PI Eligible", "plot_type":"stacked"},
+    {"name":"JOINT Eligible", "plot_type":"stacked"},
+
+    {"name":"MENU1PI CV Weight", "plot_type":"stacked"},
+    {"name":"JOINT CV Weight", "plot_type":"stacked"},
+
+    {"name":"True Enu vs True Q2", "plot_type":"category_hist"},
+    {"name":"True W vs True Q2", "plot_type":"category_hist"},
+
+    {"name":"MENU1PI Weight vs True Q2", "plot_type":"category_hist"},
+    {"name":"JOINT Weight vs True Q2", "plot_type":"category_hist"},
+
+    {"name":"MENU1PI Weight vs True Enu", "plot_type":"category_hist"},
+    {"name":"JOINT Weight vs True Enu", "plot_type":"category_hist"},
+
+
+
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"Visible Energy",
+    #     "plot_type" : "stacked"},
+    # {"name":"E Theta Squared",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton Angle",
+    #     "plot_type" : "stacked"},
+    # {"name":"Lepton Pt",
+    #     "plot_type" : "stacked"},
+    # {"name":"Q2",
+    #     "plot_type" : "stacked"},
+    # {"name":"Reco Q2",
+    #     "plot_type" : "stacked"},
+    # {"name":"True W",
+    #     "plot_type" : "stacked"},
+    # {"name":"True W Exp",
+    #     "plot_type" : "stacked"},
     # {"name":"Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"Visible Energy",

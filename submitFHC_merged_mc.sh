@@ -50,7 +50,7 @@ COMMON_ARGS=(
 # for name in 1 7 9 13C 13C_2p2h; do
 # for name in 1 7 9 13C; do
 # for name in 7 9 13C; do
-for name in 13C; do
+for name in 1; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p8

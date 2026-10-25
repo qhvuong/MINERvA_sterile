@@ -317,17 +317,92 @@ def Printvar(event):
 
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
+    # --------------------------------------------------
+    # Basic reconstructed / truth kinematics
+    # --------------------------------------------------
+    "Biased Neutrino Energy",
+    "True Neutrino Energy",
+
+    "Lepton Energy",
+    "True Lepton Energy",
+
+    "Visible Energy",
+    "Lepton Pt",
+
+    "Q2",          # true Q2
+    "Reco Q2",
+
+    # --------------------------------------------------
+    # Hadronic invariant mass
+    # --------------------------------------------------
+    "Raw True W",  # exact mc_w used by MENU1PI applicability
+    "True W",
+    "True W Exp",
+
+    # --------------------------------------------------
+    # Final-state pion content
+    # --------------------------------------------------
+    "True Pi Plus Multiplicity",
+    "True Pi Minus Multiplicity",
+    "True Pi0 Multiplicity",
+    "True Total Pion Multiplicity",
+    "Beam Sign Charged Pion Multiplicity",
+
+    # --------------------------------------------------
+    # Interaction / tune applicability
+    # --------------------------------------------------
+    "Interaction Type",
+
+    "MENU1PI Eligible",
+    "JOINT Eligible",
+
+    # --------------------------------------------------
+    # Actual independently evaluated CV tune weights
+    # --------------------------------------------------
+    "MENU1PI CV Weight",
+    "JOINT CV Weight",
+
+    # --------------------------------------------------
+    # Correlations explaining tune behavior
+    # --------------------------------------------------
+    "True Enu vs True Q2",
+    "True W vs True Q2",
+
+    "MENU1PI Weight vs True Q2",
+    "JOINT Weight vs True Q2",
+
+    "MENU1PI Weight vs True Enu",
+    "JOINT Weight vs True Enu",
+
+
+    # --------------------------------------------------
+    # Cuts study
+    # --------------------------------------------------
+	"DeadTime",
+	"VertexTrackMultiplicity",
+	"StartPointVertexMultiplicity",
+	"HasNoVertexMismatch",
+	"HasTracks",
+
+
+
+
+
     # "Biased Neutrino Energy",
-    # "Reco Energy vs L/E",
+    # # "Reco Energy vs L/E",
 	# "Lepton Energy",
-    # "True Energy vs L/E",
-    # "True Energy vs Biased Neutrino Energy",
-    # "Estimator vs Front dEdX",
-    # "Biased Neutrino Energy",
+    # # "True Energy vs L/E",
+    # # "True Energy vs Biased Neutrino Energy",
+    # # "Estimator vs Front dEdX",
+    # # "Biased Neutrino Energy",
 
 	# "Visible Energy",
-	# "Lepton Angle",
+	# # "Lepton Angle",
 	# "Lepton Pt",
+	# "Q2",
+	# "True W",
+	# "True W Exp",
+	# "Reco Q2",
 	# "E Theta Squared",
 	# "HasNoBackExitingTracks",
 	# "HasMINOSMatch",
@@ -359,9 +434,6 @@ HISTS_TO_MAKE = [
 	# "Available Energy vs Lepton Energy",
 	# "Available Energy vs Lepton Pt",
 	# "Front dEdX",
-	# "Q2",
-	# "True W",
-	# "True W Exp",
 	# "True vs Reconstructed Lepton Energy",
 	# "True vs Reconstructed Lepton Momentum",
 	# "Lepton Momentum Fractional Resolution",
@@ -372,13 +444,12 @@ HISTS_TO_MAKE = [
     # "Estimator vs Front dEdX",
 	# "True Lepton Energy",
 	# "True Neutrino Energy",
-	"True Signal True Energy vs Neutrino Length Travelled",
+	# "True Signal True Energy vs Neutrino Length Travelled",
 	# "Visible Energy",
 	# "HasNoBackExitingTracks",
 	# "Neutrino Vertex Z",
 	# "Neutrino Vertex Apothem",
 	# "Front dEdX",
-	# "Reco Q2",
 	# "Cone Outside Energy",
 	# "Neighborhood Energy",
 

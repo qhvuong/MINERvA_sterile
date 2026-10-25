@@ -490,6 +490,10 @@ CUT_CONFIGS = {
         "value_getter": lambda event,nprong: event.IsMinosMatchMuon(),
         "cut_fn": lambda val: val,
         "variable_range": [-1.1,0,1.1]
+    },
+    "IsNeutrino": {
+        "value_getter": lambda event, nprong: event.GetMuonQP(),
+        "cut_fn": lambda val: val < 0,
     }
 
 }  # CUT_CONFIGS

@@ -122,7 +122,7 @@ JAEWON_INPUT_FILE = "jaewon_nue_elastic_data.json"
 
 LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
     # "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_MAD.root"
-    "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcme1N_p8_scattering_LElike_6bins_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root"
+    "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root"
 )
 
 PREDICTED_ELASTIC_FILE = (
