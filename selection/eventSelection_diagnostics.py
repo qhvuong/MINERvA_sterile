@@ -34,6 +34,58 @@ from config import SystematicsConfig
 ROOT.TH1.AddDirectory(False)
 
 
+def plotRecoKin(mc, chainwrapper, outfile):
+    """ The main code of event selection """
+    kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
+    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
+    universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+
+    for univ in chain.from_iterable(iter(universes.values())):
+        univ.LoadTools(kin_cal,eventClassifier)
+
+    Plots = preparePlots(universes,mc)
+    nEvents = chainwrapper.GetEntries()
+    debug_prints = 0
+
+    print(f"Total number of events RECO: ", {nEvents})
+    if AnalysisConfig.testing and nEvents > 2000:
+        nEvents = 2000
+    print("plotRecoKin, mc ",mc)
+    setAlarm = AnalysisConfig.grid
+    for counter in range(nEvents):
+        #1/4 hour for 10k event, should be more than needed unless stuck in I/O
+        if counter %10000 == 0:
+            print(counter)
+            if setAlarm:
+                signal.alarm(900)
+        flux_debug_this_event = 0
+        selected_event_for_debug = False
+
+        for universe in chain.from_iterable(iter(universes.values())):
+            universe.SetEntry(counter)
+            if mc and universe.ShortName() == "cv":
+                universe.Debug2p2hCV()
+
+            universe.__dict__.pop("_cached_new_true_l_over_e", None)
+            universe.ResetWeight()
+            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
+                continue
+
+            #only update kin_cal & eventClassifier when universe in not vertical only.
+            if not universe.IsVerticalOnly():
+                kin_cal.CalculateKinematics(universe)
+                eventClassifier.Classify(universe)
+
+            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+                for entry in Plots:
+                    entry.Process(universe)
+
+    signal.alarm(0)
+    outfile.cd()
+    for entry in Plots:
+        #print entry.histwrapper.name
+        entry.Finalize()
+
 
 def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)

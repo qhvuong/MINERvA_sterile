@@ -75,21 +75,22 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "InverseHasNoBackExitingTracks",
-        "Etheta",
-        "Eavail",
+        "DeadTime",
+        # "Etheta",
+        # "Eavail",
         "LeptonAngle",
-        "Pt",
+        # "Pt",
 
         # "HasNoBackExitingTracks",
         # "HasMINOSMatch",
 
-        # inclusive CC cuts
-        "Vertex_Z",
-        "Vertex_Apothem",
-        "HasMINOSMatch",        
-        "LeptonAngle",
-        "DeadTime",
-        # "IsNeutrino",
+        # # inclusive CC cuts
+        # "Vertex_Z",
+        # "Vertex_Apothem",
+        # "HasMINOSMatch",        
+        # "LeptonAngle",
+        # "DeadTime",
+        # # "IsNeutrino",
 
         # Removed Cuts
         #"ZDifference",

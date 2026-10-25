@@ -590,6 +590,77 @@ class CVPythonUniverse():
             return self.weight
 
 
+
+    def Debug2p2hCV(self):
+        import math
+
+        if self.ShortName() != "cv":
+            return
+
+        # CV 2p2h correction only applies to MEC on nuclear targets.
+        if self.mc_intType != 8 or self.mc_targetZ < 2:
+            return
+
+        if not hasattr(CVPythonUniverse, "_debug_2p2h_counts"):
+            CVPythonUniverse._debug_2p2h_counts = {
+                "total_mec": 0,
+                "old_guard_fail": 0,
+                "invalid_q0q3": 0,
+                "mat_nonfinite": 0,
+                "changed_weight": 0,
+            }
+
+        counts = CVPythonUniverse._debug_2p2h_counts
+        counts["total_mec"] += 1
+
+        q2 = self.mc_Q2 * 1e-6
+        W = self.mc_w * 1e-3
+        q0 = self.Getq0True() * 1e-3
+        q3 = self.Getq3True() * 1e-3
+
+        old_guard = (
+            math.isfinite(q2)
+            and math.isfinite(W)
+            and q2 >= 0.0
+            and abs(W) < 90.0
+        )
+
+        if not old_guard:
+            counts["old_guard_fail"] += 1
+
+        q0q3_finite = math.isfinite(q0) and math.isfinite(q3)
+
+        if not q0q3_finite:
+            counts["invalid_q0q3"] += 1
+            return
+
+        w_mat = self.GetLowRecoil2p2hWeight()
+
+        if not math.isfinite(w_mat):
+            counts["mat_nonfinite"] += 1
+            return
+
+        w_current = w_mat if old_guard else 1.0
+
+        if abs(w_current - w_mat) > 1e-10:
+            counts["changed_weight"] += 1
+
+            if counts["changed_weight"] <= 20:
+                print(
+                    "[2P2H GUARD DIFFERENCE]",
+                    "Q2 =", q2,
+                    "W =", W,
+                    "q0 =", q0,
+                    "q3 =", q3,
+                    "MAT =", w_mat,
+                    "CURRENT =", w_current,
+                    flush=True
+                )
+
+        if counts["total_mec"] % 10000 == 0:
+            print("[2P2H AUDIT SUMMARY]", counts, flush=True)
+
+
     def GetStandardWeight(self):
 
         if USE_MNVTUNE_V1:

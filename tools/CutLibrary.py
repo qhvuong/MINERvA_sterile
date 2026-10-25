@@ -357,6 +357,19 @@ CUT_CONFIGS = {
         "cut_fn": lambda val: CutConfig.RECO_PT_RANGE[0] <= val < CutConfig.RECO_PT_RANGE[1],
         "variable_range": [0.1*i for i in range(0,21)]
     },
+
+    "Ppar": {
+        "value_getter": lambda event, nprong:
+            event.kin_cal.reco_P_lep
+            * math.cos(event.kin_cal.reco_theta_lep_rad),
+
+        "cut_fn": lambda val:
+            CutConfig.RECO_PPAR_RANGE[0] < val
+            < CutConfig.RECO_PPAR_RANGE[1],
+
+        "variable_range": [0.5 * i for i in range(0, 21)],
+    },
+
     "Etheta": {
         "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * (event.kin_cal.reco_theta_lep_rad)**2,
         # "value_getter": lambda event, nprong: event.kin_cal.reco_E_lep * CalTheta2Hybrid(event.kin_cal.reco_thetaX_lep_rad, event.kin_cal.true_thetaY_lep_rad),

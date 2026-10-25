@@ -213,6 +213,19 @@ LEPTON_ENERGY_FRAC_RESID_BINNING = [
     -1.0 + 0.04*i for i in range(51)
 ]
 
+
+# Dan paper Figure 2 pT bins
+PAPER_LEPTON_PT_BINS = [
+    0.00, 0.15, 0.25, 0.33, 0.40,
+    0.47, 0.55, 0.70, 0.85, 1.00
+]
+
+# Paper longitudinal momentum bins
+PAPER_LEPTON_PPAR_BINS = [
+    1.50, 2.00, 2.50, 3.00, 3.50, 4.50
+]
+
+
 PSI_BINNING = [0.05*i for i in range(41)]
 PSI_TAIL_BINNING = [0.05*i for i in range(4,15)]
 PSI_FRONT_BINNING = [0.01*i for i in range(0,11)]
@@ -328,52 +341,7 @@ HISTS_TO_MAKE = [
 
     "Visible Energy",
     "Lepton Pt",
-
-    "Q2",          # true Q2
-    "Reco Q2",
-
-    # --------------------------------------------------
-    # Hadronic invariant mass
-    # --------------------------------------------------
-    "Raw True W",  # exact mc_w used by MENU1PI applicability
-    "True W",
-    "True W Exp",
-
-    # --------------------------------------------------
-    # Final-state pion content
-    # --------------------------------------------------
-    "True Pi Plus Multiplicity",
-    "True Pi Minus Multiplicity",
-    "True Pi0 Multiplicity",
-    "True Total Pion Multiplicity",
-    "Beam Sign Charged Pion Multiplicity",
-
-    # --------------------------------------------------
-    # Interaction / tune applicability
-    # --------------------------------------------------
-    "Interaction Type",
-
-    "MENU1PI Eligible",
-    "JOINT Eligible",
-
-    # --------------------------------------------------
-    # Actual independently evaluated CV tune weights
-    # --------------------------------------------------
-    "MENU1PI CV Weight",
-    "JOINT CV Weight",
-
-    # --------------------------------------------------
-    # Correlations explaining tune behavior
-    # --------------------------------------------------
-    "True Enu vs True Q2",
-    "True W vs True Q2",
-
-    "MENU1PI Weight vs True Q2",
-    "JOINT Weight vs True Q2",
-
-    "MENU1PI Weight vs True Enu",
-    "JOINT Weight vs True Enu",
-
+    "Lepton Ppar",
 
     # --------------------------------------------------
     # Cuts study
@@ -383,6 +351,55 @@ HISTS_TO_MAKE = [
 	"StartPointVertexMultiplicity",
 	"HasNoVertexMismatch",
 	"HasTracks",
+	"E Theta Squared",
+
+
+    # "Q2",          # true Q2
+    # "Reco Q2",
+
+    # # --------------------------------------------------
+    # # Hadronic invariant mass
+    # # --------------------------------------------------
+    # "Raw True W",  # exact mc_w used by MENU1PI applicability
+    # "True W",
+    # "True W Exp",
+
+    # # --------------------------------------------------
+    # # Final-state pion content
+    # # --------------------------------------------------
+    # "True Pi Plus Multiplicity",
+    # "True Pi Minus Multiplicity",
+    # "True Pi0 Multiplicity",
+    # "True Total Pion Multiplicity",
+    # "Beam Sign Charged Pion Multiplicity",
+
+    # # --------------------------------------------------
+    # # Interaction / tune applicability
+    # # --------------------------------------------------
+    # "Interaction Type",
+
+    # "MENU1PI Eligible",
+    # "JOINT Eligible",
+
+    # # --------------------------------------------------
+    # # Actual independently evaluated CV tune weights
+    # # --------------------------------------------------
+    # "MENU1PI CV Weight",
+    # "JOINT CV Weight",
+
+    # # --------------------------------------------------
+    # # Correlations explaining tune behavior
+    # # --------------------------------------------------
+    # "True Enu vs True Q2",
+    # "True W vs True Q2",
+
+    # "MENU1PI Weight vs True Q2",
+    # "JOINT Weight vs True Q2",
+
+    # "MENU1PI Weight vs True Enu",
+    # "JOINT Weight vs True Enu",
+
+
 
 
 

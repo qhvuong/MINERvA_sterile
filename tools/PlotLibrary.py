@@ -309,13 +309,63 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.LOW_RECOIL_BIN_Q3,
         "value_getter" : lambda event: event.kin_cal.reco_q3,
     },
+    # "Lepton Pt":
+    # {
+    #     "name" : "Lepton_Pt",
+    #     "title" : "Pt_lepton (GeV); NEvents",
+    #     "binning" : PlotConfig.NEUTRINO4_P_BINNING,
+    #     "value_getter" : lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad),
+    # },
     "Lepton Pt":
     {
-        "name" : "Lepton_Pt",
-        "title" : "Pt_lepton (GeV); NEvents",
-        "binning" : PlotConfig.NEUTRINO4_P_BINNING,
-        "value_getter" : lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad),
+        "name": "Lepton_Pt",
+        "title": "Lepton Pt; p_{T}^{lep} (GeV/c); NEvents",
+        "binning": [PlotConfig.PAPER_LEPTON_PT_BINS],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_P_lep * math.sin(event.kin_cal.reco_theta_lep_rad)
+        ],
+        "tags": reco_tags
     },
+    "Lepton Ppar":
+    {
+        "name": "Lepton_Ppar",
+        "title": "Lepton Longitudinal Momentum; p_{||}^{lep} (GeV/c); NEvents",
+        "binning": [PlotConfig.PAPER_LEPTON_PPAR_BINS],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_P_lep * math.cos(event.kin_cal.reco_theta_lep_rad)
+        ],
+        "tags": reco_tags
+    },
+    "Lepton Ppar vs Available Energy":
+    {
+        "name": "Lepton_Ppar_vs_Eavail",
+        "title": "Lepton Ppar vs Available Energy; p_{||}^{lep} (GeV/c); E_{avail} (GeV); NEvents",
+        "binning": [
+            PlotConfig.PAPER_LEPTON_PPAR_BINS,
+            PlotConfig.LOW_RECOIL_BIN_Q0
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_P_lep * math.cos(event.kin_cal.reco_theta_lep_rad),
+            lambda event: event.kin_cal.reco_visE
+        ],
+        "tags": reco_tags
+    },
+    "Lepton Pt vs Available Energy":
+    {
+        "name": "Lepton_Pt_vs_Eavail",
+        "title": "Lepton Pt vs Available Energy; p_{T}^{lep} (GeV/c); E_{avail} (GeV); NEvents",
+        "binning": [
+            PlotConfig.PAPER_LEPTON_PT_BINS,
+            PlotConfig.LOW_RECOIL_BIN_Q0
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_P_lep * math.sin(event.kin_cal.reco_theta_lep_rad),
+            lambda event: event.kin_cal.reco_visE
+        ],
+        "tags": reco_tags
+    },
+
+
     "Nu Parent Energy":
     {
         "name" : "nuParent_energy",
@@ -2850,38 +2900,40 @@ PLOT_SETTINGS= {
         "value_getter": [lambda event: event.phys_n_dead_discr_pair_upstream_prim_track_proj],
         "tags":reco_tags
     },
-    "VertexTrackMultiplicity": 
+
+    "VertexTrackMultiplicity":
     {
-        "name" : "VertexTrackMultiplicity",
-        "title" : "VertexTrackMultiplicity; VertexTrackMultiplicity; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
+        "name": "VertexTrackMultiplicity",
+        "title": "VertexTrackMultiplicity; VertexTrackMultiplicity; NEvents",
+        "binning": [[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
         "value_getter": [lambda event: event.VertexTrackMultiplicity],
-        "tags":reco_tags
+        "tags": reco_tags
     },
-    "StartPointVertexMultiplicity": 
+    "StartPointVertexMultiplicity":
     {
-        "name" : "StartPointVertexMultiplicity",
-        "title" : "StartPointVertexMultiplicity; StartPointVertexMultiplicity; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
+        "name": "StartPointVertexMultiplicity",
+        "title": "StartPointVertexMultiplicity; StartPointVertexMultiplicity; NEvents",
+        "binning": [[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]],
         "value_getter": [lambda event: event.StartPointVertexMultiplicity],
-        "tags":reco_tags
+        "tags": reco_tags
     },
-    "HasNoVertexMismatch": 
+    "HasNoVertexMismatch":
     {
-        "name" : "HasNoVertexMismatch",
-        "title" : "HasNoVertexMismatch; HasNoVertexMismatch; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "name": "HasNoVertexMismatch",
+        "title": "HasNoVertexMismatch; HasNoVertexMismatch; NEvents",
+        "binning": [[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
         "value_getter": [lambda event: event.HasNoVertexMismatch],
-        "tags":reco_tags
+        "tags": reco_tags
     },
-    "HasTracks": 
+    "HasTracks":
     {
-        "name" : "HasTracks",
-        "title" : "HasTracks; HasTracks; NEvents",
-        "binning" : [[-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
+        "name": "HasTracks",
+        "title": "HasTracks; HasTracks; NEvents",
+        "binning": [[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5]],
         "value_getter": [lambda event: event.HasTracks],
-        "tags":reco_tags
+        "tags": reco_tags
     },
+
     "HasNoBackExitingTracks": 
     {
         "name" : "HasNoBackExitingTracks",

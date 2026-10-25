@@ -331,50 +331,63 @@ HISTS_TO_MAKE = [
     "Visible Energy",
     "Lepton Pt",
 
-    "Q2",          # true Q2
-    "Reco Q2",
+    # --------------------------------------------------
+    # Cuts study
+    # --------------------------------------------------
+	"DeadTime",
+	"VertexTrackMultiplicity",
+	"StartPointVertexMultiplicity",
+	"HasNoVertexMismatch",
+	"HasTracks",
+	"E Theta Squared",
 
-    # --------------------------------------------------
-    # Hadronic invariant mass
-    # --------------------------------------------------
-    "Raw True W",  # exact mc_w used by MENU1PI applicability
-    "True W",
-    "True W Exp",
 
-    # --------------------------------------------------
-    # Final-state pion content
-    # --------------------------------------------------
-    "True Pi Plus Multiplicity",
-    "True Pi Minus Multiplicity",
-    "True Pi0 Multiplicity",
-    "True Total Pion Multiplicity",
-    "Beam Sign Charged Pion Multiplicity",
+    # "Q2",          # true Q2
+    # "Reco Q2",
 
-    # --------------------------------------------------
-    # Interaction / tune applicability
-    # --------------------------------------------------
-    "Interaction Type",
+    # # --------------------------------------------------
+    # # Hadronic invariant mass
+    # # --------------------------------------------------
+    # "Raw True W",  # exact mc_w used by MENU1PI applicability
+    # "True W",
+    # "True W Exp",
 
-    "MENU1PI Eligible",
-    "JOINT Eligible",
+    # # --------------------------------------------------
+    # # Final-state pion content
+    # # --------------------------------------------------
+    # "True Pi Plus Multiplicity",
+    # "True Pi Minus Multiplicity",
+    # "True Pi0 Multiplicity",
+    # "True Total Pion Multiplicity",
+    # "Beam Sign Charged Pion Multiplicity",
 
-    # --------------------------------------------------
-    # Actual independently evaluated CV tune weights
-    # --------------------------------------------------
-    "MENU1PI CV Weight",
-    "JOINT CV Weight",
+    # # --------------------------------------------------
+    # # Interaction / tune applicability
+    # # --------------------------------------------------
+    # "Interaction Type",
 
-    # --------------------------------------------------
-    # Correlations explaining tune behavior
-    # --------------------------------------------------
-    "True Enu vs True Q2",
-    "True W vs True Q2",
+    # "MENU1PI Eligible",
+    # "JOINT Eligible",
 
-    "MENU1PI Weight vs True Q2",
-    "JOINT Weight vs True Q2",
+    # # --------------------------------------------------
+    # # Actual independently evaluated CV tune weights
+    # # --------------------------------------------------
+    # "MENU1PI CV Weight",
+    # "JOINT CV Weight",
 
-    "MENU1PI Weight vs True Enu",
-    "JOINT Weight vs True Enu",
+    # # --------------------------------------------------
+    # # Correlations explaining tune behavior
+    # # --------------------------------------------------
+    # "True Enu vs True Q2",
+    # "True W vs True Q2",
+
+    # "MENU1PI Weight vs True Q2",
+    # "JOINT Weight vs True Q2",
+
+    # "MENU1PI Weight vs True Enu",
+    # "JOINT Weight vs True Enu",
+
+
 
 
 

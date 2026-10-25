@@ -890,7 +890,7 @@ def MakeCutVariablePlot(cutname,value_getter=None):
         "title":";{};NEvents".format(cutname),
     }
 
-    print (binning,value_getter,name)
+    # print (binning,value_getter,name)
 
     if value_getter is None:
         settings["value_getter"]=[CUTS[cutname].Values]
