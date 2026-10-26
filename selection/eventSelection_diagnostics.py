@@ -34,57 +34,259 @@ from config import SystematicsConfig
 ROOT.TH1.AddDirectory(False)
 
 
+
+
 def plotRecoKin(mc, chainwrapper, outfile):
-    """ The main code of event selection """
-    kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
-    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
-    universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+    """The main code of event selection."""
+
+    from collections import Counter
+
+    kin_cal = KinematicsCalculator(
+        correct_beam_angle=True,
+        correct_MC_energy_scale=False,
+        calc_true=mc,
+        is_pc=AnalysisConfig.is_pc
+    )
+
+    eventClassifier = EventClassifier(
+        classifiers=["Reco", "Truth"] if mc else ["Reco"],
+        use_kin_cuts=True,
+        use_sideband=AnalysisConfig.sidebands
+    )
+
+    universes = GetAllSystematicsUniverses(
+        chainwrapper,
+        not mc,
+        AnalysisConfig.is_pc,
+        AnalysisConfig.exclude_universes
+    )
 
     for univ in chain.from_iterable(iter(universes.values())):
-        univ.LoadTools(kin_cal,eventClassifier)
+        univ.LoadTools(kin_cal, eventClassifier)
 
-    Plots = preparePlots(universes,mc)
+    Plots = preparePlots(universes, mc)
+
     nEvents = chainwrapper.GetEntries()
-    debug_prints = 0
 
-    print(f"Total number of events RECO: ", {nEvents})
+    print(f"Total number of events RECO: {nEvents}")
+
     if AnalysisConfig.testing and nEvents > 2000:
         nEvents = 2000
-    print("plotRecoKin, mc ",mc)
+
+    print("plotRecoKin, mc", mc)
+
+    # --------------------------------------------------
+    # Initialize CV 2p2h diagnostic counters
+    # --------------------------------------------------
+    interaction_counts = Counter()
+    target_counts = Counter()
+
+    if mc:
+        from tools.SystematicsUniverse import CVPythonUniverse
+
+        if hasattr(CVPythonUniverse, "_debug_genie_counts"):
+            delattr(CVPythonUniverse, "_debug_genie_counts")
+
+        # Reset the per-sample 2p2h diagnostic counters.
+        if hasattr(CVPythonUniverse, "_debug_2p2h_counts"):
+            delattr(CVPythonUniverse, "_debug_2p2h_counts")
+
+        print(
+            f"[2P2H AUDIT] Starting CV diagnostics: "
+            f"{nEvents} events",
+            flush=True
+        )
+
     setAlarm = AnalysisConfig.grid
+
+    # --------------------------------------------------
+    # Main event loop
+    # --------------------------------------------------
     for counter in range(nEvents):
-        #1/4 hour for 10k event, should be more than needed unless stuck in I/O
-        if counter %10000 == 0:
-            print(counter)
+
+        if counter % 10000 == 0:
+            print(counter, flush=True)
+
             if setAlarm:
                 signal.alarm(900)
+
         flux_debug_this_event = 0
         selected_event_for_debug = False
 
         for universe in chain.from_iterable(iter(universes.values())):
-            universe.SetEntry(counter)
-            if mc and universe.ShortName() == "cv":
-                universe.Debug2p2hCV()
 
-            universe.__dict__.pop("_cached_new_true_l_over_e", None)
+            universe.SetEntry(counter)
+
+            # ------------------------------------------
+            # CV-only 2p2h diagnostics
+            # ------------------------------------------
+            if mc and universe.ShortName() == "cv":
+
+                int_type = int(universe.mc_intType)
+                target_z = int(universe.mc_targetZ)
+
+                interaction_counts[int_type] += 1
+                target_counts[(int_type, target_z)] += 1
+
+                # Print a few raw MEC examples.
+                if (
+                    int_type == 8
+                    and interaction_counts[8] <= 10
+                ):
+                    print(
+                        "[2P2H MEC EVENT]",
+                        f"entry={counter}",
+                        f"mc_intType={int_type}",
+                        f"mc_targetZ={target_z}",
+                        f"mc_Q2={universe.mc_Q2}",
+                        f"mc_w={universe.mc_w}",
+                        flush=True
+                    )
+
+                # Compare MAT with the existing Q2/W guard.
+                universe.Debug2p2hCV()
+                universe.DebugGenieCV()
+
+            universe.__dict__.pop(
+                "_cached_new_true_l_over_e",
+                None
+            )
+
             universe.ResetWeight()
-            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
+
+            if (
+                mc
+                and AnalysisConfig.skip_2p2h
+                and universe.mc_intType == 8
+            ):
                 continue
 
-            #only update kin_cal & eventClassifier when universe in not vertical only.
+            # Recalculate kinematics and classification
+            # for non-vertical universes.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+            if (
+                eventClassifier.side_band is not None
+                or eventClassifier.is_true_signal
+            ):
                 for entry in Plots:
                     entry.Process(universe)
 
+    # --------------------------------------------------
+    # Final diagnostic summary
+    # --------------------------------------------------
+    if mc:
+        counts = getattr(
+            CVPythonUniverse,
+            "_debug_2p2h_counts",
+            {}
+        )
+
+        print("\n" + "=" * 55, flush=True)
+        print("CV LOW-RECOIL 2P2H AUDIT", flush=True)
+        print("=" * 55, flush=True)
+
+        print(f"Total MC entries processed: {nEvents}")
+
+        print("\nInteraction type counts:")
+        for int_type, count in sorted(interaction_counts.items()):
+            print(
+                f"  mc_intType={int_type:3d}: {count}",
+                flush=True
+            )
+
+        print("\nInteraction type / target-Z counts:")
+        for (int_type, target_z), count in sorted(
+            target_counts.items()
+        ):
+            print(
+                f"  mc_intType={int_type:3d}, "
+                f"mc_targetZ={target_z:3d}: {count}",
+                flush=True
+            )
+
+        total_mec = interaction_counts.get(8, 0)
+
+        eligible_mec = sum(
+            count
+            for (int_type, target_z), count
+            in target_counts.items()
+            if int_type == 8 and target_z >= 2
+        )
+
+        print("\nMEC summary:")
+        print(f"  All MEC events:             {total_mec}")
+        print(f"  MEC on nuclear targets:     {eligible_mec}")
+        print(
+            f"  MEC on hydrogen/invalid Z: {total_mec - eligible_mec}"
+        )
+
+        print("\nMAT 2p2h weight diagnostic:")
+
+        if not counts:
+            print("  No eligible MEC events reached the diagnostic.")
+        else:
+            for key, value in sorted(counts.items()):
+                print(f"  {key:24s}: {value}")
+
+            if counts["total_mec"] > 0:
+                fraction = (
+                    counts["changed_weight"]
+                    / counts["total_mec"]
+                )
+
+                print(
+                    f"\n  Fraction with changed weights: "
+                    f"{fraction:.6%}"
+                )
+
+            print(
+                "  Difference in sums of 2p2h factors:",
+                counts["sum_mat"] - counts["sum_current"]
+            )
+
+        print("=" * 55 + "\n", flush=True)
+
+        print("\n" + "=" * 55)
+        print("CV GENIE REWEIGHT AUDIT")
+        print("=" * 55)
+
+        genie_counts = getattr(
+            CVPythonUniverse, "_debug_genie_counts", {}
+        )
+
+        for key, value in sorted(genie_counts.items()):
+            print(f"{key:26s}: {value}")
+
+        if genie_counts and genie_counts["total"] > 0:
+            n = genie_counts["total"]
+
+            print("\nMean GENIE factors:")
+            print(
+                "V1 NonResPi only:",
+                genie_counts["sum_v1_nonrespi"] / n
+            )
+            print(
+                "V1 + Deuterium:",
+                genie_counts["sum_v1_deuterium"] / n
+            )
+            print(
+                "Actual MAT GENIE:",
+                genie_counts["sum_mat"] / n
+            )
+
+        print("=" * 55, flush=True)
+
+
     signal.alarm(0)
+
     outfile.cd()
+
     for entry in Plots:
-        #print entry.histwrapper.name
         entry.Finalize()
+
 
 
 def plotTruthKin(chainwrapper,outfile):

@@ -82,8 +82,8 @@ SAMPLE_CUTS = {
         # "Etheta",
         # "Eavail",
         "LeptonAngle",
-        "Pt",
-        "Ppar",
+        # "Pt",
+        # "Ppar",
         
 
         # "HasNoBackExitingTracks",

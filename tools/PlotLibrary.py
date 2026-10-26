@@ -309,12 +309,57 @@ VARIABLE_DICT = {
         "binning" : PlotConfig.LOW_RECOIL_BIN_Q3,
         "value_getter" : lambda event: event.kin_cal.reco_q3,
     },
+    "Lepton Pt":
+    {
+        "name" : "Lepton_Pt",
+        "title" : "Pt_lepton (GeV); NEvents",
+        "binning" : PlotConfig.NEUTRINO4_P_BINNING,
+        "value_getter" : lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad),
+    },
+    "Nu Parent Energy":
+    {
+        "name" : "nuParent_energy",
+        "title" : "Parent Energy (GeV); NEvents",
+        "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
+        "value_getter" : lambda event: event.mc_fr_nuParentProdP[3]/1000,
+    },
+
+}
+
+PLOT_SETTINGS= {
+    "Biased Neutrino Energy":
+    {
+        "name" : "EN4",
+        "title" : "E_{e}+E_{avail} (GeV); Energy_{Estimator} (GeV); NEvents",
+        #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
+        "tags":reco_tags
+    },
+    "Biased Neutrino Energy Background Fit":
+    {
+        "name" : "EN4_bkgFit",
+        "title" : "E_{e}+E_{avail} (GeV)",
+        #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING_FIT],
+        "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
+        "tags":reco_tags
+    },
+    "True Lepton Energy":
+    {
+        "name" : "true_Eel",
+        "title" : "True E_lep (GeV)",
+        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.true_E_lep],
+        "tags":truth_tags
+    },
     # "Lepton Pt":
     # {
     #     "name" : "Lepton_Pt",
     #     "title" : "Pt_lepton (GeV); NEvents",
-    #     "binning" : PlotConfig.NEUTRINO4_P_BINNING,
-    #     "value_getter" : lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad),
+    #     "binning" : [PlotConfig.NEUTRINO4_P_BINNING],
+    #     "value_getter" : [lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad)],
+    #     "tags":reco_tags
     # },
     "Lepton Pt":
     {
@@ -366,51 +411,6 @@ VARIABLE_DICT = {
     },
 
 
-    "Nu Parent Energy":
-    {
-        "name" : "nuParent_energy",
-        "title" : "Parent Energy (GeV); NEvents",
-        "binning" : PlotConfig.NEUTRINO4_EE_BINNING,
-        "value_getter" : lambda event: event.mc_fr_nuParentProdP[3]/1000,
-    },
-
-}
-
-PLOT_SETTINGS= {
-    "Biased Neutrino Energy":
-    {
-        "name" : "EN4",
-        "title" : "E_{e}+E_{avail} (GeV); Energy_{Estimator} (GeV); NEvents",
-        #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
-        "tags":reco_tags
-    },
-    "Biased Neutrino Energy Background Fit":
-    {
-        "name" : "EN4_bkgFit",
-        "title" : "E_{e}+E_{avail} (GeV)",
-        #"binning" : PlotConfig.NEUTRINO_ENERGY_BINNING,
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING_FIT],
-        "value_getter" : [lambda event: event.kin_cal.reco_E_lep+event.kin_cal.reco_visE],
-        "tags":reco_tags
-    },
-    "True Lepton Energy":
-    {
-        "name" : "true_Eel",
-        "title" : "True E_lep (GeV)",
-        "binning" : [PlotConfig.NEUTRINO4_EE_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.true_E_lep],
-        "tags":truth_tags
-    },
-    "Lepton Pt":
-    {
-        "name" : "Lepton_Pt",
-        "title" : "Pt_lepton (GeV); NEvents",
-        "binning" : [PlotConfig.NEUTRINO4_P_BINNING],
-        "value_getter" : [lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad)],
-        "tags":reco_tags
-    },
     "True Signal Biased Neutrino Energy":
     {
         "name" : "true_EN4_true_signal",

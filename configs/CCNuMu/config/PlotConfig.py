@@ -343,6 +343,9 @@ HISTS_TO_MAKE = [
     "Lepton Pt",
     "Lepton Ppar",
 
+	"Lepton Ppar vs Available Energy",
+	"Lepton Pt vs Available Energy",
+
     # --------------------------------------------------
     # Cuts study
     # --------------------------------------------------
