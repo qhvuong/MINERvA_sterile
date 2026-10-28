@@ -14,6 +14,8 @@ sys.argv = argv_backup
 from datetime import datetime
 from typing import Dict, Optional, List, Tuple
 
+from combine_file_specialSampleModification import MergeTH3Histograms
+
 
 RE_RUN_CMD = re.compile(r'^\s*Running command:\s*$')
 RE_SEL_CMD = re.compile(r'^\s*python\s+selection/gridSelection\.py\b(.*)$')

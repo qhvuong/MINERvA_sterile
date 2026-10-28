@@ -49,8 +49,8 @@ COMMON_ARGS=(
   --tarball "${tarball}"
 )
 
-for name in 1 7 9 13C 13C_2p2h; do
-# for name in 7; do
+# for name in 1 7 9 13C 13C_2p2h; do
+for name in 1; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6
@@ -68,8 +68,8 @@ for name in 1 7 9 13C 13C_2p2h; do
   "${cmd[@]}"
 done
 
-for name in 1 7 9 13A 13B 13C 13D 13E; do
-# for name in 7; do
+# for name in 1 7 9 13A 13B 13C 13D 13E; do
+for name in 1; do
   cmd=(
     python selection/gridSelection.py
     --playlist le${name}_p6

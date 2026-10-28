@@ -215,6 +215,33 @@ LEPTON_ENERGY_FRAC_RESID_BINNING = [
     -1.0 + 0.04*i for i in range(51)
 ]
 
+
+# Dan paper Figure 2 pT bins
+PAPER_LEPTON_PT_BINS = [
+    0.00, 0.15, 0.25, 0.33, 0.40,
+    0.47, 0.55, 0.70, 0.85, 1.00
+]
+
+# Paper longitudinal momentum bins
+PAPER_LEPTON_PPAR_BINS = [
+    1.50, 2.00, 2.50, 3.00, 3.50, 4.50
+]
+
+MARIA_PT_BINS = [
+    0.00, 0.07, 0.15, 0.25, 0.33, 0.40, 0.47,
+    0.55, 0.70, 0.85, 1.00, 1.25, 1.50, 2.50
+]
+
+MARIA_PPAR_BINS = [
+    1.50, 2.00, 2.50, 3.00, 3.50, 4.00, 4.50,
+    5.00, 6.00, 7.00, 8.00, 9.00, 10.00,
+    15.00, 20.00, 30.00, 40.00
+]
+
+
+
+
+
 PSI_BINNING = [0.05*i for i in range(41)]
 PSI_TAIL_BINNING = [0.05*i for i in range(4,15)]
 PSI_FRONT_BINNING = [0.01*i for i in range(0,11)]

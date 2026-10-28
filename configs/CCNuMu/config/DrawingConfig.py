@@ -165,11 +165,11 @@ SignalDecomposition = {
         "title" : "CC #nu_{#mu} wrong sign", 
         "color": COLORS[7]
     },
-    # "Background" : {
-    #     "title" : "Backgrounds",
-    #     "cate" : {"NCDiff", "NuEElastic", "NC", "CC"}, 
-    #     "color": COLORS[8]
-    # }
+    "Background" : {
+        "title" : "Backgrounds",
+        "cate" : {"NCDiff", "NuEElastic", "NC", "CC"}, 
+        "color": COLORS[8]
+    }
 }
 
 SIGNAL_DEFINITION = SignalDecomposition
@@ -597,6 +597,18 @@ PLOTS_TO_MAKE = [
     {"name":"True Lepton Energy", "plot_type":"stacked"},
     {"name":"Visible Energy", "plot_type":"stacked"},
     {"name":"Lepton Pt", "plot_type":"stacked"},
+    {"name":"Lepton Ppar", "plot_type":"stacked"},
+
+    {"name":"Lepton Ppar vs Available Energy", "plot_type":"stacked"},
+    {"name":"Lepton Pt vs Available Energy", "plot_type":"stacked"},
+
+    {"name":"Lepton Ppar vs Available Energy", "plot_type":"category_hist"},
+    {"name":"Lepton Pt vs Available Energy", "plot_type":"category_hist"},
+
+
+    {"name":"Lepton Ppar vs Lepton Pt", "plot_type":"stacked"},
+    {"name":"Lepton Pt vs Lepton Ppar", "plot_type":"stacked"},
+
     # {"name":"Q2", "plot_type":"stacked"},
     # {"name":"Reco Q2", "plot_type":"stacked"},
 
@@ -627,12 +639,12 @@ PLOTS_TO_MAKE = [
     # {"name":"JOINT Weight vs True Enu", "plot_type":"category_hist"},
 
 
-    {"name":"DeadTime", "plot_type":"stacked"},
-    {"name":"VertexTrackMultiplicity", "plot_type":"stacked"},
-    {"name":"StartPointVertexMultiplicity", "plot_type":"stacked"},
-    {"name":"HasNoVertexMismatch", "plot_type":"stacked"},
-    {"name":"HasTracks", "plot_type":"stacked"},
-    {"name":"E Theta Squared", "plot_type":"stacked"},
+    # {"name":"DeadTime", "plot_type":"stacked"},
+    # {"name":"VertexTrackMultiplicity", "plot_type":"stacked"},
+    # {"name":"StartPointVertexMultiplicity", "plot_type":"stacked"},
+    # {"name":"HasNoVertexMismatch", "plot_type":"stacked"},
+    # {"name":"HasTracks", "plot_type":"stacked"},
+    # {"name":"E Theta Squared", "plot_type":"stacked"},
 
 
 

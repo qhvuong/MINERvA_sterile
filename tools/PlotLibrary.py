@@ -410,6 +410,62 @@ PLOT_SETTINGS= {
         "tags": reco_tags
     },
 
+    "Available Energy vs Pt vs Ppar":
+    {
+        "name": "Eavail_Pt_Ppar_3D",
+        "title": (
+            "Available Energy vs Pt vs Ppar;"
+            "E_{avail} (GeV);"
+            "p_{T}^{lep} (GeV/c);"
+            "p_{||}^{lep} (GeV/c);"
+            "NEvents"
+        ),
+        "binning": [
+            PlotConfig.DAN_EAVAIL_BINS,
+            PlotConfig.PAPER_LEPTON_PT_BINS,
+            PlotConfig.PAPER_LEPTON_PPAR_BINS,
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_visE,
+            lambda event: (
+                event.kin_cal.reco_P_lep
+                * math.sin(event.kin_cal.reco_theta_lep_rad)
+            ),
+            lambda event: (
+                event.kin_cal.reco_P_lep
+                * math.cos(event.kin_cal.reco_theta_lep_rad)
+            ),
+        ],
+        "tags": reco_tags,
+    },
+
+    "Lepton Pt vs Lepton Ppar": {
+        "name": "Lepton_Pt_Ppar",
+        "title": "Muon Transverse vs Longitudinal Momentum; p_{T}^{#mu} (GeV/c); p_{||}^{#mu} (GeV/c)",
+        "binning": [
+            PlotConfig.MARIA_PT_FINE_BINS,
+            PlotConfig.MARIA_PPAR_BINS
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_P_lep * math.sin(event.kin_cal.reco_theta_lep_rad),
+            lambda event: event.kin_cal.reco_P_lep * math.cos(event.kin_cal.reco_theta_lep_rad)
+        ],
+        "tags": reco_tags
+    },
+
+    "Lepton Ppar vs Lepton Pt": {
+        "name": "Lepton_Ppar_Pt",
+        "title": "Muon Longitudinal vs Transverse Momentum; p_{||}^{#mu} (GeV/c); p_{T}^{#mu} (GeV/c)",
+        "binning": [
+            PlotConfig.MARIA_PPAR_FINE_BINS,
+            PlotConfig.MARIA_PT_BINS
+        ],
+        "value_getter": [
+            lambda event: event.kin_cal.reco_P_lep * math.cos(event.kin_cal.reco_theta_lep_rad),
+            lambda event: event.kin_cal.reco_P_lep * math.sin(event.kin_cal.reco_theta_lep_rad)
+        ],
+        "tags": reco_tags
+    },
 
     "True Signal Biased Neutrino Energy":
     {
@@ -871,7 +927,7 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.reco_E_lep],
         "tags": reco_tags   
     },
-    "Lepton Pt vs Available Energy":
+    "Lepton Pt vs Available Energy (Legacy)":
     {
         "name" : "Leton_Pt_Eavail",
 

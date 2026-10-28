@@ -10,6 +10,7 @@ from config.AnalysisConfig import AnalysisConfig
 from config.SignalDef import SIGNAL_DEFINITION
 from tools import Utilities
 import shutil
+import math
 
 # Get This from Rob. Thanks Rob.
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
@@ -97,6 +98,106 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     print("done a file")
 
 
+def MergeTH3Histograms(input_files, output_path):
+    """
+    Explicitly merge CV-only TH3D histograms.
+
+    Existing MnvH1D/MnvH2D merging is handled by madd.
+    TH3D histograms are summed without POT scaling,
+    matching ordinary raw histogram merging.
+    """
+    merged = {}
+    expected_names = None
+
+    for path in input_files:
+        f = ROOT.TFile.Open(path, "READ")
+        if not f or f.IsZombie():
+            raise RuntimeError("Cannot open input: " + path)
+
+        try:
+            for key in f.GetListOfKeys():
+                if key.GetClassName() != "TH3D":
+                    continue
+                names = {
+                    key.GetName()
+                    for key in f.GetListOfKeys()
+                    if key.GetClassName() == "TH3D"
+                }
+
+                if expected_names is None:
+                    expected_names = names
+                elif names != expected_names:
+                    raise RuntimeError(
+                        "TH3D histogram mismatch in {}\n"
+                        "Missing: {}\n"
+                        "Extra: {}".format(
+                            path,
+                            sorted(expected_names - names),
+                            sorted(names - expected_names),
+                        )
+                    )
+                name = key.GetName()
+                h = f.Get(name)
+
+                if name not in merged:
+                    merged[name] = h.Clone(name)
+                    merged[name].SetDirectory(0)
+                    merged[name].Sumw2()
+                else:
+                    target = merged[name]
+
+                    # Check binning before adding histograms.
+                    for a, b in (
+                        (target.GetXaxis(), h.GetXaxis()),
+                        (target.GetYaxis(), h.GetYaxis()),
+                        (target.GetZaxis(), h.GetZaxis()),
+                    ):
+                        if a.GetNbins() != b.GetNbins():
+                            raise RuntimeError(
+                                "TH3D bin count mismatch: " + name
+                            )
+
+                        for i in range(1, a.GetNbins() + 2):
+                            if not math.isclose(
+                                a.GetBinLowEdge(i),
+                                b.GetBinLowEdge(i),
+                                rel_tol=1e-10,
+                                abs_tol=1e-12,
+                            ):
+                                raise RuntimeError(
+                                    "TH3D bin edges mismatch: " + name
+                                )
+
+                    target.Add(h)
+
+        finally:
+            f.Close()
+
+    if not merged:
+        print("[TH3D] No TH3D histograms found")
+        return
+
+    fout = ROOT.TFile.Open(output_path, "UPDATE")
+    if not fout or fout.IsZombie():
+        raise RuntimeError("Cannot update output: " + output_path)
+
+    try:
+        fout.cd()
+
+        for name, h in merged.items():
+            h.Write(name, ROOT.TObject.kOverwrite)
+
+            print(
+                "[TH3D] merged {}: entries={}, integral={}".format(
+                    name, h.GetEntries(), h.Integral()
+                )
+            )
+    finally:
+        fout.Close()
+
+    print("[TH3D] Finished merging", len(merged), "histograms")
+
+
 # def MaddWrapper(output_playlist, input_files, is_data):
 #     valid_files = [f for f in input_files if is_valid_root_file(f)]
 #     print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
@@ -129,9 +230,16 @@ def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
     args = ["madd", out]
     args.extend(valid_files)
 
-    print(f"📦 Running madd on output: {out}")
-    subprocess.run(args, stdout=subprocess.DEVNULL)
-    print("✅ Finished madd.")
+    print(f"[MADD] Combining {len(valid_files)} files into {out}")
+
+    subprocess.run(
+        args,
+        check=True,
+    )
+
+    print("[MADD] Standard histograms merged successfully")
+
+    MergeTH3Histograms(valid_files, out)
 
 
 

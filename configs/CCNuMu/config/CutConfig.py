@@ -29,7 +29,7 @@ EXUV_CUT = 0.2
 EUV_CUT = 0.3
 
 DEDX_PLANES = [5,9]
-HELICITY= 1
+HELICITY= -1
 
 #OLD
 FIDUCIAL_APOTHEM = 850
@@ -79,12 +79,18 @@ SAMPLE_CUTS = {
         "Vertex_Apothem",
         "InverseHasNoBackExitingTracks",
         "DeadTime",
+        "LeptonAngle",
+
+        "Neutrino Helicity",
+        # "MariaMuonCurvature",
+
         # "Etheta",
         # "Eavail",
-        "LeptonAngle",
         # "Pt",
         # "Ppar",
-        
+        "HasNoImprovedMichelElectrons",
+        "ExtraTracksAreProtons",
+        "PassQEBlobSelection",        
 
         # "HasNoBackExitingTracks",
         # "HasMINOSMatch",
@@ -95,7 +101,10 @@ SAMPLE_CUTS = {
         # "HasMINOSMatch",        
         # "LeptonAngle",
         # "DeadTime",
-        # # "IsNeutrino",
+        # "IsNeutrino",
+
+        # "Neutrino Helicity",
+        # "MariaMuonCurvature",
 
         # Removed Cuts
         #"ZDifference",

@@ -69,6 +69,22 @@ def CalcApothem(x,y):
 def CalTheta2Hybrid(x,y):
     return x*x+y*y
 
+def PassQEBlobSelection(vals):
+    n, z_positions, energies, hits = vals
+
+    selected = [
+        i for i in range(n)
+        if z_positions[i] > 4750.0
+    ]
+
+    if len(selected) <= 1:
+        return True
+
+    total_energy = sum(energies[i] for i in selected)
+    total_hits = sum(hits[i] for i in selected)
+
+    return total_energy >= 10.0 * total_hits
+
 def FHC_Cut(available_energy,lepton_energy):
     if lepton_energy < 1.00:
         return(0 < available_energy < 2.00)
@@ -154,7 +170,7 @@ def passHybridProtonNodeCut(event, cutval):
     else:
         passes=passPrimaryProtonNodeCut(event)
         if passes:
-            chi2=0;
+            chi2=0
         else:
             chi2=75
     return chi2<cutval
@@ -463,7 +479,36 @@ CUT_CONFIGS = {
     #"value_getter": lambda event, nprong: (event.michel_digits, event.michel_energy, event.michel_slice_energy),
     #   "cut_fn": lambda vals: all([not(vals[0][i] < 35 and vals[1][i] < 55 and vals[2][i] < 100 and vals[1][i]/vals[0][i] > 0.8) for i in range(len(vals[0]))])
     #},#Better way for this?
-    
+
+    "HasNoImprovedMichelElectrons": {
+        "value_getter": lambda event, nprong:
+            event.improved_michel_vertex_type_sz,
+        "cut_fn": lambda val: val == 0,
+    },
+
+    "ExtraTracksAreProtons": {
+        "value_getter": lambda event, nprong: (
+            event.event_extra_track_PID_sz,
+            event.event_extra_track_PID,
+        ),
+        "cut_fn": lambda vals: all(
+            vals[1][i] >= 0.25
+            for i in range(vals[0])
+        ),
+    },
+
+    "PassQEBlobSelection": {
+        "value_getter": lambda event, nprong: (
+            event.nonvtx_iso_blobs_start_position_z_in_prong_sz,
+            event.nonvtx_iso_blobs_start_position_z_in_prong,
+            event.nonvtx_iso_blobs_energy_in_prong,
+            event.nonvtx_iso_blobs_n_hits_in_prong,
+        ),
+        "cut_fn": PassQEBlobSelection,
+    },
+
+
+
     "DeadTime": {
         "value_getter": lambda event, nprong: event.phys_n_dead_discr_pair_upstream_prim_track_proj,
         "cut_fn": lambda val: val >= 0 and val <= 1,
@@ -507,7 +552,21 @@ CUT_CONFIGS = {
     "IsNeutrino": {
         "value_getter": lambda event, nprong: event.GetMuonQP(),
         "cut_fn": lambda val: val < 0,
+    },
+    "MariaMuonCurvature": {
+        "value_getter": lambda event, nprong: (
+            event.GetDouble("MasterAnaDev_minos_used_curvature"),
+            event.GetDouble("MasterAnaDev_minos_trk_eqp_qp"),
+        ),
+        "cut_fn": lambda val: (
+            val[0] != 1
+            or (
+                val[1] != 0
+                and 1.0 / val[1] <= -5.0
+            )
+        ),
     }
+
 
 }  # CUT_CONFIGS
 

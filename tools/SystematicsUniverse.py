@@ -30,17 +30,41 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
-USE_MNVTUNE_V1 = True
+USE_MNVTUNE_V1 = False
+USE_MNVTUNE_V4P3P0 = True
+USE_MNVTUNE_V4P4P1 = False
+
 
 V1_ADD_DEUTERIUM = False
 V1_ADD_ZEXP = False
 
 V1_ADD_LOWQ2PI = False
-V1_LOWQ2PI_CHANNEL = "JOINT"
+V1_LOWQ2PI_CHANNEL = None
 
 V1_ADD_COH = False          # ME coherent tune implementation
 V1_ADD_LE_COH = False        # LE coherent tune implementation
 V1_ADD_DIFFCOH = False
+
+# MnvTune v4.3.0
+V4P3P0_ADD_LOWQ2PI = True
+V4P3P0_LOWQ2PI_CHANNEL = "MENU1PI"
+
+V4P3P0_ADD_ME_COH = True
+V4P3P0_ADD_DIFFRACTIVE = True
+
+# Detector weights, separately configurable
+V4P3P0_ADD_GEANT_HADRON = True
+V4P3P0_ADD_MINOS_EFFICIENCY = True
+
+
+# v4.4.1 generator corrections
+V4P4P1_ADD_ZEXP = True
+V4P4P1_ADD_LOWQ2PI = False
+V4P4P1_LOWQ2PI_CHANNEL = None
+V4P4P1_ADD_LE_COH = False
+V4P4P1_ADD_ME_COH = False
+V4P4P1_ADD_DIFFRACTIVE = False
+V4P4P1_ADD_ELASTIC_FSI = True
 
 
 TEST_TAG = "V1D2_LECOH_DiffCOH_noLowQ2"
@@ -675,9 +699,22 @@ class CVPythonUniverse():
         c["sum_mat"] += w_mat
 
         # Match the currently configured C++ GENIE switches.
-        expected = w_v1_d2 if (
-            V1_ADD_DEUTERIUM if USE_MNVTUNE_V1 else True
-        ) else w_v1
+        if USE_MNVTUNE_V1:
+            use_deuterium = V1_ADD_DEUTERIUM
+            use_zexp = V1_ADD_ZEXP
+
+        elif USE_MNVTUNE_V4P4P1:
+            use_deuterium = True
+            use_zexp = V4P4P1_ADD_ZEXP
+
+        else:
+            use_deuterium = True
+            use_zexp = V1_ADD_ZEXP
+
+        expected = w_v1_d2 if use_deuterium else w_v1
+
+        if use_zexp:
+            expected *= self.GetZExpWeight()
 
         if not math.isclose(
             w_mat, expected, rel_tol=1e-6, abs_tol=1e-8
@@ -831,9 +868,27 @@ class CVPythonUniverse():
 
     def GetStandardWeight(self):
 
+        active_tunes = [
+            USE_MNVTUNE_V1,
+            USE_MNVTUNE_V4P3P0,
+            USE_MNVTUNE_V4P4P1,
+        ]
+
+        if sum(active_tunes) > 1:
+            raise RuntimeError(
+                "Only one MINERvA tune can be active."
+            )
+
         if USE_MNVTUNE_V1:
             return self.GetStandardWeightV1()
 
+        if USE_MNVTUNE_V4P3P0:
+            return self.GetStandardWeightV4p3p0()
+
+        if USE_MNVTUNE_V4P4P1:
+            return self.GetStandardWeightV4p4p1()
+
+        # Leave existing legacy v4 implementation below.
         weight = 1.0
         weight *= self.GetGenieWeight()
 
@@ -899,7 +954,7 @@ class CVPythonUniverse():
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
         # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
 
-        weight *= self.GetLowRecoil2p2hWeight()
+        # weight *= self.GetLowRecoil2p2hWeight()
         # Low-recoil 2p2h CV weight.
         #
         # Guard pathological truth kinematics. Some events have placeholder
@@ -925,6 +980,87 @@ class CVPythonUniverse():
         #         w_2p2h = 1.0
 
         # weight *= w_2p2h
+
+        # ------------------------------------------------------------
+        # Low-recoil 2p2h CV weight
+        # ------------------------------------------------------------
+        # Compare the direct MAT weight with our safeguarded weight.
+        # Apply the safeguarded version to the prediction.
+
+        w_2p2h_safe = 1.0
+
+        q2_gev2 = self.mc_Q2 * 1e-6
+        w_gev = self.mc_w * 1e-3
+
+        valid_2p2h_kinematics = (
+            math.isfinite(q2_gev2)
+            and math.isfinite(w_gev)
+            and q2_gev2 >= 0.0
+            and abs(w_gev) < 90.0
+        )
+
+        # Only potentially nonunity for MEC on nuclear targets.
+        is_mec = self.mc_intType == 8 and self.mc_targetZ >= 2
+
+        # Evaluate MAT directly for diagnostics.
+        # For events rejected by our old guard, this lets us see
+        # whether MAT actually returns a valid correction.
+        w_2p2h_raw = None
+
+        if is_mec:
+            try:
+                w_2p2h_raw = self.GetLowRecoil2p2hWeight()
+            except Exception as exc:
+                print(
+                    "[2P2H MAT EXCEPTION]",
+                    f"Q2={q2_gev2}",
+                    f"W={w_gev}",
+                    f"error={exc}",
+                    flush=True
+                )
+
+        # Reproduce our original safeguarded implementation.
+        if valid_2p2h_kinematics:
+            if w_2p2h_raw is not None:
+                if math.isfinite(w_2p2h_raw):
+                    w_2p2h_safe = w_2p2h_raw
+            elif not is_mec:
+                # MAT gives unity for ineligible events.
+                w_2p2h_safe = 1.0
+
+        # Print cases where the raw MAT weight is nonfinite
+        # or our guard changes a finite MAT weight.
+        if is_mec and (
+            w_2p2h_raw is None
+            or not math.isfinite(w_2p2h_raw)
+            or (
+                math.isfinite(w_2p2h_raw)
+                and abs(w_2p2h_safe - w_2p2h_raw) > 1e-10
+            )
+        ):
+            if not hasattr(CVPythonUniverse, "_2p2h_debug_prints"):
+                CVPythonUniverse._2p2h_debug_prints = 0
+
+            if (
+                self.ShortName() == "cv"
+                and CVPythonUniverse._2p2h_debug_prints < 20
+            ):
+                CVPythonUniverse._2p2h_debug_prints += 1
+
+                print(
+                    "[2P2H SAFE VS RAW]",
+                    f"intType={self.mc_intType}",
+                    f"Q2={q2_gev2}",
+                    f"W={w_gev}",
+                    f"q0={self.Getq0True() * 1e-3}",
+                    f"q3={self.Getq3True() * 1e-3}",
+                    f"old_guard={valid_2p2h_kinematics}",
+                    f"raw={w_2p2h_raw}",
+                    f"safe={w_2p2h_safe}",
+                    flush=True
+                )
+
+        weight *= w_2p2h_safe
 
 
 
@@ -955,6 +1091,212 @@ class CVPythonUniverse():
             weight *= 1.4368 # diffractive coherent reweight from Aaron Mislivec
 
         return weight
+
+    def GetStandardWeightV4p3p0(self):
+        """
+        MINERvA Tune v4.3.0 central-value event weight.
+
+        Generator corrections:
+        - NonResPi reduction
+        - Full deuterium bubble-chamber fit
+        - Valencia QE RPA
+        - LE low-recoil Valencia 2p2h fit
+        - MENU1PI low-Q2 pion correction
+        - ME coherent pion correction
+        - Diffractive correction (hydrogen only)
+
+        No QE z-expansion or elastic-FSI bug-fix weight.
+
+        Detector corrections are controlled separately.
+        """
+
+        weight = 1.0
+
+        # --------------------------------------------------
+        # GENIE CV: NonResPi + full deuterium fit
+        # --------------------------------------------------
+        # Configured through SetNonResPiReweight(True),
+        # SetDeuteriumGeniePiTune(True), and
+        # SetZExpansionFaReweight(False).
+        weight *= self.GetGenieWeight()
+
+        # --------------------------------------------------
+        # Flux CV
+        # --------------------------------------------------
+        pdg = self.mc_incoming
+
+        if SystematicsConfig.USE_SWAPPED:
+            if pdg == 12:
+                pdg = 14
+            elif pdg == -12:
+                pdg = -14
+            elif pdg == 14:
+                pdg = 12
+            elif pdg == -14:
+                pdg = -12
+            else:
+                raise ValueError(
+                    "Unexpected incoming neutrino PDG: {}".format(pdg)
+                )
+
+        weight *= self.GetFluxAndCVWeight(
+            self.mc_incomingE * 1e-3,
+            pdg
+        )
+
+        # --------------------------------------------------
+        # LE low-recoil Valencia 2p2h
+        # --------------------------------------------------
+        weight *= self.GetLowRecoil2p2hWeight()
+
+        # --------------------------------------------------
+        # Valencia QE RPA
+        # --------------------------------------------------
+        weight *= self.GetRPAWeight()
+
+        # --------------------------------------------------
+        # Low-Q2 pion correction: Aaron / MENU1PI
+        # --------------------------------------------------
+        if V4P3P0_ADD_LOWQ2PI:
+            weight *= self.GetMyLowQ2PiWeight(
+                V4P3P0_LOWQ2PI_CHANNEL
+            )
+
+        # --------------------------------------------------
+        # ME coherent-pion reweight
+        # --------------------------------------------------
+        if V4P3P0_ADD_ME_COH:
+            weight *= self.GetCOHPionWeight()
+
+        # --------------------------------------------------
+        # Diffractive coherent correction
+        # Hydrogen only
+        # --------------------------------------------------
+        if (
+            V4P3P0_ADD_DIFFRACTIVE
+            and self.mc_intType == 4
+            and self.mc_targetZ == 1
+        ):
+            weight *= 1.4368
+
+        # --------------------------------------------------
+        # Detector / reconstruction corrections
+        # --------------------------------------------------
+        if V4P3P0_ADD_GEANT_HADRON:
+            weight *= self.GetGeantHadronWeight()
+
+        if V4P3P0_ADD_MINOS_EFFICIENCY:
+            weight *= self.GetMyMinosEfficiencyWeight()
+
+        return weight
+
+    def GetStandardWeightV4p4p1(self):
+        """
+        MINERvA Tune v4.4.1 central-value weight.
+
+        Core corrections:
+        - NonResPi reduction
+        - Full deuterium bubble-chamber tune
+        - QE axial form factor z-expansion
+        - GENIE elastic-FSI bug fix
+        - Valencia RPA
+        - LE low-recoil Valencia 2p2h fit
+
+        Optional corrections are controlled by the
+        V4P4P1_ADD_* configuration flags.
+        """
+
+        weight = 1.0
+
+        # --------------------------------------------------
+        # GENIE CV
+        # NonResPi + deuterium + z-expansion
+        # --------------------------------------------------
+        # Switches configured in GetAllSystematicsUniverses().
+        weight *= self.GetGenieWeight()
+
+        # --------------------------------------------------
+        # GENIE elastic-FSI bug fix
+        # iWeight=1: elastic correction only
+        # --------------------------------------------------
+        if V4P4P1_ADD_ELASTIC_FSI:
+            weight *= self.GetFSIWeight(1)
+
+        # --------------------------------------------------
+        # Flux CV
+        # --------------------------------------------------
+        pdg = self.mc_incoming
+
+        if SystematicsConfig.USE_SWAPPED:
+            if pdg == 12:
+                pdg = 14
+            elif pdg == -12:
+                pdg = -14
+            elif pdg == 14:
+                pdg = 12
+            elif pdg == -14:
+                pdg = -12
+            else:
+                raise ValueError(
+                    "Unexpected incoming neutrino PDG: {}".format(pdg)
+                )
+
+        weight *= self.GetFluxAndCVWeight(
+            self.mc_incomingE * 1e-3, pdg
+        )
+
+        # --------------------------------------------------
+        # LE low-recoil Valencia 2p2h
+        # Original MAT implementation, without safeguards
+        # --------------------------------------------------
+        weight *= self.GetLowRecoil2p2hWeight()
+
+        # --------------------------------------------------
+        # Valencia RPA
+        # --------------------------------------------------
+        weight *= self.GetRPAWeight()
+
+        # --------------------------------------------------
+        # Optional low-Q2 pion correction
+        # --------------------------------------------------
+        if V4P4P1_ADD_LOWQ2PI:
+            weight *= self.GetMyLowQ2PiWeight(
+                V4P4P1_LOWQ2PI_CHANNEL
+            )
+
+        # --------------------------------------------------
+        # Optional coherent pion corrections
+        # --------------------------------------------------
+        if V4P4P1_ADD_LE_COH and V4P4P1_ADD_ME_COH:
+            raise RuntimeError(
+                "Choose either LE or ME coherent weighting, not both."
+            )
+
+        if V4P4P1_ADD_LE_COH:
+            weight *= self.GetLECOHPionWeight()
+
+        if V4P4P1_ADD_ME_COH:
+            weight *= self.GetCOHPionWeight()
+
+        # --------------------------------------------------
+        # Optional diffractive correction
+        # Hydrogen only
+        # --------------------------------------------------
+        if (
+            V4P4P1_ADD_DIFFRACTIVE
+            and self.mc_intType == 4
+            and self.mc_targetZ == 1
+        ):
+            weight *= 1.4368
+
+        # --------------------------------------------------
+        # Detector / reconstruction corrections
+        # --------------------------------------------------
+        weight *= self.GetGeantHadronWeight()
+        weight *= self.GetMyMinosEfficiencyWeight()
+
+        return weight
+
 
 
     def GetStandardWeightV1(self):
@@ -1002,7 +1344,20 @@ class CVPythonUniverse():
                 print("Not neutrino PDG? {}".format(pdg))
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
-        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1M")
+        # # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1M")
+        # Flux CV: reproduce Maria's treatment
+        # pdg = self.mc_incoming
+
+        # if abs(pdg) == 12:
+        #     flux_weight = 1.0
+        # else:
+        #     flux_weight = self.GetFluxAndCVWeight(
+        #         self.mc_incomingE * 1e-3,
+        #         pdg
+        #     )
+
+        # weight *= flux_weight
+
 
         # ------------------------------------------------------------
         # Low-recoil 2p2h
@@ -1026,7 +1381,90 @@ class CVPythonUniverse():
         #         w_2p2h = 1.0
 
         # weight *= w_2p2h
+
         weight *= self.GetLowRecoil2p2hWeight()
+
+        # ------------------------------------------------------------
+        # Low-recoil 2p2h CV weight
+        # ------------------------------------------------------------
+        # Compare the direct MAT weight with our safeguarded weight.
+        # Apply the safeguarded version to the prediction.
+
+        # w_2p2h_safe = 1.0
+
+        # q2_gev2 = self.mc_Q2 * 1e-6
+        # w_gev = self.mc_w * 1e-3
+
+        # valid_2p2h_kinematics = (
+        #     math.isfinite(q2_gev2)
+        #     and math.isfinite(w_gev)
+        #     and q2_gev2 >= 0.0
+        #     and abs(w_gev) < 90.0
+        # )
+
+        # # Only potentially nonunity for MEC on nuclear targets.
+        # is_mec = self.mc_intType == 8 and self.mc_targetZ >= 2
+
+        # # Evaluate MAT directly for diagnostics.
+        # # For events rejected by our old guard, this lets us see
+        # # whether MAT actually returns a valid correction.
+        # w_2p2h_raw = None
+
+        # if is_mec:
+        #     try:
+        #         w_2p2h_raw = self.GetLowRecoil2p2hWeight()
+        #     except Exception as exc:
+        #         print(
+        #             "[2P2H MAT EXCEPTION]",
+        #             f"Q2={q2_gev2}",
+        #             f"W={w_gev}",
+        #             f"error={exc}",
+        #             flush=True
+        #         )
+
+        # # Reproduce our original safeguarded implementation.
+        # if valid_2p2h_kinematics:
+        #     if w_2p2h_raw is not None:
+        #         if math.isfinite(w_2p2h_raw):
+        #             w_2p2h_safe = w_2p2h_raw
+        #     elif not is_mec:
+        #         # MAT gives unity for ineligible events.
+        #         w_2p2h_safe = 1.0
+
+        # # Print cases where the raw MAT weight is nonfinite
+        # # or our guard changes a finite MAT weight.
+        # if is_mec and (
+        #     w_2p2h_raw is None
+        #     or not math.isfinite(w_2p2h_raw)
+        #     or (
+        #         math.isfinite(w_2p2h_raw)
+        #         and abs(w_2p2h_safe - w_2p2h_raw) > 1e-10
+        #     )
+        # ):
+        #     if not hasattr(CVPythonUniverse, "_2p2h_debug_prints"):
+        #         CVPythonUniverse._2p2h_debug_prints = 0
+
+        #     if (
+        #         self.ShortName() == "cv"
+        #         and CVPythonUniverse._2p2h_debug_prints < 20
+        #     ):
+        #         CVPythonUniverse._2p2h_debug_prints += 1
+
+        #         print(
+        #             "[2P2H SAFE VS RAW]",
+        #             f"intType={self.mc_intType}",
+        #             f"Q2={q2_gev2}",
+        #             f"W={w_gev}",
+        #             f"q0={self.Getq0True() * 1e-3}",
+        #             f"q3={self.Getq3True() * 1e-3}",
+        #             f"old_guard={valid_2p2h_kinematics}",
+        #             f"raw={w_2p2h_raw}",
+        #             f"safe={w_2p2h_safe}",
+        #             flush=True
+        #         )
+
+        # weight *= w_2p2h_safe
+
 
 
 
@@ -1245,20 +1683,20 @@ class CVPythonUniverse():
         )
 
     #################### functions to be overide in systematics shift universes #################
-    # #### No correction
-    # def ElectronEnergyRaw(self):
-    #     return self.GetVecElem("prong_part_E",0,3)
+    #### No correction
+    def ElectronEnergyRaw(self):
+        return self.GetVecElem("prong_part_E",0,3)
 
-    # @Utilities.decorator_ReLU
-    # def ElectronEnergy(self):
-    #     return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
+    @Utilities.decorator_ReLU
+    def ElectronEnergy(self):
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
 
-    # ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
-    # def ElectronP3D_det(self):
-    #     electronp = self.GetVecOfVecDouble("prong_part_E")
-    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-    #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-    #     return p
+    ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
+    def ElectronP3D_det(self):
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
+        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
+        return p
 
     # ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
     # ## to be in beam coord
@@ -1271,6 +1709,7 @@ class CVPythonUniverse():
     #     if s is None:
     #         print (p,r,tuple(list(electronp[0])[:3]))
     #     return s
+    # ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
 
 
     #### Yes correction: angle only, no momentum-magnitude correction
@@ -1376,6 +1815,7 @@ class CVPythonUniverse():
     @Utilities.decorator_ReLU
     def ElectronEnergy(self):
         return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
+    #### Yes correction: angle only, no momentum-magnitude correction
 
 
 
@@ -1509,6 +1949,7 @@ class CVPythonUniverse():
     # def ElectronEnergyRaw(self):
     #     p = self.ElectronP3D_det_noEMshift().R()   # |p| from corrected momentum
     #     return math.sqrt(p*p + M_e_sqr)
+    # #### Yes correction both angle and magnitude
 
 
 
@@ -2045,7 +2486,17 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
     def GetSystematicsUniverses(chain):
 
         if USE_MNVTUNE_V1:
-            channel = V1_LOWQ2PI_CHANNEL if V1_ADD_LOWQ2PI else None
+            channel = (
+                V1_LOWQ2PI_CHANNEL
+                if V1_ADD_LOWQ2PI
+                else None
+            )
+        elif USE_MNVTUNE_V4P4P1:
+            channel = (
+                V4P4P1_LOWQ2PI_CHANNEL
+                if V4P4P1_ADD_LOWQ2PI
+                else None
+            )
         else:
             channel = SystematicsConfig.LowQ2PiWeightChannel
 
@@ -2514,27 +2965,50 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         #Set nu_type
         CVSystematicUniverse.SetAnalysisNuPDG(SystematicsConfig.AnaNuPDG)
 
-        # ------------------------------------------------------------
-        # GENIE tune configuration
-        # ------------------------------------------------------------
 
-        # NonResPi is part of both our V1 baseline and the current tune.
+        # ------------------------------------------------------------
+        # GENIE CV tune configuration
+        # ------------------------------------------------------------
+        active_tunes = [
+            USE_MNVTUNE_V1,
+            USE_MNVTUNE_V4P3P0,
+            USE_MNVTUNE_V4P4P1,
+        ]
+
+        if sum(active_tunes) > 1:
+            raise RuntimeError(
+                "Only one MINERvA tune can be active."
+            )
+
         CVSystematicUniverse.SetNonResPiReweight(True)
 
         if USE_MNVTUNE_V1:
-            # Diagnostic V1-based configurations.
-            CVSystematicUniverse.SetDeuteriumGeniePiTune(
-                V1_ADD_DEUTERIUM
-            )
+            tune_name = "v1"
+            use_deuterium = V1_ADD_DEUTERIUM
+            use_zexp = V1_ADD_ZEXP
 
-            CVSystematicUniverse.SetZExpansionFaReweight(V1_ADD_ZEXP)
+        elif USE_MNVTUNE_V4P3P0:
+            tune_name = "v4.3.0"
+            use_deuterium = True
+            use_zexp = False
+
+        elif USE_MNVTUNE_V4P4P1:
+            tune_name = "v4.4.1"
+            use_deuterium = True
+            use_zexp = V4P4P1_ADD_ZEXP
 
         else:
-            # Current / V4 configuration.
-            CVSystematicUniverse.SetDeuteriumGeniePiTune(True)
+            tune_name = "legacy_v4"
+            use_deuterium = True
+            use_zexp = V1_ADD_ZEXP
 
-            # CVSystematicUniverse.SetZExpansionFaReweight(bool(SystematicsConfig.NumZExpansionUniverses))
-            CVSystematicUniverse.SetZExpansionFaReweight(V1_ADD_ZEXP)
+        CVSystematicUniverse.SetDeuteriumGeniePiTune(
+            use_deuterium
+        )
+        CVSystematicUniverse.SetZExpansionFaReweight(
+            use_zexp
+        )
+
 
         CVSystematicUniverse.SetNFluxUniverses(
             SystematicsConfig.NUM_FLUX_UNIVERSE

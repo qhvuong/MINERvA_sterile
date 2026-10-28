@@ -175,12 +175,20 @@ if __name__ == "__main__":
         outputSelectionHistogram = AnalysisConfig.SelectionHistoPath(AnalysisConfig.playlist,"data" in st,True)
         output_file = ROOT.TFile.Open(outputSelectionHistogram,"RECREATE")
         CopyMetaTreeToOutPutFile(output_file)
-
-        if st=="mc" and Truth:
-            print("selecting truth")
-            plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
         if Reco :
             print("selecting reco")
             plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
+            print("done selection reco")
+        if st=="mc" and Truth:
+            print("selecting truth")
+            plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
         output_file.Close()
         print("selection is done for ", st, AnalysisConfig.playlist)
+        # if st=="mc" and Truth:
+        #     print("selecting truth")
+        #     plotTruthKin(Utilities.fileChain(AnalysisConfig.playlist,"mc",AnalysisConfig.ntuple_tag,"Truth",AnalysisConfig.count[0],AnalysisConfig.count[1]),output_file)
+        # if Reco :
+        #     print("selecting reco")
+        #     plotRecoKin(st=="mc", Utilities.fileChain(AnalysisConfig.playlist,st,AnalysisConfig.ntuple_tag,None,AnalysisConfig.count[0],AnalysisConfig.count[1]), output_file)
+        # output_file.Close()
+        # print("selection is done for ", st, AnalysisConfig.playlist)

@@ -331,6 +331,80 @@ class HistWrapper2D(HistWrapper):
         self.hist.Write()
         del self.hist
 
+class HistWrapper3D:
+    """
+    CV-only 3D histogram.
+
+    Does not create systematic error bands.
+    Compatible with the PlotProcessor wrapper interface.
+    """
+
+    def __init__(self, title, Xbins, Ybins, Zbins):
+        self.hist = ROOT.TH3D(
+            "temporary_3d",
+            title,
+            len(Xbins) - 1, array("d", Xbins),
+            len(Ybins) - 1, array("d", Ybins),
+            len(Zbins) - 1, array("d", Zbins),
+        )
+
+        self.hist.Sumw2()
+        self.hist.SetDirectory(0)
+        self.cv_universe = None
+
+    @property
+    def name(self):
+        return self.hist.GetName()
+
+    @name.setter
+    def name(self, name):
+        self.hist.SetName(name)
+
+    def Clone(self, name):
+        clone = copy.copy(self)
+        clone.hist = self.hist.Clone(name)
+        clone.hist.SetDirectory(0)
+        return clone
+
+    def AddUniverses(self, universes):
+        print(
+            "[HistWrapper3D] universe groups:",
+            list(universes.keys()),
+            flush=True
+        )
+
+        self.cv_universe = None
+
+        for band_name, band_universes in universes.items():
+            if str(band_name).lower() == "cv":
+                if not band_universes:
+                    raise RuntimeError("Empty CV universe list")
+
+                self.cv_universe = band_universes[0]
+                break
+
+        if self.cv_universe is None:
+            raise RuntimeError(
+                "HistWrapper3D: CV universe not found"
+            )
+
+
+    def FillUniverse(self, universe, x, y, z, weight):
+        """
+        Fill only for the central-value universe.
+        """
+        if universe is not self.cv_universe:
+            return
+
+        if not all(math.isfinite(float(v)) for v in (x, y, z, weight)):
+            return
+
+        self.hist.Fill(x, y, z, weight)
+
+    def Write(self):
+        self.hist.Write()
+
+
 class MnvResponseWrapper(object):
     def __init__(self,title, bins):
         self.reco_hist = HistWrapper2D(title,bins[0],bins[1])
@@ -434,7 +508,8 @@ class PlotProcessor():
             self.histwrapper = HistWrapper1D(title,binning[0])
         elif len (value_getter) == 2:
             self.histwrapper = HistWrapper2D(title,binning[0],binning[1])
-
+        elif len(value_getter) == 3:
+            self.histwrapper = HistWrapper3D(title, binning[0], binning[1], binning[2])
         elif len(value_getter) == 4:
             self.histwrapper = MnvResponseWrapper(title, binning)
         else :

@@ -215,6 +215,20 @@ class KinematicsCalculator(object):
         self.reco_E_lep = event.LeptonEnergy()/1e3
         self.M_lep_sqr = event.M_lep_sqr/1e6
         self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
+
+        # Compare momentum magnitude from the reconstructed vector
+        # against momentum magnitude inferred from reconstructed energy.
+        p_vector = self.reco_LeptonP3D.R() / 1000.0
+        p_energy = self.reco_P_lep
+
+        if abs(p_vector - p_energy) > 1e-4:
+            print(
+                "[MUON MOMENTUM MISMATCH]",
+                f"p_vector={p_vector:.6f}",
+                f"p_energy={p_energy:.6f}",
+                f"diff={p_vector-p_energy:.6f}",
+            )
+
         self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
         self.reco_Pt_lep = self.reco_P_lep*math.sin(self.reco_theta_lep_rad)
