@@ -30,9 +30,9 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
-USE_MNVTUNE_V1 = False
+USE_MNVTUNE_V1 = True
 USE_MNVTUNE_V4P3P0 = False
-USE_MNVTUNE_V4P4P1 = True
+USE_MNVTUNE_V4P4P1 = False
 
 
 V1_ADD_DEUTERIUM = False
