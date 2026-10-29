@@ -98,104 +98,147 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     print("done a file")
 
 
+
 def MergeTH3Histograms(input_files, output_path):
     """
-    Explicitly merge CV-only TH3D histograms.
+    Merge CV-only TH3D histograms from ROOT files.
 
-    Existing MnvH1D/MnvH2D merging is handled by madd.
-    TH3D histograms are summed without POT scaling,
-    matching ordinary raw histogram merging.
+    MnvH1D/MnvH2D objects are handled separately by madd.
+    This function overwrites only TH3D objects in the merged file.
     """
     merged = {}
     expected_names = None
 
+    input_files = list(input_files)
+
+    if not input_files:
+        raise RuntimeError("[TH3D] No input files provided")
+
     for path in input_files:
         f = ROOT.TFile.Open(path, "READ")
+
         if not f or f.IsZombie():
-            raise RuntimeError("Cannot open input: " + path)
+            raise RuntimeError(
+                "[TH3D] Cannot open input: {}".format(path)
+            )
 
         try:
-            for key in f.GetListOfKeys():
-                if key.GetClassName() != "TH3D":
-                    continue
-                names = {
-                    key.GetName()
-                    for key in f.GetListOfKeys()
-                    if key.GetClassName() == "TH3D"
-                }
+            names = {
+                key.GetName()
+                for key in f.GetListOfKeys()
+                if key.GetClassName() == "TH3D"
+            }
 
-                if expected_names is None:
-                    expected_names = names
-                elif names != expected_names:
+            if expected_names is None:
+                expected_names = names
+
+                if not names:
                     raise RuntimeError(
-                        "TH3D histogram mismatch in {}\n"
-                        "Missing: {}\n"
-                        "Extra: {}".format(
-                            path,
-                            sorted(expected_names - names),
-                            sorted(names - expected_names),
+                        "[TH3D] No TH3D histograms in {}".format(path)
+                    )
+
+            elif names != expected_names:
+                raise RuntimeError(
+                    "[TH3D] Histogram mismatch in {}\n"
+                    "Missing: {}\n"
+                    "Extra: {}".format(
+                        path,
+                        sorted(expected_names - names),
+                        sorted(names - expected_names),
+                    )
+                )
+
+            for name in sorted(names):
+                h = f.Get(name)
+
+                if not h or not h.InheritsFrom("TH3D"):
+                    raise RuntimeError(
+                        "[TH3D] Cannot read {} from {}".format(
+                            name, path
                         )
                     )
-                name = key.GetName()
-                h = f.Get(name)
 
                 if name not in merged:
                     merged[name] = h.Clone(name)
                     merged[name].SetDirectory(0)
                     merged[name].Sumw2()
-                else:
-                    target = merged[name]
+                    continue
 
-                    # Check binning before adding histograms.
-                    for a, b in (
-                        (target.GetXaxis(), h.GetXaxis()),
-                        (target.GetYaxis(), h.GetYaxis()),
-                        (target.GetZaxis(), h.GetZaxis()),
-                    ):
-                        if a.GetNbins() != b.GetNbins():
+                target = merged[name]
+
+                for axis_target, axis_input in (
+                    (target.GetXaxis(), h.GetXaxis()),
+                    (target.GetYaxis(), h.GetYaxis()),
+                    (target.GetZaxis(), h.GetZaxis()),
+                ):
+                    if axis_target.GetNbins() != axis_input.GetNbins():
+                        raise RuntimeError(
+                            "[TH3D] Bin count mismatch: {} in {}".format(
+                                name, path
+                            )
+                        )
+
+                    for ibin in range(1, axis_target.GetNbins() + 2):
+                        edge_a = axis_target.GetBinLowEdge(ibin)
+                        edge_b = axis_input.GetBinLowEdge(ibin)
+
+                        if not math.isclose(
+                            edge_a,
+                            edge_b,
+                            rel_tol=1e-10,
+                            abs_tol=1e-12,
+                        ):
                             raise RuntimeError(
-                                "TH3D bin count mismatch: " + name
+                                "[TH3D] Bin edge mismatch: "
+                                "{} in {}".format(name, path)
                             )
 
-                        for i in range(1, a.GetNbins() + 2):
-                            if not math.isclose(
-                                a.GetBinLowEdge(i),
-                                b.GetBinLowEdge(i),
-                                rel_tol=1e-10,
-                                abs_tol=1e-12,
-                            ):
-                                raise RuntimeError(
-                                    "TH3D bin edges mismatch: " + name
-                                )
-
-                    target.Add(h)
+                if not target.Add(h):
+                    raise RuntimeError(
+                        "[TH3D] ROOT Add failed: {} in {}".format(
+                            name, path
+                        )
+                    )
 
         finally:
             f.Close()
 
-    if not merged:
-        print("[TH3D] No TH3D histograms found")
-        return
-
     fout = ROOT.TFile.Open(output_path, "UPDATE")
+
     if not fout or fout.IsZombie():
-        raise RuntimeError("Cannot update output: " + output_path)
+        raise RuntimeError(
+            "[TH3D] Cannot open output: {}".format(output_path)
+        )
 
     try:
         fout.cd()
 
         for name, h in merged.items():
-            h.Write(name, ROOT.TObject.kOverwrite)
+            if h.Write(name, ROOT.TObject.kOverwrite) <= 0:
+                raise RuntimeError(
+                    "[TH3D] Failed to write {}".format(name)
+                )
 
             print(
-                "[TH3D] merged {}: entries={}, integral={}".format(
-                    name, h.GetEntries(), h.Integral()
-                )
+                "[TH3D] {}: entries={}, integral={:.12g}".format(
+                    name,
+                    h.GetEntries(),
+                    h.Integral(),
+                ),
+                flush=True,
             )
+
     finally:
         fout.Close()
 
-    print("[TH3D] Finished merging", len(merged), "histograms")
+    print(
+        "[TH3D] Successfully merged {} histograms from {} files".format(
+            len(merged),
+            len(input_files),
+        ),
+        flush=True,
+    )
+
 
 
 # def MaddWrapper(output_playlist, input_files, is_data):
@@ -216,30 +259,60 @@ def MergeTH3Histograms(input_files, output_path):
 #     subprocess.run(args, stdout=subprocess.DEVNULL)
 #     print("✅ Finished madd.")
 
+
 def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
-    valid_files = [f for f in input_files if is_valid_root_file(f)]
-    print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
+    input_files = list(input_files)
+
+    valid_files = [
+        f for f in input_files
+        if is_valid_root_file(f)
+    ]
+
+    if len(valid_files) != len(input_files):
+        raise RuntimeError(
+            "[MADD] {} invalid input files".format(
+                len(input_files) - len(valid_files)
+            )
+        )
 
     if not valid_files:
-        print(f"❌ No valid files to combine for {output_playlist} — skipping.")
-        return
+        raise RuntimeError(
+            "[MADD] No files for playlist {}".format(output_playlist)
+        )
 
     valid_files.sort()
 
-    out = output_file or AnalysisConfig.SelectionHistoPath(output_playlist, is_data)
-    args = ["madd", out]
-    args.extend(valid_files)
-
-    print(f"[MADD] Combining {len(valid_files)} files into {out}")
-
-    subprocess.run(
-        args,
-        check=True,
+    out = (
+        output_file
+        or AnalysisConfig.SelectionHistoPath(output_playlist, is_data)
     )
 
-    print("[MADD] Standard histograms merged successfully")
+    if os.path.exists(out):
+        os.remove(out)
+
+    args = ["madd", out] + valid_files
+
+    print(
+        "[MADD] Combining {} files into {}".format(
+            len(valid_files), out
+        ),
+        flush=True,
+    )
+
+    subprocess.run(args, check=True)
+
+    if not os.path.exists(out):
+        raise RuntimeError(
+            "[MADD] Output was not created: {}".format(out)
+        )
 
     MergeTH3Histograms(valid_files, out)
+
+    print(
+        "[MADD] Completed playlist {}".format(output_playlist),
+        flush=True,
+    )
+
 
 
 

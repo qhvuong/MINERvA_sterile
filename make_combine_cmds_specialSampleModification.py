@@ -322,113 +322,125 @@ def combined_output_path(playlist: str, selection_tag: str, is_data: bool, ntupl
 #     f.Close()
 #     print(f"[SYNC] Synced {n_synced} MnvH* objects in {path}; skipped {n_skipped}")
 
+
 def maybe_madd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
     mc_files = [
         combined_output_path(pl, selection_tag, False)
         for pl in EXPECTED_MC_PLAYLISTS
     ]
+
     data_files = [
         combined_output_path(pl, selection_tag, True)
         for pl in EXPECTED_DATA_PLAYLISTS
     ]
 
-    # keep only the standard combined MC outputs
     mc_files = [
         f for f in mc_files
-        if "_no2p2h" not in os.path.basename(f) and "_only2p2h" not in os.path.basename(f)
+        if "_no2p2h" not in os.path.basename(f)
+        and "_only2p2h" not in os.path.basename(f)
     ]
 
-    mc_dir = os.path.dirname(mc_files[0]) if mc_files else "."
-    data_dir = os.path.dirname(data_files[0]) if data_files else "."
+    mc_dir = os.path.dirname(mc_files[0])
+    data_dir = os.path.dirname(data_files[0])
 
-    out_mc = os.path.join(mc_dir, f"kin_dist_mcleFHC_{selection_tag}_MAD.root")
-    out_data = os.path.join(data_dir, f"kin_dist_dataleFHC_{selection_tag}_MAD.root")
+    out_mc = os.path.join(
+        mc_dir,
+        f"kin_dist_mcleFHC_{selection_tag}_MAD.root",
+    )
 
-    missing_mc = [f for f in mc_files if not os.path.exists(f)]
-    missing_data = [f for f in data_files if not os.path.exists(f)]
+    out_data = os.path.join(
+        data_dir,
+        f"kin_dist_dataleFHC_{selection_tag}_MAD.root",
+    )
 
-    lines = []
-    lines.append("################ FHC MERGE CHECK ################")
-    lines.append(f"Selection tag: {selection_tag}")
-    lines.append(f"MC output dir : {mc_dir}")
-    lines.append(f"DATA output dir: {data_dir}")
-    lines.append(f"Found MC      : {len(mc_files) - len(missing_mc)}/{len(mc_files)}")
-    lines.append(f"Found DATA    : {len(data_files) - len(missing_data)}/{len(data_files)}")
-
-    if missing_mc:
-        lines.append("[WARN] Missing MC files:")
-        lines.extend([f"  {x}" for x in missing_mc])
-    else:
-        lines.append("[OK] All MC playlist outputs are present")
-
-    if missing_data:
-        lines.append("[WARN] Missing DATA files:")
-        lines.extend([f"  {x}" for x in missing_data])
-    else:
-        lines.append("[OK] All DATA playlist outputs are present")
-
-    print("\n".join(lines))
-    if log_sink is not None:
-        log_sink.extend(lines)
-        log_sink.append("")
-
-    # cmd_mc = ["madd", "-f", out_mc] + mc_files
-    # cmd_data = ["madd", "-f", out_data] + data_files
-    cmd_mc = ["madd", out_mc] + mc_files
-    cmd_data = ["madd", out_data] + data_files
-
-
-    if not missing_mc:
-        print("FHC MC madd command:")
-        print(" ", " ".join(cmd_mc))
+    def log(message):
+        print(message, flush=True)
         if log_sink is not None:
-            log_sink.append("FHC MC madd command:")
-            log_sink.append("  " + " ".join(cmd_mc))
-            log_sink.append("")
+            log_sink.append(message)
+
+    log("################ FHC MERGE CHECK ################")
+    log("Selection tag: {}".format(selection_tag))
+
+    for sample_type, input_files, output_file in (
+        ("MC", mc_files, out_mc),
+        ("DATA", data_files, out_data),
+    ):
+        missing = [
+            path for path in input_files
+            if not os.path.isfile(path)
+        ]
+
+        log(
+            "[{}] Found {}/{} playlist files".format(
+                sample_type,
+                len(input_files) - len(missing),
+                len(input_files),
+            )
+        )
+
+        if missing:
+            for path in missing:
+                log("[MISSING] {}".format(path))
+
+            log(
+                "[SKIP] {} FHC merge: missing inputs".format(
+                    sample_type
+                )
+            )
+            continue
+
+        if os.path.exists(output_file):
+            if dry_run:
+                log("[DRY-RUN] Would overwrite {}".format(output_file))
+            else:
+                os.remove(output_file)
+
+        cmd = ["madd", output_file] + input_files
+
+        log("[{}] Command: {}".format(
+            sample_type, " ".join(cmd)
+        ))
 
         if dry_run:
-            print("[DRY-RUN] would run FHC MC madd")
-            if log_sink is not None:
-                log_sink.append("[DRY-RUN] would run FHC MC madd")
-                log_sink.append("")
-        else:
-            print("[RUNNING] madd for FHC MC")
-            subprocess.run(cmd_mc, check=False)
-            # print("[RUNNING] madd for FHC MC")
-            # ret = subprocess.run(cmd_mc, check=False)
+            log(
+                "[DRY-RUN] Would merge {} FHC".format(
+                    sample_type
+                )
+            )
+            continue
 
-            # if ret.returncode == 0:
-            #     print("[RUNNING] sync band CVs for FHC MC")
-            #     sync_mnv_band_cvs_in_file(out_mc)
-            # else:
-            #     print(f"[WARN] FHC MC madd failed with return code {ret.returncode}; not syncing")
-    else:
-        print("[SKIP] Not running MC madd because some expected MC playlist outputs are missing")
-        if log_sink is not None:
-            log_sink.append("[SKIP] Not running MC madd because some expected MC playlist outputs are missing")
-            log_sink.append("")
+        log(
+            "[RUNNING] madd for FHC {}".format(sample_type)
+        )
 
-    if not missing_data:
-        print("FHC DATA madd command:")
-        print(" ", " ".join(cmd_data))
-        if log_sink is not None:
-            log_sink.append("FHC DATA madd command:")
-            log_sink.append("  " + " ".join(cmd_data))
-            log_sink.append("")
+        subprocess.run(cmd, check=True)
 
-        if dry_run:
-            print("[DRY-RUN] would run FHC DATA madd")
-            if log_sink is not None:
-                log_sink.append("[DRY-RUN] would run FHC DATA madd")
-                log_sink.append("")
-        else:
-            print("[RUNNING] madd for FHC DATA")
-            subprocess.run(cmd_data, check=False)
-    else:
-        print("[SKIP] Not running DATA madd because some expected DATA playlist outputs are missing")
-        if log_sink is not None:
-            log_sink.append("[SKIP] Not running DATA madd because some expected DATA playlist outputs are missing")
-            log_sink.append("")
+        if not os.path.isfile(output_file):
+            raise RuntimeError(
+                "[FHC] Output not created: {}".format(
+                    output_file
+                )
+            )
+
+        log(
+            "[RUNNING] TH3D merge for FHC {}".format(
+                sample_type
+            )
+        )
+
+        MergeTH3Histograms(
+            input_files,
+            output_file,
+        )
+
+        log(
+            "[DONE] FHC {} including TH3D".format(
+                sample_type
+            )
+        )
+
+    log("################ END FHC MERGE ################")
+
 
 # def maybe_madd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
 #     mc_files = [

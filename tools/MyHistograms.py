@@ -367,11 +367,11 @@ class HistWrapper3D:
         return clone
 
     def AddUniverses(self, universes):
-        print(
-            "[HistWrapper3D] universe groups:",
-            list(universes.keys()),
-            flush=True
-        )
+        # print(
+        #     "[HistWrapper3D] universe groups:",
+        #     list(universes.keys()),
+        #     flush=True
+        # )
 
         self.cv_universe = None
 
