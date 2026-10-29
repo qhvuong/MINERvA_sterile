@@ -159,6 +159,196 @@ class KinematicsCalculator(object):
                 sc = False
         return sc
 
+
+
+    def DebugMuonCoordinates(self):
+        """Temporary read-only diagnostic for muon coordinate conventions."""
+
+        if not hasattr(self, "_coord_debug_count"):
+            self._coord_debug_count = 0
+            self._coord_debug_errors = 0
+
+        if self._coord_debug_count >= 10:
+            return
+
+        event = self.event
+
+        if event.ShortName() != "cv":
+            return
+
+        try:
+            # Raw reconstructed momentum components, MeV.
+            raw = event.GetVecDouble("MasterAnaDev_leptonE")
+            if len(raw) < 3:
+                return
+
+            p_raw = ROOT.TVector3(
+                float(raw[0]), float(raw[1]), float(raw[2])
+            )
+
+            if p_raw.Mag() <= 0:
+                return
+
+            # Raw muon angular branches, radians.
+            tx = float(event.GetDouble("muon_thetaX"))
+            ty = float(event.GetDouble("muon_thetaY"))
+
+            if not all(math.isfinite(x) for x in (tx, ty)):
+                return
+            if abs(tx) >= math.pi / 2 or abs(ty) >= math.pi / 2:
+                return
+
+            # Reconstruct the forward-going direction from projected angles.
+            p_mat = ROOT.TVector3(
+                math.tan(tx), math.tan(ty), 1.0
+            ).Unit()
+
+            # Compare both nominal rotation signs.
+            # MAT nominal angle, NOT the uncertainty.
+            mat_angle = -0.05887
+            analysis_angle = SystematicsConfig.BEAM_ANGLE
+
+            candidates = {"raw": ROOT.TVector3(p_raw)}
+
+            for name, angle in [
+                ("MAT +alpha", mat_angle),
+                ("MAT -alpha", -mat_angle),
+                ("analysis +alpha", analysis_angle),
+                ("analysis -alpha", -analysis_angle),
+            ]:
+                p = ROOT.TVector3(p_raw)
+                p.RotateX(angle)
+                candidates[name] = p
+
+            # Existing vectors calculated by our analysis.
+            p_analysis = self.reco_LeptonP3D
+            p_analysis_det = self.reco_LeptonP3D_det
+
+            def separation(a, b):
+                if a is None or b is None:
+                    return float("nan")
+
+                va = ROOT.TVector3(a.X(), a.Y(), a.Z())
+                vb = ROOT.TVector3(b.X(), b.Y(), b.Z())
+
+                if va.Mag() <= 0 or vb.Mag() <= 0:
+                    return float("nan")
+
+                return math.degrees(va.Angle(vb))
+
+            def show_vec(label, p):
+                if p is None:
+                    print("  {:22s}: None".format(label))
+                    return
+                print(
+                    "  {:22s}: ({:10.3f}, {:10.3f}, {:10.3f}) "
+                    "theta={:9.5f} phi={:9.5f}".format(
+                        label, p.X(), p.Y(), p.Z(),
+                        math.degrees(p.Theta()),
+                        math.degrees(p.Phi())
+                    )
+                )
+
+            self._coord_debug_count += 1
+
+            print("\n" + "=" * 85)
+            print("[MUON COORD DEBUG] CV event", self._coord_debug_count)
+            print("=" * 85)
+
+            print("Angles in degrees; vector components in MeV")
+            print("Nominal MAT beam angle:", mat_angle)
+            print("KinematicsCalculator BEAM_ANGLE:", BEAM_ANGLE)
+            print("SystematicsConfig.BEAM_ANGLE:", SystematicsConfig.BEAM_ANGLE)
+            print("MAT nominal angle:", mat_angle)
+
+            print("\n[1] Raw muon branches")
+            print("  muon_thetaX = {:.8f} rad".format(tx))
+            print("  muon_thetaY = {:.8f} rad".format(ty))
+
+            print("\n[2] Momentum vectors")
+            show_vec("Raw leptonE", p_raw)
+            show_vec("From thetaX/Y", p_mat)
+            show_vec("Our LeptonP3D", p_analysis)
+            show_vec("Our LeptonP3D_det", p_analysis_det)
+
+            print("\n[3] Rotating raw leptonE")
+            for name, p in candidates.items():
+                print(
+                    "  {:22s}: separation from thetaX/Y = {:10.6f} deg".format(
+                        name, separation(p, p_mat)
+                    )
+                )
+
+            print("\n[4] Our vectors versus raw representations")
+            for label, p in [
+                ("LeptonP3D", p_analysis),
+                ("LeptonP3D_det", p_analysis_det),
+            ]:
+                print(
+                    "  {:18s} vs raw: {:10.6f} deg".format(
+                        label, separation(p, p_raw)
+                    )
+                )
+                print(
+                    "  {:18s} vs thetaX/Y: {:10.6f} deg".format(
+                        label, separation(p, p_mat)
+                    )
+                )
+
+            print("\n[5] Angle calculation comparison")
+            print(
+                "  Our beam theta = {:.8f} deg".format(
+                    math.degrees(self.reco_theta_lep_rad)
+                )
+            )
+            print(
+                "  Our det theta  = {:.8f} deg".format(
+                    math.degrees(self.reco_theta_lep_rad_det)
+                )
+            )
+            print(
+                "  thetaX/Y theta = {:.8f} deg".format(
+                    math.degrees(p_mat.Theta())
+                )
+            )
+
+            for method in ("GetThetamu", "GetPhimu"):
+                try:
+                    value = float(getattr(event, method)())
+                    print(
+                        "  {:14s} = {:.8f} deg".format(
+                            method, math.degrees(value)
+                        )
+                    )
+                except (AttributeError, RuntimeError):
+                    print("  {} unavailable".format(method))
+
+            print("\n[6] Azimuth comparison")
+            print(
+                "  Our beam phi = {:.8f} deg".format(
+                    self.reco_phi_lep
+                )
+            )
+            print(
+                "  Our det phi  = {:.8f} deg".format(
+                    self.reco_phi_lep_det
+                )
+            )
+            print(
+                "  thetaX/Y phi = {:.8f} deg".format(
+                    math.degrees(p_mat.Phi())
+                )
+            )
+
+            print("=" * 85)
+
+        except Exception as exc:
+            if self._coord_debug_errors < 3:
+                print("[MUON COORD DEBUG ERROR]", repr(exc))
+            self._coord_debug_errors += 1
+
+
+
     def CalculateRecoKinematics(self):
         self._clear = False
         if self.event.SetLeptonType():
@@ -238,6 +428,9 @@ class KinematicsCalculator(object):
 
         self.reco_phi_lep_det = math.degrees(self.reco_phi_lep_rad_det)
         self.reco_phi_lep     = math.degrees(self.reco_phi_lep_rad)
+
+        # TEMPORARY: reconstructed muon coordinate-system audit
+        # self.DebugMuonCoordinates()
 
         # Project reconstructed lepton direction to the front face of MINOS
         MINOS_FRONT_Z = 12087.301  # mm

@@ -82,15 +82,15 @@ SAMPLE_CUTS = {
         "LeptonAngle",
 
         "Neutrino Helicity",
-        # "MariaMuonCurvature",
+        "MariaMuonCurvature",
 
         # "Etheta",
         # "Eavail",
         # "Pt",
         # "Ppar",
-        "HasNoImprovedMichelElectrons",
-        "ExtraTracksAreProtons",
-        "PassQEBlobSelection",        
+        # "HasNoImprovedMichelElectrons",
+        # "ExtraTracksAreProtons",
+        # "PassQEBlobSelection",        
 
         # "HasNoBackExitingTracks",
         # "HasMINOSMatch",

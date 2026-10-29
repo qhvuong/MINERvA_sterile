@@ -2212,35 +2212,64 @@ class CVPythonUniverse():
         y = self.GetVecElem("vtx", 1)
         return _hex_edge_distance_mm(x, y, apothem_mm)
 
-    def MuonP3D_beam(self):
-        """
-        Reco muon 3-momentum (px,py,pz) in BEAM coordinates, MeV.
+    # def MuonP3D_beam(self):
+    #     """
+    #     Reco muon 3-momentum (px,py,pz) in BEAM coordinates, MeV.
 
-        This matches the components used in MuonFunctions.h:GetPmu_nominal()
-        via: GetAnaToolName() + "_leptonE".
+    #     This matches the components used in MuonFunctions.h:GetPmu_nominal()
+    #     via: GetAnaToolName() + "_leptonE".
+    #     """
+    #     lepton_branch = self.GetAnaToolName() + "_leptonE"
+    #     px = self.GetVecElem(lepton_branch, 0)
+    #     py = self.GetVecElem(lepton_branch, 1)
+    #     pz = self.GetVecElem(lepton_branch, 2)
+
+    #     # print("Muon beam p:", px, py, pz)
+    #     # print("lepton_branch: ", lepton_branch)
+
+    #     return ROOT.Math.XYZVector(px, py, pz)
+
+    # def MuonP3D_det(self):
+    #     """
+    #     Muon 3-momentum rotated into the same DET coordinate convention
+    #     used by ElectronP3D() (RotationX(-BEAM_ANGLE)).
+    #     """
+    #     p = self.MuonP3D_beam()
+    #     r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
+    #     p_det = r(p)
+
+    #     # print("Muon det vec:", p_det.X(), p_det.Y(), p_det.Z(), " |p|=", p_det.R())
+
+    #     return p_det
+
+
+    def MuonP3D_det(self):
+        """
+        Reconstructed muon momentum in detector coordinates (MeV).
+
+        Raw components are taken directly from the AnaTuple
+        lepton four-vector.
         """
         lepton_branch = self.GetAnaToolName() + "_leptonE"
+
         px = self.GetVecElem(lepton_branch, 0)
         py = self.GetVecElem(lepton_branch, 1)
         pz = self.GetVecElem(lepton_branch, 2)
 
-        # print("Muon beam p:", px, py, pz)
-        # print("lepton_branch: ", lepton_branch)
-
         return ROOT.Math.XYZVector(px, py, pz)
 
-    def MuonP3D_det(self):
+    def MuonP3D_beam(self):
         """
-        Muon 3-momentum rotated into the same DET coordinate convention
-        used by ElectronP3D() (RotationX(-BEAM_ANGLE)).
+        Reconstructed muon momentum in beam coordinates (MeV).
+
+        Uses the same detector-to-beam rotation as
+        MinervaCoordSysTool::thetaWRTBeam().
         """
-        p = self.MuonP3D_beam()
-        r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
-        p_det = r(p)
+        p_det = self.MuonP3D_det()
+        rotation = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        return rotation(p_det)
 
-        # print("Muon det vec:", p_det.X(), p_det.Y(), p_det.Z(), " |p|=", p_det.R())
 
-        return p_det
 
 
     @staticmethod

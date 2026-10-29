@@ -36,7 +36,7 @@ EM_ENERGY_SCALE_UNCERTAINTY = {
 }
 
 # BEAM_ANGLE = math.radians(-3.3)
-BEAM_ANGLE = -0.05887
+BEAM_ANGLE = -0.05887  # rad, MinervaUnits::numi_beam_angle_rad
 BEAM_XANGLE_UNCERTAINTY = 1*1e-3 #radians
 BEAM_YANGLE_UNCERTAINTY = 0.9*1e-3
 

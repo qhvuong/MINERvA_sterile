@@ -406,6 +406,9 @@ HISTS_TO_MAKE = [
 	"Lepton Pt vs Available Energy",
 	"Available Energy vs Pt vs Ppar",
 
+	"Lepton Energy vs Available Energy",
+
+
 	"Lepton Pt vs Lepton Ppar",
 	"Lepton Ppar vs Lepton Pt",
 
