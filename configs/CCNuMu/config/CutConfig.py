@@ -63,6 +63,8 @@ EAVAIL_LOW = [0.0,0.05]
 EAVAIL_HIGH = [0.0,0.2]
 ELECTRON_ENERGY_CUTOFF = 2.5
 
+MIN_MINOS_CURVE = 5.0
+
 # Muon longitudinal momentum (GeV/c)
 # Dan Ruterbories et al., Fig. 2
 RECO_PPAR_RANGE = [2.5, 3.0]

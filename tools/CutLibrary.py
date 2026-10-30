@@ -85,6 +85,29 @@ def PassQEBlobSelection(vals):
 
     return total_energy >= 10.0 * total_hits
 
+
+def PassMuonCurvature(used_curvature, eqp_qp):
+    # Range-reconstructed muons bypass the curvature requirement.
+    if used_curvature != 1:
+        return True
+
+    # Reject invalid curvature significance.
+    if not math.isfinite(eqp_qp) or eqp_qp == 0:
+        return False
+
+    significance = 1.0 / eqp_qp
+    threshold = CutConfig.MIN_MINOS_CURVE
+    helicity = CutConfig.HELICITY
+
+    if helicity is None:
+        return abs(significance) >= threshold
+
+    if helicity not in (-1, 1):
+        raise ValueError("HELICITY must be -1, +1, or None")
+
+    return significance * helicity >= threshold
+
+
 def FHC_Cut(available_energy,lepton_energy):
     if lepton_energy < 1.00:
         return(0 < available_energy < 2.00)
@@ -558,14 +581,8 @@ CUT_CONFIGS = {
             event.GetDouble("MasterAnaDev_minos_used_curvature"),
             event.GetDouble("MasterAnaDev_minos_trk_eqp_qp"),
         ),
-        "cut_fn": lambda val: (
-            val[0] != 1
-            or (
-                val[1] != 0
-                and 1.0 / val[1] <= -5.0
-            )
-        ),
-    }
+        "cut_fn": lambda val: PassMuonCurvature(*val),
+    },
 
 
 }  # CUT_CONFIGS

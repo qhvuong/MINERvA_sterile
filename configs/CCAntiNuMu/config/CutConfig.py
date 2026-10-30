@@ -66,6 +66,8 @@ visE_RANGE = [0.0,0.3]
 Ethetasquared_CUT = .0032
 FRONT_DEDX_PI0_UPPERBOUND = 5
 
+MIN_MINOS_CURVE = 5.0
+
 ############################################################################
 # choose the cuts you want from cut library
 
