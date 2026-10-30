@@ -84,7 +84,7 @@ SAMPLE_CUTS = {
         "LeptonAngle",
 
         "Neutrino Helicity",
-        # "MariaMuonCurvature",
+        "MuonCurvature",
 
         # "Etheta",
         # "Eavail",

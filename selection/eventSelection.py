@@ -75,6 +75,8 @@ def plotRecoKin(mc, chainwrapper, outfile):
                 for entry in Plots:
                     entry.Process(universe)
 
+    # eventClassifier.PrintMINOSComparison()
+
     signal.alarm(0)
     outfile.cd()
     for entry in Plots:

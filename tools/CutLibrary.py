@@ -108,6 +108,39 @@ def PassMuonCurvature(used_curvature, eqp_qp):
     return significance * helicity >= threshold
 
 
+def DebugHasMINOSMatch(event, nprong):
+    raw = event.GetInt("isMinosMatchTrack")
+    inclusive = raw == 1
+
+    try:
+        direct = event.IsMinosMatchMuon()
+    except Exception as exc:
+        print(
+            "[MINOS METHOD ERROR]",
+            type(exc).__name__,
+            str(exc),
+            "raw =", raw,
+        )
+        raise
+
+    if not hasattr(DebugHasMINOSMatch, "count"):
+        DebugHasMINOSMatch.count = 0
+
+    if DebugHasMINOSMatch.count < 30:
+        print(
+            "[MINOS DEBUG]",
+            "raw =", raw,
+            "inclusive =", inclusive,
+            "direct =", direct,
+        )
+        DebugHasMINOSMatch.count += 1
+
+    return direct
+
+print("[MINOS DEBUG] CutLibrary loaded from:", __file__)
+print("[MINOS DEBUG] DebugHasMINOSMatch registered")
+
+
 def FHC_Cut(available_energy,lepton_energy):
     if lepton_energy < 1.00:
         return(0 < available_energy < 2.00)
@@ -567,16 +600,21 @@ CUT_CONFIGS = {
         "cut_fn": lambda val: CutConfig.HELICITY is None or val * CutConfig.HELICITY>0,
         "variable_range": [-1.1,0,1.1]
     },
-    "HasMINOSMatch" : {
+    "HasMINOSMatch Legacy" : {
         "value_getter": lambda event,nprong: event.IsMinosMatchMuon(),
         "cut_fn": lambda val: val,
         "variable_range": [-1.1,0,1.1]
+    },
+    "HasMINOSMatch": {
+        "value_getter": DebugHasMINOSMatch,
+        "cut_fn": lambda val: val,
+        "variable_range": [-1.1, 0, 1.1],
     },
     "IsNeutrino": {
         "value_getter": lambda event, nprong: event.GetMuonQP(),
         "cut_fn": lambda val: val < 0,
     },
-    "MariaMuonCurvature": {
+    "MuonCurvature": {
         "value_getter": lambda event, nprong: (
             event.GetDouble("MasterAnaDev_minos_used_curvature"),
             event.GetDouble("MasterAnaDev_minos_trk_eqp_qp"),

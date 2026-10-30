@@ -404,6 +404,7 @@ HISTS_TO_MAKE = [
     # "True Lepton Energy",
 
     "Visible Energy",
+    "Lepton Angle",
     "Lepton Pt",
     "Lepton Ppar",
 

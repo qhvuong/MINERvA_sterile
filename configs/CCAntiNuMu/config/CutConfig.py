@@ -76,12 +76,12 @@ SAMPLE_CUTS = {
         "NoCut",
         "Vertex_Z",
         "Vertex_Apothem",
-        "InverseHasNoBackExitingTracks",
-        "DeadTime",
-        "LeptonAngle",
+        # "InverseHasNoBackExitingTracks",
+        # "DeadTime",
+        # "LeptonAngle",
 
-        "Neutrino Helicity",
-        "MariaMuonCurvature",
+        # "Neutrino Helicity",
+        # "MuonCurvature",
 
         # "Etheta",
         # "Eavail",
@@ -92,7 +92,7 @@ SAMPLE_CUTS = {
         # "PassQEBlobSelection",        
 
         # "HasNoBackExitingTracks",
-        # "HasMINOSMatch",
+        "HasMINOSMatch",
 
         # # inclusive CC cuts
         # "Vertex_Z",
