@@ -82,7 +82,7 @@ SAMPLE_CUTS = {
         "LeptonAngle",
 
         "Neutrino Helicity",
-        "MariaMuonCurvature",
+        # "MariaMuonCurvature",
 
         # "Etheta",
         # "Eavail",
@@ -111,7 +111,7 @@ SAMPLE_CUTS = {
         #"ZDifference_vtx",
         #"ProtonEnd",
         #"ContainedProton",
-     ]
+    ]
 }
 
 KINEMATICS_CUTS = [

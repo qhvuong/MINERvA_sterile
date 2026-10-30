@@ -592,22 +592,22 @@ PLOTS_TO_MAKE = [
 
 
     {"name":"Biased Neutrino Energy", "plot_type":"stacked"},
-    {"name":"True Neutrino Energy", "plot_type":"stacked"},
-    {"name":"Lepton Energy", "plot_type":"stacked"},
-    {"name":"True Lepton Energy", "plot_type":"stacked"},
-    {"name":"Visible Energy", "plot_type":"stacked"},
-    {"name":"Lepton Pt", "plot_type":"stacked"},
-    {"name":"Lepton Ppar", "plot_type":"stacked"},
+    # # {"name":"True Neutrino Energy", "plot_type":"stacked"},
+    # {"name":"Lepton Energy", "plot_type":"stacked"},
+    # # {"name":"True Lepton Energy", "plot_type":"stacked"},
+    # {"name":"Visible Energy", "plot_type":"stacked"},
+    # {"name":"Lepton Pt", "plot_type":"stacked"},
+    # {"name":"Lepton Ppar", "plot_type":"stacked"},
 
-    {"name":"Lepton Ppar vs Available Energy", "plot_type":"stacked"},
-    {"name":"Lepton Pt vs Available Energy", "plot_type":"stacked"},
+    # {"name":"Lepton Ppar vs Available Energy", "plot_type":"stacked"},
+    # {"name":"Lepton Pt vs Available Energy", "plot_type":"stacked"},
 
-    {"name":"Lepton Ppar vs Available Energy", "plot_type":"category_hist"},
-    {"name":"Lepton Pt vs Available Energy", "plot_type":"category_hist"},
+    # {"name":"Lepton Ppar vs Available Energy", "plot_type":"category_hist"},
+    # {"name":"Lepton Pt vs Available Energy", "plot_type":"category_hist"},
 
 
-    {"name":"Lepton Ppar vs Lepton Pt", "plot_type":"stacked"},
-    {"name":"Lepton Pt vs Lepton Ppar", "plot_type":"stacked"},
+    # {"name":"Lepton Ppar vs Lepton Pt", "plot_type":"stacked"},
+    # {"name":"Lepton Pt vs Lepton Ppar", "plot_type":"stacked"},
 
     # {"name":"Q2", "plot_type":"stacked"},
     # {"name":"Reco Q2", "plot_type":"stacked"},
@@ -731,46 +731,46 @@ PLOTS_TO_MAKE = [
     # {"name":"True Neutrino Energy",
     #     "plot_type" : "stacked"},
 
+    {"name":"Reco ThetaX vs Vertex X",
+       "plot_type" : "profileX"}, 
     # {"name":"Reco ThetaX vs Vertex X",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"Reco ThetaX vs Vertex X",
     #    "plot_type" : "category_hist"}, 
 
-    # {"name":"True ThetaX vs Vertex X",
-    #    "plot_type" : "profileX"}, 
+    {"name":"True ThetaX vs Vertex X",
+       "plot_type" : "profileX"}, 
     # {"name":"True ThetaX vs Vertex X",
     #    "plot_type" : "category_hist"}, 
 
 
-    # {"name":"Reco ThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},    
+    {"name":"Reco ThetaY vs Vertex Y",
+       "plot_type" : "profileX"},    
     # {"name":"Reco ThetaY vs Vertex Y",
     #    "plot_type" : "category_hist"}, 
 
-    # {"name":"True ThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},
+    {"name":"True ThetaY vs Vertex Y",
+       "plot_type" : "profileX"},
     # {"name":"True ThetaY vs Vertex Y",
     #    "plot_type" : "category_hist"}, 
 
 
-    # {"name":"dThetaX vs Vertex X",
-    #    "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex X",
+       "plot_type" : "profileX"},  
     # {"name":"dThetaX vs Vertex X",
     #    "plot_type" : "category_hist"},  
 
-    # {"name":"dThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex Y",
+       "plot_type" : "profileX"},  
     # {"name":"dThetaY vs Vertex Y",
     #    "plot_type" : "category_hist"},  
 
 
-    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-    #    "plot_type" : "profileX"}, 
+    {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+       "plot_type" : "profileX"}, 
     # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
     #    "plot_type" : "category_hist"}, 
 
-    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-    #    "plot_type" : "profileX"}, 
+    {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+       "plot_type" : "profileX"}, 
     # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
     #    "plot_type" : "category_hist"}, 
 

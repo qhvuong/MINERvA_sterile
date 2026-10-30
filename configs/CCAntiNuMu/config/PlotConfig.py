@@ -224,8 +224,25 @@ PAPER_LEPTON_PT_BINS = [
 
 # Paper longitudinal momentum bins
 PAPER_LEPTON_PPAR_BINS = [
-    1.50, 2.00, 2.50, 3.00, 3.50, 4.50
+    1.5, 2.0, 2.5, 3.0, 3.5, 4.5
 ]
+
+
+DAN_EAVAIL_BINS = [
+    0.00,
+    0.02,
+    0.04,
+    0.08,
+    0.12,
+    0.16,
+    0.24,
+    0.32,
+    0.40,
+    0.60,
+    0.799,
+]
+
+
 
 MARIA_PT_BINS = [
     0.00, 0.07, 0.15, 0.25, 0.33, 0.40, 0.47,
@@ -237,6 +254,37 @@ MARIA_PPAR_BINS = [
     5.00, 6.00, 7.00, 8.00, 9.00, 10.00,
     15.00, 20.00, 30.00, 40.00
 ]
+
+# MARIA_PT_FINE_BINS = [
+#     0.0, 0.0375, 0.075, 0.1125, 0.15,
+#     0.2, 0.25, 0.2875, 0.325, 0.3625,
+#     0.4, 0.4375, 0.475, 0.5125, 0.55,
+#     0.625, 0.7, 0.775, 0.85, 0.925,
+#     1.0, 1.125, 1.25, 1.375, 1.5,
+#     1.75, 2.0, 2.25, 2.5
+# ]
+
+# MARIA_PPAR_FINE_BINS = [
+#     1.5, 1.75, 2.0, 2.25, 2.5, 2.75,
+#     3.0, 3.25, 3.5, 3.75, 4.0, 4.25,
+#     4.5, 4.75, 5.0, 5.5, 6.0, 6.5,
+#     7.0, 7.5, 8.0, 8.5, 9.0, 9.5,
+#     10.0, 11.25, 12.5, 13.75, 15.0,
+#     17.5, 20.0, 25.0, 30.0, 35.0, 40.0
+# ]
+
+MARIA_PPAR_FINE_BINS = [
+    1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0,
+    6.0, 7.0, 8.0, 9.0, 10.0, 15.0,
+    20.0, 30.0, 40.0
+]
+
+MARIA_PT_FINE_BINS = [
+    0.0, 0.075, 0.15, 0.25, 0.325, 0.40,
+    0.475, 0.55, 0.70, 0.85, 1.00,
+    1.25, 1.50, 2.50
+]
+
 
 
 
@@ -350,23 +398,33 @@ HISTS_TO_MAKE = [
     # Basic reconstructed / truth kinematics
     # --------------------------------------------------
     "Biased Neutrino Energy",
-    "True Neutrino Energy",
+    # "True Neutrino Energy",
 
     "Lepton Energy",
-    "True Lepton Energy",
+    # "True Lepton Energy",
 
     "Visible Energy",
     "Lepton Pt",
+    "Lepton Ppar",
+
+	"Lepton Energy vs Available Energy",
+
+	"Lepton Pt vs Lepton Ppar",
+	"Lepton Ppar vs Lepton Pt",
+
+	# "Lepton Ppar vs Available Energy",
+	# "Lepton Pt vs Available Energy",
+	# "Available Energy vs Pt vs Ppar",
 
     # --------------------------------------------------
     # Cuts study
     # --------------------------------------------------
-	"DeadTime",
-	"VertexTrackMultiplicity",
-	"StartPointVertexMultiplicity",
-	"HasNoVertexMismatch",
-	"HasTracks",
-	"E Theta Squared",
+	# "DeadTime",
+	# "VertexTrackMultiplicity",
+	# "StartPointVertexMultiplicity",
+	# "HasNoVertexMismatch",
+	# "HasTracks",
+	# "E Theta Squared",
 
 
     # "Q2",          # true Q2

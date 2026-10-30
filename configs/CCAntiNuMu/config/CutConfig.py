@@ -29,7 +29,7 @@ EXUV_CUT = 0.2
 EUV_CUT = 0.3
 
 DEDX_PLANES = [5,9]
-HELICITY= -1
+HELICITY= 1
 
 #OLD
 FIDUCIAL_APOTHEM = 850
@@ -70,16 +70,24 @@ FRONT_DEDX_PI0_UPPERBOUND = 5
 # choose the cuts you want from cut library
 
 SAMPLE_CUTS = {
-    "Signal" : [
+    "Signal" : [ 
         "NoCut",
         "Vertex_Z",
         "Vertex_Apothem",
         "InverseHasNoBackExitingTracks",
         "DeadTime",
+        "LeptonAngle",
+
+        "Neutrino Helicity",
+        "MariaMuonCurvature",
+
         # "Etheta",
         # "Eavail",
-        "LeptonAngle",
         # "Pt",
+        # "Ppar",
+        # "HasNoImprovedMichelElectrons",
+        # "ExtraTracksAreProtons",
+        # "PassQEBlobSelection",        
 
         # "HasNoBackExitingTracks",
         # "HasMINOSMatch",
@@ -90,14 +98,17 @@ SAMPLE_CUTS = {
         # "HasMINOSMatch",        
         # "LeptonAngle",
         # "DeadTime",
-        # # "IsNeutrino",
+        # "IsNeutrino",
+
+        # "Neutrino Helicity",
+        # "MariaMuonCurvature",
 
         # Removed Cuts
         #"ZDifference",
         #"ZDifference_vtx",
         #"ProtonEnd",
         #"ContainedProton",
-     ]
+    ]
 }
 
 KINEMATICS_CUTS = [

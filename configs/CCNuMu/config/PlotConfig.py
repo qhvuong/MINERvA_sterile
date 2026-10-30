@@ -393,25 +393,23 @@ HISTS_TO_MAKE = [
     # Basic reconstructed / truth kinematics
     # --------------------------------------------------
     "Biased Neutrino Energy",
-    "True Neutrino Energy",
+    # "True Neutrino Energy",
 
     "Lepton Energy",
-    "True Lepton Energy",
+    # "True Lepton Energy",
 
     "Visible Energy",
     "Lepton Pt",
     "Lepton Ppar",
 
-	"Lepton Ppar vs Available Energy",
-	"Lepton Pt vs Available Energy",
-	"Available Energy vs Pt vs Ppar",
-
 	"Lepton Energy vs Available Energy",
-
 
 	"Lepton Pt vs Lepton Ppar",
 	"Lepton Ppar vs Lepton Pt",
 
+	# "Lepton Ppar vs Available Energy",
+	# "Lepton Pt vs Available Energy",
+	# "Available Energy vs Pt vs Ppar",
 
     # --------------------------------------------------
     # Cuts study
