@@ -938,6 +938,24 @@ PLOT_SETTINGS= {
                           lambda event: event.kin_cal.reco_visE],
         "tags": reco_tags   
     },
+    "Lepton Energy vs Lepton Angle":
+    {
+        "name": "Elepton_LepAngle",
+
+        "title": "Lepton Energy vs Lepton Angle; Reconstructed Lepton Energy (GeV); Reconstructed Lepton Angle (deg); NEvents",
+
+        "binning": [
+            PlotConfig.NEUTRINO4_EE_BINNING,
+            PlotConfig.LEPTON_ANGLE_BINNING,
+        ],
+
+        "value_getter": [
+            lambda event: event.kin_cal.reco_E_lep,
+            lambda event: event.kin_cal.reco_theta_lep,
+        ],
+
+        "tags": reco_tags,
+    },
     "Lepton Energy vs Available Energy":
     {
         "name" : "Elepton_Eavail",

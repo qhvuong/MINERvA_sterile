@@ -782,6 +782,35 @@ class PlotProcessor():
     #             ),
     #             flush=True,
     #         )
+
+
+
+    # def FillHist(self, universe, value, wgt):
+    #     import math
+
+    #     if value.count(None) != 0:
+    #         return
+
+    #     values = value + [wgt]
+
+    #     try:
+    #         valid = all(math.isfinite(float(v)) for v in values)
+    #     except (TypeError, ValueError, OverflowError):
+    #         valid = False
+
+    #     if not valid:
+    #         print(
+    #             "[NONFINITE FILL]",
+    #             "hist =", self.histwrapper.name,
+    #             "entry =", universe.GetEntry(),
+    #             "universe =", universe.ShortName(),
+    #             "values =", value,
+    #             "weight =", wgt,
+    #             flush=True,
+    #         )
+    #         # raise RuntimeError("Nonfinite histogram fill detected")
+
+    #     self.histwrapper.FillUniverse(universe, *values)
     def FillHist(self,universe,value,wgt):
         if value.count(None) == 0:
             args = value+[wgt]

@@ -34,8 +34,9 @@ from config import SystematicsConfig
 ROOT.TH1.AddDirectory(False)
 
 
+
 def plotRecoKin(mc, chainwrapper, outfile):
-    """The main code of event selection."""
+    """Main event selection with nonfinite CV-weight diagnostics."""
 
     kin_cal = KinematicsCalculator(
         correct_beam_angle=True,
@@ -65,18 +66,18 @@ def plotRecoKin(mc, chainwrapper, outfile):
     nEvents = chainwrapper.GetEntries()
     print("Total number of events RECO:", nEvents)
 
-    if AnalysisConfig.testing and nEvents > 1000:
-        nEvents = 1000
+    if AnalysisConfig.testing and nEvents > 2000:
+        nEvents = 2000
 
-    # ============================================================
-    # EVENT LOOP
-    # ============================================================
+    print("plotRecoKin, mc", mc)
+
     setAlarm = AnalysisConfig.grid
 
     for counter in range(nEvents):
 
         if counter % 10000 == 0:
-            print(counter)
+            print(counter, flush=True)
+
             if setAlarm:
                 signal.alarm(900)
 
@@ -84,10 +85,21 @@ def plotRecoKin(mc, chainwrapper, outfile):
 
             universe.SetEntry(counter)
 
-            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType == 8:
+            universe.__dict__.pop(
+                "_cached_new_true_l_over_e", None
+            )
+
+            universe.ResetWeight()
+
+            if (
+                mc
+                and AnalysisConfig.skip_2p2h
+                and universe.mc_intType == 8
+            ):
                 continue
 
-            # Only recalculate for non-vertical universes.
+            # Recalculate kinematics and classification
+            # for non-vertical-only universes.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
@@ -100,82 +112,47 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if not selected:
                 continue
 
-            # ============================================================
-            # CCNUE MINOS EFFICIENCY DIAGNOSTIC — CV MC ONLY
-            # ============================================================
+            # =============================================
+            # DEBUG: Check selected CV event weight
+            # =============================================
             if mc and universe.ShortName() == "cv":
 
-                if not hasattr(plotRecoKin, "_minos_debug"):
-                    plotRecoKin._minos_debug = {
-                        "count": 0,
-                        "nonunity": 0,
-                        "flag_true": 0,
-                        "flag_false": 0,
-                        "nonunity_flag_true": 0,
-                        "nonunity_flag_false": 0,
-                    }
+                total_weight = universe.GetWeight()
 
-                d = plotRecoKin._minos_debug
+                if not math.isfinite(float(total_weight)):
 
-                raw_weight = float(universe.GetMinosEfficiencyWeight())
-                protected_weight = float(universe.GetMyMinosEfficiencyWeight())
-                flag = bool(universe.HasNoBackExitingTracks)
-
-                d["count"] += 1
-                d["nonunity"] += abs(raw_weight - 1.0) > 1e-10
-
-                if flag:
-                    d["flag_true"] += 1
-                    d["nonunity_flag_true"] += abs(raw_weight - 1.0) > 1e-10
-                else:
-                    d["flag_false"] += 1
-                    d["nonunity_flag_false"] += abs(raw_weight - 1.0) > 1e-10
-
-                if d["count"] <= 20:
                     print(
-                        "[CCNUE MINOS EFF]",
+                        "\n[BAD CV EVENT]",
                         "entry =", counter,
-                        "truePDG =", universe.mc_incoming,
-                        "HasNoBackExitingTracks =", flag,
-                        "MINOSMatch =", universe.GetInt("isMinosMatchTrack"),
-                        "raw =", raw_weight,
-                        "protected =", protected_weight,
+                        "total_weight =", total_weight,
+                        "side_band =", eventClassifier.side_band,
+                        "is_true_signal =",
+                        eventClassifier.is_true_signal,
                         flush=True,
                     )
 
-            # ====================================================
-            # ORIGINAL HISTOGRAM FILLING
-            # ====================================================
+                    # Method defined in SystematicsUniverse.py
+                    universe.DebugCVWeights(entry=counter)
+
+                    raise RuntimeError(
+                        "Nonfinite CV weight at entry {}".format(
+                            counter
+                        )
+                    )
+
+            # =============================================
+            # Normal histogram processing
+            # =============================================
             for entry in Plots:
                 entry.Process(universe)
 
     signal.alarm(0)
 
-    if mc and hasattr(plotRecoKin, "_minos_debug"):
-        d = plotRecoKin._minos_debug
-
-        print("\n========== CCNUE MINOS EFFICIENCY ==========")
-        print("Selected CV events:", d["count"])
-        print("Raw weight != 1:", d["nonunity"])
-        print("HasNoBackExitingTracks = True:", d["flag_true"])
-        print("HasNoBackExitingTracks = False:", d["flag_false"])
-        print(
-            "Nonunity raw weight, flag=True:",
-            d["nonunity_flag_true"],
-        )
-        print(
-            "Nonunity raw weight, flag=False:",
-            d["nonunity_flag_false"],
-        )
-        print("===========================================\n")
-
-    # ============================================================
-    # FINALIZE HISTOGRAMS
-    # ============================================================
     outfile.cd()
 
     for entry in Plots:
         entry.Finalize()
+
 
 
 

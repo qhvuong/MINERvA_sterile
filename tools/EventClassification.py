@@ -121,14 +121,6 @@ class EventClassifier(object):
     def _ClassifyReco(self):
         """ Determine if the event passes the cuts on reconstructed quantities. """
 
-        if not getattr(self, "_printed_minos_cut_info", False):
-            print("[MINOS DEBUG] Active cuts:", sorted(self.reco_cuts_passed))
-            print(
-                "[MINOS DEBUG] HasMINOSMatch active:",
-                "HasMINOSMatch" in self.reco_cuts_passed
-            )
-            self._printed_minos_cut_info = True
-
         # Check all cuts for simplicity. A better way is only checking cuts that will be used.
         for cut_name in self.reco_cuts_passed:
             cut = self.cuts[cut_name]

@@ -137,8 +137,8 @@ def DebugHasMINOSMatch(event, nprong):
 
     return direct
 
-print("[MINOS DEBUG] CutLibrary loaded from:", __file__)
-print("[MINOS DEBUG] DebugHasMINOSMatch registered")
+# print("[MINOS DEBUG] CutLibrary loaded from:", __file__)
+# print("[MINOS DEBUG] DebugHasMINOSMatch registered")
 
 
 def FHC_Cut(available_energy,lepton_energy):
@@ -600,16 +600,16 @@ CUT_CONFIGS = {
         "cut_fn": lambda val: CutConfig.HELICITY is None or val * CutConfig.HELICITY>0,
         "variable_range": [-1.1,0,1.1]
     },
-    "HasMINOSMatch Legacy" : {
+    "HasMINOSMatch" : {
         "value_getter": lambda event,nprong: event.IsMinosMatchMuon(),
         "cut_fn": lambda val: val,
         "variable_range": [-1.1,0,1.1]
     },
-    "HasMINOSMatch": {
-        "value_getter": DebugHasMINOSMatch,
-        "cut_fn": lambda val: val,
-        "variable_range": [-1.1, 0, 1.1],
-    },
+    # "HasMINOSMatch": {
+    #     "value_getter": DebugHasMINOSMatch,
+    #     "cut_fn": lambda val: val,
+    #     "variable_range": [-1.1, 0, 1.1],
+    # },
     "IsNeutrino": {
         "value_getter": lambda event, nprong: event.GetMuonQP(),
         "cut_fn": lambda val: val < 0,
