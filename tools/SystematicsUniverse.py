@@ -30,8 +30,8 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
-USE_MNVTUNE_V1 = True
-USE_MNVTUNE_V4P3P0 = False
+USE_MNVTUNE_V1 = False
+USE_MNVTUNE_V4P3P0 = True
 USE_MNVTUNE_V4P4P1 = False
 
 
@@ -1144,10 +1144,88 @@ class CVPythonUniverse():
             pdg
         )
 
-        # --------------------------------------------------
-        # LE low-recoil Valencia 2p2h
-        # --------------------------------------------------
-        weight *= self.GetLowRecoil2p2hWeight()
+        # ------------------------------------------------------------
+        # Low-recoil 2p2h CV correction: invalid truth-kinematics guard
+        # ------------------------------------------------------------
+        #
+        # Motivation (October 2026):
+        # During validation of the MINERvA LE p8 CCnumubar selection,
+        # several MC files contained NaN histogram bins, which propagated
+        # through madd and caused the merged distributions to become
+        # unusable.
+        #
+        # Event-level debugging traced the problem to the MAT
+        # GetLowRecoil2p2hWeight() calculation. An example was a
+        # CC antineutrino-electron MEC event (mc_intType == 8) on carbon
+        # with:
+        #
+        #   true Enu = 40.07 GeV
+        #   mc_Q2    = -99999 GeV^2 (invalid sentinel)
+        #   mc_w     =  99999 GeV   (invalid sentinel)
+        #   q0       = 13.46 GeV
+        #   q3       = NaN
+        #
+        # Inspection of MAT-MINERvA showed that Getq3True() derives q3
+        # from the truth kinematics, while the 2p2h reweighter directly
+        # evaluates a 2D Gaussian in (q0, q3), without checking whether
+        # these inputs are finite. Consequently, invalid truth kinematics
+        # can produce a NaN 2p2h weight and contaminate the entire CV
+        # histogram bin.
+        #
+        # Safeguard:
+        # For eligible MEC events on nuclear targets, evaluate the MAT
+        # correction only when both q0 and q3 are finite. Otherwise,
+        # assign a unity 2p2h correction while retaining the event and
+        # all other CV-weight components.
+        #
+        # This avoids passing invalid inputs into MAT and preserves
+        # valid events without introducing arbitrary Q2 or W cutoffs.
+        # The unity fallback is an analysis-level numerical safeguard,
+        # not a fallback explicitly prescribed by MAT.
+        #
+        # IMPORTANT:
+        # Monitor the number and properties of affected events. The
+        # fallback should be validated for the physics analysis, and
+        # 2p2h systematic universes must be checked separately because
+        # their weight ratios can encounter the same invalid kinematics.
+        # ------------------------------------------------------------
+        # Undefined MAT 2p2h correction due to nonfinite q0/q3:
+        # use unity for this component only; do not discard the event.
+        w_2p2h = 1.0
+
+        if self.mc_intType == 8 and self.mc_targetZ >= 2:
+
+            q0 = self.Getq0True() * 1e-3
+            q3 = self.Getq3True() * 1e-3
+
+            if math.isfinite(q0) and math.isfinite(q3):
+                w_2p2h = self.GetLowRecoil2p2hWeight()
+
+                if not math.isfinite(w_2p2h):
+                    raise RuntimeError(
+                        "Nonfinite 2p2h weight with finite q0/q3"
+                    )
+
+            else:
+                if not hasattr(CVPythonUniverse, "_invalid_2p2h_count"):
+                    CVPythonUniverse._invalid_2p2h_count = 0
+
+                CVPythonUniverse._invalid_2p2h_count += 1
+
+                if CVPythonUniverse._invalid_2p2h_count <= 20:
+                    print(
+                        "[INVALID 2P2H KINEMATICS]",
+                        "count =", CVPythonUniverse._invalid_2p2h_count,
+                        "q0 =", q0,
+                        "q3 =", q3,
+                        "mc_Q2 =", self.mc_Q2,
+                        "mc_intType =", self.mc_intType,
+                        "targetZ =", self.mc_targetZ,
+                        "fallback_weight = 1.0",
+                        flush=True,
+                    )
+
+        weight *= w_2p2h
 
         # --------------------------------------------------
         # Valencia QE RPA

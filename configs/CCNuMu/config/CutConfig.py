@@ -84,11 +84,11 @@ SAMPLE_CUTS = {
         "LeptonAngle",
 
         "Neutrino Helicity",
-        "MuonCurvature",
+        # "MuonCurvature",
 
-        # "Etheta",
-        # "Eavail",
-        # "Pt",
+        "Etheta",
+        "Eavail",
+        "Pt",
         # "Ppar",
         # "HasNoImprovedMichelElectrons",
         # "ExtraTracksAreProtons",

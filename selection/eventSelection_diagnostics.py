@@ -15,6 +15,7 @@ import sys
 from itertools import chain
 import math
 
+
 #start loading my modules
 from tools import Utilities
 from config.PlotConfig import HISTS_TO_MAKE
@@ -36,121 +37,71 @@ ROOT.TH1.AddDirectory(False)
 
 
 def plotRecoKin(mc, chainwrapper, outfile):
-    """Main event selection with nonfinite CV-weight diagnostics."""
-
-    kin_cal = KinematicsCalculator(
-        correct_beam_angle=True,
-        correct_MC_energy_scale=False,
-        calc_true=mc,
-        is_pc=AnalysisConfig.is_pc,
-    )
-
-    eventClassifier = EventClassifier(
-        classifiers=["Reco", "Truth"] if mc else ["Reco"],
-        use_kin_cuts=True,
-        use_sideband=AnalysisConfig.sidebands,
-    )
-
-    universes = GetAllSystematicsUniverses(
-        chainwrapper,
-        not mc,
-        AnalysisConfig.is_pc,
-        AnalysisConfig.exclude_universes,
-    )
+    """ The main code of event selection """
+    kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
+    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
+    universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
 
     for univ in chain.from_iterable(iter(universes.values())):
-        univ.LoadTools(kin_cal, eventClassifier)
+        univ.LoadTools(kin_cal,eventClassifier)
 
-    Plots = preparePlots(universes, mc)
-
+    Plots = preparePlots(universes,mc)
     nEvents = chainwrapper.GetEntries()
-    print("Total number of events RECO:", nEvents)
 
-    if AnalysisConfig.testing and nEvents > 2000:
-        nEvents = 2000
 
-    print("plotRecoKin, mc", mc)
+    from studies.rhc_cv_weight_audit import CVWeightAudit
 
+    audit = CVWeightAudit(
+        "rhc_cv_weight_audit.csv",
+        max_rows=20000,
+    ) if mc else None
+
+    debug_prints = 0
+
+    print(f"Total number of events RECO: ", {nEvents})
+    if AnalysisConfig.testing and nEvents > 20000:
+        nEvents = 20000
+    print("plotRecoKin, mc ",mc)
     setAlarm = AnalysisConfig.grid
-
     for counter in range(nEvents):
-
-        if counter % 10000 == 0:
-            print(counter, flush=True)
-
+        #1/4 hour for 10k event, should be more than needed unless stuck in I/O
+        if counter %10000 == 0:
+            print(counter)
             if setAlarm:
                 signal.alarm(900)
+        flux_debug_this_event = 0
+        selected_event_for_debug = False
 
         for universe in chain.from_iterable(iter(universes.values())):
-
             universe.SetEntry(counter)
-
-            universe.__dict__.pop(
-                "_cached_new_true_l_over_e", None
-            )
-
+            universe.__dict__.pop("_cached_new_true_l_over_e", None)
             universe.ResetWeight()
-
-            if (
-                mc
-                and AnalysisConfig.skip_2p2h
-                and universe.mc_intType == 8
-            ):
+            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
                 continue
 
-            # Recalculate kinematics and classification
-            # for non-vertical-only universes.
+            #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-            selected = (
-                eventClassifier.side_band is not None
-                or eventClassifier.is_true_signal
-            )
+                if (
+                    audit is not None
+                    and universe.ShortName() == "cv"
+                    and eventClassifier.is_reco_signal
+                ):
+                    audit.record(universe, counter)
 
-            if not selected:
-                continue
+            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+                for entry in Plots:
+                    entry.Process(universe)
 
-            # =============================================
-            # DEBUG: Check selected CV event weight
-            # =============================================
-            if mc and universe.ShortName() == "cv":
-
-                total_weight = universe.GetWeight()
-
-                if not math.isfinite(float(total_weight)):
-
-                    print(
-                        "\n[BAD CV EVENT]",
-                        "entry =", counter,
-                        "total_weight =", total_weight,
-                        "side_band =", eventClassifier.side_band,
-                        "is_true_signal =",
-                        eventClassifier.is_true_signal,
-                        flush=True,
-                    )
-
-                    # Method defined in SystematicsUniverse.py
-                    universe.DebugCVWeights(entry=counter)
-
-                    raise RuntimeError(
-                        "Nonfinite CV weight at entry {}".format(
-                            counter
-                        )
-                    )
-
-            # =============================================
-            # Normal histogram processing
-            # =============================================
-            for entry in Plots:
-                entry.Process(universe)
+    if audit is not None:
+        audit.close()
 
     signal.alarm(0)
-
     outfile.cd()
-
     for entry in Plots:
+        #print entry.histwrapper.name
         entry.Finalize()
 
 
