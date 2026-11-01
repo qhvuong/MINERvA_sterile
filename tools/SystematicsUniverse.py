@@ -2593,92 +2593,78 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
         return [ElectronEnergyShiftUniverse(chain, i,region) for region in SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY for i in OneSigmaShift]
 
 ###########################################################################
-# # Ryan's electron energy scale class
-# class ElectronEnergyScaleUniverse(CVSystematicUniverse):
-#     def __init__(self,chain, nsigma):
-#         super(ElectronEnergyScaleUniverse,self).__init__(chain, nsigma)
-
-#     def ElectronEnergyRaw(self):
-#         return self.nsigma*SystematicsConfig.ELECTRON_ENERGY_SCALE* super(ElectronEnergyScaleUniverse,self).ElectronEnergyRaw()
-
-#     def ShortName(self):
-#         return "electron_scale"
-
-#     def LatexName(self):
-#         return "Electron Energy Scale"
-
-#     @staticmethod
-#     def GetSystematicsUniverses(chain):
-#         return [ElectronEnergyScaleUniverse(chain, i)  for i in OneSigmaShift]
-
-# # My old electron energy scale class
-# class ElectronEnergyScaleUniverse(CVSystematicUniverse):
-#     def __init__(self, chain, nsigma):
-#         super(ElectronEnergyScaleUniverse, self).__init__(chain, nsigma)
-
-#     def _scale_factor(self):
-#         return 1.0 + self.nsigma * SystematicsConfig.ELECTRON_ENERGY_SCALE
-
-#     def ElectronP3D_det(self):
-#         """
-#         Apply a global ±1σ electron energy/momentum scale shift
-#         to the corrected detector-coordinate electron momentum.
-
-#         This makes ElectronEnergy(), ElectronP3D(), and EN4 all see
-#         the same shifted reconstructed lepton energy.
-#         """
-#         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det()
-#         return p * self._scale_factor()
-
-#     def ElectronP3D_det_noEMshift(self):
-#         """
-#         Apply the same global scale to the no-EM-shift momentum used by
-#         ElectronEnergyRaw() and leakage-related correction paths.
-#         """
-#         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det_noEMshift()
-#         return p * self._scale_factor()
-
-#     def ShortName(self):
-#         return "electron_scale"
-
-#     def LatexName(self):
-#         return "Electron Energy Scale"
-
-#     @staticmethod
-#     def GetSystematicsUniverses(chain):
-#         return [ElectronEnergyScaleUniverse(chain, i) for i in OneSigmaShift]
 class ElectronEnergyScaleUniverse(CVSystematicUniverse):
+    """
+    Global electron energy-scale systematic (±1 sigma).
+
+    Based on Ryan Howell's original ElectronEnergyScaleUniverse,
+    with corrections to ensure that:
+
+      1. The shifted energy retains the nominal reconstructed energy.
+         E_syst = E_CV * (1 + nsigma * delta)
+
+      2. The scale is applied to the fully corrected electron energy,
+         including the nominal EM energy correction.
+
+      3. The electron momentum magnitude receives the same fractional
+         shift, while its direction is preserved.
+
+    This is distinct from ElectronEnergyShiftUniverse, which varies
+    the region-dependent EM calorimetric correction.
+
+    The CV prediction is unchanged; these shifts are applied only
+    to the systematic universes.
+    """
+
     def __init__(self, chain, nsigma):
-        super(ElectronEnergyScaleUniverse, self).__init__(chain, nsigma)
+        super(ElectronEnergyScaleUniverse, self).__init__(
+            chain, nsigma
+        )
 
     def _scale_factor(self):
+        # Global fractional calibration uncertainty.
+        # nsigma = -1 or +1.
         return 1.0 + self.nsigma * SystematicsConfig.ELECTRON_ENERGY_SCALE
 
-    def ElectronEnergyRaw(self):
-        """
-        Apply the global ±1σ electron energy-scale shift
-        to the reconstructed electron energy.
-        """
-        e = super(ElectronEnergyScaleUniverse, self).ElectronEnergyRaw()
+    def ElectronEnergy(self):
+        # ElectronEnergy() in CVPythonUniverse returns:
+        #
+        #   E_CV = ElectronEnergyRaw() + GetEMEnergyShift()
+        #
+        # Apply the global scale to the FULL corrected energy:
+        #
+        #   E_syst = E_CV * (1 + nsigma * delta)
+        #
+        # Do not override ElectronEnergyRaw() here. Scaling both
+        # ElectronEnergyRaw() and ElectronEnergy() would double-count
+        # the scale in the nominal energy component.
+        e = super(ElectronEnergyScaleUniverse, self).ElectronEnergy()
         return e * self._scale_factor()
 
     def ElectronP3D_det(self):
-        """
-        Apply the same global ±1σ scale shift to the magnitude of the
-        corrected detector-coordinate electron momentum.
-
-        The direction is unchanged, so angular observables are unaffected
-        by this systematic while momentum-dependent observables shift
-        consistently with ElectronEnergy().
-        """
+        # Start from the CV detector-coordinate momentum, which
+        # already includes the nominal EM correction and the
+        # electron angular bias correction.
+        #
+        # Apply the same global scale to the momentum magnitude.
+        # Multiplying the entire vector preserves its direction.
+        #
+        # ElectronP3D() subsequently rotates this vector into
+        # beam coordinates, so the shift propagates automatically
+        # to momentum- and angle-dependent observables.
         p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det()
         return p * self._scale_factor()
 
     def ElectronP3D_det_noEMshift(self):
-        """
-        Apply the same global scale to the no-EM-shift momentum path.
-        """
-        p = super(ElectronEnergyScaleUniverse, self).ElectronP3D_det_noEMshift()
+        # Scale the alternate detector-coordinate momentum path
+        # without the nominal EM energy correction.
+        #
+        # Keep this consistent with ElectronP3D_det() for any
+        # calculation that explicitly uses the no-EM-shift momentum.
+        p = super(
+            ElectronEnergyScaleUniverse, self
+        ).ElectronP3D_det_noEMshift()
+
         return p * self._scale_factor()
 
     def ShortName(self):
@@ -2689,7 +2675,11 @@ class ElectronEnergyScaleUniverse(CVSystematicUniverse):
 
     @staticmethod
     def GetSystematicsUniverses(chain):
-        return [ElectronEnergyScaleUniverse(chain, i) for i in OneSigmaShift]
+        # Two universes: -1 sigma and +1 sigma.
+        return [
+            ElectronEnergyScaleUniverse(chain, i)
+            for i in OneSigmaShift
+        ]
 
 
 ###########################################################################
