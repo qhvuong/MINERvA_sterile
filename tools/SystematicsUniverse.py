@@ -2598,9 +2598,21 @@ class BirksShiftUniverse(CVSystematicUniverse):
 ###########################################################################
 
 class BeamAngleShiftUniverse(CVSystematicUniverse):
-    def __init__(self,chain, nsigma, x):
-        super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
-        self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
+
+    def __init__(self, chain, nsigma, x):
+        super().__init__(chain, nsigma)
+
+        self.axis = "X" if x else "Y"
+        uncertainty = (
+            SystematicsConfig.BEAM_XANGLE_UNCERTAINTY
+            if x else SystematicsConfig.BEAM_YANGLE_UNCERTAINTY
+        )
+
+        angle = uncertainty * nsigma
+        self.rotation = (
+            ROOT.Math.RotationX(angle)
+            if x else ROOT.Math.RotationY(angle)
+        )
 
     def ShortName(self):
         return "beam_angle"
@@ -2609,16 +2621,69 @@ class BeamAngleShiftUniverse(CVSystematicUniverse):
         return "Beam Angle"
 
     def ElectronP3D(self):
-        p = super(BeamAngleShiftUniverse,self).ElectronP3D()
+        p = super().ElectronP3D()
         return self.rotation(p)
 
     def MuonP3D_beam(self):
-        p = super(BeamAngleShiftUniverse, self).MuonP3D_beam()
+        p = super().MuonP3D_beam()
         return self.rotation(p)
 
+    def GetThetamu(self):
+        # MAT projected muon angles, in radians.
+        theta_x = self.GetThetaXmu()
+        theta_y = self.GetThetaYmu()
+
+        # Reproduce MAT's theta3D(thetaX, thetaY).
+        sec_x = 1.0 / math.cos(theta_x)
+        sec_y = 1.0 / math.cos(theta_y)
+
+        denom = sec_x**2 + sec_y**2 - 1.0
+        theta_mat = math.acos(
+            min(1.0, max(-1.0, 1.0 / math.sqrt(denom)))
+        )
+
+        if theta_x > math.pi / 2 or theta_y > math.pi / 2:
+            theta_mat = math.pi - theta_mat
+
+        # Apply the additional beam-angle rotation.
+        p_nom = CVPythonUniverse.MuonP3D_beam(self)
+        p_var = self.rotation(p_nom)
+
+        if p_nom.R() <= 0:
+            return theta_mat
+
+        return theta_mat + p_var.Theta() - p_nom.Theta()
+
+
     @staticmethod
-    def GetSystematicsUniverses(chain ):
-        return [BeamAngleShiftUniverse(chain, i, j) for j in [True,False] for i in OneSigmaShift]
+    def GetSystematicsUniverses(chain):
+        return [
+            BeamAngleShiftUniverse(chain, sigma, x)
+            for x in (True, False)
+            for sigma in OneSigmaShift
+        ]
+# class BeamAngleShiftUniverse(CVSystematicUniverse):
+#     def __init__(self,chain, nsigma, x):
+#         super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
+#         self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
+
+#     def ShortName(self):
+#         return "beam_angle"
+
+#     def LatexName(self):
+#         return "Beam Angle"
+
+#     def ElectronP3D(self):
+#         p = super(BeamAngleShiftUniverse,self).ElectronP3D()
+#         return self.rotation(p)
+
+#     def MuonP3D_beam(self):
+#         p = super(BeamAngleShiftUniverse, self).MuonP3D_beam()
+#         return self.rotation(p)
+
+#     @staticmethod
+#     def GetSystematicsUniverses(chain ):
+#         return [BeamAngleShiftUniverse(chain, i, j) for j in [True,False] for i in OneSigmaShift]
 
 
 class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):
