@@ -351,102 +351,76 @@ class KinematicsCalculator(object):
 
     def CalculateRecoKinematics(self):
         self._clear = False
-        if self.event.SetLeptonType():
-            nParticles = self.event.GetVecInt("prong_nParticles")
-            if len(nParticles) < 1 or nParticles[0] < 1:
-                return False
         event = self.event
 
-        #decide if whether it is muon or electron event, and get lepton kinematics
-        # self.reco_theta_lep_rad = event.LeptonTheta()
-        # self.reco_thetaX_lep_rad = event.LeptonThetaX()
-        # self.reco_thetaY_lep_rad = event.LeptonThetaY()
-        # self.reco_theta2D_lep_rad = event.LeptonTheta2D()
-        # self.reco_phi_lep_rad = event.LeptonPhi()
-        # self.reco_vertex3D_beam      = event.Vertex3D_beam()
-        self.reco_LeptonP3D_det      = event.LeptonP3D_det()
-        self.reco_LeptonP3D          = event.LeptonP3D()
+        # ============================================================
+        # Lepton initialization
+        # ============================================================
+        if event.SetLeptonType():
+            nParticles = event.GetVecInt("prong_nParticles")
+            if not nParticles or nParticles[0] < 1:
+                return False
 
-        if self.reco_LeptonP3D_det is not None and self.reco_LeptonP3D is not None:
-            reco_det_mag  = self.reco_LeptonP3D_det.R()
-            reco_beam_mag = self.reco_LeptonP3D.R()
-            if abs(reco_det_mag - reco_beam_mag) > 1e-6:
-                print(f"[WARN] reco |p| mismatch: det={reco_det_mag:.6f}, beam={reco_beam_mag:.6f}, diff={reco_det_mag-reco_beam_mag:.6e}")
+        # ============================================================
+        # Reconstructed lepton momentum and angles
+        # ============================================================
+        self.reco_LeptonP3D_det = event.LeptonP3D_det()
+        self.reco_LeptonP3D = event.LeptonP3D()
 
-            # rel_diff = (
-            #     abs(reco_det_mag - reco_beam_mag) / reco_det_mag
-            #     if reco_det_mag != 0 else 0.0
-            # )
-
-            # if reco_det_mag > 1e6:
-            #     print("\n[WARN] HUGE reco lepton momentum")
-            #     print(f"  ShortName = {self.event.ShortName()}")
-            #     print(f"  det  = ({self.reco_LeptonP3D_det.X():.12g}, "
-            #         f"{self.reco_LeptonP3D_det.Y():.12g}, "
-            #         f"{self.reco_LeptonP3D_det.Z():.12g})")
-            #     print(f"  beam = ({self.reco_LeptonP3D.X():.12g}, "
-            #         f"{self.reco_LeptonP3D.Y():.12g}, "
-            #         f"{self.reco_LeptonP3D.Z():.12g})")
-            #     print(f"  |p| det  = {reco_det_mag:.12g}")
-            #     print(f"  |p| beam = {reco_beam_mag:.12g}")
-            #     print(f"  LeptonEnergy = {self.event.LeptonEnergy():.12g}")
-            #     print(f"  abs diff = {reco_det_mag-reco_beam_mag:.12g}")
-            #     print(f"  rel diff = {rel_diff:.12g}")
-
-        self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
-        self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()
-        self.reco_thetaX_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.X(), self.reco_LeptonP3D_det.Z())
-        self.reco_thetaX_lep_rad     = math.atan2(self.reco_LeptonP3D.X(), self.reco_LeptonP3D.Z())
-        self.reco_thetaY_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.Y(), self.reco_LeptonP3D_det.Z())
-        self.reco_thetaY_lep_rad     = math.atan2(self.reco_LeptonP3D.Y(), self.reco_LeptonP3D.Z())
-
-        # self.reco_thetaY_lep_rad_det = event.LeptonThetaY_det()
-        # self.reco_thetaY_lep_rad     = event.LeptonThetaY_beam()
-        self.reco_E_lep = event.LeptonEnergy()/1e3
-        self.M_lep_sqr = event.M_lep_sqr/1e6
-        self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
-
-        # Compare momentum magnitude from the reconstructed vector
-        # against momentum magnitude inferred from reconstructed energy.
-        p_vector = self.reco_LeptonP3D.R() / 1000.0
-        p_energy = self.reco_P_lep
-
-        if abs(p_vector - p_energy) > 1e-4:
-            print(
-                "[MUON MOMENTUM MISMATCH]",
-                "universe =", event.ShortName(),
-                "sigma =", event.GetSigma(),
-                f"p_vector={p_vector:.6f}",
-                f"p_energy={p_energy:.6f}",
-                f"diff={p_vector-p_energy:.6f}",
-            )
-
-        self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
+        # Use the established lepton-angle accessor:
+        # - CCnu_mu: MAT GetThetamu() (including X/Y resolution shifts)
+        # - CCnu_e: ElectronTheta()
+        self.reco_theta_lep_rad = event.LeptonTheta()
         self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
-        self.reco_Pt_lep = self.reco_P_lep*math.sin(self.reco_theta_lep_rad)
+        self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
 
-        self.reco_phi_lep_rad_det = self.reco_LeptonP3D_det.Phi()
-        self.reco_phi_lep_rad     = self.reco_LeptonP3D.Phi()
+        # Detector-coordinate angles from the momentum vector.
+        p_det = self.reco_LeptonP3D_det
+        p_beam = self.reco_LeptonP3D
+
+        self.reco_theta_lep_rad_det = p_det.Theta()
+        self.reco_thetaX_lep_rad_det = math.atan2(p_det.X(), p_det.Z())
+        self.reco_thetaY_lep_rad_det = math.atan2(p_det.Y(), p_det.Z())
+        self.reco_phi_lep_rad_det = p_det.Phi()
+
+        # Beam-coordinate projected angles and geometric azimuth.
+        self.reco_thetaX_lep_rad = math.atan2(p_beam.X(), p_beam.Z())
+        self.reco_thetaY_lep_rad = math.atan2(p_beam.Y(), p_beam.Z())
+        self.reco_phi_lep_rad = p_beam.Phi()
 
         self.reco_phi_lep_det = math.degrees(self.reco_phi_lep_rad_det)
-        self.reco_phi_lep     = math.degrees(self.reco_phi_lep_rad)
+        self.reco_phi_lep = math.degrees(self.reco_phi_lep_rad)
 
-        # TEMPORARY: reconstructed muon coordinate-system audit
-        # self.DebugMuonCoordinates()
+        # ============================================================
+        # Reconstructed lepton energy and momentum (GeV)
+        # ============================================================
+        self.reco_E_lep = event.LeptonEnergy() / 1e3
+        self.M_lep_sqr = event.M_lep_sqr / 1e6
 
-        # Project reconstructed lepton direction to the front face of MINOS
-        MINOS_FRONT_Z = 12087.301  # mm
+        self.reco_P_lep = math.sqrt(
+            max(0.0, self.reco_E_lep**2 - self.M_lep_sqr)
+        )
+
+        self.reco_Pt_lep = (
+            self.reco_P_lep * math.sin(self.reco_theta_lep_rad)
+        )
+
+        # ============================================================
+        # Reconstructed MINOS entrance-face projection
+        # Detector coordinates, mm
+        # ============================================================
+        MINOS_FRONT_Z = 12087.301
 
         self.reco_minos_proj_x = None
         self.reco_minos_proj_y = None
 
-        x0 = event.vtx[0]
-        y0 = event.vtx[1]
-        z0 = event.vtx[2]
+        x0, y0, z0 = (
+            event.vtx[0],
+            event.vtx[1],
+            event.vtx[2],
+        )
 
-        px = self.reco_LeptonP3D_det.X()
-        py = self.reco_LeptonP3D_det.Y()
-        pz = self.reco_LeptonP3D_det.Z()
+        px, py, pz = p_det.X(), p_det.Y(), p_det.Z()
 
         if abs(pz) > 1e-10:
             dz = MINOS_FRONT_Z - z0
@@ -454,41 +428,188 @@ class KinematicsCalculator(object):
             self.reco_minos_proj_x = x0 + dz * px / pz
             self.reco_minos_proj_y = y0 + dz * py / pz
 
-        #get appearance or disappearance probabilities
-        #self.reco_appearance = sin_ue_sqr*np.sin(1.27*delta_m_sqr*L/E)**2
-        #self.reco_dissapearance = sin_ee_sqr*np.sin(1.27*delta_m_sqr*L/E)**2\
+        # ============================================================
+        # Hadronic calorimetry (GeV)
+        # ============================================================
+        self.reco_q0 = self.spliner.get_q0(
+            event.RecoilEnergy() / 1e3
+        )
+        self.reco_visE = event.AvailableEnergy() / 1e3
 
-        #now hadronic calorimetry
-        self.reco_q0 = self.spliner.get_q0(self.event.RecoilEnergy()/1e3)
-        self.reco_visE = self.event.AvailableEnergy()/1e3
-        
-        # calc q2, q3
+        # ============================================================
+        # Reconstructed neutrino and interaction kinematics
+        # ============================================================
         self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
-        self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad, self.M_lep_sqr)
-        self.reco_q2_cal = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_cal)
 
-        self.reco_q3 = self.calcq3(self.reco_q2_cal,self.reco_E_nu_cal,self.reco_E_lep)
-        self.pseudo_q3 = self.reco_E_nu_cal - self.reco_P_lep*self.reco_cos_theta_lep
-        self.reco_W2 = (M_n/1e3)**2+2*M_n/1e3*self.reco_q0-self.reco_q2_cal
-        self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
-        self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
-        #print(self.event.GetLowRecoilQ3(),self.reco_q3)
-        viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
-        self.Ex = (viewE[0])/sum(viewE)
-        self.Eu = (viewE[1])/sum(viewE)
-        self.Ev = (viewE[2])/sum(viewE)
-        self.Exuv = self.Ex-self.Eu-self.Ev
-        self.Euv = self.Eu-self.Ev
-            #self.LLR = self.event.GetLLR()
-        # except RuntimeError:
-            #this ntuple does not have these variables
-            # pass
+        self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(
+            self.reco_E_lep,
+            self.reco_P_lep,
+            self.reco_theta_lep_rad,
+            self.M_lep_sqr,
+        )
 
-        # self.leftE = sum(self.event.ExtraEnergyClusters_energy[i] for i in range(self.event.ExtraEnergy_nClusters) if self.event.ExtraEnergyClusters_X[i]>self.event.vtx[0])
-        # self.leftE += sum(self.event.eProngClusters_energy[i] for i in range(self.event.eProng_nClusters) if self.event.eProngClusters_X[i]>self.event.vtx[0])
-        # self.rightE = sum(self.event.ExtraEnergyClusters_energy[i] for i in range(self.event.ExtraEnergy_nClusters) if self.event.ExtraEnergyClusters_X[i]<self.event.vtx[0])
-        # self.rightE += sum(self.event.eProngClusters_energy[i] for i in range(self.event.eProng_nClusters) if self.event.eProngClusters_X[i]<self.event.vtx[0])
+        self.reco_q2_cal = KinematicsCalculator.Q2_cal(
+            self.reco_E_lep,
+            self.reco_theta_lep_rad,
+            self.reco_P_lep,
+            self.M_lep_sqr,
+            self.reco_E_nu_cal,
+        )
+
+        self.reco_q3 = self.calcq3(
+            self.reco_q2_cal,
+            self.reco_E_nu_cal,
+            self.reco_E_lep,
+        )
+
+        self.pseudo_q3 = (
+            self.reco_E_nu_cal
+            - self.reco_P_lep * self.reco_cos_theta_lep
+        )
+
+        Mn_GeV = M_n / 1e3
+        self.reco_W2 = (
+            Mn_GeV**2
+            + 2.0 * Mn_GeV * self.reco_q0
+            - self.reco_q2_cal
+        )
+        self.reco_W = (
+            math.sqrt(self.reco_W2)
+            if self.reco_W2 >= 0.0
+            else -1
+        )
+
+        self.reco_Etheta2 = (
+            self.reco_E_lep * self.reco_theta_lep_rad**2
+        )
+
+        # ============================================================
+        # Calorimetric energy fractions by view
+        # ============================================================
+        ex, ev, eu = (
+            event.prong_XViewE[0],
+            event.prong_VViewE[0],
+            event.prong_UViewE[0],
+        )
+
+        total_viewE = ex + ev + eu
+
+        self.Ex = ex / total_viewE
+        self.Eu = ev / total_viewE
+        self.Ev = eu / total_viewE
+
+        self.Exuv = self.Ex - self.Eu - self.Ev
+        self.Euv = self.Eu - self.Ev
+
         return True
+
+    # def CalculateRecoKinematics(self):
+    #     self._clear = False
+    #     if self.event.SetLeptonType():
+    #         nParticles = self.event.GetVecInt("prong_nParticles")
+    #         if len(nParticles) < 1 or nParticles[0] < 1:
+    #             return False
+    #     event = self.event
+
+    #     #decide if whether it is muon or electron event, and get lepton kinematics
+    #     # self.reco_theta_lep_rad = event.LeptonTheta()
+    #     # self.reco_thetaX_lep_rad = event.LeptonThetaX()
+    #     # self.reco_thetaY_lep_rad = event.LeptonThetaY()
+    #     # self.reco_theta2D_lep_rad = event.LeptonTheta2D()
+    #     # self.reco_phi_lep_rad = event.LeptonPhi()
+    #     # self.reco_vertex3D_beam      = event.Vertex3D_beam()
+    #     self.reco_LeptonP3D_det      = event.LeptonP3D_det()
+    #     self.reco_LeptonP3D          = event.LeptonP3D()
+
+    #     if self.reco_LeptonP3D_det is not None and self.reco_LeptonP3D is not None:
+    #         reco_det_mag  = self.reco_LeptonP3D_det.R()
+    #         reco_beam_mag = self.reco_LeptonP3D.R()
+    #         if abs(reco_det_mag - reco_beam_mag) > 1e-6:
+    #             print(f"[WARN] reco |p| mismatch: det={reco_det_mag:.6f}, beam={reco_beam_mag:.6f}, diff={reco_det_mag-reco_beam_mag:.6e}")
+
+    #     self.reco_theta_lep_rad_det  = self.reco_LeptonP3D_det.Theta()
+    #     self.reco_theta_lep_rad      = self.reco_LeptonP3D.Theta()
+    #     self.reco_thetaX_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.X(), self.reco_LeptonP3D_det.Z())
+    #     self.reco_thetaX_lep_rad     = math.atan2(self.reco_LeptonP3D.X(), self.reco_LeptonP3D.Z())
+    #     self.reco_thetaY_lep_rad_det = math.atan2(self.reco_LeptonP3D_det.Y(), self.reco_LeptonP3D_det.Z())
+    #     self.reco_thetaY_lep_rad     = math.atan2(self.reco_LeptonP3D.Y(), self.reco_LeptonP3D.Z())
+
+    #     # self.reco_thetaY_lep_rad_det = event.LeptonThetaY_det()
+    #     # self.reco_thetaY_lep_rad     = event.LeptonThetaY_beam()
+    #     self.reco_E_lep = event.LeptonEnergy()/1e3
+    #     self.M_lep_sqr = event.M_lep_sqr/1e6
+    #     self.reco_P_lep = math.sqrt(max(0,self.reco_E_lep**2-self.M_lep_sqr))
+
+    #     # Compare momentum magnitude from the reconstructed vector
+    #     # against momentum magnitude inferred from reconstructed energy.
+    #     p_vector = self.reco_LeptonP3D.R() / 1000.0
+    #     p_energy = self.reco_P_lep
+
+    #     if abs(p_vector - p_energy) > 1e-4:
+    #         print(
+    #             "[MUON MOMENTUM MISMATCH]",
+    #             "universe =", event.ShortName(),
+    #             "sigma =", event.GetSigma(),
+    #             f"p_vector={p_vector:.6f}",
+    #             f"p_energy={p_energy:.6f}",
+    #             f"diff={p_vector-p_energy:.6f}",
+    #         )
+
+    #     self.reco_cos_theta_lep = math.cos(self.reco_theta_lep_rad)
+    #     self.reco_theta_lep = math.degrees(self.reco_theta_lep_rad)
+    #     self.reco_Pt_lep = self.reco_P_lep*math.sin(self.reco_theta_lep_rad)
+
+    #     self.reco_phi_lep_rad_det = self.reco_LeptonP3D_det.Phi()
+    #     self.reco_phi_lep_rad     = self.reco_LeptonP3D.Phi()
+
+    #     self.reco_phi_lep_det = math.degrees(self.reco_phi_lep_rad_det)
+    #     self.reco_phi_lep     = math.degrees(self.reco_phi_lep_rad)
+
+    #     # TEMPORARY: reconstructed muon coordinate-system audit
+    #     # self.DebugMuonCoordinates()
+
+    #     # Project reconstructed lepton direction to the front face of MINOS
+    #     MINOS_FRONT_Z = 12087.301  # mm
+
+    #     self.reco_minos_proj_x = None
+    #     self.reco_minos_proj_y = None
+
+    #     x0 = event.vtx[0]
+    #     y0 = event.vtx[1]
+    #     z0 = event.vtx[2]
+
+    #     px = self.reco_LeptonP3D_det.X()
+    #     py = self.reco_LeptonP3D_det.Y()
+    #     pz = self.reco_LeptonP3D_det.Z()
+
+    #     if abs(pz) > 1e-10:
+    #         dz = MINOS_FRONT_Z - z0
+
+    #         self.reco_minos_proj_x = x0 + dz * px / pz
+    #         self.reco_minos_proj_y = y0 + dz * py / pz
+
+    #     #now hadronic calorimetry
+    #     self.reco_q0 = self.spliner.get_q0(self.event.RecoilEnergy()/1e3)
+    #     self.reco_visE = self.event.AvailableEnergy()/1e3
+        
+    #     # calc q2, q3
+    #     self.reco_E_nu_cal = self.reco_E_lep + self.reco_q0
+    #     self.reco_E_nu_QE = KinematicsCalculator.Enu_QE(self.reco_E_lep, self.reco_P_lep, self.reco_theta_lep_rad, self.M_lep_sqr)
+    #     self.reco_q2_cal = KinematicsCalculator.Q2_cal(self.reco_E_lep, self.reco_theta_lep_rad, self.reco_P_lep, self.M_lep_sqr, self.reco_E_nu_cal)
+
+    #     self.reco_q3 = self.calcq3(self.reco_q2_cal,self.reco_E_nu_cal,self.reco_E_lep)
+    #     self.pseudo_q3 = self.reco_E_nu_cal - self.reco_P_lep*self.reco_cos_theta_lep
+    #     self.reco_W2 = (M_n/1e3)**2+2*M_n/1e3*self.reco_q0-self.reco_q2_cal
+    #     self.reco_W = math.sqrt(self.reco_W2) if self.reco_W2>=0 else -1
+    #     self.reco_Etheta2 = self.reco_E_lep * self.reco_theta_lep_rad**2
+    #     #print(self.event.GetLowRecoilQ3(),self.reco_q3)
+    #     viewE = (self.event.prong_XViewE[0], self.event.prong_VViewE[0],self.event.prong_UViewE[0])
+    #     self.Ex = (viewE[0])/sum(viewE)
+    #     self.Eu = (viewE[1])/sum(viewE)
+    #     self.Ev = (viewE[2])/sum(viewE)
+    #     self.Exuv = self.Ex-self.Eu-self.Ev
+    #     self.Euv = self.Eu-self.Ev
+    #     return True
 
     def CalculatePCTrueKinematics(self):
         assert self.event.mc_processType == 5
@@ -511,46 +632,48 @@ class KinematicsCalculator(object):
 
         return True
 
+
+
     def CalculateTrueKinematics(self):
         assert self.event.mc_processType >= 0 and self.event.mc_processType != 5
+
         if not self.new_truth:
             return True
+
         self._clear = False
+        event = self.event
 
-        self.true_enu_genie = self.event.GetEnuTrue()/1e3
-        self.true_E_lep = self.event.GetElepTrue()/1e3
-        self.true_P_lep = self.event.GetPlepTrue()/1e3
-        self.true_q0 = self.event.Getq0True()/1e3
-        self.true_q3 = self.event.Getq3True()/1e3
-        self.true_q2 = self.event.GetQ2True()/1e6
-        self.true_theta_lep_rad = self.event.GetThetalepTrue()
+        # ============================================================
+        # Generator-level lepton and neutrino kinematics (GeV)
+        # ============================================================
+        self.true_enu_genie = event.GetEnuTrue() / 1e3
+        self.true_E_lep = event.GetElepTrue() / 1e3
+        self.true_P_lep = event.GetPlepTrue() / 1e3
+
+        self.true_q0 = event.Getq0True() / 1e3
+        self.true_q3 = event.Getq3True() / 1e3
+        self.true_q2 = event.GetQ2True() / 1e6
+
+        self.true_theta_lep_rad = event.GetThetalepTrue()
         self.true_theta_lep = math.degrees(self.true_theta_lep_rad)
-        self.true_visE = self.CalculateVisibleE()
-        self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
 
+        self.true_visE = self.CalculateVisibleE()
+        self.true_Pt_lep = self.true_P_lep * math.sin(self.true_theta_lep_rad)
+
+        # ============================================================
+        # True invariant mass W
+        # ============================================================
         Mn_GeV = M_n / 1e3
 
-        # ---------------------------------------------------------
-        # Generator true W
-        #
-        # For ordinary interactions, use GENIE mc_w directly.
-        # For 2p2h (mc_intType == 8), mc_w corresponds to the
-        # invariant mass of the two-nucleon system, so subtract
-        # one nucleon mass for comparison with the 1N W scale.
-        # ---------------------------------------------------------
-        self.true_W = self.event.mc_w / 1e3
+        # GENIE W; for 2p2h, subtract one nucleon mass to place
+        # the two-nucleon invariant mass on the 1N W scale.
+        self.true_W = event.mc_w / 1e3
 
-        if self.event.mc_intType == 8:
+        if event.mc_intType == 8:
             self.true_W -= Mn_GeV
 
-
-        # ---------------------------------------------------------
-        # W_exp from true leptonic kinematics
-        #
-        # Defined assuming scattering from one stationary nucleon:
-        #   W_exp^2 = M_N^2 + 2 M_N nu - Q^2
-        # with nu = q0.
-        # ---------------------------------------------------------
+        # Expected W assuming scattering from one stationary nucleon:
+        # W_exp^2 = M_n^2 + 2*M_n*q0 - Q^2
         true_W_exp2 = (
             Mn_GeV**2
             + 2.0 * Mn_GeV * self.true_q0
@@ -559,117 +682,199 @@ class KinematicsCalculator(object):
 
         self.true_W_exp = (
             math.sqrt(true_W_exp2)
-            if true_W_exp2 >= 0
+            if true_W_exp2 >= 0.0
             else -1
         )
 
+        # ============================================================
+        # True lepton momentum: detector -> beam coordinates
+        # ============================================================
+        p_det = ROOT.TVector3(
+            *(event.GetVecElem("mc_primFSLepton", i) for i in range(3))
+        )
 
-        ### WRONG ASSUMPTIONS
-        # lep_pdg = abs(int(self.event.GetVecElem("mc_FSPartPDG", 0)))
-
-        # px = self.event.GetVecElem("mc_primFSLepton", 0)
-        # py = self.event.GetVecElem("mc_primFSLepton", 1)
-        # pz = self.event.GetVecElem("mc_primFSLepton", 2)
-
-        # if lep_pdg == 13:
-        #     # muon truth momentum stored in BEAM
-        #     p_beam = ROOT.TVector3(px, py, pz)
-        #     p_det = ROOT.TVector3(p_beam)
-        #     p_det.RotateX(-SystematicsConfig.BEAM_ANGLE)
-
-        # else:
-        #     # electron & other particles truth momentum stored in DET
-        #     p_det = ROOT.TVector3(px, py, pz)
-        #     p_beam = ROOT.TVector3(p_det)
-        #     p_beam.RotateX(+SystematicsConfig.BEAM_ANGLE)
-
-
-
-
-        px = self.event.GetVecElem("mc_primFSLepton", 0)
-        py = self.event.GetVecElem("mc_primFSLepton", 1)
-        pz = self.event.GetVecElem("mc_primFSLepton", 2)
-
-        # Truth momentum is stored in detector coordinates.
-        p_det = ROOT.TVector3(px, py, pz)
-
-        # Convert detector -> beam coordinates.
         p_beam = ROOT.TVector3(p_det)
         p_beam.RotateX(SystematicsConfig.BEAM_ANGLE)
 
-        self.true_LeptonP3D_det = ROOT.TVector3(p_det)
-        self.true_LeptonP3D     = ROOT.TVector3(p_beam)
+        self.true_LeptonP3D_det = p_det
+        self.true_LeptonP3D = p_beam
 
-
-
-
-
-
-        # else:
-        #     raise ValueError(f"Unexpected mc_FSPartPDG[0] = {lep_pdg}")
-
-        self.true_LeptonP3D_det = ROOT.TVector3(p_det)
-        self.true_LeptonP3D     = ROOT.TVector3(p_beam)
-
-        # if self.true_LeptonP3D_det is not None and self.true_LeptonP3D is not None:
-        #     true_det_mag  = self.true_LeptonP3D_det.Mag()
-        #     true_beam_mag = self.true_LeptonP3D.Mag()
-        #     if abs(true_det_mag - true_beam_mag) > 1e-6:
-        #         print(f"[WARN] true |p| mismatch: det={true_det_mag:.6f}, beam={true_beam_mag:.6f}, diff={true_det_mag-true_beam_mag:.6e}")
-
-
-        # print(type(p3))
-        # print([m for m in dir(p3) if m.lower() in ("mag","mag2","r","r2","rho","rho2","perp","perp2","pt","pt2","unit")])
-
-        # Use the SAME convention as TruthFunctions.h:
-        # p3lep.RotateX(MinervaUnits::numi_beam_angle_rad);
-        # p_beam.RotateX(ROOT.PlotUtils.MinervaUnits.numi_beam_angle_rad)
-        # det angles
-        self.true_theta_lep_rad_det  = p_det.Theta()
+        # Detector-coordinate angles (radians).
+        self.true_theta_lep_rad_det = p_det.Theta()
         self.true_thetaX_lep_rad_det = math.atan2(p_det.X(), p_det.Z())
         self.true_thetaY_lep_rad_det = math.atan2(p_det.Y(), p_det.Z())
 
-        # beam angles
+        # Beam-coordinate angles (radians).
         self.true_thetaX_lep_rad = math.atan2(p_beam.X(), p_beam.Z())
         self.true_thetaY_lep_rad = math.atan2(p_beam.Y(), p_beam.Z())
+        self.true_phi_lep_rad = p_beam.Phi()
+
         self.true_thetaX_lep = math.degrees(self.true_thetaX_lep_rad)
         self.true_thetaY_lep = math.degrees(self.true_thetaY_lep_rad)
-        self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
-        self.true_phi_lep_rad = math.atan2(p_beam.Y(), p_beam.X())
 
-        # print("existing true theta = ", self.true_theta_lep_rad, "\t my true theta = ", p_beam.Theta())
-    
-        vtxX = self.event.GetVecElem("mc_vtx", 0)
-        vtxY = self.event.GetVecElem("mc_vtx", 1)
-        vtxZ = self.event.GetVecElem("mc_vtx", 2)
-        vtx3D = ROOT.TVector3(vtxX, vtxY, vtxZ)
-        vtx3D.RotateX(SystematicsConfig.BEAM_ANGLE)
-        self.true_vertex3D_beam = vtx3D
-        # -----------------------------------------------
+        self.true_theta2D_lep_rad = math.hypot(
+            self.true_thetaX_lep_rad,
+            self.true_thetaY_lep_rad,
+        )
 
+        # ============================================================
+        # True interaction vertex in beam coordinates (mm)
+        # ============================================================
+        self.true_vertex3D_beam = ROOT.TVector3(
+            *(event.GetVecElem("mc_vtx", i) for i in range(3))
+        )
+        self.true_vertex3D_beam.RotateX(SystematicsConfig.BEAM_ANGLE)
+
+        # ============================================================
+        # Final-state hadron momenta
+        # ============================================================
         if self.include_hadron_momenta:
-            for part_idx in range(len(self.event.mc_FSPartPDG)):
-                pdg = abs(self.event.mc_FSPartPDG[part_idx])
+            for part_idx, pdg_value in enumerate(event.mc_FSPartPDG):
+                pdg = abs(pdg_value)
+
                 if pdg not in (111, 211, 2212):
                     continue
 
-                mom = ROOT.TVector3(self.event.mc_FSPartPx[part_idx], self.event.mc_FSPartPy[part_idx], self.event.mc_FSPartPz[part_idx])
-                mom_mag = mom.Mag()/1e3
-                theta = math.degrees(mom.Theta())
-#               print pdg, mom_mag, theta
+                momentum = ROOT.TVector3(
+                    event.mc_FSPartPx[part_idx],
+                    event.mc_FSPartPy[part_idx],
+                    event.mc_FSPartPz[part_idx],
+                )
+
+                mom_mag = momentum.Mag() / 1e3
+                theta = math.degrees(momentum.Theta())
 
                 if pdg == 2212:
                     self.proton_momenta.append(mom_mag)
                     self.proton_thetas.append(theta)
+
                 elif pdg == 111:
                     self.pi0_momenta.append(mom_mag)
                     self.pi0_thetas.append(theta)
+
                 else:
                     self.pion_momenta.append(mom_mag)
                     self.pion_thetas.append(theta)
 
         return True
-        #       print E_e, self.E_nu_QE, self.Q2_QE
+
+#     def CalculateTrueKinematics(self):
+#         assert self.event.mc_processType >= 0 and self.event.mc_processType != 5
+#         if not self.new_truth:
+#             return True
+#         self._clear = False
+
+#         self.true_enu_genie = self.event.GetEnuTrue()/1e3
+#         self.true_E_lep = self.event.GetElepTrue()/1e3
+#         self.true_P_lep = self.event.GetPlepTrue()/1e3
+#         self.true_q0 = self.event.Getq0True()/1e3
+#         self.true_q3 = self.event.Getq3True()/1e3
+#         self.true_q2 = self.event.GetQ2True()/1e6
+#         self.true_theta_lep_rad = self.event.GetThetalepTrue()
+#         self.true_theta_lep = math.degrees(self.true_theta_lep_rad)
+#         self.true_visE = self.CalculateVisibleE()
+#         self.true_Pt_lep = self.true_P_lep*math.sin(self.true_theta_lep_rad)
+
+#         Mn_GeV = M_n / 1e3
+
+#         # ---------------------------------------------------------
+#         # Generator true W
+#         #
+#         # For ordinary interactions, use GENIE mc_w directly.
+#         # For 2p2h (mc_intType == 8), mc_w corresponds to the
+#         # invariant mass of the two-nucleon system, so subtract
+#         # one nucleon mass for comparison with the 1N W scale.
+#         # ---------------------------------------------------------
+#         self.true_W = self.event.mc_w / 1e3
+
+#         if self.event.mc_intType == 8:
+#             self.true_W -= Mn_GeV
+
+
+#         # ---------------------------------------------------------
+#         # W_exp from true leptonic kinematics
+#         #
+#         # Defined assuming scattering from one stationary nucleon:
+#         #   W_exp^2 = M_N^2 + 2 M_N nu - Q^2
+#         # with nu = q0.
+#         # ---------------------------------------------------------
+#         true_W_exp2 = (
+#             Mn_GeV**2
+#             + 2.0 * Mn_GeV * self.true_q0
+#             - self.true_q2
+#         )
+
+#         self.true_W_exp = (
+#             math.sqrt(true_W_exp2)
+#             if true_W_exp2 >= 0
+#             else -1
+#         )
+
+#         px = self.event.GetVecElem("mc_primFSLepton", 0)
+#         py = self.event.GetVecElem("mc_primFSLepton", 1)
+#         pz = self.event.GetVecElem("mc_primFSLepton", 2)
+
+#         # Truth momentum is stored in detector coordinates.
+#         p_det = ROOT.TVector3(px, py, pz)
+
+#         # Convert detector -> beam coordinates.
+#         p_beam = ROOT.TVector3(p_det)
+#         p_beam.RotateX(SystematicsConfig.BEAM_ANGLE)
+
+#         self.true_LeptonP3D_det = ROOT.TVector3(p_det)
+#         self.true_LeptonP3D     = ROOT.TVector3(p_beam)
+
+#         self.true_LeptonP3D_det = ROOT.TVector3(p_det)
+#         self.true_LeptonP3D     = ROOT.TVector3(p_beam)
+
+#         # Use the SAME convention as TruthFunctions.h:
+#         # p3lep.RotateX(MinervaUnits::numi_beam_angle_rad);
+#         # p_beam.RotateX(ROOT.PlotUtils.MinervaUnits.numi_beam_angle_rad)
+#         # det angles
+#         self.true_theta_lep_rad_det  = p_det.Theta()
+#         self.true_thetaX_lep_rad_det = math.atan2(p_det.X(), p_det.Z())
+#         self.true_thetaY_lep_rad_det = math.atan2(p_det.Y(), p_det.Z())
+
+#         # beam angles
+#         self.true_thetaX_lep_rad = math.atan2(p_beam.X(), p_beam.Z())
+#         self.true_thetaY_lep_rad = math.atan2(p_beam.Y(), p_beam.Z())
+#         self.true_thetaX_lep = math.degrees(self.true_thetaX_lep_rad)
+#         self.true_thetaY_lep = math.degrees(self.true_thetaY_lep_rad)
+#         self.true_theta2D_lep_rad = math.sqrt(self.true_thetaX_lep_rad**2 + self.true_thetaY_lep_rad**2)
+#         self.true_phi_lep_rad = math.atan2(p_beam.Y(), p_beam.X())
+
+#         # print("existing true theta = ", self.true_theta_lep_rad, "\t my true theta = ", p_beam.Theta())
+    
+#         vtxX = self.event.GetVecElem("mc_vtx", 0)
+#         vtxY = self.event.GetVecElem("mc_vtx", 1)
+#         vtxZ = self.event.GetVecElem("mc_vtx", 2)
+#         vtx3D = ROOT.TVector3(vtxX, vtxY, vtxZ)
+#         vtx3D.RotateX(SystematicsConfig.BEAM_ANGLE)
+#         self.true_vertex3D_beam = vtx3D
+#         # -----------------------------------------------
+
+#         if self.include_hadron_momenta:
+#             for part_idx in range(len(self.event.mc_FSPartPDG)):
+#                 pdg = abs(self.event.mc_FSPartPDG[part_idx])
+#                 if pdg not in (111, 211, 2212):
+#                     continue
+
+#                 mom = ROOT.TVector3(self.event.mc_FSPartPx[part_idx], self.event.mc_FSPartPy[part_idx], self.event.mc_FSPartPz[part_idx])
+#                 mom_mag = mom.Mag()/1e3
+#                 theta = math.degrees(mom.Theta())
+# #               print pdg, mom_mag, theta
+
+#                 if pdg == 2212:
+#                     self.proton_momenta.append(mom_mag)
+#                     self.proton_thetas.append(theta)
+#                 elif pdg == 111:
+#                     self.pi0_momenta.append(mom_mag)
+#                     self.pi0_thetas.append(theta)
+#                 else:
+#                     self.pion_momenta.append(mom_mag)
+#                     self.pion_thetas.append(theta)
+
+#         return True
 
     @staticmethod
     def Enu_QE(E_lep, p_lep, theta_lep,m_lep_sqr):

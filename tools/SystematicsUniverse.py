@@ -562,7 +562,7 @@ class CVPythonUniverse():
             self.GetCorrection     = self.GetLeakageCorrection
             return True
         else:
-            self.LeptonTheta       = self.MuonTheta        # angle in BEAM coord
+            self.LeptonTheta       = self.GetThetamu        # angle in BEAM coord
             self.LeptonEnergy      = self.GetEmu
             self.LeptonP3D_det     = self.MuonP3D_det
             self.LeptonP3D         = self.MuonP3D_beam
