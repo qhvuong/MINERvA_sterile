@@ -612,259 +612,6 @@ class CVPythonUniverse():
         else:
             return self.weight
 
-
-
-
-    def DebugGenieCV(self):
-        import math
-
-        if self.ShortName() != "cv":
-            return
-
-        if not hasattr(CVPythonUniverse, "_debug_genie_counts"):
-            CVPythonUniverse._debug_genie_counts = {
-                "total": 0,
-                "nonrespi": 0,
-                "ccres": 0,
-                "nonrespi_and_ccres": 0,
-                "nonfinite_mat": 0,
-                "nonfinite_expected": 0,
-                "mismatch": 0,
-                "sum_v1_nonrespi": 0.0,
-                "sum_v1_deuterium": 0.0,
-                "sum_mat": 0.0,
-            }
-
-        c = CVPythonUniverse._debug_genie_counts
-        c["total"] += 1
-
-        int_type = int(self.mc_intType)
-        current = int(self.mc_current)
-
-        rvn = self.GetVecElem("truth_genie_wgt_Rvn1pi", 2)
-        rvp = self.GetVecElem("truth_genie_wgt_Rvp1pi", 2)
-
-        is_nonrespi = rvn < 1.0 or rvp < 1.0
-        is_ccres = int_type == 2 and current == 1
-
-        if is_nonrespi:
-            c["nonrespi"] += 1
-
-        if is_ccres:
-            c["ccres"] += 1
-
-        if is_nonrespi and is_ccres:
-            c["nonrespi_and_ccres"] += 1
-
-        # V1 baseline: NonResPi only.
-        w_nonrespi = 0.43 if is_nonrespi else 1.0
-
-        # Deuterium resonance correction:
-        # MAT: GENIE_MaRES=1.12, DEUTERIUM_MaRES=0.94,
-        #      GENIE_MaRES_1Sig=0.22, RES_NORM=1.15
-        w_deuterium = 1.0
-        ma_res = None
-
-        if is_ccres:
-            ma_res = self.GetVecElem("truth_genie_wgt_MaRES", 2)
-            w_deuterium = 1.15 * (
-                1.0 + (0.18 / 0.22) * (ma_res - 1.0)
-            )
-
-        w_v1 = w_nonrespi
-        w_v1_d2 = w_nonrespi * w_deuterium
-
-        # Actual MAT implementation, with the active C++ switches.
-        w_mat = self.GetGenieWeight()
-
-        if not math.isfinite(w_mat):
-            c["nonfinite_mat"] += 1
-            if c["nonfinite_mat"] <= 10:
-                print(
-                    "[GENIE NONFINITE MAT]",
-                    f"intType={int_type}",
-                    f"current={current}",
-                    f"mat={w_mat}",
-                    flush=True
-                )
-            return
-
-        if not (math.isfinite(w_v1) and math.isfinite(w_v1_d2)):
-            c["nonfinite_expected"] += 1
-            return
-
-        c["sum_v1_nonrespi"] += w_v1
-        c["sum_v1_deuterium"] += w_v1_d2
-        c["sum_mat"] += w_mat
-
-        # Match the currently configured C++ GENIE switches.
-        if USE_MNVTUNE_V1:
-            use_deuterium = V1_ADD_DEUTERIUM
-            use_zexp = V1_ADD_ZEXP
-
-        elif USE_MNVTUNE_V4P4P1:
-            use_deuterium = True
-            use_zexp = V4P4P1_ADD_ZEXP
-
-        else:
-            use_deuterium = True
-            use_zexp = V1_ADD_ZEXP
-
-        expected = w_v1_d2 if use_deuterium else w_v1
-
-        if use_zexp:
-            expected *= self.GetZExpWeight()
-
-        if not math.isclose(
-            w_mat, expected, rel_tol=1e-6, abs_tol=1e-8
-        ):
-            c["mismatch"] += 1
-
-            if c["mismatch"] <= 20:
-                print(
-                    "[GENIE CV MISMATCH]",
-                    f"intType={int_type}",
-                    f"current={current}",
-                    f"rvn={rvn}",
-                    f"rvp={rvp}",
-                    f"MaRES={ma_res}",
-                    f"NonResPi={w_nonrespi}",
-                    f"D2={w_deuterium}",
-                    f"expected={expected}",
-                    f"MAT={w_mat}",
-                    flush=True
-                )
-
-        if c["total"] % 10000 == 0:
-            print("[GENIE AUDIT PROGRESS]", c, flush=True)
-
-
-
-    def Debug2p2hCV(self):
-        import math
-
-        if self.ShortName() != "cv":
-            return
-
-        # CV correction only affects MEC on nuclear targets.
-        if self.mc_intType != 8 or self.mc_targetZ < 2:
-            return
-
-        if not hasattr(CVPythonUniverse, "_debug_2p2h_counts"):
-            CVPythonUniverse._debug_2p2h_counts = {
-                "total_mec": 0,
-                "old_guard_pass": 0,
-                "old_guard_fail": 0,
-                "invalid_Q2": 0,
-                "invalid_W": 0,
-                "invalid_q0q3": 0,
-                "mat_exceptions": 0,
-                "mat_nonfinite": 0,
-                "mat_nonunity": 0,
-                "changed_weight": 0,
-                "sum_mat": 0.0,
-                "sum_current": 0.0,
-            }
-
-        counts = CVPythonUniverse._debug_2p2h_counts
-        counts["total_mec"] += 1
-
-        q2 = self.mc_Q2 * 1e-6
-        W = self.mc_w * 1e-3
-
-        q0 = self.Getq0True() * 1e-3
-        q3 = self.Getq3True() * 1e-3
-
-        # Exactly reproduce the current Python safeguard.
-        valid_Q2 = math.isfinite(q2) and q2 >= 0.0
-        valid_W = math.isfinite(W) and abs(W) < 90.0
-
-        old_guard = valid_Q2 and valid_W
-
-        if old_guard:
-            counts["old_guard_pass"] += 1
-        else:
-            counts["old_guard_fail"] += 1
-
-        if not valid_Q2:
-            counts["invalid_Q2"] += 1
-
-        if not valid_W:
-            counts["invalid_W"] += 1
-
-        # MAT evaluates its Gaussian using true q0 and q3.
-        if not (math.isfinite(q0) and math.isfinite(q3)):
-            counts["invalid_q0q3"] += 1
-
-            if counts["invalid_q0q3"] <= 10:
-                print(
-                    "[2P2H INVALID Q0/Q3]",
-                    "Q2 =", q2,
-                    "W =", W,
-                    "q0 =", q0,
-                    "q3 =", q3,
-                    flush=True
-                )
-            return
-
-        # Compare against MAT directly, without changing CV weights.
-        try:
-            w_mat = self.GetLowRecoil2p2hWeight()
-        except Exception as exc:
-            counts["mat_exceptions"] += 1
-
-            if counts["mat_exceptions"] <= 10:
-                print("[2P2H MAT EXCEPTION]", exc, flush=True)
-            return
-
-        if not math.isfinite(w_mat):
-            counts["mat_nonfinite"] += 1
-
-            if counts["mat_nonfinite"] <= 10:
-                print(
-                    "[2P2H NONFINITE MAT]",
-                    "Q2 =", q2,
-                    "W =", W,
-                    "q0 =", q0,
-                    "q3 =", q3,
-                    "w_mat =", w_mat,
-                    flush=True
-                )
-            return
-
-        # Reproduce what our existing Python code applies.
-        w_current = w_mat if old_guard else 1.0
-
-        counts["sum_mat"] += w_mat
-        counts["sum_current"] += w_current
-
-        if abs(w_mat - 1.0) > 1e-10:
-            counts["mat_nonunity"] += 1
-
-        if abs(w_mat - w_current) > 1e-10:
-            counts["changed_weight"] += 1
-
-            if counts["changed_weight"] <= 20:
-                print(
-                    "[2P2H GUARD DIFFERENCE]",
-                    "Q2 =", q2,
-                    "W =", W,
-                    "q0 =", q0,
-                    "q3 =", q3,
-                    "MAT =", w_mat,
-                    "CURRENT =", w_current,
-                    flush=True
-                )
-
-        # Frequent progress reports for small diagnostic runs.
-        if counts["total_mec"] % 100 == 0:
-            print(
-                "[2P2H AUDIT PROGRESS]",
-                counts,
-                flush=True
-            )
-
-
     def GetStandardWeight(self):
 
         active_tunes = [
@@ -909,159 +656,91 @@ class CVPythonUniverse():
                 print("Not neutrino PDG? {}".format(pdg))
         pdg = newpdg
 
-
-        # enu = self.mc_incomingE * 1e-3
-        # flux_cv = self.GetFluxAndCVWeight(enu, pdg)
-
-        # # ---- DEBUG: true-E binned flux CV summary ----
-        # if self.ShortName() == "cv":
-        #     if not hasattr(CVPythonUniverse, "_trueE_flux_summary"):
-        #         CVPythonUniverse._trueE_flux_summary = {}
-
-        #     ebin = math.floor(enu / 0.5) * 0.5
-        #     key = (pdg, ebin)
-
-        #     if key not in CVPythonUniverse._trueE_flux_summary:
-        #         CVPythonUniverse._trueE_flux_summary[key] = [0, 0.0, 0.0]
-
-        #     # [N, sum fluxCV, sum weight before flux]
-        #     CVPythonUniverse._trueE_flux_summary[key][0] += 1
-        #     CVPythonUniverse._trueE_flux_summary[key][1] += flux_cv
-        #     CVPythonUniverse._trueE_flux_summary[key][2] += weight
-
-        #     if not hasattr(CVPythonUniverse, "_trueE_flux_print_counter"):
-        #         CVPythonUniverse._trueE_flux_print_counter = 0
-
-        #     if CVPythonUniverse._trueE_flux_print_counter < 10:
-        #         CVPythonUniverse._trueE_flux_print_counter += 1
-        #         print("[TRUEE_FLUX_BIN_SUMMARY]")
-        #         for k, v in sorted(CVPythonUniverse._trueE_flux_summary.items()):
-        #             pdg_bin, ebin_print = k
-        #             n, sum_flux, sum_w_before = v
-        #             if n < 20:
-        #                 continue
-        #             print(
-        #                 "pdg=", pdg_bin,
-        #                 "Ebin=", ebin_print, "-", ebin_print + 0.5,
-        #                 "n=", n,
-        #                 "avg_fluxCV=", sum_flux / n,
-        #                 "sum_fluxCV=", sum_flux,
-        #                 "avg_weight_before_flux=", sum_w_before / n,
-        #             )
-
-        # weight *= flux_cv
-        # # ---- END DEBUG ----
-
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
         # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
 
-        # weight *= self.GetLowRecoil2p2hWeight()
-        # Low-recoil 2p2h CV weight.
+        # ------------------------------------------------------------
+        # Low-recoil 2p2h CV correction: invalid truth-kinematics guard
+        # ------------------------------------------------------------
         #
-        # Guard pathological truth kinematics. Some events have placeholder
-        # values such as mc_Q2=-99999 and mc_w=99999; the 2p2h reweighter can
-        # return NaN for those inputs. For those cases, use neutral weight 1.
-        # w_2p2h = 1.0
-
-        # q2_gev2 = self.mc_Q2 * 1e-6
-        # w_gev = self.mc_w * 1e-3
-
-        # valid_2p2h_kinematics = (
-        #     math.isfinite(q2_gev2)
-        #     and math.isfinite(w_gev)
-        #     and q2_gev2 >= 0.0
-        #     and abs(w_gev) < 90.0
-        # )
-
-        # if valid_2p2h_kinematics:
-        #     w_2p2h = self.GetLowRecoil2p2hWeight()
-
-        #     if not math.isfinite(w_2p2h):
-        #         # Keep neutral weight for pathological reweighter output.
-        #         w_2p2h = 1.0
-
-        # weight *= w_2p2h
-
+        # Motivation (October 2026):
+        # During validation of the MINERvA LE p8 CCnumubar selection,
+        # several MC files contained NaN histogram bins, which propagated
+        # through madd and caused the merged distributions to become
+        # unusable.
+        #
+        # Event-level debugging traced the problem to the MAT
+        # GetLowRecoil2p2hWeight() calculation. An example was a
+        # CC antineutrino-electron MEC event (mc_intType == 8) on carbon
+        # with:
+        #
+        #   true Enu = 40.07 GeV
+        #   mc_Q2    = -99999 GeV^2 (invalid sentinel)
+        #   mc_w     =  99999 GeV   (invalid sentinel)
+        #   q0       = 13.46 GeV
+        #   q3       = NaN
+        #
+        # Inspection of MAT-MINERvA showed that Getq3True() derives q3
+        # from the truth kinematics, while the 2p2h reweighter directly
+        # evaluates a 2D Gaussian in (q0, q3), without checking whether
+        # these inputs are finite. Consequently, invalid truth kinematics
+        # can produce a NaN 2p2h weight and contaminate the entire CV
+        # histogram bin.
+        #
+        # Safeguard:
+        # For eligible MEC events on nuclear targets, evaluate the MAT
+        # correction only when both q0 and q3 are finite. Otherwise,
+        # assign a unity 2p2h correction while retaining the event and
+        # all other CV-weight components.
+        #
+        # This avoids passing invalid inputs into MAT and preserves
+        # valid events without introducing arbitrary Q2 or W cutoffs.
+        # The unity fallback is an analysis-level numerical safeguard,
+        # not a fallback explicitly prescribed by MAT.
+        #
+        # IMPORTANT:
+        # Monitor the number and properties of affected events. The
+        # fallback should be validated for the physics analysis, and
+        # 2p2h systematic universes must be checked separately because
+        # their weight ratios can encounter the same invalid kinematics.
         # ------------------------------------------------------------
-        # Low-recoil 2p2h CV weight
-        # ------------------------------------------------------------
-        # Compare the direct MAT weight with our safeguarded weight.
-        # Apply the safeguarded version to the prediction.
+        # Undefined MAT 2p2h correction due to nonfinite q0/q3:
+        # use unity for this component only; do not discard the event.
+        w_2p2h = 1.0
 
-        w_2p2h_safe = 1.0
+        if self.mc_intType == 8 and self.mc_targetZ >= 2:
 
-        q2_gev2 = self.mc_Q2 * 1e-6
-        w_gev = self.mc_w * 1e-3
+            q0 = self.Getq0True() * 1e-3
+            q3 = self.Getq3True() * 1e-3
 
-        valid_2p2h_kinematics = (
-            math.isfinite(q2_gev2)
-            and math.isfinite(w_gev)
-            and q2_gev2 >= 0.0
-            and abs(w_gev) < 90.0
-        )
+            if math.isfinite(q0) and math.isfinite(q3):
+                w_2p2h = self.GetLowRecoil2p2hWeight()
 
-        # Only potentially nonunity for MEC on nuclear targets.
-        is_mec = self.mc_intType == 8 and self.mc_targetZ >= 2
+                if not math.isfinite(w_2p2h):
+                    raise RuntimeError(
+                        "Nonfinite 2p2h weight with finite q0/q3"
+                    )
 
-        # Evaluate MAT directly for diagnostics.
-        # For events rejected by our old guard, this lets us see
-        # whether MAT actually returns a valid correction.
-        w_2p2h_raw = None
+            else:
+                if not hasattr(CVPythonUniverse, "_invalid_2p2h_count"):
+                    CVPythonUniverse._invalid_2p2h_count = 0
 
-        if is_mec:
-            try:
-                w_2p2h_raw = self.GetLowRecoil2p2hWeight()
-            except Exception as exc:
-                print(
-                    "[2P2H MAT EXCEPTION]",
-                    f"Q2={q2_gev2}",
-                    f"W={w_gev}",
-                    f"error={exc}",
-                    flush=True
-                )
+                CVPythonUniverse._invalid_2p2h_count += 1
 
-        # Reproduce our original safeguarded implementation.
-        if valid_2p2h_kinematics:
-            if w_2p2h_raw is not None:
-                if math.isfinite(w_2p2h_raw):
-                    w_2p2h_safe = w_2p2h_raw
-            elif not is_mec:
-                # MAT gives unity for ineligible events.
-                w_2p2h_safe = 1.0
+                if CVPythonUniverse._invalid_2p2h_count <= 20:
+                    print(
+                        "[INVALID 2P2H KINEMATICS]",
+                        "count =", CVPythonUniverse._invalid_2p2h_count,
+                        "q0 =", q0,
+                        "q3 =", q3,
+                        "mc_Q2 =", self.mc_Q2,
+                        "mc_intType =", self.mc_intType,
+                        "targetZ =", self.mc_targetZ,
+                        "fallback_weight = 1.0",
+                        flush=True,
+                    )
 
-        # Print cases where the raw MAT weight is nonfinite
-        # or our guard changes a finite MAT weight.
-        if is_mec and (
-            w_2p2h_raw is None
-            or not math.isfinite(w_2p2h_raw)
-            or (
-                math.isfinite(w_2p2h_raw)
-                and abs(w_2p2h_safe - w_2p2h_raw) > 1e-10
-            )
-        ):
-            if not hasattr(CVPythonUniverse, "_2p2h_debug_prints"):
-                CVPythonUniverse._2p2h_debug_prints = 0
-
-            if (
-                self.ShortName() == "cv"
-                and CVPythonUniverse._2p2h_debug_prints < 20
-            ):
-                CVPythonUniverse._2p2h_debug_prints += 1
-
-                print(
-                    "[2P2H SAFE VS RAW]",
-                    f"intType={self.mc_intType}",
-                    f"Q2={q2_gev2}",
-                    f"W={w_gev}",
-                    f"q0={self.Getq0True() * 1e-3}",
-                    f"q3={self.Getq3True() * 1e-3}",
-                    f"old_guard={valid_2p2h_kinematics}",
-                    f"raw={w_2p2h_raw}",
-                    f"safe={w_2p2h_safe}",
-                    flush=True
-                )
-
-        weight *= w_2p2h_safe
+        weight *= w_2p2h
 
 
 
@@ -1440,14 +1119,6 @@ class CVPythonUniverse():
         # Valencia RPA
         # --------------------------------------------------
         weight *= self.GetRPAWeight()
-
-        # # --------------------------------------------------
-        # # Optional low-Q2 pion correction
-        # # --------------------------------------------------
-        # if V4P4P1_ADD_LOWQ2PI:
-        #     weight *= self.GetMyLowQ2PiWeight(
-        #         V4P4P1_LOWQ2PI_CHANNEL
-        #     )
 
         # --------------------------------------------------
         # Optional coherent pion corrections
