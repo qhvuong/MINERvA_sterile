@@ -558,29 +558,14 @@ class CVPythonUniverse():
             self.LeptonEnergy      = self.ElectronEnergy
             self.LeptonP3D_det     = self.ElectronP3D_det
             self.LeptonP3D         = self.ElectronP3D
-            # self.LeptonThetaX  = self.ElectronThetaX
-            # self.LeptonThetaY  = self.ElectronThetaY
-            # self.LeptonTheta2D = self.ElectronTheta2D ## <===== fixed beam 2D angle
-            # self.LeptonPhi     = self.ElectronPhi
-            # self.LeptonTheta   = self.ElectronTheta_vtxcorr ## <===== vertex corrected 3D angle
-            # self.LeptonThetaX  = self.ElectronThetaX_vtxcorr
-            # self.LeptonThetaY  = self.ElectronThetaY_vtxcorr
-            # self.LeptonTheta2D = self.ElectronTheta2D_vtxcorr ## <===== vertex corrected 2D angle
-            # self.LeptonPhi     = self.ElectronPhi_vtxcorr
-
-            # self.Vertex3D_beam     = self.Vertex_beam
-            # self.LeptonThetaY_det  = self.ElectronThetaY_det
-            # self.LeptonThetaY_beam = self.ElectronThetaY_beam
             self.M_lep_sqr         =  M_e_sqr
             self.GetCorrection     = self.GetLeakageCorrection
             return True
         else:
-            self.LeptonTheta       = self.GetThetamu        # angle in BEAM coord
+            self.LeptonTheta       = self.MuonTheta        # angle in BEAM coord
             self.LeptonEnergy      = self.GetEmu
             self.LeptonP3D_det     = self.MuonP3D_det
             self.LeptonP3D         = self.MuonP3D_beam
-            # # self.LeptonP3D         = self.GetPmu
-            # # self.Vertex3D_beam     = self.Vertex_beam
             self.M_lep_sqr         =  M_mu_sqr
             self.GetCorrection     = self.GetNuEFuzz
             return False
@@ -1152,146 +1137,6 @@ class CVPythonUniverse():
         weight *= self.GetMyMinosEfficiencyWeight()
 
         return weight
-
-    def DebugCVWeights(self, entry=None):
-        import math
-
-        if self.ShortName() != "cv":
-            return
-
-        print("\n========== DEBUG CV WEIGHTS ==========", flush=True)
-        print("Entry:", entry, flush=True)
-        print("PDG:", self.mc_incoming, flush=True)
-        print("True Enu (MeV):", self.mc_incomingE, flush=True)
-        print("Current:", self.mc_current, flush=True)
-        print("Interaction type:", self.mc_intType, flush=True)
-
-        print(
-            "[ACTIVE TUNE]",
-            "V1 =", USE_MNVTUNE_V1,
-            "V4.3.0 =", USE_MNVTUNE_V4P3P0,
-            "V4.4.1 =", USE_MNVTUNE_V4P4P1,
-            flush=True,
-        )
-        print(
-            "[WEIGHT PATH]",
-            "GetStandardWeight =", self.GetStandardWeight(),
-            "GetWeight =", self.GetWeight(),
-            "cached_weight =", self.weight,
-            flush=True,
-        )
-
-        components = []
-
-        def inspect(name, getter):
-            try:
-                w = float(getter())
-                finite = math.isfinite(w)
-
-                print(
-                    "{:<24s} {:>18.8g} {}".format(
-                        name, w,
-                        "OK" if finite else "NONFINITE"
-                    ),
-                    flush=True,
-                )
-                components.append((name, w))
-
-            except Exception as exc:
-                print(
-                    "{:<24s} ERROR: {}".format(name, exc),
-                    flush=True,
-                )
-
-        # GENIE: follow active V1 configuration
-        if V1_ADD_DEUTERIUM:
-            inspect("GENIE", lambda: self.GetGenieWeight())
-        else:
-            def nonrespi():
-                rvn = self.GetVecElem("truth_genie_wgt_Rvn1pi", 2)
-                rvp = self.GetVecElem("truth_genie_wgt_Rvp1pi", 2)
-                return 0.43 if rvn < 1.0 or rvp < 1.0 else 1.0
-
-            inspect("NonResPi", nonrespi)
-
-        # Flux: preserve swapped-PDG behavior
-        pdg = self.mc_incoming
-
-        if SystematicsConfig.USE_SWAPPED:
-            pdg = {12: 14, -12: -14, 14: 12, -14: -12}.get(pdg, pdg)
-
-        inspect(
-            "FluxCV",
-            lambda: self.GetFluxAndCVWeight(
-                self.mc_incomingE * 1e-3, pdg
-            )
-        )
-
-        inspect(
-            "LowRecoil2p2h",
-            lambda: self.GetLowRecoil2p2hWeight()
-        )
-
-
-        print("\n[2P2H KINEMATICS]", flush=True)
-
-        for name, getter in [
-            ("targetZ", lambda: self.mc_targetZ),
-            ("Q2_GeV2", lambda: self.mc_Q2 * 1e-6),
-            ("W_GeV", lambda: self.mc_w * 1e-3),
-            ("q0_GeV", lambda: self.Getq0True() * 1e-3),
-            ("q3_GeV", lambda: self.Getq3True() * 1e-3),
-        ]:
-            try:
-                print(name, "=", getter(), flush=True)
-            except Exception as exc:
-                print(name, "ERROR:", exc, flush=True)
-
-
-        inspect("RPA", lambda: self.GetRPAWeight())
-
-        if USE_MNVTUNE_V4P3P0 or USE_MNVTUNE_V4P4P1:
-            inspect(
-                "LowRecoil2p2h",
-                lambda: self.GetLowRecoil2p2hWeight()
-            )
-
-        if V1_ADD_LOWQ2PI:
-            inspect(
-                "LowQ2Pi",
-                lambda: self.GetMyLowQ2PiWeight(V1_LOWQ2PI_CHANNEL)
-            )
-
-        if V1_ADD_COH:
-            inspect("ME_COH", lambda: self.GetCOHPionWeight())
-
-        if V1_ADD_LE_COH:
-            inspect("LE_COH", lambda: self.GetLECOHPionWeight())
-
-        if V1_ADD_DIFFCOH and self.mc_intType == 4:
-            inspect("DiffCOH", lambda: 1.4368)
-
-        inspect("GeantHadron", lambda: self.GetGeantHadronWeight())
-        inspect("MINOS", lambda: self.GetMyMinosEfficiencyWeight())
-
-        # Reconstruct cumulative weight
-        cumulative = 1.0
-
-        print("\nCumulative product:", flush=True)
-
-        for name, w in components:
-            cumulative *= w
-            print(
-                "{:<24s} {:>18.8g}".format(name, cumulative),
-                flush=True,
-            )
-
-        print(
-            "\nCached total GetWeight():",
-            self.GetWeight(),
-            flush=True,
-        )
-        print("======================================\n", flush=True)
 
     def GetStandardWeightV1(self):
 
@@ -2170,37 +2015,6 @@ class CVPythonUniverse():
         y = self.GetVecElem("vtx", 1)
         return _hex_edge_distance_mm(x, y, apothem_mm)
 
-    # def MuonP3D_beam(self):
-    #     """
-    #     Reco muon 3-momentum (px,py,pz) in BEAM coordinates, MeV.
-
-    #     This matches the components used in MuonFunctions.h:GetPmu_nominal()
-    #     via: GetAnaToolName() + "_leptonE".
-    #     """
-    #     lepton_branch = self.GetAnaToolName() + "_leptonE"
-    #     px = self.GetVecElem(lepton_branch, 0)
-    #     py = self.GetVecElem(lepton_branch, 1)
-    #     pz = self.GetVecElem(lepton_branch, 2)
-
-    #     # print("Muon beam p:", px, py, pz)
-    #     # print("lepton_branch: ", lepton_branch)
-
-    #     return ROOT.Math.XYZVector(px, py, pz)
-
-    # def MuonP3D_det(self):
-    #     """
-    #     Muon 3-momentum rotated into the same DET coordinate convention
-    #     used by ElectronP3D() (RotationX(-BEAM_ANGLE)).
-    #     """
-    #     p = self.MuonP3D_beam()
-    #     r = ROOT.Math.RotationX(-SystematicsConfig.BEAM_ANGLE)
-    #     p_det = r(p)
-
-    #     # print("Muon det vec:", p_det.X(), p_det.Y(), p_det.Z(), " |p|=", p_det.R())
-
-    #     return p_det
-
-
     def MuonP3D_det(self):
         """
         Reconstructed muon momentum in detector coordinates (MeV).
@@ -2227,7 +2041,28 @@ class CVPythonUniverse():
         rotation = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
         return rotation(p_det)
 
+    def MuonTheta(self):
+        """Muon polar angle in beam coordinates (radians)."""
+        return self.MuonP3D_beam().Theta()
 
+
+    def MuonPhi(self):
+        """
+        Muon azimuth in beam coordinates (radians).
+
+        Match MAT's phi3D convention, including backward-going tracks.
+        """
+        p = self.MuonP3D_beam()
+
+        if p.R() == 0:
+            return 0.0
+
+        sign = -1.0 if p.Z() < 0 else 1.0
+
+        return math.atan2(
+            sign * p.Y(),
+            sign * p.X()
+        )
 
 
     @staticmethod
@@ -2758,6 +2593,10 @@ class BeamAngleShiftUniverse(CVSystematicUniverse):
 
     def ElectronP3D(self):
         p = super(BeamAngleShiftUniverse,self).ElectronP3D()
+        return self.rotation(p)
+
+    def MuonP3D_beam(self):
+        p = super(BeamAngleShiftUniverse, self).MuonP3D_beam()
         return self.rotation(p)
 
     @staticmethod
