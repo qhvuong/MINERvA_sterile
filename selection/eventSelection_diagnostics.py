@@ -35,19 +35,21 @@ from config import SystematicsConfig
 ROOT.TH1.AddDirectory(False)
 
 
+
 def plotRecoKin(mc, chainwrapper, outfile):
     """
     Main reconstructed-event selection.
 
-    Optional muon-angle validation:
-      Compare MAT GetThetamu()/GetPhimu() against the angles
-      calculated from MuonP3D_beam() using the same MC event.
+    Optional diagnostics:
+      DEBUG_MUON_ANGLES=1
+          Compare MAT GetThetamu()/GetPhimu() with the new
+          MuonTheta()/MuonPhi() methods, including backward muons.
 
-    Enable with:
-        DEBUG_MUON_ANGLES=1
+      DEBUG_BEAM_ANGLE=1
+          Verify that beam-angle systematic universes shift
+          the reconstructed muon angle and preserve |p|.
 
-    This diagnostic does not change event selection, weights,
-    systematic universes, or histogram filling.
+    Neither diagnostic modifies selection, weights, or histograms.
     """
     kin_cal = KinematicsCalculator(
         correct_beam_angle=True,
@@ -85,63 +87,79 @@ def plotRecoKin(mc, chainwrapper, outfile):
     setAlarm = AnalysisConfig.grid
 
     # ============================================================
-    # Optional CV muon-angle comparison
+    # Optional muon-angle diagnostics
     # ============================================================
 
     from config import SystematicsConfig
 
+    is_muon_mc = (
+        mc and abs(SystematicsConfig.AnaNuPDG) == 14
+    )
+
     debug_muon_angles = (
-        os.environ.get("DEBUG_MUON_ANGLES", "0") == "1"
-        and mc
-        and abs(SystematicsConfig.AnaNuPDG) == 14
+        is_muon_mc
+        and os.environ.get("DEBUG_MUON_ANGLES", "0") == "1"
+    )
+
+    debug_beam_angle = (
+        is_muon_mc
+        and os.environ.get("DEBUG_BEAM_ANGLE", "0") == "1"
     )
 
     max_debug_events = 5000
     max_print_outliers = 10
 
+    def wrapped_delta_phi(phi1, phi2):
+        """Wrapped difference in radians, within [-pi, pi]."""
+        return math.atan2(
+            math.sin(phi1 - phi2),
+            math.cos(phi1 - phi2),
+        )
+
+    # CV vs MAT statistics, separated by forward/backward tracks.
+    def new_angle_stats():
+        return {
+            "n": 0,
+            "skipped": 0,
+            "sum_dtheta": 0.0,
+            "sum_dphi": 0.0,
+            "sum_dtheta2": 0.0,
+            "sum_dphi2": 0.0,
+            "max_dtheta": 0.0,
+            "max_dphi": 0.0,
+            "outliers": [],
+        }
+
     angle_stats = {
-        "n": 0,
-        "skipped": 0,
-        "sum_dtheta": 0.0,
-        "sum_dphi": 0.0,
-        "sum_dtheta2": 0.0,
-        "sum_dphi2": 0.0,
-        "max_dtheta": 0.0,
-        "max_dphi": 0.0,
-        "outliers": [],
+        "forward": new_angle_stats(),
+        "backward": new_angle_stats(),
     }
 
-    if debug_muon_angles:
-        print("\n========== MUON ANGLE VALIDATION ==========")
-        print("MAT: GetThetamu(), GetPhimu()")
-        print("Vector: MuonP3D_beam().Theta(), .Phi()")
-        print("All reported angles are in degrees.")
-        print("Comparisons use the CV universe only.")
-        print("Maximum comparisons:", max_debug_events)
-        print("===========================================\n")
+    cv_universe = universes["cv"][0] if is_muon_mc else None
 
-    cv_universe = universes["cv"][0] if debug_muon_angles else None
+    # Identify beam-angle universes through the systematic factory,
+    # rather than PyROOT's class-name representation.
+    beam_universes = universes.get("beam_angle", [])
+
+    if debug_beam_angle:
+        print("Available systematic groups:", list(universes.keys()))
+        print("Number of beam-angle universes:", len(beam_universes))
+
+        for i, u in enumerate(beam_universes):
+            print(
+                "Beam universe", i,
+                "sigma =", u.GetSigma(),
+                "type =", type(u),
+            )
 
     def compare_muon_angles(univ, counter):
         """
-        Compare MAT angles to momentum-derived angles.
+        Compare new momentum-derived angles against MAT.
 
-        Ignore invalid momenta and nonfinite angular values.
-        This is a diagnostic, not an event-selection cut.
+        Include both forward and backward reconstructed muons.
         """
-        stats = angle_stats
-
-        if stats["n"] >= max_debug_events:
-            return
-
         p_det = univ.MuonP3D_det()
         p_beam = univ.MuonP3D_beam()
-
-        # Only compare forward-going muons.
-        # MAT's phi3D() uses angular slopes, which can differ by
-        # 180 degrees from the momentum-vector phi for backward tracks.
-        if p_beam.Z() <= 0:
-            return
 
         components = (
             float(p_det.X()),
@@ -151,6 +169,14 @@ def plotRecoKin(mc, chainwrapper, outfile):
             float(p_beam.Y()),
             float(p_beam.Z()),
         )
+
+        direction = (
+            "forward" if p_beam.Z() >= 0 else "backward"
+        )
+        stats = angle_stats[direction]
+
+        if stats["n"] >= max_debug_events:
+            return
 
         if (
             not all(math.isfinite(x) for x in components)
@@ -163,31 +189,28 @@ def plotRecoKin(mc, chainwrapper, outfile):
         theta_mat = float(univ.GetThetamu())
         phi_mat = float(univ.GetPhimu())
 
-        theta_vec = float(p_beam.Theta())
-        phi_vec = float(p_beam.Phi())
+        # New functions added to CVPythonUniverse.
+        theta_new = float(univ.MuonTheta())
+        phi_new = float(univ.MuonPhi())
 
-        angles = (theta_mat, phi_mat, theta_vec, phi_vec)
-
-        if not all(math.isfinite(x) for x in angles):
-            stats["skipped"] += 1
-            return
-
-        if not (
-            0.0 <= theta_mat <= math.pi
-            and 0.0 <= theta_vec <= math.pi
+        if not all(
+            math.isfinite(x)
+            for x in (theta_mat, phi_mat, theta_new, phi_new)
         ):
             stats["skipped"] += 1
             return
 
-        dtheta = math.degrees(theta_vec - theta_mat)
+        if not (
+            0 <= theta_mat <= math.pi
+            and 0 <= theta_new <= math.pi
+        ):
+            stats["skipped"] += 1
+            return
 
-        # Wrap phi difference into [-pi, pi].
-        # This avoids false ~360-degree disagreements.
-        dphi_rad = math.atan2(
-            math.sin(phi_vec - phi_mat),
-            math.cos(phi_vec - phi_mat),
+        dtheta = math.degrees(theta_new - theta_mat)
+        dphi = math.degrees(
+            wrapped_delta_phi(phi_new, phi_mat)
         )
-        dphi = math.degrees(dphi_rad)
 
         stats["n"] += 1
         stats["sum_dtheta"] += dtheta
@@ -205,27 +228,122 @@ def plotRecoKin(mc, chainwrapper, outfile):
         result = {
             "entry": counter,
             "theta_mat": math.degrees(theta_mat),
-            "theta_vec": math.degrees(theta_vec),
+            "theta_new": math.degrees(theta_new),
             "phi_mat": math.degrees(phi_mat),
-            "phi_vec": math.degrees(phi_vec),
+            "phi_new": math.degrees(phi_new),
             "dtheta": dtheta,
             "dphi": dphi,
             "p_det": components[:3],
             "p_beam": components[3:],
-            "pmu_mat": float(univ.GetPmu()),
         }
 
-        # Keep events with the largest combined angular difference.
-        outliers = stats["outliers"]
-        outliers.append(result)
-
-        outliers.sort(
-            key=lambda r: max(abs(r["dtheta"]), abs(r["dphi"])),
+        stats["outliers"].append(result)
+        stats["outliers"].sort(
+            key=lambda r: max(
+                abs(r["dtheta"]),
+                abs(r["dphi"]),
+            ),
             reverse=True,
         )
 
-        if len(outliers) > max_print_outliers:
-            outliers.pop()
+        if len(stats["outliers"]) > max_print_outliers:
+            stats["outliers"].pop()
+
+    # Collect beam-angle comparisons for each universe.
+    beam_stats = {}
+
+    def compare_beam_angle(univ, counter):
+        """
+        Compare the varied muon direction with CV.
+
+        Check:
+          - theta variation
+          - wrapped phi variation
+          - momentum magnitude preservation
+        """
+        p_cv = cv_universe.MuonP3D_beam()
+        p_var = univ.MuonP3D_beam()
+
+        values = (
+            float(p_cv.R()),
+            float(p_var.R()),
+            float(p_cv.Theta()),
+            float(p_var.Theta()),
+            float(p_cv.Phi()),
+            float(p_var.Phi()),
+        )
+
+        if (
+            not all(math.isfinite(v) for v in values)
+            or p_cv.R() <= 0
+            or p_var.R() <= 0
+        ):
+            return
+
+        key = (
+            str(univ.ShortName()),
+            float(univ.GetSigma()),
+            str(getattr(univ, "rotation", "")),
+        )
+
+        if key not in beam_stats:
+            beam_stats[key] = {
+                "n": 0,
+                "max_dtheta": 0.0,
+                "max_dphi": 0.0,
+                "max_rel_dp": 0.0,
+                "sum_dtheta2": 0.0,
+                "sum_dphi2": 0.0,
+            }
+
+        stats = beam_stats[key]
+
+        if stats["n"] >= max_debug_events:
+            return
+
+        dtheta = math.degrees(
+            float(p_var.Theta() - p_cv.Theta())
+        )
+
+        dphi = math.degrees(
+            wrapped_delta_phi(
+                float(p_var.Phi()),
+                float(p_cv.Phi()),
+            )
+        )
+
+        rel_dp = abs(
+            float(p_var.R() - p_cv.R()) / float(p_cv.R())
+        )
+
+        stats["n"] += 1
+
+        stats["max_dtheta"] = max(
+            stats["max_dtheta"], abs(dtheta)
+        )
+        stats["max_dphi"] = max(
+            stats["max_dphi"], abs(dphi)
+        )
+        stats["max_rel_dp"] = max(
+            stats["max_rel_dp"], rel_dp
+        )
+
+        stats["sum_dtheta2"] += dtheta * dtheta
+        stats["sum_dphi2"] += dphi * dphi
+
+    if debug_muon_angles:
+        print("\n========== MUON ANGLE VALIDATION ==========")
+        print("MAT: GetThetamu(), GetPhimu()")
+        print("New: MuonTheta(), MuonPhi()")
+        print("Forward and backward tracks included")
+        print("Angles reported in degrees")
+        print("===========================================\n")
+
+    if debug_beam_angle:
+        print("\n========== BEAM ANGLE VALIDATION ==========")
+        print("Comparing beam-angle universes against CV")
+        print("Checking angular shifts and |p| preservation")
+        print("===========================================\n")
 
     # ============================================================
     # Standard reconstructed-event loop
@@ -239,8 +357,10 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if setAlarm:
                 signal.alarm(900)
 
-        flux_debug_this_event = 0
-        selected_event_for_debug = False
+        # Set CV to the same event before using it as a reference.
+        # The normal universe loop will SetEntry again as usual.
+        if debug_beam_angle:
+            cv_universe.SetEntry(counter)
 
         for universe in chain.from_iterable(iter(universes.values())):
 
@@ -250,14 +370,17 @@ def plotRecoKin(mc, chainwrapper, outfile):
             )
             universe.ResetWeight()
 
-            # Diagnostic before classification so that the angle
-            # comparison is independent of selection decisions.
             if (
                 debug_muon_angles
                 and universe is cv_universe
-                and angle_stats["n"] < max_debug_events
             ):
                 compare_muon_angles(universe, counter)
+
+            if (
+                debug_beam_angle
+                and any(universe is u for u in beam_universes)
+            ):
+                compare_beam_angle(universe, counter)
 
             if (
                 mc
@@ -266,8 +389,6 @@ def plotRecoKin(mc, chainwrapper, outfile):
             ):
                 continue
 
-            # Recalculate kinematics and classification only
-            # for universes with lateral shifts.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
@@ -280,19 +401,22 @@ def plotRecoKin(mc, chainwrapper, outfile):
                     entry.Process(universe)
 
     # ============================================================
-    # Muon-angle diagnostic summary
+    # CV muon-angle comparison summary
     # ============================================================
 
     if debug_muon_angles:
-        stats = angle_stats
-        n = stats["n"]
-
         print("\n========== MUON ANGLE COMPARISON ==========")
-        print("Valid comparisons:", n)
-        print("Invalid entries skipped:", stats["skipped"])
 
-        if n > 0:
-            print("\n--- Angular differences (degrees) ---")
+        for direction in ("forward", "backward"):
+            stats = angle_stats[direction]
+            n = stats["n"]
+
+            print("\n---", direction.upper(), "MUONS ---")
+            print("Valid comparisons:", n)
+            print("Invalid skipped:", stats["skipped"])
+
+            if n == 0:
+                continue
 
             print(
                 "Delta theta:",
@@ -308,26 +432,69 @@ def plotRecoKin(mc, chainwrapper, outfile):
                 "max abs =", stats["max_dphi"],
             )
 
-            print("\n--- Largest angular discrepancies ---")
+            print("\nLargest discrepancies:")
 
             for r in stats["outliers"]:
                 print(
                     "\nEntry:", r["entry"],
                     "\n  theta MAT:", r["theta_mat"],
-                    "\n  theta vec:", r["theta_vec"],
+                    "\n  theta new:", r["theta_new"],
                     "\n  dtheta:", r["dtheta"],
                     "\n  phi MAT:", r["phi_mat"],
-                    "\n  phi vec:", r["phi_vec"],
+                    "\n  phi new:", r["phi_new"],
                     "\n  dphi:", r["dphi"],
                     "\n  p det:", r["p_det"],
                     "\n  p beam:", r["p_beam"],
-                    "\n  |p| MAT:", r["pmu_mat"],
                 )
 
-        else:
-            print("WARNING: No valid muon comparisons!")
-
         print("\n===========================================\n")
+
+    # ============================================================
+    # Beam-angle systematic summary
+    # ============================================================
+
+    if debug_beam_angle:
+        print("\n========== BEAM ANGLE SYSTEMATICS ==========")
+
+        if not beam_stats:
+            print("WARNING: No beam-angle universes were compared.")
+            print("Check AnalysisConfig.exclude_universes.")
+
+        for key, stats in beam_stats.items():
+            n = stats["n"]
+
+            if n == 0:
+                continue
+
+            print("\nUniverse:", key)
+            print("Events:", n)
+
+            print(
+                "Delta theta RMS:",
+                math.sqrt(stats["sum_dtheta2"] / n),
+                "degrees",
+            )
+            print(
+                "Delta phi RMS:",
+                math.sqrt(stats["sum_dphi2"] / n),
+                "degrees",
+            )
+            print(
+                "Max |Delta theta|:",
+                stats["max_dtheta"],
+                "degrees",
+            )
+            print(
+                "Max |Delta phi|:",
+                stats["max_dphi"],
+                "degrees",
+            )
+            print(
+                "Max relative |p| difference:",
+                stats["max_rel_dp"],
+            )
+
+        print("\n============================================\n")
 
     # ============================================================
     # Standard histogram finalization

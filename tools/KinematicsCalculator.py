@@ -414,6 +414,8 @@ class KinematicsCalculator(object):
         if abs(p_vector - p_energy) > 1e-4:
             print(
                 "[MUON MOMENTUM MISMATCH]",
+                "universe =", event.ShortName(),
+                "sigma =", event.GetSigma(),
                 f"p_vector={p_vector:.6f}",
                 f"p_energy={p_energy:.6f}",
                 f"diff={p_vector-p_energy:.6f}",

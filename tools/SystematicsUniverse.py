@@ -2019,8 +2019,15 @@ class CVPythonUniverse():
         """
         Reconstructed muon momentum in detector coordinates (MeV).
 
-        Raw components are taken directly from the AnaTuple
-        lepton four-vector.
+        The AnaTuple lepton four-vector provides the reconstructed
+        muon direction.
+
+        Use MAT GetPmu() for the momentum magnitude so that
+        MINERvA/MINOS muon-energy and resolution systematics
+        propagate consistently to the reconstructed momentum vector.
+
+        This preserves the nominal direction and does not apply
+        any beam-coordinate rotation here.
         """
         lepton_branch = self.GetAnaToolName() + "_leptonE"
 
@@ -2028,7 +2035,17 @@ class CVPythonUniverse():
         py = self.GetVecElem(lepton_branch, 1)
         pz = self.GetVecElem(lepton_branch, 2)
 
-        return ROOT.Math.XYZVector(px, py, pz)
+        p_det = ROOT.Math.XYZVector(px, py, pz)
+
+        p_raw = p_det.R()
+
+        if p_raw <= 0:
+            return p_det
+
+        # MAT GetPmu() includes the active muon momentum systematics.
+        p_syst = self.GetPmu()
+
+        return p_det * (p_syst / p_raw)
 
     def MuonP3D_beam(self):
         """
