@@ -2786,43 +2786,31 @@ class LowQ2PionUniverse(ROOT.PlotUtils.LowQ2PionUniverse(ROOT.PythonMinervaUnive
             channel.upper()
         )
 
-
-    # def GetMyLowQ2PiWeight(self):
-    #     if self.nsigma == 0 or self.channel is None:
-    #         return 1
-    #     else :
-    #         return super(LowQ2PionUniverse,self).GetLowQ2PiWeight(self.channel)
-
-    # @staticmethod
-    # def GetSystematicsUniverses(chain):
-    #     cvshifts = [LowQ2PionUniverse(chain,i,SystematicsConfig.LowQ2PiWeightChannel) for i in OneSigmaShift] if SystematicsConfig.LowQ2PiWeightChannel is not None else []
-    #     #cvshifts.extend([LowQ2PionUniverse(chain,i,j) for j in SystematicsConfig.LowQ2PiWeightSysChannel for i in ([-1,1] if j is not None else [0])])
-    #     return cvshifts
     @staticmethod
     def GetSystematicsUniverses(chain):
 
-        if USE_MNVTUNE_V1:
-            channel = (
-                V1_LOWQ2PI_CHANNEL
-                if V1_ADD_LOWQ2PI
-                else None
-            )
-        elif USE_MNVTUNE_V4P4P1:
-            channel = (
-                V4P4P1_LOWQ2PI_CHANNEL
-                if V4P4P1_ADD_LOWQ2PI
-                else None
-            )
-        else:
-            channel = SystematicsConfig.LowQ2PiWeightChannel
-
-        if channel is None:
+        # V1 and v4.4.1 do not use the low-Q2 pion tune.
+        if USE_MNVTUNE_V1 or USE_MNVTUNE_V4P4P1:
             return []
 
-        return [
-            LowQ2PionUniverse(chain, i, channel)
-            for i in OneSigmaShift
-        ]
+        # v4.3.0 and v4.3.1 use MENU1PI.
+        if USE_MNVTUNE_V4P3P0 or USE_MNVTUNE_V4P3P1:
+            if not V4P3P0_ADD_LOWQ2PI:
+                return []
+
+            channel = V4P3P0_LOWQ2PI_CHANNEL
+
+            if channel is None:
+                raise RuntimeError(
+                    "Low-Q2 pion tune enabled without a channel."
+                )
+
+            return [
+                LowQ2PionUniverse(chain, i, channel)
+                for i in OneSigmaShift
+            ]
+
+        return []
 
 
 class LowQ2PionUniverseAlt(CVPythonUniverse):
@@ -3288,12 +3276,13 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
         active_tunes = [
             USE_MNVTUNE_V1,
             USE_MNVTUNE_V4P3P0,
+            USE_MNVTUNE_V4P3P1,
             USE_MNVTUNE_V4P4P1,
         ]
 
-        if sum(active_tunes) > 1:
+        if sum(active_tunes) != 1:
             raise RuntimeError(
-                "Only one MINERvA tune can be active."
+                "Exactly one MINERvA tune must be active."
             )
 
         CVSystematicUniverse.SetNonResPiReweight(True)
@@ -3419,12 +3408,11 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #Non resonant pion universe
             # #universes.extend(NonResonantPionUniverse.GetSystematicsUniverses(chain ))
 
-            # Low-Q2 pion systematic only when that tune component is active
-            if (not USE_MNVTUNE_V1) or V1_ADD_LOWQ2PI:
-                universes.extend(
-                    LowQ2PionUniverse.GetSystematicsUniverses(chain)
-                )
-            #universes.extend(LowQ2PionUniverseAlt.GetSystematicsUniverses(chain )) used for warping study variant
+            # Low-Q2 pion systematic:
+            # enabled only for v4.3.0 and v4.3.1 when MENU1PI is active.
+            universes.extend(
+                LowQ2PionUniverse.GetSystematicsUniverses(chain)
+            )
 
             # #birk shift universe
             ##universes.extend(BirksShiftUniverse.GetSystematicsUniverses(chain ))
@@ -3432,8 +3420,18 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             #MKModelUniverse
             universes.extend(MKModelUniverse.GetSystematicsUniverses(chain ))
 
-            #FSIWeighUniverse
-            universes.extend(FSIWeightUniverse.GetSystematicsUniverses(chain ))
+            # FSI bug-fix model alternatives.
+            #
+            # The elastic-FSI correction is already included in the
+            # v4.3.1 and v4.4.1 central-value predictions.
+            #
+            # Do not multiply absolute FSI corrections onto those
+            # corrected nominal weights a second time.
+            if USE_MNVTUNE_V1 or USE_MNVTUNE_V4P3P0:
+                universes.extend(
+                    FSIWeightUniverse.GetSystematicsUniverses(chain)
+                )
+
 
             #SuSAValenciaUniverse
             universes.extend(SusaValenciaUniverse.GetSystematicsUniverses(chain ))
