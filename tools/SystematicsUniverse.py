@@ -8,10 +8,8 @@ import os,sys
 import random
 import itertools
 import operator
-import random
 import re
 import numpy as np
-import math
 import ROOT
 import PlotUtils
 import ctypes
@@ -2536,11 +2534,21 @@ class ElectronEnergyScaleUniverse(CVSystematicUniverse):
 
 ###########################################################################
 class ElectronAngleShiftUniverse(CVSystematicUniverse):
-    def __init__(self,chain, nsigma):
-        super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
-        self.axis_angle = random.random()*math.pi
-        self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY)
+    # def __init__(self,chain, nsigma):
+    #     super(ElectronAngleShiftUniverse,self).__init__(chain, nsigma)
+    #     self.axis_angle = random.random()*math.pi
+    #     self.shift_angle = random.gauss(0,self.nsigma*SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY)
+    def __init__(self, chain, nsigma, universe_index):
+        super().__init__(chain, nsigma)
 
+        rng = random.Random(12345 + universe_index)
+
+        self.axis_angle = rng.random() * math.pi
+        self.shift_angle = rng.gauss(
+            0.0,
+            abs(nsigma) * SystematicsConfig.LEPTON_ANGLE_UNCERTAINTY,
+        )
+        
     def ShortName(self):
         return "eltheta"
 
@@ -2562,10 +2570,15 @@ class ElectronAngleShiftUniverse(CVSystematicUniverse):
         theta = super(ElectronAngleShiftUniverse,self).ElectronTheta()
         return theta+self.shift_angle
 
+    # @staticmethod
+    # def GetSystematicsUniverses(chain ):
+    #     return [ElectronAngleShiftUniverse(chain,  1) for i in range(SystematicsConfig.NUM_UNIVERSE)]
     @staticmethod
-    def GetSystematicsUniverses(chain ):
-        return [ElectronAngleShiftUniverse(chain,  1) for i in range(SystematicsConfig.NUM_UNIVERSE)]
-
+    def GetSystematicsUniverses(chain):
+        return [
+            ElectronAngleShiftUniverse(chain, 1, i)
+            for i in range(SystematicsConfig.NUM_UNIVERSE)
+        ]
     
 
 ###########################################################################
@@ -2662,28 +2675,6 @@ class BeamAngleShiftUniverse(CVSystematicUniverse):
             for x in (True, False)
             for sigma in OneSigmaShift
         ]
-# class BeamAngleShiftUniverse(CVSystematicUniverse):
-#     def __init__(self,chain, nsigma, x):
-#         super(BeamAngleShiftUniverse,self).__init__(chain, nsigma)
-#         self.rotation =  ROOT.Math.RotationX(SystematicsConfig.BEAM_XANGLE_UNCERTAINTY*nsigma) if x else ROOT.Math.RotationY(SystematicsConfig.BEAM_YANGLE_UNCERTAINTY*nsigma)
-
-#     def ShortName(self):
-#         return "beam_angle"
-
-#     def LatexName(self):
-#         return "Beam Angle"
-
-#     def ElectronP3D(self):
-#         p = super(BeamAngleShiftUniverse,self).ElectronP3D()
-#         return self.rotation(p)
-
-#     def MuonP3D_beam(self):
-#         p = super(BeamAngleShiftUniverse, self).MuonP3D_beam()
-#         return self.rotation(p)
-
-#     @staticmethod
-#     def GetSystematicsUniverses(chain ):
-#         return [BeamAngleShiftUniverse(chain, i, j) for j in [True,False] for i in OneSigmaShift]
 
 
 class GeantHadronUniverse(ROOT.PlotUtils.GeantHadronUniverse(ROOT.PythonMinervaUniverse), CVPythonUniverse):

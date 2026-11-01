@@ -38,151 +38,107 @@ ROOT.TH1.AddDirectory(False)
 
 
 def plotRecoKin(mc, chainwrapper, outfile):
-    """Main reconstructed-event selection."""
-
-    kin_cal = KinematicsCalculator(
-        correct_beam_angle=True,
-        correct_MC_energy_scale=False,
-        calc_true=mc,
-        is_pc=AnalysisConfig.is_pc,
-    )
-
-    eventClassifier = EventClassifier(
-        classifiers=["Reco", "Truth"] if mc else ["Reco"],
-        use_kin_cuts=True,
-        use_sideband=AnalysisConfig.sidebands,
-    )
-
-    universes = GetAllSystematicsUniverses(
-        chainwrapper,
-        not mc,
-        AnalysisConfig.is_pc,
-        AnalysisConfig.exclude_universes,
-    )
-
-    for universe in chain.from_iterable(universes.values()):
-        universe.LoadTools(kin_cal, eventClassifier)
-
-    Plots = preparePlots(universes, mc)
-
-    nEvents = chainwrapper.GetEntries()
-    print("Total number of events RECO:", nEvents)
-
-    if AnalysisConfig.testing:
-        nEvents = min(nEvents, 2000)
-
-    print("plotRecoKin, mc:", mc)
+    """ The main code of event selection """
+    kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
+    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
+    universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
 
     # ============================================================
-    # Beam-angle diagnostic configuration
+    # Temporary electron-angle systematic audit
     # ============================================================
-    debug_beam_angle = (
+    debug_eltheta = (
         mc
-        and abs(SystematicsConfig.AnaNuPDG) == 14
-        and "beam_angle" in universes
+        and abs(SystematicsConfig.AnaNuPDG) == 12
+        and "eltheta" in universes
     )
 
-    cv_universe = universes["cv"][0] if debug_beam_angle else None
+    if debug_eltheta:
+        print("\n========== ELECTRON ANGLE AUDIT ==========")
 
-    if debug_beam_angle:
-        print("\n========== BEAM ANGLE VALIDATION ==========")
-        print("Beam-angle universes:", len(universes["beam_angle"]))
-        print("Comparing MAT CV angle with varied beam angle")
+        eltheta_universes = universes["eltheta"]
+        print("Number of universes:", len(eltheta_universes))
+
+        for i, u in enumerate(eltheta_universes[:10]):
+            print(
+                f"universe={i:3d}",
+                f"axis_angle={u.axis_angle:+.8f}",
+                f"shift_angle={u.shift_angle:+.8f}",
+                f"shift_mrad={u.shift_angle * 1e3:+.5f}",
+            )
+
         print("==========================================\n")
 
-    # ============================================================
-    # Event loop
-    # ============================================================
+    for univ in chain.from_iterable(iter(universes.values())):
+        univ.LoadTools(kin_cal,eventClassifier)
+
+    Plots = preparePlots(universes,mc)
+    nEvents = chainwrapper.GetEntries()
+    debug_prints = 0
+
+    print(f"Total number of events RECO: ", {nEvents})
+    if AnalysisConfig.testing and nEvents > 2000:
+        nEvents = 2000
+    print("plotRecoKin, mc ",mc)
+    setAlarm = AnalysisConfig.grid
     for counter in range(nEvents):
-
-        if counter % 10000 == 0:
+        #1/4 hour for 10k event, should be more than needed unless stuck in I/O
+        if counter %10000 == 0:
             print(counter)
-            if AnalysisConfig.grid:
+            if setAlarm:
                 signal.alarm(900)
+        flux_debug_this_event = 0
+        selected_event_for_debug = False
 
-        if debug_beam_angle and counter < 10:
-            cv_universe.SetEntry(counter)
-
-            theta_cv = cv_universe.GetThetamu()
-            p_cv = cv_universe.MuonP3D_beam()
-
-        for universe in chain.from_iterable(universes.values()):
+        for universe in chain.from_iterable(iter(universes.values())):
             universe.SetEntry(counter)
-            universe.__dict__.pop(
-                "_cached_new_true_l_over_e", None
-            )
-            universe.ResetWeight()
-
-            # ====================================================
-            # Beam-angle propagation test
-            # ====================================================
             if (
-                debug_beam_angle
+                debug_eltheta
                 and counter < 10
-                and universe.ShortName() == "beam_angle"
+                and universe is universes["eltheta"][0]
             ):
-                p_var = universe.MuonP3D_beam()
+                # Ensure CV and systematic universe use the same event.
+                cv_universe = universes["cv"][0]
+                cv_universe.SetEntry(counter)
 
-                theta_var = universe.GetThetamu()
+                p_cv = cv_universe.ElectronP3D()
 
-                # Expected: MAT CV angle + vector rotation difference.
-                theta_expected = (
-                    theta_cv
-                    + p_var.Theta()
-                    - p_cv.Theta()
-                )
+                p1 = universe.ElectronP3D()
+                p2 = universe.ElectronP3D()
+                p_det = universe.ElectronP3D_det()
 
-                delta_theta = math.degrees(
-                    theta_var - theta_cv
-                )
-
-                delta_expected = math.degrees(
-                    theta_expected - theta_cv
-                )
-
-                residual = math.degrees(
-                    theta_var - theta_expected
-                )
+                delta_theta_mrad = (
+                    p1.Theta() - p_cv.Theta()
+                ) * 1e3
 
                 print(
-                    "[BEAM ANGLE PROPAGATION]",
+                    "[ELTHETA CHECK]",
                     f"event={counter}",
-                    f"axis={universe.axis}",
-                    f"sigma={universe.GetSigma():+.0f}",
-                    f"CV={math.degrees(theta_cv):.8f} deg",
-                    f"var={math.degrees(theta_var):.8f} deg",
-                    f"delta={delta_theta:+.8f} deg",
-                    f"expected_delta={delta_expected:+.8f} deg",
-                    f"residual={residual:.3e} deg",
+                    f"theta_cv={math.degrees(p_cv.Theta()):.8f} deg",
+                    f"theta_var={math.degrees(p1.Theta()):.8f} deg",
+                    f"delta_theta={delta_theta_mrad:+.6f} mrad",
+                    f"theta_repeat_diff={abs(p1.Theta()-p2.Theta()):.3e}",
+                    f"p_mag_diff={p1.R()-p_det.R():.3e}",
                 )
 
-            # ====================================================
-            # Standard event processing
-            # ====================================================
-            if (
-                mc
-                and AnalysisConfig.skip_2p2h
-                and universe.mc_intType == 8
-            ):
+            universe.__dict__.pop("_cached_new_true_l_over_e", None)
+            universe.ResetWeight()
+            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
                 continue
 
+            #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-            if (
-                eventClassifier.side_band is not None
-                or eventClassifier.is_true_signal
-            ):
+            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
                 for entry in Plots:
                     entry.Process(universe)
 
     signal.alarm(0)
     outfile.cd()
-
     for entry in Plots:
+        #print entry.histwrapper.name
         entry.Finalize()
-
 
 def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)

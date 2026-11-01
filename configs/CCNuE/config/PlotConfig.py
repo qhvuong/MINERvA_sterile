@@ -222,8 +222,25 @@ PAPER_LEPTON_PT_BINS = [
 
 # Paper longitudinal momentum bins
 PAPER_LEPTON_PPAR_BINS = [
-    1.50, 2.00, 2.50, 3.00, 3.50, 4.50
+    1.5, 2.0, 2.5, 3.0, 3.5, 4.5
 ]
+
+
+DAN_EAVAIL_BINS = [
+    0.00,
+    0.02,
+    0.04,
+    0.08,
+    0.12,
+    0.16,
+    0.24,
+    0.32,
+    0.40,
+    0.60,
+    0.799,
+]
+
+
 
 MARIA_PT_BINS = [
     0.00, 0.07, 0.15, 0.25, 0.33, 0.40, 0.47,
