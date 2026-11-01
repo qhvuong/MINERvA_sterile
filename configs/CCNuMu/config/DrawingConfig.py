@@ -597,6 +597,7 @@ PLOTS_TO_MAKE = [
     # {"name":"True Lepton Energy", "plot_type":"stacked"},
     {"name":"Visible Energy", "plot_type":"stacked"},
     {"name":"Lepton Angle", "plot_type":"stacked"},
+    {"name":"Lepton Phi", "plot_type":"stacked"},
     {"name":"Lepton Pt", "plot_type":"stacked"},
     {"name":"Lepton Ppar", "plot_type":"stacked"},
 
