@@ -78,6 +78,14 @@ def plotRecoKin(mc, chainwrapper, outfile):
             {name: len(univs) for name, univs in universes.items()}
         )
 
+    if not mc:
+        universes = {"cv": universes["cv"]}
+
+        print(
+            "[DATA EM AUDIT] Active universes:",
+            {name: len(univs) for name, univs in universes.items()}
+        )
+
     for univ in chain.from_iterable(universes.values()):
         univ.LoadTools(kin_cal, eventClassifier)
 
@@ -196,6 +204,25 @@ def plotRecoKin(mc, chainwrapper, outfile):
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
+
+                if not mc and universe is universes["cv"][0]:
+                    selected = (
+                        eventClassifier.side_band is not None
+                        or eventClassifier.is_true_signal
+                    )
+
+                    if selected:
+                        e_ecal = universe.GetVecElem(
+                            "prong_ECALCalibE", 0
+                        )
+
+                        if not math.isfinite(e_ecal) or e_ecal < 0:
+                            print(
+                                "[DATA SELECTED INVALID ECAL]",
+                                f"event={counter}",
+                                f"ECALCalibE={e_ecal}",
+                                f"EMShift={universe.GetEMEnergyShift()}",
+                            )
 
                 selected = (
                     eventClassifier.side_band is not None

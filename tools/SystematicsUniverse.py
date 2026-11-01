@@ -2141,7 +2141,15 @@ class CVPythonUniverse():
         return 0
 
     def GetEMEnergyShift(self):
-        return self.prong_ECALCalibE[0]*SystematicsConfig.EM_ENERGY_SCALE_SHIFT_ECAL if self.nsigma is None else 0
+        if self.nsigma is not None:
+            return 0.0
+
+        calib_e = self.GetVecElem("prong_ECALCalibE", 0)
+
+        if not math.isfinite(calib_e) or calib_e < 0:
+            return 0.0
+
+        return (calib_e * SystematicsConfig.EM_ENERGY_SCALE_SHIFT_ECAL)
 
     def dedxDelta(self):
         dedx = self.GetVecDouble("dEdXs")
@@ -2558,7 +2566,7 @@ class ElectronAngleShiftUniverse(CVSystematicUniverse):
         return "eltheta"
 
     def LatexName(self):
-        return "Election Candidate Angle"
+        return "Electron Candidate Angle"
 
     def ElectronP3D(self):
         p = super(ElectronAngleShiftUniverse,self).ElectronP3D()
@@ -2941,6 +2949,9 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             # #Electron momentum universe
             if abs(SystematicsConfig.AnaNuPDG)==12:
                 universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
+                universes.extend(ElectronEnergyScaleUniverse.GetSystematicsUniverses(chain))
+
             elif abs(SystematicsConfig.AnaNuPDG)==14:
                 universes.extend(MuonUniverseMinerva.GetSystematicsUniverses(chain ))
                 universes.extend(MuonUniverseMinos.GetSystematicsUniverses(chain ))
@@ -2951,14 +2962,8 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
             else:
                 raise ValueError ("AnaNuPDG should be \pm 12 or 14, but you set {}".format(SystematicsConfig.AnaNuPDG))
 
-            #Electron angle universe
-            universes.extend(ElectronAngleShiftUniverse.GetSystematicsUniverses(chain ))
-
             #Electron momentum universe
             #universes.extend(ElectronEnergyShiftUniverse.GetSystematicsUniverses(chain ))
-
-            #Electron energy scale universe
-            universes.extend(ElectronEnergyScaleUniverse.GetSystematicsUniverses(chain))
 
             #beam angle shift universe
             universes.extend(BeamAngleShiftUniverse.GetSystematicsUniverses(chain ))
