@@ -32,7 +32,8 @@ M_mu_sqr = M_mu**2
 
 USE_MNVTUNE_V1 = False
 USE_MNVTUNE_V4P3P0 = False
-USE_MNVTUNE_V4P4P1 = True
+USE_MNVTUNE_V4P3P1 = True
+USE_MNVTUNE_V4P4P1 = False
 
 
 V1_ADD_DEUTERIUM = False
@@ -59,8 +60,6 @@ V4P3P0_ADD_MINOS_EFFICIENCY = True
 
 # v4.4.1 generator corrections
 V4P4P1_ADD_ZEXP = True
-V4P4P1_ADD_LOWQ2PI = False
-V4P4P1_LOWQ2PI_CHANNEL = None
 V4P4P1_ADD_LE_COH = False
 V4P4P1_ADD_ME_COH = False
 V4P4P1_ADD_DIFFRACTIVE = False
@@ -871,19 +870,21 @@ class CVPythonUniverse():
         active_tunes = [
             USE_MNVTUNE_V1,
             USE_MNVTUNE_V4P3P0,
+            USE_MNVTUNE_V4P3P1,
             USE_MNVTUNE_V4P4P1,
         ]
 
-        if sum(active_tunes) > 1:
-            raise RuntimeError(
-                "Only one MINERvA tune can be active."
-            )
+        if sum(active_tunes) != 1:
+            raise RuntimeError("Exactly one MINERvA tune must be active.")
 
         if USE_MNVTUNE_V1:
             return self.GetStandardWeightV1()
 
         if USE_MNVTUNE_V4P3P0:
             return self.GetStandardWeightV4p3p0()
+
+        if USE_MNVTUNE_V4P3P1:
+            return self.GetStandardWeightV4p3p1()
 
         if USE_MNVTUNE_V4P4P1:
             return self.GetStandardWeightV4p4p1()
@@ -1268,6 +1269,35 @@ class CVPythonUniverse():
 
         return weight
 
+
+    def GetStandardWeightV4p3p1(self):
+        """
+        MINERvA Tune v4.3.1 central-value event weight.
+
+        v4.3.1 = v4.3.0 + GENIE elastic-FSI bug fix.
+
+        Retains:
+        - NonResPi and full deuterium bubble-chamber fit
+        - Flux CV
+        - Valencia 2p2h, with invalid-kinematics safeguard
+        - Valencia RPA
+        - MENU1PI low-Q2 pion correction
+        - ME coherent pion correction
+        - Hydrogen diffractive correction
+        - Configured GEANT neutron CV and MINOS corrections
+
+        Adds:
+        - GENIE elastic-FSI correction
+        """
+
+        weight = self.GetStandardWeightV4p3p0()
+
+        # GENIE elastic-FSI bug fix
+        weight *= self.GetFSIWeight(1)
+
+        return weight
+
+
     def GetStandardWeightV4p4p1(self):
         """
         MINERvA Tune v4.4.1 central-value weight.
@@ -1411,13 +1441,13 @@ class CVPythonUniverse():
         # --------------------------------------------------
         weight *= self.GetRPAWeight()
 
-        # --------------------------------------------------
-        # Optional low-Q2 pion correction
-        # --------------------------------------------------
-        if V4P4P1_ADD_LOWQ2PI:
-            weight *= self.GetMyLowQ2PiWeight(
-                V4P4P1_LOWQ2PI_CHANNEL
-            )
+        # # --------------------------------------------------
+        # # Optional low-Q2 pion correction
+        # # --------------------------------------------------
+        # if V4P4P1_ADD_LOWQ2PI:
+        #     weight *= self.GetMyLowQ2PiWeight(
+        #         V4P4P1_LOWQ2PI_CHANNEL
+        #     )
 
         # --------------------------------------------------
         # Optional coherent pion corrections
@@ -1447,7 +1477,7 @@ class CVPythonUniverse():
         # --------------------------------------------------
         # Detector / reconstruction corrections
         # --------------------------------------------------
-        # weight *= self.GetGeantHadronWeight()
+        weight *= self.GetGeantHadronWeight()
         weight *= self.GetMyMinosEfficiencyWeight()
 
         return weight
@@ -1638,18 +1668,6 @@ class CVPythonUniverse():
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
         # # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1M")
-        # Flux CV: reproduce Maria's treatment
-        # pdg = self.mc_incoming
-
-        # if abs(pdg) == 12:
-        #     flux_weight = 1.0
-        # else:
-        #     flux_weight = self.GetFluxAndCVWeight(
-        #         self.mc_incomingE * 1e-3,
-        #         pdg
-        #     )
-
-        # weight *= flux_weight
 
 
         # ------------------------------------------------------------
@@ -3287,6 +3305,11 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
         elif USE_MNVTUNE_V4P3P0:
             tune_name = "v4.3.0"
+            use_deuterium = True
+            use_zexp = False
+
+        elif USE_MNVTUNE_V4P3P1:
+            tune_name = "v4.3.1"
             use_deuterium = True
             use_zexp = False
 

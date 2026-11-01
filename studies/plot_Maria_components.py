@@ -48,15 +48,17 @@ ROOT.TH1.SetDefaultSumw2(True)
 # ============================================================
 
 DATA_FILE = (
-    "/exp/minerva/data/users/qvuong/nu_mu/"
+    "/exp/minerva/data/users/qvuong/antinu_mu/"
     # "kin_dist_datale1_Maria_LE1_p6_CV_MAD.root"
-    "kin_dist_datale1_ValidateDataMC_CCnumu_MariasCuts_v1_fixedMuonAngle_MAD.root"
+    # "kin_dist_datale1_ValidateDataMC_CCnumu_MariasCuts_v1_fixedMuonAngle_MAD.root"
+    "kin_dist_datale5_ValidateCuts_CCnumubar_Inclusive_Curvature_v1_MAD.root"
 )
 
 MC_FILE = (
-    "/exp/minerva/data/users/qvuong/nu_mu/"
+    "/exp/minerva/data/users/qvuong/antinu_mu/"
     # "kin_dist_mcle1_Maria_LE1_p6_CV_MAD.root"
-    "kin_dist_mcle1_ValidateDataMC_CCnumu_MariasCuts_v1_fixedMuonAngle_MAD.root"
+    # "kin_dist_mcle1_ValidateDataMC_CCnumu_MariasCuts_v1_fixedMuonAngle_MAD.root"
+    "kin_dist_mcle5_ValidateCuts_CCnumubar_Inclusive_Curvature_v1_MAD_no2p2h.root"
 )
 
 
@@ -1037,7 +1039,7 @@ def main():
 
             output = os.path.join(
                 args.outdir,
-                config["name"] + "_components_MariasCuts_v1_fixedMuonAngle_LE1_p8",
+                config["name"] + "_components_CCnumubar_Inclusive_Curvature_v1_p8",
             )
 
             # --------------------------------------------
