@@ -2430,7 +2430,12 @@ class ElectronEnergyShiftUniverse(CVSystematicUniverse):
         self.region = region
 
     def GetEMEnergyShift(self):
-        return self.nsigma*SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY[self.region]*self.GetVecElem("prong_"+self.region+"CalibE",0)
+        calib_e = self.GetVecElem("prong_" + self.region + "CalibE", 0)
+        # Invalid or missing calibrated energy should not
+        # contribute to a regional energy-scale uncertainty.
+        if not math.isfinite(calib_e) or calib_e < 0:
+            return 0.0
+        return (self.nsigma * SystematicsConfig.EM_ENERGY_SCALE_UNCERTAINTY[self.region] * calib_e)
 
     def ShortName(self):
         return "elE_"+self.region

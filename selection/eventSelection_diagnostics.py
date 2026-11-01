@@ -36,109 +36,403 @@ ROOT.TH1.AddDirectory(False)
 
 
 
-
 def plotRecoKin(mc, chainwrapper, outfile):
-    """ The main code of event selection """
-    kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = mc, is_pc = AnalysisConfig.is_pc)
-    eventClassifier = EventClassifier(classifiers=["Reco","Truth"] if mc else ["Reco"], use_kin_cuts=True, use_sideband = AnalysisConfig.sidebands)
-    universes = GetAllSystematicsUniverses(chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+    """Main event selection, with final EM-scale diagnostic."""
 
-    # ============================================================
-    # Temporary electron-angle systematic audit
-    # ============================================================
-    debug_eltheta = (
-        mc
-        and abs(SystematicsConfig.AnaNuPDG) == 12
-        and "eltheta" in universes
+    kin_cal = KinematicsCalculator(
+        correct_beam_angle=True,
+        correct_MC_energy_scale=False,
+        calc_true=mc,
+        is_pc=AnalysisConfig.is_pc,
     )
 
-    if debug_eltheta:
-        print("\n========== ELECTRON ANGLE AUDIT ==========")
+    eventClassifier = EventClassifier(
+        classifiers=["Reco", "Truth"] if mc else ["Reco"],
+        use_kin_cuts=True,
+        use_sideband=AnalysisConfig.sidebands,
+    )
 
-        eltheta_universes = universes["eltheta"]
-        print("Number of universes:", len(eltheta_universes))
+    universes = GetAllSystematicsUniverses(
+        chainwrapper,
+        not mc,
+        AnalysisConfig.is_pc,
+        AnalysisConfig.exclude_universes,
+    )
 
-        for i, u in enumerate(eltheta_universes[:10]):
-            print(
-                f"universe={i:3d}",
-                f"axis_angle={u.axis_angle:+.8f}",
-                f"shift_angle={u.shift_angle:+.8f}",
-                f"shift_mrad={u.shift_angle * 1e3:+.5f}",
-            )
+    # Keep only CV and regional electron-energy systematics
+    # for this diagnostic.
+    if mc and abs(SystematicsConfig.AnaNuPDG) == 12:
+        required = ("cv", "elE_ECAL", "elE_HCAL")
 
-        print("==========================================\n")
+        assert all(name in universes for name in required), (
+            f"Missing required universes. Available: {list(universes)}"
+        )
 
-    for univ in chain.from_iterable(iter(universes.values())):
-        univ.LoadTools(kin_cal,eventClassifier)
+        universes = {
+            name: universes[name]
+            for name in required
+        }
 
-    Plots = preparePlots(universes,mc)
+        print(
+            "[EM AUDIT] Active universes:",
+            {name: len(univs) for name, univs in universes.items()}
+        )
+
+    for univ in chain.from_iterable(universes.values()):
+        univ.LoadTools(kin_cal, eventClassifier)
+
+    Plots = preparePlots(universes, mc)
+
     nEvents = chainwrapper.GetEntries()
-    debug_prints = 0
+    print(f"Total number of events RECO: {nEvents}")
 
-    print(f"Total number of events RECO: ", {nEvents})
-    if AnalysisConfig.testing and nEvents > 2000:
-        nEvents = 2000
-    print("plotRecoKin, mc ",mc)
+    if AnalysisConfig.testing and nEvents > 5000:
+        nEvents = 5000
+
+    print("plotRecoKin, mc", mc)
+
     setAlarm = AnalysisConfig.grid
+
+    # ====================================================
+    # Final regional electron-energy diagnostic
+    # ====================================================
+    audit_em = (
+        mc and abs(SystematicsConfig.AnaNuPDG) == 12
+    )
+
+    regions = ("ECAL", "HCAL")
+    regional_names = {
+        "elE_ECAL": "ECAL",
+        "elE_HCAL": "HCAL",
+    }
+
+    stats = {
+        "total": 0,
+        "invalid_ecal_all": 0,
+        "invalid_hcal_all": 0,
+        "invalid_either_all": 0,
+        "cv_selected": 0,
+        "cv_selected_invalid_ecal": 0,
+        "cv_selected_invalid_hcal": 0,
+        "cv_selected_invalid_either": 0,
+    }
+
+    reg_stats = {
+        (region, sigma): {
+            "selected": 0,
+            "selected_invalid": 0,
+            "selected_invalid_either": 0,
+            "selected_not_cv": 0,
+            "selected_not_cv_invalid": 0,
+            "cv_selected_not_region": 0,
+            "cv_selected_not_region_invalid": 0,
+        }
+        for region in regions
+        for sigma in (-1, 1)
+    }
+
+    sample_messages = []
+    max_samples = 12
+
+    def invalid_energy(value):
+        return not math.isfinite(value) or value < 0
+
+    # ====================================================
+    # Event loop
+    # ====================================================
     for counter in range(nEvents):
-        #1/4 hour for 10k event, should be more than needed unless stuck in I/O
-        if counter %10000 == 0:
+
+        if counter % 10000 == 0:
             print(counter)
             if setAlarm:
                 signal.alarm(900)
-        flux_debug_this_event = 0
-        selected_event_for_debug = False
 
-        for universe in chain.from_iterable(iter(universes.values())):
+        # Read CV regional energies once per event.
+        if audit_em:
+            cv = universes["cv"][0]
+            cv.SetEntry(counter)
+
+            e_ecal = cv.GetVecElem(
+                "prong_ECALCalibE", 0
+            )
+            e_hcal = cv.GetVecElem(
+                "prong_HCALCalibE", 0
+            )
+
+            bad_ecal = invalid_energy(e_ecal)
+            bad_hcal = invalid_energy(e_hcal)
+            bad_either = bad_ecal or bad_hcal
+
+            stats["total"] += 1
+            stats["invalid_ecal_all"] += int(bad_ecal)
+            stats["invalid_hcal_all"] += int(bad_hcal)
+            stats["invalid_either_all"] += int(bad_either)
+
+        # Per-event selection decisions.
+        cv_selected = False
+        regional_results = {}
+
+        # ====================================================
+        # Systematic universe loop
+        # ====================================================
+        for universe in chain.from_iterable(
+            universes.values()
+        ):
             universe.SetEntry(counter)
-            if (
-                debug_eltheta
-                and counter < 10
-                and universe is universes["eltheta"][0]
-            ):
-                # Ensure CV and systematic universe use the same event.
-                cv_universe = universes["cv"][0]
-                cv_universe.SetEntry(counter)
 
-                p_cv = cv_universe.ElectronP3D()
-
-                p1 = universe.ElectronP3D()
-                p2 = universe.ElectronP3D()
-                p_det = universe.ElectronP3D_det()
-
-                delta_theta_mrad = (
-                    p1.Theta() - p_cv.Theta()
-                ) * 1e3
-
-                print(
-                    "[ELTHETA CHECK]",
-                    f"event={counter}",
-                    f"theta_cv={math.degrees(p_cv.Theta()):.8f} deg",
-                    f"theta_var={math.degrees(p1.Theta()):.8f} deg",
-                    f"delta_theta={delta_theta_mrad:+.6f} mrad",
-                    f"theta_repeat_diff={abs(p1.Theta()-p2.Theta()):.3e}",
-                    f"p_mag_diff={p1.R()-p_det.R():.3e}",
-                )
-
-            universe.__dict__.pop("_cached_new_true_l_over_e", None)
+            # Original event-selection workflow.
+            universe.__dict__.pop(
+                "_cached_new_true_l_over_e", None
+            )
             universe.ResetWeight()
-            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType==8:
+
+            if (
+                mc
+                and AnalysisConfig.skip_2p2h
+                and universe.mc_intType == 8
+            ):
                 continue
 
-            #only update kin_cal & eventClassifier when universe in not vertical only.
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+                selected = (
+                    eventClassifier.side_band is not None
+                    or eventClassifier.is_true_signal
+                )
+
+                if audit_em:
+
+                    # CV selection decision.
+                    if universe is universes["cv"][0]:
+                        cv_selected = selected
+
+                        if selected:
+                            stats["cv_selected"] += 1
+
+                            if bad_ecal:
+                                stats[
+                                    "cv_selected_invalid_ecal"
+                                ] += 1
+
+                            if bad_hcal:
+                                stats[
+                                    "cv_selected_invalid_hcal"
+                                ] += 1
+
+                            if bad_either:
+                                stats[
+                                    "cv_selected_invalid_either"
+                                ] += 1
+
+                    # Regional systematic decisions.
+                    name = universe.ShortName()
+
+                    if name in regional_names:
+                        region = regional_names[name]
+                        sigma = int(universe.GetSigma())
+
+                        key = (region, sigma)
+
+                        calib_e = (
+                            e_ecal
+                            if region == "ECAL"
+                            else e_hcal
+                        )
+
+                        bad_region = invalid_energy(
+                            calib_e
+                        )
+
+                        regional_results[key] = (
+                            selected,
+                            bad_region,
+                        )
+
+                        if selected:
+                            reg_stats[key]["selected"] += 1
+
+                            if bad_region:
+                                reg_stats[key][
+                                    "selected_invalid"
+                                ] += 1
+
+                            if bad_either:
+                                reg_stats[key][
+                                    "selected_invalid_either"
+                                ] += 1
+
+            # Original histogram processing.
+            if (
+                eventClassifier.side_band is not None
+                or eventClassifier.is_true_signal
+            ):
                 for entry in Plots:
                     entry.Process(universe)
 
+        # ====================================================
+        # Compare regional selection against CV
+        # ====================================================
+        if audit_em:
+            for key, result in regional_results.items():
+                selected, bad_region = result
+                region, sigma = key
+
+                if selected and not cv_selected:
+                    reg_stats[key][
+                        "selected_not_cv"
+                    ] += 1
+
+                    if bad_region:
+                        reg_stats[key][
+                            "selected_not_cv_invalid"
+                        ] += 1
+
+                elif cv_selected and not selected:
+                    reg_stats[key][
+                        "cv_selected_not_region"
+                    ] += 1
+
+                    if bad_region:
+                        reg_stats[key][
+                            "cv_selected_not_region_invalid"
+                        ] += 1
+
+                # Keep a few concrete examples.
+                if (
+                    bad_region
+                    and (selected or cv_selected)
+                    and len(sample_messages) < max_samples
+                ):
+                    sample_messages.append(
+                        (
+                            counter,
+                            region,
+                            sigma,
+                            e_ecal,
+                            e_hcal,
+                            cv_selected,
+                            selected,
+                        )
+                    )
+
     signal.alarm(0)
+
+    # ====================================================
+    # Final diagnostic report
+    # ====================================================
+    if audit_em:
+
+        print("\n" + "=" * 65)
+        print("FINAL ELECTRON REGIONAL ENERGY-SCALE AUDIT")
+        print("=" * 65)
+
+        print(f"Events processed: {stats['total']}")
+
+        print("\n--- All reconstructed entries ---")
+        print(
+            "Invalid ECAL:",
+            stats["invalid_ecal_all"]
+        )
+        print(
+            "Invalid HCAL:",
+            stats["invalid_hcal_all"]
+        )
+        print(
+            "Invalid either:",
+            stats["invalid_either_all"]
+        )
+
+        print("\n--- CV selection ---")
+        print(
+            "CV selected:",
+            stats["cv_selected"]
+        )
+        print(
+            "Selected with invalid ECAL:",
+            stats["cv_selected_invalid_ecal"]
+        )
+        print(
+            "Selected with invalid HCAL:",
+            stats["cv_selected_invalid_hcal"]
+        )
+        print(
+            "Selected with invalid either:",
+            stats["cv_selected_invalid_either"]
+        )
+
+        print("\n--- Regional systematic universes ---")
+
+        for key, s in sorted(reg_stats.items()):
+            region, sigma = key
+
+            print(
+                f"\n{region} sigma={sigma:+d}"
+            )
+            print(
+                "  Selected:",
+                s["selected"]
+            )
+            print(
+                "  Selected with invalid region energy:",
+                s["selected_invalid"]
+            )
+            print(
+                "  Selected with invalid either energy:",
+                s["selected_invalid_either"]
+            )
+            print(
+                "  Entered selection relative to CV:",
+                s["selected_not_cv"]
+            )
+            print(
+                "    With invalid region energy:",
+                s["selected_not_cv_invalid"]
+            )
+            print(
+                "  Left selection relative to CV:",
+                s["cv_selected_not_region"]
+            )
+            print(
+                "    With invalid region energy:",
+                s["cv_selected_not_region_invalid"]
+            )
+
+        print("\n--- Example invalid-energy events ---")
+
+        if not sample_messages:
+            print(
+                "No invalid regional-energy events "
+                "selected in CV or regional universes."
+            )
+        else:
+            for (
+                event,
+                region,
+                sigma,
+                e_ecal,
+                e_hcal,
+                cv_sel,
+                region_sel,
+            ) in sample_messages:
+                print(
+                    f"event={event}",
+                    f"region={region}",
+                    f"sigma={sigma:+d}",
+                    f"ECAL={e_ecal:.3f}",
+                    f"HCAL={e_hcal:.3f}",
+                    f"CV_selected={cv_sel}",
+                    f"region_selected={region_sel}",
+                )
+
+        print("=" * 65 + "\n")
+
     outfile.cd()
+
     for entry in Plots:
-        #print entry.histwrapper.name
         entry.Finalize()
+
 
 def plotTruthKin(chainwrapper,outfile):
     kin_cal = KinematicsCalculator(correct_beam_angle=True, correct_MC_energy_scale=False, calc_true = True, calc_reco = False)
