@@ -418,11 +418,11 @@ HISTS_TO_MAKE = [
 
 
 ### MY PLOTS ###
-	# "Lepton Energy",
+	"Lepton Energy",
 	# "E Theta Squared",
 	# "True E Theta Squared",
     "Biased Neutrino Energy",
-    "Reco Energy vs L/E",
+    # "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
 	# "Q2",
 	# "True W",
@@ -435,7 +435,7 @@ HISTS_TO_MAKE = [
 	# "True q0 vs Reconstructed Available Energy",
 	# "True Signal True Energy vs Neutrino Length Travelled",
     # "Biased Neutrino Energy Background Fit",
-	# "Visible Energy",
+	"Visible Energy",
 	# "True Lepton Energy",
 	# "True Neutrino Energy",
 	# "Front dEdX",
@@ -457,7 +457,7 @@ HISTS_TO_MAKE = [
 	# "HasTracks",
 	# "HasNoBackExitingTracks",
 	# "Lepton Angle",
-	# "Lepton Pt",
+	"Lepton Pt",
 
 	# # These are plots for testing angle and momentum bias
 	# "Reco ThetaX vs Vertex X",

@@ -88,7 +88,7 @@ SAMPLE_CUTS = {
         "MeanFrontdEdX",
         "Etheta",
         "Eavail",
-        "Pt",
+        # "Pt",
         "LeptonAngle",
 
         ## REMOVED CUTS

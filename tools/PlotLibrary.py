@@ -353,24 +353,24 @@ PLOT_SETTINGS= {
         "value_getter" : [lambda event: event.kin_cal.true_E_lep],
         "tags":truth_tags
     },
-    # "Lepton Pt":
-    # {
-    #     "name" : "Lepton_Pt",
-    #     "title" : "Pt_lepton (GeV); NEvents",
-    #     "binning" : [PlotConfig.NEUTRINO4_P_BINNING],
-    #     "value_getter" : [lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad)],
-    #     "tags":reco_tags
-    # },
     "Lepton Pt":
     {
-        "name": "Lepton_Pt",
-        "title": "Lepton Pt; p_{T}^{lep} (GeV/c); NEvents",
-        "binning": [PlotConfig.PAPER_LEPTON_PT_BINS],
-        "value_getter": [
-            lambda event: event.kin_cal.reco_P_lep * math.sin(event.kin_cal.reco_theta_lep_rad)
-        ],
-        "tags": reco_tags
+        "name" : "Lepton_Pt",
+        "title" : "Pt_lepton (GeV); NEvents",
+        "binning" : [PlotConfig.NEUTRINO4_P_BINNING],
+        "value_getter" : [lambda event: event.kin_cal.reco_P_lep*math.sin(event.kin_cal.reco_theta_lep_rad)],
+        "tags":reco_tags
     },
+    # "Lepton Pt":
+    # {
+    #     "name": "Lepton_Pt",
+    #     "title": "Lepton Pt; p_{T}^{lep} (GeV/c); NEvents",
+    #     "binning": [PlotConfig.PAPER_LEPTON_PT_BINS],
+    #     "value_getter": [
+    #         lambda event: event.kin_cal.reco_P_lep * math.sin(event.kin_cal.reco_theta_lep_rad)
+    #     ],
+    #     "tags": reco_tags
+    # },
     "Lepton Ppar":
     {
         "name": "Lepton_Ppar",
