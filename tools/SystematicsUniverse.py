@@ -29,9 +29,9 @@ M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
 USE_MNVTUNE_V1 = False
-USE_MNVTUNE_V4P3P0 = False
+USE_MNVTUNE_V4P3P0 = True
 USE_MNVTUNE_V4P3P1 = False
-USE_MNVTUNE_V4P4P1 = True
+USE_MNVTUNE_V4P4P1 = False
 
 
 V1_ADD_DEUTERIUM = False
@@ -44,14 +44,15 @@ V1_ADD_COH = False          # ME coherent tune implementation
 V1_ADD_LE_COH = False        # LE coherent tune implementation
 V1_ADD_DIFFCOH = False
 
-# MnvTune v4.3.0
+
+# MnvTune v4.3.0 and analysis-specific variants
 V4P3P0_ADD_LOWQ2PI = True
 V4P3P0_LOWQ2PI_CHANNEL = "MENU1PI"
 
 V4P3P0_ADD_ME_COH = True
+V4P3P0_ADD_LE_COH = False
 V4P3P0_ADD_DIFFRACTIVE = True
 
-# Detector weights, separately configurable
 V4P3P0_ADD_GEANT_HADRON = True
 V4P3P0_ADD_MINOS_EFFICIENCY = True
 
@@ -904,8 +905,16 @@ class CVPythonUniverse():
             )
 
         # --------------------------------------------------
-        # ME coherent-pion reweight
+        # Coherent-pion correction: LE or ME prescription
         # --------------------------------------------------
+        if V4P3P0_ADD_LE_COH and V4P3P0_ADD_ME_COH:
+            raise RuntimeError(
+                "Choose either LE or ME coherent weighting, not both."
+            )
+
+        if V4P3P0_ADD_LE_COH:
+            weight *= self.GetLECOHPionWeight()
+
         if V4P3P0_ADD_ME_COH:
             weight *= self.GetCOHPionWeight()
 

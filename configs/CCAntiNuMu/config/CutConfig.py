@@ -45,13 +45,13 @@ NEUTRINO_ENERGY_RANGE = [0, 100] # in GeV.
 LEPTON_ANGLE_RANGE = [0, 20] # in deg
 RECO_Q3_RANGE = [0,4]
 
-# Ryans ME PT range
-RECO_PT_RANGE= [.2,1.0]
-TRUE_PT_RANGE= [.2,1.0]
+# # Ryans ME PT range
+# RECO_PT_RANGE= [.2,1.0]
+# TRUE_PT_RANGE= [.2,1.0]
 
-# # My LE PT range
-# RECO_PT_RANGE= [.2,1.2]
-# TRUE_PT_RANGE= [.2,1.2]
+# My LE PT range
+RECO_PT_RANGE= [.2,1.2]
+TRUE_PT_RANGE= [.2,1.2]
 
 TRUE_Q3_RANGE = [0,4]
 
@@ -59,7 +59,7 @@ PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 
 # Ryans ME Eavail range
-visE_RANGE = [0.0,0.3]
+visE_RANGE = [0.0,0.4]
 # # My LE Eavail range
 # visE_RANGE = [0.0,0.5]
 

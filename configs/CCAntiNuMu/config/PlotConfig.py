@@ -403,17 +403,17 @@ HISTS_TO_MAKE = [
     "Lepton Energy",
     # "True Lepton Energy",
 
-    "Visible Energy",
-    "Lepton Angle",
-    "Lepton Phi",
-    "Lepton Pt",
-    "Lepton Ppar",
+    # "Visible Energy",
+    # "Lepton Angle",
+    # "Lepton Phi",
+    # "Lepton Pt",
+    # "Lepton Ppar",
 
-	"Lepton Energy vs Available Energy",
-    "Lepton Energy vs Lepton Angle",
+	# "Lepton Energy vs Available Energy",
+    # "Lepton Energy vs Lepton Angle",
 
-	"Lepton Pt vs Lepton Ppar",
-	"Lepton Ppar vs Lepton Pt",
+	# "Lepton Pt vs Lepton Ppar",
+	# "Lepton Ppar vs Lepton Pt",
 
 	# "Lepton Ppar vs Available Energy",
 	# "Lepton Pt vs Available Energy",

@@ -10,6 +10,8 @@ from config.AnalysisConfig import AnalysisConfig
 from config.SignalDef import SIGNAL_DEFINITION
 from tools import Utilities
 import shutil
+import tempfile
+import textwrap
 
 # Get This from Rob. Thanks Rob.
 # This helps python and ROOT not fight over deleting something, by stopping ROOT from trying to own the histogram. Thanks, Phil!
@@ -32,31 +34,90 @@ SelectionFilesRegex = "(kin|truth)_dist_(data|mc)(.+)_"+ AnalysisConfig.selectio
 # )
 
 
-def is_valid_root_file(filepath):
+def is_valid_root_file(filepath, timeout=60):
+    print(f"[CHECK] {filepath}", flush=True)
+
+    check_code = r"""
+import sys
+import ROOT
+
+ROOT.gROOT.SetBatch(True)
+
+f = ROOT.TFile.Open(sys.argv[1], "READ")
+
+if not f or f.IsZombie():
+    sys.exit(1)
+
+if f.TestBit(ROOT.TFile.kRecovered):
+    f.Close()
+    sys.exit(2)
+
+keys = f.GetListOfKeys()
+
+if not keys or keys.GetSize() == 0:
+    f.Close()
+    sys.exit(3)
+
+f.Close()
+sys.exit(0)
+"""
+
     try:
-        print(f"🔍 Checking file: {filepath}")
-        f = ROOT.TFile.Open(filepath, "READ")
-        if not f:
-            print(f"⚠️ Could not open file: {filepath}")
+        result = subprocess.run(
+            [sys.executable, "-c", check_code, filepath],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            print(
+                f"[SKIP] Invalid ROOT file: {filepath} "
+                f"(return code {result.returncode})",
+                flush=True,
+            )
             return False
-        if f.IsZombie():
-            print(f"⚠️ Zombie file: {filepath}")
-            f.Close()
-            return False
-        if f.TestBit(ROOT.TFile.kRecovered):
-            print(f"⚠️ Recovered file (incomplete write): {filepath}")
-            f.Close()
-            return False
-        keys = f.GetListOfKeys()
-        if not keys or keys.GetSize() == 0:
-            print(f"⚠️ File has no histograms: {filepath}")
-            f.Close()
-            return False
-        f.Close()
+
+        print(f"[OK] {filepath}", flush=True)
         return True
-    except Exception as e:
-        print(f"⚠️ Exception while checking {filepath}: {e}")
+
+    except subprocess.TimeoutExpired:
+        print(
+            f"[SKIP] ROOT open/check timed out after "
+            f"{timeout}s: {filepath}",
+            flush=True,
+        )
         return False
+
+    except Exception as e:
+        print(f"[SKIP] {filepath}: {e}", flush=True)
+        return False
+# def is_valid_root_file(filepath):
+#     try:
+#         print(f"🔍 Checking file: {filepath}")
+#         f = ROOT.TFile.Open(filepath, "READ")
+#         if not f:
+#             print(f"⚠️ Could not open file: {filepath}")
+#             return False
+#         if f.IsZombie():
+#             print(f"⚠️ Zombie file: {filepath}")
+#             f.Close()
+#             return False
+#         if f.TestBit(ROOT.TFile.kRecovered):
+#             print(f"⚠️ Recovered file (incomplete write): {filepath}")
+#             f.Close()
+#             return False
+#         keys = f.GetListOfKeys()
+#         if not keys or keys.GetSize() == 0:
+#             print(f"⚠️ File has no histograms: {filepath}")
+#             f.Close()
+#             return False
+#         f.Close()
+#         return True
+#     except Exception as e:
+#         print(f"⚠️ Exception while checking {filepath}: {e}")
+#         return False
 
 
 def MakeNo2p2hName(path):
@@ -97,7 +158,7 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
     print("done a file")
 
 
-# def MaddWrapper(output_playlist, input_files, is_data):
+# def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
 #     valid_files = [f for f in input_files if is_valid_root_file(f)]
 #     print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
 
@@ -105,34 +166,62 @@ def AddOneFile(input_string,output_string, pot_scale,bigGenie=False):
 #         print(f"❌ No valid files to combine for {output_playlist} — skipping.")
 #         return
 
-#     # Optional: sort to make sure the first file is reliable
 #     valid_files.sort()
 
-#     args = ["madd", AnalysisConfig.SelectionHistoPath(output_playlist, is_data)]
+#     out = output_file or AnalysisConfig.SelectionHistoPath(output_playlist, is_data)
+#     args = ["madd", out]
 #     args.extend(valid_files)
 
-#     print(f"📦 Running madd on output: {args[1]}")
+#     print(f"📦 Running madd on output: {out}")
 #     subprocess.run(args, stdout=subprocess.DEVNULL)
 #     print("✅ Finished madd.")
-
 def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
     valid_files = [f for f in input_files if is_valid_root_file(f)]
-    print(f"✅ Found {len(valid_files)} valid input files for playlist {output_playlist}")
+
+    print(
+        f"✅ Found {len(valid_files)} valid input files "
+        f"for playlist {output_playlist}",
+        flush=True,
+    )
 
     if not valid_files:
-        print(f"❌ No valid files to combine for {output_playlist} — skipping.")
-        return
+        raise RuntimeError(
+            f"No valid ROOT files to combine for {output_playlist}"
+        )
 
     valid_files.sort()
 
-    out = output_file or AnalysisConfig.SelectionHistoPath(output_playlist, is_data)
-    args = ["madd", out]
-    args.extend(valid_files)
+    out = output_file or AnalysisConfig.SelectionHistoPath(
+        output_playlist, is_data
+    )
 
-    print(f"📦 Running madd on output: {out}")
-    subprocess.run(args, stdout=subprocess.DEVNULL)
-    print("✅ Finished madd.")
+    args = ["madd", out] + valid_files
 
+    print(f"📦 Running madd on output: {out}", flush=True)
+
+    try:
+        result = subprocess.run(
+            args,
+            timeout=60,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(
+            f"madd timed out after 3600 seconds for {output_playlist}. "
+            f"Check for a partial output: {out}"
+        )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"madd failed for {output_playlist} "
+            f"(exit code {result.returncode}):\n"
+            f"{result.stderr[-3000:]}"
+        )
+
+    print(f"✅ Finished madd: {out}", flush=True)
 
 
 
