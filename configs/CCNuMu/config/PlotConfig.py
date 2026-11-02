@@ -392,10 +392,10 @@ HISTS_TO_MAKE = [
     # --------------------------------------------------
     # Basic reconstructed / truth kinematics
     # --------------------------------------------------
-    "Biased Neutrino Energy",
+    # "Biased Neutrino Energy",
     # "True Neutrino Energy",
 
-    "Lepton Energy",
+    # "Lepton Energy",
     # "True Lepton Energy",
 
     # "Visible Energy",
@@ -477,7 +477,7 @@ HISTS_TO_MAKE = [
 
 
     # "Biased Neutrino Energy",
-    # # "Reco Energy vs L/E",
+    # "Reco Energy vs L/E",
 	# "Lepton Energy",
     # # "True Energy vs L/E",
     # # "True Energy vs Biased Neutrino Energy",
@@ -532,7 +532,7 @@ HISTS_TO_MAKE = [
     # "Estimator vs Front dEdX",
 	# "True Lepton Energy",
 	# "True Neutrino Energy",
-	# "True Signal True Energy vs Neutrino Length Travelled",
+	"True Signal True Energy vs Neutrino Length Travelled",
 	# "Visible Energy",
 	# "HasNoBackExitingTracks",
 	# "Neutrino Vertex Z",

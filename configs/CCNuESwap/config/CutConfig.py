@@ -56,7 +56,7 @@ PSIEE_FLAT_CUT = 0.5
 WEXP_CUT = 2
 
 # Ryans ME Eavail range
-visE_RANGE = [0.0,0.7]
+visE_RANGE = [0.0,0.6]
 # # My LE Eavail range
 # visE_RANGE = [0.0,0.65]
 

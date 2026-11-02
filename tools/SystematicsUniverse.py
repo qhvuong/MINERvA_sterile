@@ -65,7 +65,7 @@ V4P4P1_ADD_DIFFRACTIVE = False
 V4P4P1_ADD_ELASTIC_FSI = True
 
 
-TEST_TAG = "V1D2_LECOH_DiffCOH_noLowQ2"
+TEST_TAG = "v4p3p0"
 
 
 
@@ -314,49 +314,49 @@ def _get_trueEL_hist(path, hname="ETrue_Length_CCNuE"):
         _trueEL_cache[key] = (f, h)
     return _trueEL_cache[key][1]
 
-def GetNeutrinoTravelledLength(enu_gev, pdg,
-                          nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_fullStatsFluxes_MAD.root",
-                          numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_fullStatsFluxes_MAD.root",
-                          nue_hname="ETrue_Length_CCNuE",
-                          numu_hname="ETrue_Length_CCNuMu"):
-    """
-    Return a sampled true L for a neutrino with true energy enu_gev and species pdg.
+# def GetNeutrinoTravelledLength(enu_gev, pdg,
+#                           nue_file="/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_fullStatsFluxes_MAD.root",
+#                           numu_file="/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_fullStatsFluxes_MAD.root",
+#                           nue_hname="ETrue_Length_CCNuE",
+#                           numu_hname="ETrue_Length_CCNuMu"):
+#     """
+#     Return a sampled true L for a neutrino with true energy enu_gev and species pdg.
 
-    Uses:
-      - nue template file/hist for |pdg| == 12
-      - numu template file/hist for |pdg| == 14
+#     Uses:
+#       - nue template file/hist for |pdg| == 12
+#       - numu template file/hist for |pdg| == 14
 
-    Sampling is done from the true-L distribution in the corresponding true-E slice.
-    """
+#     Sampling is done from the true-L distribution in the corresponding true-E slice.
+#     """
 
-    apdg = abs(int(pdg))
-    if apdg == 12:
-        h2 = _get_trueEL_hist(nue_file, nue_hname)
-    elif apdg == 14:
-        h2 = _get_trueEL_hist(numu_file, numu_hname)
-    else:
-        raise ValueError(f"Unsupported PDG for GetNeutrinoTravelledLength: {pdg}")
+#     apdg = abs(int(pdg))
+#     if apdg == 12:
+#         h2 = _get_trueEL_hist(nue_file, nue_hname)
+#     elif apdg == 14:
+#         h2 = _get_trueEL_hist(numu_file, numu_hname)
+#     else:
+#         raise ValueError(f"Unsupported PDG for GetNeutrinoTravelledLength: {pdg}")
 
-    by = h2.GetYaxis().FindBin(enu_gev)
-    by = max(1, min(by, h2.GetNbinsY()))
+#     by = h2.GetYaxis().FindBin(enu_gev)
+#     by = max(1, min(by, h2.GetNbinsY()))
 
-    hL = h2.ProjectionX(f"hL_tmp_{apdg}_{by}_{ROOT.TUUID().AsString()}", by, by)
-    hL.SetDirectory(0)
+#     hL = h2.ProjectionX(f"hL_tmp_{apdg}_{by}_{ROOT.TUUID().AsString()}", by, by)
+#     hL.SetDirectory(0)
 
-    if hL.Integral() <= 0:
-        by1 = max(1, by - 1)
-        by2 = min(h2.GetNbinsY(), by + 1)
-        hL = h2.ProjectionX(f"hL_tmp_wide_{apdg}_{by1}_{by2}_{ROOT.TUUID().AsString()}", by1, by2)
-        hL.SetDirectory(0)
+#     if hL.Integral() <= 0:
+#         by1 = max(1, by - 1)
+#         by2 = min(h2.GetNbinsY(), by + 1)
+#         hL = h2.ProjectionX(f"hL_tmp_wide_{apdg}_{by1}_{by2}_{ROOT.TUUID().AsString()}", by1, by2)
+#         hL.SetDirectory(0)
 
-    if hL.Integral() <= 0:
-        hL = h2.ProjectionX(f"hL_tmp_all_{apdg}_{ROOT.TUUID().AsString()}", 1, h2.GetNbinsY())
-        hL.SetDirectory(0)
+#     if hL.Integral() <= 0:
+#         hL = h2.ProjectionX(f"hL_tmp_all_{apdg}_{ROOT.TUUID().AsString()}", 1, h2.GetNbinsY())
+#         hL.SetDirectory(0)
 
-    if hL.Integral() <= 0:
-        raise RuntimeError(f"No valid L distribution found for pdg={pdg}, Enu={enu_gev}")
+#     if hL.Integral() <= 0:
+#         raise RuntimeError(f"No valid L distribution found for pdg={pdg}, Enu={enu_gev}")
 
-    return hL.GetRandom()
+#     return hL.GetRandom()
 
 def GetNeutrinoTravelledLengthPDF(
     enu_gev,
@@ -803,10 +803,9 @@ class CVPythonUniverse():
                     "Unexpected incoming neutrino PDG: {}".format(pdg)
                 )
 
-        weight *= self.GetFluxAndCVWeight(
-            self.mc_incomingE * 1e-3,
-            pdg
-        )
+        weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
+        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
+
 
         # ------------------------------------------------------------
         # Low-recoil 2p2h CV correction: invalid truth-kinematics guard

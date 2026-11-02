@@ -390,15 +390,15 @@ def Printvar(event):
 
 HISTS_TO_MAKE = [
 ### Plots for Paper ###
-	"Lepton Energy",
 	# "E Theta Squared",
 	# "True E Theta Squared",
-    "Biased Neutrino Energy",
+	# "Lepton Energy",
+    # "Biased Neutrino Energy",
     # "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
 	# "Q2",
 	# "True W",
-	# "True Signal True Energy vs Neutrino Length Travelled",
+	"True Signal True Energy vs Neutrino Length Travelled",
     # "Biased Neutrino Energy Background Fit",
 	# "Visible Energy",
 	# "True Lepton Energy",
@@ -424,9 +424,9 @@ HISTS_TO_MAKE = [
 
     # "Biased Neutrino Energy",
 	# "Lepton Energy",
-	"Visible Energy",
+	# "Visible Energy",
 	# "Lepton Angle",
-	"Lepton Pt",
+	# "Lepton Pt",
 	# "E Theta Squared",
 	# "HasNoBackExitingTracks",
 	# "HasMINOSMatch",
