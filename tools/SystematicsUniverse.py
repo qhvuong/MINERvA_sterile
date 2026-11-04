@@ -28,8 +28,8 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
-USE_MNVTUNE_V1 = False
-USE_MNVTUNE_V4P3P0 = True
+USE_MNVTUNE_V1 = True
+USE_MNVTUNE_V4P3P0 = False
 USE_MNVTUNE_V4P3P1 = False
 USE_MNVTUNE_V4P4P1 = False
 
@@ -65,7 +65,7 @@ V4P4P1_ADD_DIFFRACTIVE = False
 V4P4P1_ADD_ELASTIC_FSI = True
 
 
-TEST_TAG = "v4p3p0"
+TEST_TAG = "v4p4p1"
 
 
 
@@ -804,7 +804,7 @@ class CVPythonUniverse():
                 )
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
-        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
+        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
 
 
         # ------------------------------------------------------------
@@ -1019,9 +1019,9 @@ class CVPythonUniverse():
                     "Unexpected incoming neutrino PDG: {}".format(pdg)
                 )
 
-        weight *= self.GetFluxAndCVWeight(
-            self.mc_incomingE * 1e-3, pdg
-        )
+        weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
+        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+
 
         # ------------------------------------------------------------
         # Low-recoil 2p2h CV correction: invalid truth-kinematics guard

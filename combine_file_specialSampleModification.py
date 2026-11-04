@@ -202,7 +202,7 @@ def MaddWrapper(output_playlist, input_files, is_data, output_file=None):
     try:
         result = subprocess.run(
             args,
-            timeout=60,
+            timeout=600,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=True,

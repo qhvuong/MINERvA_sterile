@@ -66,7 +66,12 @@ def Is2DSignal(event):
 IsCC = lambda event: event.mc_current == 1
 IsNC = lambda event: event.mc_current == 2
 
-IsQE =  lambda event : event.mc_intType==1 and event.mc_charm!=1
+# Your current production
+IsQE = lambda event: event.mc_intType == 1 and event.mc_charm != 1
+# # Maria-compatible classification
+# IsQE = lambda event: event.mc_intType == 1
+
+
 IsDelta = lambda event : event.mc_intType == 2
 IsDIS = lambda event : event.mc_intType == 3
 IsCoherent = lambda event: event.mc_intType == 4
@@ -107,21 +112,21 @@ def IsInKinematicPhaseSpace(event):
 
 # In case a event satisfy multiple definations, the first takes priority.
 TRUTH_CATEGORIES = OrderedDict()
-# TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
-# TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
-# TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
-# # TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
+TRUTH_CATEGORIES["NCDiff"] = lambda event: IsUnknown(event)
+TRUTH_CATEGORIES["NuEElastic"] = lambda event: IsElastic(event)
+TRUTH_CATEGORIES["NC"] = lambda event: IsNC(event)
+# TRUTH_CATEGORIES["NonPhaseSpace"] = lambda event: IsCC(event) and IsNuMu(event) and not IsInKinematicPhaseSpace(event)
 
-# TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNuMu(event) and not IsAntiNu(event)
-# TRUTH_CATEGORIES["CCNuMuQE"] = lambda event: IsCC(event) and IsNuMu(event) and IsQE(event)
-# TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) and IsDelta(event)
-# TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)
-# TRUTH_CATEGORIES["CCNuMu2p2h"] = lambda event: IsCC(event) and IsNuMu(event) and Is2p2h(event)
-# TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNuMu(event)
-# TRUTH_CATEGORIES["CC"] = lambda event: IsCC(event)
+TRUTH_CATEGORIES["CCNuMuWrongSign"] = lambda event: IsCC(event) and IsNuMu(event) and not IsAntiNu(event)
+TRUTH_CATEGORIES["CCNuMuQE"] = lambda event: IsCC(event) and IsNuMu(event) and IsQE(event)
+TRUTH_CATEGORIES["CCNuMuDelta"] = lambda event: IsCC(event) and IsNuMu(event) and IsDelta(event)
+TRUTH_CATEGORIES["CCNuMuDIS"] = lambda event: IsCC(event) and IsNuMu(event) and IsDIS(event)
+TRUTH_CATEGORIES["CCNuMu2p2h"] = lambda event: IsCC(event) and IsNuMu(event) and Is2p2h(event)
+TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNuMu(event)
+TRUTH_CATEGORIES["CC"] = lambda event: IsCC(event)
 
-# This one is for inclusive numu true E vs true L template
-TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNumu(event) and IsFiducial(event)
+# # This one is for inclusive numu true E vs true L template
+# TRUTH_CATEGORIES["CCNuMu"] = lambda event: IsCC(event) and IsNumu(event) and IsFiducial(event)
 
 # My signal is one or more of the listed categories.
 SIGNAL_DEFINITION = [

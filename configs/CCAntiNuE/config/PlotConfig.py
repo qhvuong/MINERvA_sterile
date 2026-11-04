@@ -398,7 +398,7 @@ HISTS_TO_MAKE = [
     # "Estimator vs Front dEdX",
 	# "Q2",
 	# "True W",
-	"True Signal True Energy vs Neutrino Length Travelled",
+	# "True Signal True Energy vs Neutrino Length Travelled",
     # "Biased Neutrino Energy Background Fit",
 	# "Visible Energy",
 	# "True Lepton Energy",
@@ -421,6 +421,30 @@ HISTS_TO_MAKE = [
 	# "HasNoVertexMismatch",
 	# "HasTracks",
 	# "HasNoBackExitingTracks",
+
+
+    "Biased Neutrino Energy",
+    "True Neutrino Energy",
+
+    "Lepton Energy",
+    "True Lepton Energy",
+
+    "Visible Energy",
+    "Lepton Angle",
+    "Lepton Phi",
+    "Lepton Pt",
+    "Lepton Ppar",
+
+	"Lepton Energy vs Available Energy",
+    "Lepton Energy vs Lepton Angle",
+
+	"Lepton Pt vs Lepton Ppar",
+	"Lepton Ppar vs Lepton Pt",
+
+	"Lepton Ppar vs Available Energy",
+	"Lepton Pt vs Available Energy",
+	# "Available Energy vs Pt vs Ppar",
+
 
     # "Biased Neutrino Energy",
 	# "Lepton Energy",

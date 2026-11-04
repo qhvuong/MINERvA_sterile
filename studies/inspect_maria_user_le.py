@@ -12,8 +12,8 @@ USER={
  'Our LE5 DATA':'/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_ValidateCuts_CCnumubar_Inclusive_Curvature_v1_MAD.root',
  'Our LE5 standard MC':'/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_ValidateCuts_CCnumubar_Inclusive_Curvature_v1_MAD_no2p2h.root',
  'Our LE5 combined MC':'/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_ValidateCuts_CCnumubar_Inclusive_Curvature_v1_MAD.root',
- 'Our LE1 DATA':'/exp/minerva/data/users/qvuong/nu_mu/kin_dist_datale1_Maria_LE1_p6_CV_MAD.root',
- 'Our LE1 MC':'/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcle1_Maria_LE1_p6_CV_MAD.root',
+ 'Our LE1 DATA':'/exp/minerva/data/users/qvuong/nu_mu/kin_dist_datale1_ValidateCuts_CCnumu_Inclusive_Curvature_v1_MAD.root',
+ 'Our LE1 MC':'/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcle1_ValidateCuts_CCnumu_Inclusive_Curvature_v1_MAD.root',
 }
 
 def op(path):
