@@ -36,427 +36,124 @@ ROOT.TH1.AddDirectory(False)
 
 
 
+# Replace plotRecoKin in selection/eventSelection.py with this function.
+# Uses the imports already present in eventSelection.py; extra imports are local.
 def plotRecoKin(mc, chainwrapper, outfile):
-    """Main event selection, with final EM-scale diagnostic."""
+    """Original selection flow, with bounded CV swapped-flux diagnostics."""
+    from config import SystematicsConfig
+    from tools import SystematicsUniverse as syst
+
+    debug_limit = int(os.environ.get("SWAP_FLUX_DEBUG_N", "20"))
+    if debug_limit < 0:
+        raise ValueError("SWAP_FLUX_DEBUG_N must be nonnegative")
+    swapped = bool(getattr(SystematicsConfig, "USE_SWAPPED", False))
+    debug_enabled = mc and swapped and not AnalysisConfig.is_pc and debug_limit > 0
+    debug_prints = 0
+    bad_calls = 0
+    bad_weights = 0
+
+    print("[SWAP DEBUG] config={} USE_SWAPPED={} MC={} is_pc={} max_CV_events={}".format(
+        SystematicsConfig.__file__, swapped, mc, AnalysisConfig.is_pc, debug_limit), flush=True)
+    if debug_enabled and not callable(getattr(syst, "get_swapped_flux_ratio", None)):
+        raise RuntimeError(
+            "tools.SystematicsUniverse.get_swapped_flux_ratio is missing. "
+            "Import the helper there, or define it there, before running this diagnostic.")
 
     kin_cal = KinematicsCalculator(
-        correct_beam_angle=True,
-        correct_MC_energy_scale=False,
-        calc_true=mc,
-        is_pc=AnalysisConfig.is_pc,
-    )
-
+        correct_beam_angle=True, correct_MC_energy_scale=False,
+        calc_true=mc, is_pc=AnalysisConfig.is_pc)
     eventClassifier = EventClassifier(
         classifiers=["Reco", "Truth"] if mc else ["Reco"],
-        use_kin_cuts=True,
-        use_sideband=AnalysisConfig.sidebands,
-    )
-
+        use_kin_cuts=True, use_sideband=AnalysisConfig.sidebands)
     universes = GetAllSystematicsUniverses(
-        chainwrapper,
-        not mc,
-        AnalysisConfig.is_pc,
-        AnalysisConfig.exclude_universes,
-    )
-
-    # Keep only CV and regional electron-energy systematics
-    # for this diagnostic.
-    if mc and abs(SystematicsConfig.AnaNuPDG) == 12:
-        required = ("cv", "elE_ECAL", "elE_HCAL")
-
-        assert all(name in universes for name in required), (
-            f"Missing required universes. Available: {list(universes)}"
-        )
-
-        universes = {
-            name: universes[name]
-            for name in required
-        }
-
-        print(
-            "[EM AUDIT] Active universes:",
-            {name: len(univs) for name, univs in universes.items()}
-        )
-
-    if not mc:
-        universes = {"cv": universes["cv"]}
-
-        print(
-            "[DATA EM AUDIT] Active universes:",
-            {name: len(univs) for name, univs in universes.items()}
-        )
-
-    for univ in chain.from_iterable(universes.values()):
+        chainwrapper, not mc, AnalysisConfig.is_pc, AnalysisConfig.exclude_universes)
+    for univ in chain.from_iterable(iter(universes.values())):
         univ.LoadTools(kin_cal, eventClassifier)
 
     Plots = preparePlots(universes, mc)
-
     nEvents = chainwrapper.GetEntries()
-    print(f"Total number of events RECO: {nEvents}")
-
+    print("Total number of events RECO:", nEvents)
     if AnalysisConfig.testing and nEvents > 5000:
         nEvents = 5000
-
     print("plotRecoKin, mc", mc)
-
     setAlarm = AnalysisConfig.grid
-
-    # ====================================================
-    # Final regional electron-energy diagnostic
-    # ====================================================
-    audit_em = (
-        mc and abs(SystematicsConfig.AnaNuPDG) == 12
-    )
-
-    regions = ("ECAL", "HCAL")
-    regional_names = {
-        "elE_ECAL": "ECAL",
-        "elE_HCAL": "HCAL",
-    }
-
-    stats = {
-        "total": 0,
-        "invalid_ecal_all": 0,
-        "invalid_hcal_all": 0,
-        "invalid_either_all": 0,
-        "cv_selected": 0,
-        "cv_selected_invalid_ecal": 0,
-        "cv_selected_invalid_hcal": 0,
-        "cv_selected_invalid_either": 0,
-    }
-
-    reg_stats = {
-        (region, sigma): {
-            "selected": 0,
-            "selected_invalid": 0,
-            "selected_invalid_either": 0,
-            "selected_not_cv": 0,
-            "selected_not_cv_invalid": 0,
-            "cv_selected_not_region": 0,
-            "cv_selected_not_region_invalid": 0,
-        }
-        for region in regions
-        for sigma in (-1, 1)
-    }
-
-    sample_messages = []
-    max_samples = 12
-
-    def invalid_energy(value):
-        return not math.isfinite(value) or value < 0
-
-    # ====================================================
-    # Event loop
-    # ====================================================
     for counter in range(nEvents):
-
         if counter % 10000 == 0:
             print(counter)
             if setAlarm:
                 signal.alarm(900)
-
-        # Read CV regional energies once per event.
-        if audit_em:
-            cv = universes["cv"][0]
-            cv.SetEntry(counter)
-
-            e_ecal = cv.GetVecElem(
-                "prong_ECALCalibE", 0
-            )
-            e_hcal = cv.GetVecElem(
-                "prong_HCALCalibE", 0
-            )
-
-            bad_ecal = invalid_energy(e_ecal)
-            bad_hcal = invalid_energy(e_hcal)
-            bad_either = bad_ecal or bad_hcal
-
-            stats["total"] += 1
-            stats["invalid_ecal_all"] += int(bad_ecal)
-            stats["invalid_hcal_all"] += int(bad_hcal)
-            stats["invalid_either_all"] += int(bad_either)
-
-        # Per-event selection decisions.
-        cv_selected = False
-        regional_results = {}
-
-        # ====================================================
-        # Systematic universe loop
-        # ====================================================
-        for universe in chain.from_iterable(
-            universes.values()
-        ):
+        for universe in chain.from_iterable(iter(universes.values())):
             universe.SetEntry(counter)
-
-            # Original event-selection workflow.
-            universe.__dict__.pop(
-                "_cached_new_true_l_over_e", None
-            )
+            universe.__dict__.pop("_cached_new_true_l_over_e", None)
             universe.ResetWeight()
-
-            if (
-                mc
-                and AnalysisConfig.skip_2p2h
-                and universe.mc_intType == 8
-            ):
+            if mc and AnalysisConfig.skip_2p2h and universe.mc_intType == 8:
                 continue
-
             if not universe.IsVerticalOnly():
                 kin_cal.CalculateKinematics(universe)
                 eventClassifier.Classify(universe)
 
-                if not mc and universe is universes["cv"][0]:
-                    selected = (
-                        eventClassifier.side_band is not None
-                        or eventClassifier.is_true_signal
-                    )
+            if eventClassifier.side_band is not None or eventClassifier.is_true_signal:
+                if (debug_enabled and debug_prints < debug_limit
+                        and str(universe.ShortName()).lower() == "cv"):
+                    source = int(universe.mc_incoming)
+                    target = {12: 14, -12: -14, 14: 12, -14: -12}.get(source)
+                    if target is None:
+                        raise ValueError("Unexpected incoming neutrino PDG: {}".format(source))
+                    energy = float(universe.mc_incomingE) * 1e-3
+                    ratio_helper = syst.get_swapped_flux_ratio
+                    expected_ratio = float(ratio_helper(universe))
+                    cv_flux = float(universe.GetFluxAndCVWeight(energy, target))
+                    calls = []
 
-                    if selected:
-                        e_ecal = universe.GetVecElem(
-                            "prong_ECALCalibE", 0
-                        )
+                    # Observe calls from the ACTUAL weight implementation.
+                    # This wrapper returns the helper's original value unchanged.
+                    def traced_ratio(*args, **kwargs):
+                        value = ratio_helper(*args, **kwargs)
+                        calls.append(float(value))
+                        return value
 
-                        if not math.isfinite(e_ecal) or e_ecal < 0:
-                            print(
-                                "[DATA SELECTED INVALID ECAL]",
-                                f"event={counter}",
-                                f"ECALCalibE={e_ecal}",
-                                f"EMShift={universe.GetEMEnergyShift()}",
-                            )
+                    syst.get_swapped_flux_ratio = traced_ratio
+                    try:
+                        total_weight = float(universe.GetWeight())
+                    finally:
+                        syst.get_swapped_flux_ratio = ratio_helper
 
-                selected = (
-                    eventClassifier.side_band is not None
-                    or eventClassifier.is_true_signal
-                )
+                    expected_calls = 1
+                    calls_ok = (len(calls) == expected_calls and
+                                math.isclose(calls[0], expected_ratio,
+                                             rel_tol=1e-12, abs_tol=0.0))
+                    finite = math.isfinite(total_weight) and math.isfinite(cv_flux)
+                    bad_calls += int(not calls_ok)
+                    bad_weights += int(not finite)
+                    debug_prints += 1
+                    print("\n[SWAP DEBUG {}/{}] entry={} playlist={} trueE={:.8g} GeV".format(
+                        debug_prints, debug_limit, counter,
+                        universe.GetPlaylist(), energy), flush=True)
+                    print("  source PDG={} -> flux PDG={} sideband={} truth_class={}".format(
+                        source, target, eventClassifier.side_band,
+                        getattr(eventClassifier, "truth_class", None)))
+                    print("  extra generated target/source ratio = {:.12g}".format(expected_ratio))
+                    print("  mapped-PDG CV flux weight           = {:.12g}".format(cv_flux))
+                    print("  expected combined flux factor       = {:.12g}".format(
+                        cv_flux * expected_ratio))
+                    print("  helper calls during actual GetWeight = {} values={} [{}]".format(
+                        len(calls), calls, "PASS" if calls_ok else "CHECK IMPLEMENTATION"))
+                    print("  actual total event weight           = {:.12g} [{}]".format(
+                        total_weight, "FINITE" if finite else "INVALID"), flush=True)
+                    # GetWeight caches the actual weight just computed. Plot
+                    # processors use that same result; do not multiply again here.
 
-                if audit_em:
-
-                    # CV selection decision.
-                    if universe is universes["cv"][0]:
-                        cv_selected = selected
-
-                        if selected:
-                            stats["cv_selected"] += 1
-
-                            if bad_ecal:
-                                stats[
-                                    "cv_selected_invalid_ecal"
-                                ] += 1
-
-                            if bad_hcal:
-                                stats[
-                                    "cv_selected_invalid_hcal"
-                                ] += 1
-
-                            if bad_either:
-                                stats[
-                                    "cv_selected_invalid_either"
-                                ] += 1
-
-                    # Regional systematic decisions.
-                    name = universe.ShortName()
-
-                    if name in regional_names:
-                        region = regional_names[name]
-                        sigma = int(universe.GetSigma())
-
-                        key = (region, sigma)
-
-                        calib_e = (
-                            e_ecal
-                            if region == "ECAL"
-                            else e_hcal
-                        )
-
-                        bad_region = invalid_energy(
-                            calib_e
-                        )
-
-                        regional_results[key] = (
-                            selected,
-                            bad_region,
-                        )
-
-                        if selected:
-                            reg_stats[key]["selected"] += 1
-
-                            if bad_region:
-                                reg_stats[key][
-                                    "selected_invalid"
-                                ] += 1
-
-                            if bad_either:
-                                reg_stats[key][
-                                    "selected_invalid_either"
-                                ] += 1
-
-            # Original histogram processing.
-            if (
-                eventClassifier.side_band is not None
-                or eventClassifier.is_true_signal
-            ):
                 for entry in Plots:
                     entry.Process(universe)
 
-        # ====================================================
-        # Compare regional selection against CV
-        # ====================================================
-        if audit_em:
-            for key, result in regional_results.items():
-                selected, bad_region = result
-                region, sigma = key
-
-                if selected and not cv_selected:
-                    reg_stats[key][
-                        "selected_not_cv"
-                    ] += 1
-
-                    if bad_region:
-                        reg_stats[key][
-                            "selected_not_cv_invalid"
-                        ] += 1
-
-                elif cv_selected and not selected:
-                    reg_stats[key][
-                        "cv_selected_not_region"
-                    ] += 1
-
-                    if bad_region:
-                        reg_stats[key][
-                            "cv_selected_not_region_invalid"
-                        ] += 1
-
-                # Keep a few concrete examples.
-                if (
-                    bad_region
-                    and (selected or cv_selected)
-                    and len(sample_messages) < max_samples
-                ):
-                    sample_messages.append(
-                        (
-                            counter,
-                            region,
-                            sigma,
-                            e_ecal,
-                            e_hcal,
-                            cv_selected,
-                            selected,
-                        )
-                    )
-
     signal.alarm(0)
-
-    # ====================================================
-    # Final diagnostic report
-    # ====================================================
-    if audit_em:
-
-        print("\n" + "=" * 65)
-        print("FINAL ELECTRON REGIONAL ENERGY-SCALE AUDIT")
-        print("=" * 65)
-
-        print(f"Events processed: {stats['total']}")
-
-        print("\n--- All reconstructed entries ---")
-        print(
-            "Invalid ECAL:",
-            stats["invalid_ecal_all"]
-        )
-        print(
-            "Invalid HCAL:",
-            stats["invalid_hcal_all"]
-        )
-        print(
-            "Invalid either:",
-            stats["invalid_either_all"]
-        )
-
-        print("\n--- CV selection ---")
-        print(
-            "CV selected:",
-            stats["cv_selected"]
-        )
-        print(
-            "Selected with invalid ECAL:",
-            stats["cv_selected_invalid_ecal"]
-        )
-        print(
-            "Selected with invalid HCAL:",
-            stats["cv_selected_invalid_hcal"]
-        )
-        print(
-            "Selected with invalid either:",
-            stats["cv_selected_invalid_either"]
-        )
-
-        print("\n--- Regional systematic universes ---")
-
-        for key, s in sorted(reg_stats.items()):
-            region, sigma = key
-
-            print(
-                f"\n{region} sigma={sigma:+d}"
-            )
-            print(
-                "  Selected:",
-                s["selected"]
-            )
-            print(
-                "  Selected with invalid region energy:",
-                s["selected_invalid"]
-            )
-            print(
-                "  Selected with invalid either energy:",
-                s["selected_invalid_either"]
-            )
-            print(
-                "  Entered selection relative to CV:",
-                s["selected_not_cv"]
-            )
-            print(
-                "    With invalid region energy:",
-                s["selected_not_cv_invalid"]
-            )
-            print(
-                "  Left selection relative to CV:",
-                s["cv_selected_not_region"]
-            )
-            print(
-                "    With invalid region energy:",
-                s["cv_selected_not_region_invalid"]
-            )
-
-        print("\n--- Example invalid-energy events ---")
-
-        if not sample_messages:
-            print(
-                "No invalid regional-energy events "
-                "selected in CV or regional universes."
-            )
-        else:
-            for (
-                event,
-                region,
-                sigma,
-                e_ecal,
-                e_hcal,
-                cv_sel,
-                region_sel,
-            ) in sample_messages:
-                print(
-                    f"event={event}",
-                    f"region={region}",
-                    f"sigma={sigma:+d}",
-                    f"ECAL={e_ecal:.3f}",
-                    f"HCAL={e_hcal:.3f}",
-                    f"CV_selected={cv_sel}",
-                    f"region_selected={region_sel}",
-                )
-
-        print("=" * 65 + "\n")
-
+    if debug_enabled:
+        print("\n[SWAP DEBUG SUMMARY] inspected_CV_events={} helper_call_failures={} "
+              "nonfinite_weight_events={}".format(debug_prints, bad_calls, bad_weights), flush=True)
+        if debug_prints == 0:
+            print("[SWAP DEBUG] No eligible CV events reached the diagnostic; "
+                  "this run has not validated the implementation.", flush=True)
     outfile.cd()
-
     for entry in Plots:
         entry.Finalize()
 
