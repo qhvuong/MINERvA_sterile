@@ -1,0 +1,55 @@
+{
+  "note": "Candidate points are approximate diagnostic benchmarks, NOT measured best fits. Enter exact best_fit dictionaries or use --refit.",
+  "lambda": 1.0,
+  "nprof": 40,
+  "points": {
+    "null": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "muon_candidate_2": [
+      2.0,
+      0.0,
+      0.1,
+      0.0
+    ],
+    "high_dm2_candidate": [
+      39.2,
+      0.002,
+      0.12,
+      0.0
+    ]
+  },
+  "ue_scan": [
+    0,
+    0.0001,
+    0.001,
+    0.003,
+    0.01,
+    0.03,
+    0.06,
+    0.1
+  ],
+  "runs": [
+    {
+      "name": "direct_all",
+      "tag": "predNueel_noRatio_p8_v4p3p0",
+      "exclude": "",
+      "best_fit": null
+    },
+    {
+      "name": "ratio_all",
+      "tag": "predNueel_p8_v4p3p0",
+      "exclude": "",
+      "best_fit": null
+    },
+    {
+      "name": "ratio_no_ratio_profile",
+      "tag": "predNueel_p8_v4p3p0",
+      "exclude": "ratio",
+      "best_fit": null
+    }
+  ]
+}

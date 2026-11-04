@@ -20,6 +20,7 @@ from collections import OrderedDict
 from tools import pcweight
 #from .pcweight import GetModelWeight,MyWeighter
 from tools import AvailableECorrection
+from tools.SwappedFlux import get_swapped_flux_ratio
 
 
 OneSigmaShift = [-1.0,1.0]
@@ -805,6 +806,9 @@ class CVPythonUniverse():
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
         # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+
+        if SystematicsConfig.USE_SWAPPED:
+            weight *= get_swapped_flux_ratio(self)
 
 
         # ------------------------------------------------------------
