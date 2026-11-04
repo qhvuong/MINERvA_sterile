@@ -24,6 +24,11 @@ _LE_FLUX_TAG = {
 }
 _DEFAULT_FLUX_DIR = Path(__file__).resolve().parents[1] / "custom_plotutils/data/flux"
 
+# Keep each TFile alive for as long as its cached, file-owned histogram.
+# Do not Clone()/Close() here: that combination crashed in the GPVM PyROOT
+# environment. These histograms are read-only and the files are few and small.
+_OPEN_FLUX_FILES = {}
+
 
 @lru_cache(maxsize=None)
 def _load_generated_flux(flux_dir, playlist_tag, pdg):
@@ -31,15 +36,11 @@ def _load_generated_flux(flux_dir, playlist_tag, pdg):
     f = ROOT.TFile.Open(str(path), "READ")
     if not f or f.IsZombie():
         raise RuntimeError("Cannot open generated flux: {}".format(path))
-    try:
-        h = f.Get("flux_E_unweighted")
-        if not h or h.GetDimension() != 1:
-            raise RuntimeError("Missing 1D flux_E_unweighted in {}".format(path))
-        clone = h.Clone("swap_generated_{}_{}".format(playlist_tag, pdg))
-        clone.SetDirectory(0)
-        return clone
-    finally:
-        f.Close()
+    _OPEN_FLUX_FILES[(flux_dir, playlist_tag, pdg)] = f
+    h = f.Get("flux_E_unweighted")
+    if not h or h.GetDimension() != 1:
+        raise RuntimeError("Missing 1D flux_E_unweighted in {}".format(path))
+    return h
 
 
 def _flux_value(hist, energy):
@@ -51,6 +52,27 @@ def _flux_value(hist, energy):
     if energy > 75.0:
         return float(hist.GetBinContent(axis.FindFixBin(energy)))
     return float(hist.Interpolate(energy))
+
+
+@lru_cache(maxsize=None)
+def _get_flux_pair(flux_dir, playlist_tag, source_pdg):
+    source = _load_generated_flux(flux_dir, playlist_tag, source_pdg)
+    target = _load_generated_flux(flux_dir, playlist_tag, _SWAP_PDG[source_pdg])
+    if source.GetNbinsX() != target.GetNbinsX():
+        raise ValueError("Generated flux bin counts differ: {} PDG {} vs {}".format(
+            playlist_tag, source_pdg, _SWAP_PDG[source_pdg]))
+    previous = None
+    for i in range(1, source.GetNbinsX() + 2):
+        a = float(source.GetXaxis().GetBinLowEdge(i))
+        b = float(target.GetXaxis().GetBinLowEdge(i))
+        if (not math.isfinite(a) or not math.isfinite(b)
+                or not math.isclose(a, b, rel_tol=0.0, abs_tol=1e-10)
+                or (previous is not None and a <= previous)):
+            raise ValueError("Generated flux edges differ or are invalid: {} PDGs {}/{} "
+                             "edge {}: {} vs {}".format(
+                                 playlist_tag, source_pdg, _SWAP_PDG[source_pdg], i, a, b))
+        previous = a
+    return source, target
 
 
 def get_swapped_flux_ratio(universe, flux_dir=None):
@@ -75,8 +97,7 @@ def get_swapped_flux_ratio(universe, flux_dir=None):
     directory = str(Path(flux_dir).expanduser().resolve() if flux_dir is not None
                     else _DEFAULT_FLUX_DIR)
     tag = _LE_FLUX_TAG[playlist]
-    source = _load_generated_flux(directory, tag, source_pdg)
-    target = _load_generated_flux(directory, tag, _SWAP_PDG[source_pdg])
+    source, target = _get_flux_pair(directory, tag, source_pdg)
     denominator = _flux_value(source, energy)
     numerator = _flux_value(target, energy)
     if not math.isfinite(denominator) or denominator <= 0:

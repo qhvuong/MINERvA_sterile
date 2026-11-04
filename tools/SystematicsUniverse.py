@@ -625,24 +625,30 @@ class CVPythonUniverse():
         weight = 1.0
         weight *= self.GetGenieWeight()
 
-        ### take care of flavor swapped sample below ###
+        # --------------------------------------------------
+        # Flux CV
+        # --------------------------------------------------
         pdg = self.mc_incoming
-        newpdg = pdg
+
         if SystematicsConfig.USE_SWAPPED:
             if pdg == 12:
-                newpdg = 14
+                pdg = 14
             elif pdg == -12:
-                newpdg = -14
+                pdg = -14
             elif pdg == 14:
-                newpdg = 12
+                pdg = 12
             elif pdg == -14:
-                newpdg = -12
+                pdg = -12
             else:
-                print("Not neutrino PDG? {}".format(pdg))
-        pdg = newpdg
+                raise ValueError(
+                    "Unexpected incoming neutrino PDG: {}".format(pdg)
+                )
 
-        weight *= self.GetFluxAndCVWeight(self.mc_incomingE*1e-3,pdg)
+        weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
         # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+
+        if SystematicsConfig.USE_SWAPPED:
+            weight *= get_swapped_flux_ratio(self)
 
         # ------------------------------------------------------------
         # Low-recoil 2p2h CV correction: invalid truth-kinematics guard
@@ -1024,7 +1030,10 @@ class CVPythonUniverse():
                 )
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
-        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+
+        if SystematicsConfig.USE_SWAPPED:
+            weight *= get_swapped_flux_ratio(self)
 
 
         # ------------------------------------------------------------
@@ -1175,9 +1184,9 @@ class CVPythonUniverse():
             is_nonrespi = (rvn1pi < 1.0) or (rvp1pi < 1.0)
             weight *= 0.43 if is_nonrespi else 1.0
 
-        # ------------------------------------------------------------
-        # Flux
-        # ------------------------------------------------------------
+        # --------------------------------------------------
+        # Flux CV
+        # --------------------------------------------------
         pdg = self.mc_incoming
 
         if SystematicsConfig.USE_SWAPPED:
@@ -1190,10 +1199,15 @@ class CVPythonUniverse():
             elif pdg == -14:
                 pdg = -12
             else:
-                print("Not neutrino PDG? {}".format(pdg))
+                raise ValueError(
+                    "Unexpected incoming neutrino PDG: {}".format(pdg)
+                )
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
-        # # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1M")
+        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+
+        if SystematicsConfig.USE_SWAPPED:
+            weight *= get_swapped_flux_ratio(self)
 
 
         # ------------------------------------------------------------
