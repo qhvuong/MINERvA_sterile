@@ -136,7 +136,7 @@ SIGNAL_DEFINITION = [
     "CCNuEDIS",
     "CCNuE",
     "CCNuE2p2h",
-    "CCNuEWrongSign"
+    # "CCNuEWrongSign"
 ]
 SWAP_SIGNAL_DEFINITION = [
     "CCNuEQE",
@@ -144,7 +144,7 @@ SWAP_SIGNAL_DEFINITION = [
     "CCNuEDIS",
     "CCNuE",
     "CCNuE2p2h",
-    "CCNuEWrongSign",
+    # "CCNuEWrongSign",
 ]
 
 

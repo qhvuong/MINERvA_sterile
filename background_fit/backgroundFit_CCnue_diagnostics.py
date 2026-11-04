@@ -536,7 +536,8 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
     for cate in mcsignal_histholders[index].hists:
         if cate == "Total":
             continue
-        if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+        # if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+        if cate not in SIGNAL_DEFINITION and cate != "NuEElastic" and cate != "CCNuEWrongSign":
             mc_sidebandBKG.Add(mcsideband_histholders[index].hists[cate])
             mc_signalBKG.Add(mcsignal_histholders[index].hists[cate])
         if cate in SIGNAL_DEFINITION:
@@ -545,6 +546,9 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
 
     mc_signalNUEEL = mcsignal_histholders[index].hists["NuEElastic"].Clone()
     mc_sidebandNUEEL = mcsideband_histholders[index].hists["NuEElastic"].Clone()
+
+    mc_signalNUEEL.Add(mcsignal_histholders[index].hists["CCNuEWrongSign"])
+    mc_sidebandNUEEL.Add(mcsideband_histholders[index].hists["CCNuEWrongSign"])
 
     ### want a MC-like pseudodata signal region to avoid preliminary unblinding
     if AnalysisConfig.pseudodata:
@@ -617,14 +621,16 @@ def ScaleCategories(hist_holder,scale_hists,prediction=False):
             continue
         try:
             if not prediction:
-                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+                # if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic" and cate != "CCNuEWrongSign":
                     scale = scale_hists["background"]
                     hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
                 if cate in SIGNAL_DEFINITION:
                     scale = scale_hists["signal"]
                     hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
             else:
-                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+                # if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic" and cate != "CCNuEWrongSign":
                     scale = scale_hists["background"]
                     hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
 
@@ -979,6 +985,76 @@ if __name__ == "__main__":
             #         bins=MNV_TUNE_DIAG_BINS
             #     )
 
+
+    # =====================================================
+    # Signal/background template separation diagnostics
+    # =====================================================
+    sr = mcsignal_histholders[0]
+    sb = mcsideband_histholders[0]
+
+    print("\n" + "=" * 105)
+    print("TWO-REGION FIT: SIGNAL/BACKGROUND SEPARATION")
+    print("Signal definition:", SIGNAL_DEFINITION)
+    print("=" * 105)
+
+    nbin = sr.GetHist().GetNbinsX()
+
+    for ib in range(1, nbin + 1):
+        def yield_of(holder, categories):
+            return sum(
+                holder.hists[c].GetBinContent(ib)
+                for c in categories
+                if c in holder.hists
+                and holder.hists[c] is not None
+            )
+
+        cats = [
+            c for c in sr.hists
+            if c not in ("Total", "NuEElastic", "CCNuEWrongSign")
+        ]
+
+        sig = [c for c in cats if c in SIGNAL_DEFINITION]
+        bkg = [c for c in cats if c not in SIGNAL_DEFINITION]
+
+        S_sr = yield_of(sr, sig)
+        B_sr = yield_of(sr, bkg)
+        S_sb = yield_of(sb, sig)
+        B_sb = yield_of(sb, bkg)
+
+        ws_sr = yield_of(sr, ["CCNuEWrongSign"])
+        ws_sb = yield_of(sb, ["CCNuEWrongSign"])
+
+        determinant = B_sb * S_sr - S_sb * B_sr
+
+        norm = (S_sr + B_sr) * (S_sb + B_sb)
+        separation = determinant / norm if norm else float("nan")
+
+        purity_sr = S_sr / (S_sr + B_sr) if S_sr + B_sr else 0
+        purity_sb = S_sb / (S_sb + B_sb) if S_sb + B_sb else 0
+
+        print(
+            f"\nBIN {ib:2d}:"
+            f" [{sr.GetHist().GetXaxis().GetBinLowEdge(ib):.3f},"
+            f" {sr.GetHist().GetXaxis().GetBinUpEdge(ib):.3f}]"
+        )
+        print(
+            f" SR: S={S_sr:10.3f} B={B_sr:10.3f}"
+            f" WS={ws_sr:10.3f} purity={purity_sr:.4f}"
+        )
+        print(
+            f" SB: S={S_sb:10.3f} B={B_sb:10.3f}"
+            f" WS={ws_sb:10.3f} purity={purity_sb:.4f}"
+        )
+        print(
+            f" determinant={determinant:.6g}"
+            f" normalized_separation={separation:.6g}"
+        )
+        print(
+            f" signal_purity_difference="
+            f"{purity_sr - purity_sb:+.6g}"
+        )
+
+
     RunMinimizer(datasideband_histholders,datasignal_histholders,mcsideband_histholders,mcsignal_histholders,scale_hists)
 
     if DO_MNV_TUNE_DIAGNOSTICS:
@@ -999,6 +1075,221 @@ if __name__ == "__main__":
                 label=f"ScaleFactor_{factor}",
                 bins=MNV_TUNE_DIAG_BINS
             )
+
+    sig = scale_hists["signal"]
+
+    for bandname in sig.GetVertErrorBandNames():
+        bandname = str(bandname)
+        band = sig.GetVertErrorBand(bandname)
+        frac = band.GetErrorBand(True, False)
+
+        print(f"\n{bandname}")
+        for b in [9, 10, 11, 12]:
+            print(
+                f"  bin {b}: "
+                f"CV={sig.GetBinContent(b):.4f}, "
+                f"fractional error={frac.GetBinContent(b):.2%}"
+            )
+
+
+    sig = scale_hists["signal"]
+    b = 12
+
+    print("\n===== BIN 12 SIGNAL UNIVERSE DIAGNOSTICS =====")
+    print("CV signal scale:", sig.GetBinContent(b))
+
+    for name in ["Flux", "LowQ2Pi", "GENIE_MaCCQE",
+                "Low_Recoil_2p2h_Tune", "fsi_weight"]:
+
+        if not sig.HasVertErrorBand(name):
+            continue
+
+        band = sig.GetVertErrorBand(name)
+        cv = sig.GetBinContent(b)
+
+        values = [
+            (i, band.GetHist(i).GetBinContent(b))
+            for i in range(band.GetNHists())
+        ]
+
+        values = [(i, v) for i, v in values if math.isfinite(v)]
+        values.sort(key=lambda x: abs(x[1] - cv), reverse=True)
+
+        print(f"\n{name}: {band.GetNHists()} universes")
+        print("Band CV:", band.GetBinContent(b))
+
+        if values:
+            print("Minimum scale:", min(v for _, v in values))
+            print("Maximum scale:", max(v for _, v in values))
+            print("Five largest deviations:")
+            for i, v in values[:5]:
+                print(
+                    f"  Universe {i}: scale={v:.6f}, "
+                    f"deviation={v-cv:+.6f}"
+                )
+
+
+
+    # ============================================================
+    # BIN 12: EXTREME FLUX UNIVERSE COMPONENT DIAGNOSTICS
+    # ============================================================
+
+    DEBUG_BIN = 12
+    DEBUG_UNIVERSES = [313, 112, 553, 455, 930]
+    DEBUG_BAND = "Flux"
+
+    sr = mcsignal_histholders[0]
+    sb = mcsideband_histholders[0]
+
+    data_sr = datasignal_histholders[0].GetHist()
+    data_sb = datasideband_histholders[0].GetHist()
+
+    sig_cats = [
+        c for c in sr.hists
+        if c in SIGNAL_DEFINITION
+    ]
+
+    bkg_cats = [
+        c for c in sr.hists
+        if c not in SIGNAL_DEFINITION
+        and c not in ("Total", "NuEElastic", "CCNuEWrongSign")
+    ]
+
+
+    def get_component(holder, categories, univ=None):
+        total = 0.0
+
+        for cate in categories:
+            h = holder.hists[cate]
+
+            if univ is not None:
+                h = h.GetVertErrorBand(DEBUG_BAND).GetHist(univ)
+
+            total += h.GetBinContent(DEBUG_BIN)
+
+        return total
+
+
+    def check_flux_universe(univ=None):
+        label = "CV" if univ is None else f"Flux universe {univ}"
+
+        # Right-sign signal
+        S_sr = get_component(sr, sig_cats, univ)
+        S_sb = get_component(sb, sig_cats, univ)
+
+        # Floating background
+        B_sr = get_component(sr, bkg_cats, univ)
+        B_sb = get_component(sb, bkg_cats, univ)
+
+        # Fixed wrong-sign CCNuE
+        W_sr = get_component(sr, ["CCNuEWrongSign"], univ)
+        W_sb = get_component(sb, ["CCNuEWrongSign"], univ)
+
+        # Fixed nu+e elastic
+        E_sr = get_component(sr, ["NuEElastic"], univ)
+        E_sb = get_component(sb, ["NuEElastic"], univ)
+
+        # Observed data remains fixed across MC universes
+        D_sr = data_sr.GetBinContent(DEBUG_BIN)
+        D_sb = data_sb.GetBinContent(DEBUG_BIN)
+
+        # Subtract fixed contributions
+        Dsig = D_sr - W_sr - E_sr
+        Dside = D_sb - W_sb - E_sb
+
+        # Signal scale numerator and determinant
+        numerator = B_sb * Dsig - B_sr * Dside
+        denominator = B_sb * S_sr - B_sr * S_sb
+
+        calculated_scale = (
+            numerator / denominator
+            if abs(denominator) > 1e-12
+            else float("nan")
+        )
+
+        # Retrieve scale produced by the actual minimizer
+        h_scale = scale_hists["signal"]
+
+        if univ is None:
+            fitted_scale = h_scale.GetBinContent(DEBUG_BIN)
+        else:
+            fitted_scale = (
+                h_scale.GetVertErrorBand(DEBUG_BAND)
+                .GetHist(univ)
+                .GetBinContent(DEBUG_BIN)
+            )
+
+        print("\n" + "=" * 75)
+        print(label)
+        print("=" * 75)
+
+        print(f"{'Component':<22} {'Signal region':>16} {'Sideband':>16}")
+        print("-" * 58)
+
+        for name, x, y in [
+            ("Observed data", D_sr, D_sb),
+            ("Right-sign S", S_sr, S_sb),
+            ("Floating B", B_sr, B_sb),
+            ("Wrong-sign W", W_sr, W_sb),
+            ("NuEElastic E", E_sr, E_sb),
+            ("Data minus W minus E", Dsig, Dside),
+        ]:
+            print(f"{name:<22} {x:16.6f} {y:16.6f}")
+
+        print("\nSignal fit:")
+        print(f"  Numerator          = {numerator:+.8f}")
+        print(f"  Determinant        = {denominator:+.8f}")
+        print(f"  Calculated scale   = {calculated_scale:+.8f}")
+        print(f"  Minimizer scale    = {fitted_scale:+.8f}")
+        print(f"  Difference         = {calculated_scale-fitted_scale:+.3e}")
+
+        return {
+            "S_sr": S_sr,
+            "B_sr": B_sr,
+            "W_sr": W_sr,
+            "E_sr": E_sr,
+            "S_sb": S_sb,
+            "B_sb": B_sb,
+            "W_sb": W_sb,
+            "E_sb": E_sb,
+            "numerator": numerator,
+            "denominator": denominator,
+            "scale": calculated_scale,
+        }
+
+
+    print("\n\n===== EXTREME FLUX UNIVERSE COMPONENT CHECK =====")
+
+    cv_result = check_flux_universe()
+
+    for u in DEBUG_UNIVERSES:
+        result = check_flux_universe(u)
+
+        print("\nChanges relative to CV:")
+        for key in [
+            "S_sr", "B_sr", "W_sr", "E_sr",
+            "S_sb", "B_sb", "W_sb", "E_sb",
+            "numerator", "denominator",
+        ]:
+            delta = result[key] - cv_result[key]
+            print(f"  {key:<14} {delta:+.6f}")
+
+    # Count finite and negative fitted Flux scales
+    band = scale_hists["signal"].GetVertErrorBand(DEBUG_BAND)
+
+    values = [
+        band.GetHist(u).GetBinContent(DEBUG_BIN)
+        for u in range(band.GetNHists())
+    ]
+
+    n_finite = sum(math.isfinite(v) for v in values)
+    n_negative = sum(math.isfinite(v) and v < 0 for v in values)
+
+    print("\n===== ALL FLUX UNIVERSES: BIN 12 =====")
+    print("Total universes:", len(values))
+    print("Finite scales:", n_finite)
+    print("Nonfinite scales:", len(values) - n_finite)
+    print("Negative scales:", n_negative)
 
 
 
