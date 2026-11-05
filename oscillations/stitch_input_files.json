@@ -251,14 +251,14 @@
         "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p3p0_MAD.root",
         "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p3p0_MAD.root",
         "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p3p0_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p0_MAD.root"
+        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p0_fixedFluxNorm_MAD.root"
       },
   
       "rhc_ccnuebar": {
         "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p3p0_MAD.root",
         "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p3p0_MAD.root",
         "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p3p0_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p0_MAD.root"
+        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p0_fixedFluxNorm_MAD.root"
       },
   
       "fhc_ccnumu": {

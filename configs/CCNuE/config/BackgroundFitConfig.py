@@ -224,7 +224,7 @@ N4_TUNE ={
         "NCPi":"dEdX",
         "NCDiff":"dEdX",
         #"NuEElastic":"dEdX",
-        "CCNuEWrongSign":"dEdX",
+        # "CCNuEWrongSign":"dEdX",
         "Other":"dEdX",
     }
 }

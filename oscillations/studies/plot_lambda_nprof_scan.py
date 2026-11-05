@@ -32,7 +32,10 @@ import matplotlib.pyplot as plt
 #     "_p8_profileAll":
 #         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
 # }
+MASKED_RATIO_CASE = r"$\nu+e$ + CC$\nu_\mu$, ratios omitted from profiling and $\chi^2$"
+
 CASE_PATTERNS = {
+    "excludeRatio_maskRatio": MASKED_RATIO_CASE,
     "excludeRatio":
         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
 
@@ -46,6 +49,7 @@ CASE_PATTERNS = {
         r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
 }
 CASE_SAFE_NAMES = {
+    MASKED_RATIO_CASE: "excludeRatio_maskRatio",
     r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling":
         "excludeRatio",
 
@@ -59,6 +63,7 @@ CASE_SAFE_NAMES = {
         "directCC_includeAll",
 }
 CASE_ORDER = [
+    MASKED_RATIO_CASE,
     r"$\nu+e$ + CC$\nu_e$ + CC$\nu_\mu$, all profiled",
     r"$\nu+e$ + CC ratios + CC$\nu_\mu$, ratios excluded from profiling",
     r"$\nu+e$ + CC ratios + CC$\nu_\mu$, all profiled",
@@ -106,6 +111,18 @@ def infer_case_and_nprof(path):
     if not m:
         raise RuntimeError("Could not infer Nprof from filename: {}".format(base))
     nprof = int(m.group(1))
+
+    # Current scan filenames include tune tags between p8 and profileAll.
+    # Match their suffix explicitly before the older filename conventions.
+    mode = re.search(r"_(profileAll|profileOnlyRatio|excludeRatio_maskRatio)_Nprof\d+(?:_|$)", stem)
+    if mode:
+        name = mode.group(1)
+        if name == "excludeRatio_maskRatio":
+            return MASKED_RATIO_CASE, nprof
+        if name == "profileOnlyRatio":
+            return CASE_PATTERNS["ratioOnly"], nprof
+        key = "directCC_profileAll" if "noRatio" in stem else "ratio_profileAll"
+        return CASE_PATTERNS[key], nprof
 
     case = None
     for key, label in CASE_PATTERNS.items():
@@ -188,6 +205,9 @@ def plot_lcurves_by_nprof(grouped, outdir):
     Curves are the different analysis cases.
 
     grouped structure:
+        if nprof in grouped[case]:
+            raise RuntimeError("Duplicate case/Nprof in input glob: {} Nprof={} (file {})".format(
+                case, nprof, path))
         grouped[case][nprof] = rows
     """
     all_nprof = sorted(
@@ -346,29 +366,18 @@ def plot_vs_lambda_grid(grouped, outdir):
 
 
 def write_lambda1_summary(grouped, outpath):
-    with open(outpath, "w") as f:
-        f.write("case,nprof,lambda,chi2_null,resid_null,penalty_null,norm_a_null,max_abs_a_null\n")
-
-        # for case, by_nprof in grouped.items():
+    fields = ["case", "nprof", "lambda", "chi2_null", "resid_null",
+              "penalty_null", "norm_a_null", "max_abs_a_null"]
+    with open(outpath, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
         for case in CASE_ORDER:
             if case not in grouped:
                 continue
-            by_nprof = grouped[case]
-            for nprof in sorted(by_nprof):
-                r = get_lambda1_row(by_nprof[nprof])
-                f.write(
-                    "{},{},{:.6g},{:.8g},{:.8g},{:.8g},{:.8g},{:.8g}\n".format(
-                        case,
-                        nprof,
-                        r["lambda"],
-                        r["chi2_null"],
-                        r["resid_null"],
-                        r["penalty_null"],
-                        r["norm_a_null"],
-                        r["max_abs_a_null"],
-                    )
-                )
-
+            for nprof in sorted(grouped[case]):
+                r = get_lambda1_row(grouped[case][nprof])
+                writer.writerow(dict(case=case, nprof=nprof,
+                                     **{key: r[key] for key in fields[2:]}))
     print("Wrote", outpath)
 
 

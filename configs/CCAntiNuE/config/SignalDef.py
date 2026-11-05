@@ -135,7 +135,7 @@ SIGNAL_DEFINITION = [
     "CCNuEDIS",
     "CCNuE",
     "CCNuE2p2h",
-    # "CCNuEWrongSign"
+    "CCNuEWrongSign"
 ]
 
 EXTRA_OTHER = [
