@@ -120,11 +120,11 @@ ROOT.TH1.AddDirectory(False)
 
 JAEWON_INPUT_FILE = "jaewon_nue_elastic_data.json"
 
-LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
-    # "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_MAD.root"
-    # "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root"
-    "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p0_MAD.root"
-)
+# LELIKE_6BIN_ELASTIC_TEMPLATE_FILE = (
+#     # "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_MAD.root"
+#     # "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_6bins_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root"
+#     "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p0_MAD.root"
+# )
 
 PREDICTED_ELASTIC_FILE = (
     "/exp/minerva/data/users/qvuong/nueel_prediction_studies/nue_elastic_prediction_TomalakXS_fixedTotalNorm_newElectronResponse_mnv_FHC.root"
@@ -1616,19 +1616,18 @@ def load_nue_elastic_fhc_prediction():
     # =================================================
     # Load high-statistics 2D oscillation templates
     # =================================================
-
-    template_file = ROOT.TFile.Open(
-        LELIKE_6BIN_ELASTIC_TEMPLATE_FILE
+    prediction_template_path = stitch_path(
+        "fhc_elastic", "prediction_template_2d"
     )
+
+    template_file = ROOT.TFile.Open(prediction_template_path)
 
     if (
         not template_file
         or template_file.IsZombie()
     ):
         raise RuntimeError(
-            "Could not open 6-bin elastic template file: {}".format(
-                LELIKE_6BIN_ELASTIC_TEMPLATE_FILE
-            )
+            f"Could not open prediction 2D template: {prediction_template_path}"
         )
 
     h2_nue_raw = get_hist_checked(
