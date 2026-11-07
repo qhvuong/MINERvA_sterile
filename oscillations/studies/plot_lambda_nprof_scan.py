@@ -154,121 +154,76 @@ def get_lambda1_row(rows):
     return matches[0]
 
 
-def plot_lcurves_by_case(grouped, outdir):
-    """
-    One L-curve plot per case. Curves are different Nprof values.
-    """
-    # for case, by_nprof in grouped.items():
+LCURVE_YLABELS = {
+    "norm2": r"Unweighted flux pull $\|a\|^2$",
+    "penalty": r"Flux penalty $\lambda a^T a$",
+}
+
+
+def lcurve_points(rows, y_mode):
+    key = "norm_a_null" if y_mode == "norm2" else "penalty_null"
+    points = []
+    for r in rows:
+        if all(finite(r.get(k)) for k in ("resid_null", key, "lambda")):
+            y = float(r[key])
+            points.append((float(r["resid_null"]),
+                           y ** 2 if y_mode == "norm2" else y,
+                           float(r["lambda"])))
+    return points
+
+
+def draw_lcurve(rows, y_mode, label, linewidth):
+    points = lcurve_points(rows, y_mode)
+    if not points:
+        raise ValueError("No finite L-curve points for {}".format(label))
+    x, y, lam = zip(*points)
+    line, = plt.plot(x, y, marker="o", linewidth=linewidth, markersize=4, label=label)
+    for xi, yi, li in points:
+        if math.isclose(li, 1., rel_tol=0., abs_tol=1e-10):
+            plt.scatter([xi], [yi], marker="D", s=30, color=line.get_color(),
+                        edgecolors="black", linewidths=.5, zorder=3)
+        if any(math.isclose(li, v, rel_tol=1e-9)
+               for v in (0.01, 0.1, 1., 2., 5., 10., 100.)):
+            plt.annotate(r"$\lambda={:g}$".format(li), (xi, yi), fontsize=6,
+                         xytext=(3, 3), textcoords="offset points")
+
+
+def finish_lcurve(title, out, y_mode):
+    plt.xlabel(r"Residual $\chi^2$")
+    plt.ylabel(LCURVE_YLABELS[y_mode])
+    plt.title(title)
+    plt.grid(True, alpha=0.35)
+    plt.legend(fontsize=8)
+    plt.tight_layout()
+    plt.savefig(out, dpi=200)
+    plt.close()
+    print("Wrote", out)
+
+
+def plot_lcurves_by_case(grouped, outdir, y_mode="norm2"):
+    """One plot per configuration, with a curve for each Nprof."""
+    suffix = "_norm2" if y_mode == "norm2" else ""
     for case in CASE_ORDER:
         if case not in grouped:
             continue
-        by_nprof = grouped[case]
-
         plt.figure(figsize=(8, 6))
-
-        for nprof in sorted(by_nprof):
-            rows = by_nprof[nprof]
-            x = []
-            y = []
-            lam = []
-
-            for r in rows:
-                if finite(r.get("resid_null")) and finite(r.get("penalty_null")):
-                    x.append(float(r["resid_null"]))
-                    y.append(float(r["penalty_null"]))
-                    lam.append(float(r["lambda"]))
-
-            plt.plot(x, y, marker="o", linewidth=1.5, markersize=4, label="Nprof={}".format(nprof))
-
-            for xi, yi, li in zip(x, y, lam):
-                if li in [0.1, 1, 2, 5, 10, 100]:
-                    plt.text(xi, yi, "{:g}".format(li), fontsize=6)
-
-        plt.xlabel(r"Residual $\chi^2$")
-        plt.ylabel(r"Flux penalty $\lambda a^T a$")
-        plt.title("Null L-curve: {}".format(case))
-        plt.grid(True, alpha=0.35)
-        plt.legend(fontsize=8)
-        plt.tight_layout()
-
-        # safe = case.replace(" ", "_").replace(",", "").replace("/", "-")
-        safe = safe_case_name(case)
-        out = os.path.join(outdir, "lcurve_by_nprof_{}.png".format(safe))
-        plt.savefig(out, dpi=200)
-        plt.close()
-        print("Wrote", out)
+        for nprof, rows in sorted(grouped[case].items()):
+            draw_lcurve(rows, y_mode, "Nprof={}".format(nprof), 1.5)
+        out = os.path.join(outdir, "lcurve_by_nprof_{}{}.png".format(
+            safe_case_name(case), suffix))
+        finish_lcurve("Null L-curve: {}".format(case), out, y_mode)
 
 
-def plot_lcurves_by_nprof(grouped, outdir):
-    """
-    One L-curve plot per Nprof.
-    Curves are the different analysis cases.
-
-    grouped structure:
-        if nprof in grouped[case]:
-            raise RuntimeError("Duplicate case/Nprof in input glob: {} Nprof={} (file {})".format(
-                case, nprof, path))
-        grouped[case][nprof] = rows
-    """
-    all_nprof = sorted(
-        set(
-            nprof
-            for case, by_nprof in grouped.items()
-            for nprof in by_nprof.keys()
-        )
-    )
-
-    for nprof in all_nprof:
+def plot_lcurves_by_nprof(grouped, outdir, y_mode="norm2"):
+    """One plot per Nprof, with a curve for each configuration."""
+    suffix = "_norm2" if y_mode == "norm2" else ""
+    for nprof in sorted({n for by_nprof in grouped.values() for n in by_nprof}):
         plt.figure(figsize=(8, 6))
-
-        plotted_any = False
-
-        # for case, by_nprof in grouped.items():
         for case in CASE_ORDER:
-            if case not in grouped:
-                continue
-            by_nprof = grouped[case]
-            if nprof not in by_nprof:
-                continue
-
-            rows = by_nprof[nprof]
-
-            x = []
-            y = []
-            lam = []
-
-            for r in rows:
-                if finite(r.get("resid_null")) and finite(r.get("penalty_null")) and finite(r.get("lambda")):
-                    x.append(float(r["resid_null"]))
-                    y.append(float(r["penalty_null"]))
-                    lam.append(float(r["lambda"]))
-
-            if len(x) == 0:
-                continue
-
-            plotted_any = True
-            plt.plot(x, y, marker="o", linewidth=1.8, markersize=4, label=case)
-
-            # Optional: label a few lambda points
-            for xi, yi, li in zip(x, y, lam):
-                if li in [0.1, 1, 2, 5, 10, 100]:
-                    plt.text(xi, yi, "{:g}".format(li), fontsize=6)
-
-        if not plotted_any:
-            plt.close()
-            continue
-
-        plt.xlabel(r"Residual $\chi^2$")
-        plt.ylabel(r"Flux penalty $\lambda a^T a$")
-        plt.title("Null L-curve comparison across cases (Nprof = {})".format(nprof))
-        plt.grid(True, alpha=0.35)
-        plt.legend(fontsize=8)
-        plt.tight_layout()
-
-        out = os.path.join(outdir, "lcurve_compare_cases_Nprof{}.png".format(nprof))
-        plt.savefig(out, dpi=200)
-        plt.close()
-        print("Wrote", out)
+            if nprof in grouped.get(case, {}):
+                draw_lcurve(grouped[case][nprof], y_mode, case, 1.8)
+        out = os.path.join(outdir, "lcurve_compare_cases_Nprof{}{}.png".format(nprof, suffix))
+        finish_lcurve("Null L-curve comparison (Nprof = {})".format(nprof), out, y_mode)
 
 
 def plot_lambda1_vs_nprof(grouped, outdir):
@@ -394,6 +349,10 @@ def main():
         # default="/exp/minerva/data/users/qvuong/surfaces/lambda_scans/plots_nprof_lcurve_fixedFlux",
         default="/exp/minerva/data/users/qvuong/surfaces/plots/p8_lambda_scans",
     )
+    parser.add_argument(
+        "--lcurve-y", choices=("norm2", "penalty", "both"), default="norm2",
+        help="L-curve y-axis: unweighted norm squared (default), lambda-weighted penalty, or both.",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -406,14 +365,18 @@ def main():
     for path in files:
         case, nprof = infer_case_and_nprof(path)
         rows = read_csv(path)
+        if nprof in grouped[case]:
+            raise RuntimeError("Duplicate input for {} at Nprof={}: {}".format(case, nprof, path))
         grouped[case][nprof] = rows
         print("Loaded case='{}' Nprof={} rows={} path={}".format(case, nprof, len(rows), path))
 
     if len(grouped) == 0:
         raise RuntimeError("No datasets found")
 
-    plot_lcurves_by_case(grouped, args.outdir)
-    plot_lcurves_by_nprof(grouped, args.outdir)
+    modes = ("norm2", "penalty") if args.lcurve_y == "both" else (args.lcurve_y,)
+    for mode in modes:
+        plot_lcurves_by_case(grouped, args.outdir, mode)
+        plot_lcurves_by_nprof(grouped, args.outdir, mode)
     plot_lambda1_vs_nprof(grouped, args.outdir)
     plot_vs_lambda_grid(grouped, args.outdir)
     write_lambda1_summary(grouped, os.path.join(args.outdir, "lambda1_nprof_summary.csv"))
