@@ -99,16 +99,30 @@ LOW_RECOIL_BIN_LOW_Q0 = [0.0, 0.02, 0.04, 0.06, 0.08, 0.1,
                      0.12, 0.14, 0.16, 0.2]
 PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 
-# NEUTRINO4_ENU_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
-# NEUTRINO4_EE_BINNING = [0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,9,10,12.5,15,17.5,20]
-# NEUTRINO4_ELEP_BINNING = [0.5 * i for i in range(21)]
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 
-# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.1, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning4
-# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.7, 4.5, 5.4, 6.4, 7.6, 9.5, 12.5, 16.0, 20.0]  # ==> newBinning3
-# NEUTRINO4_EE_BINNING = [0.0, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 7.5, 9.5, 12.0, 16.0, 20.0]  # ==> newBinning2
-# NEUTRINO4_EE_BINNING = [0.0, 1.2, 1.6, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.5, 9.5, 12.0, 16.0, 20.0] # ==> newBinning
-NEUTRINO4_EE_BINNING = [0.8, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
+# NEUTRINO4_EE_BINNING = [0.8, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> oldBinning used in current v4.3.1 result
+# NEUTRINO4_EE_BINNING = [1.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
+
+# Current v4.3.1
+# NEUTRINO4_EE_BINNING = [
+#     0.8, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5,
+#     8.0, 10.0, 12.5, 16.0, 20.0
+# ]
+
+# Current test: raise threshold to 1.0 GeV
+# NEUTRINO4_EE_BINNING = [
+#     1.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5,
+#     8.0, 10.0, 12.5, 16.0, 20.0
+# ]
+
+# Proposed finer CV diagnostic
+NEUTRINO4_EE_BINNING = [
+    0.8, 1.0, 1.5, 2.0, 2.5,
+    3.0, 3.8, 4.6, 5.5, 6.5,
+    8.0, 10.0, 12.5, 16.0, 20.0
+]
+
 NEUTRINO4_EE_BINNING_EL_TEMPLATE = [0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.5, 6.0, 6.5, 7.2, 8.0, 9.0, 10.0, 11.2, 12.5, 14.0, 16.0, 18.0, 20.0]
 NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
 
@@ -476,8 +490,8 @@ HISTS_TO_MAKE = [
 
 
 
-    # "Biased Neutrino Energy",
-    # "Reco Energy vs L/E",
+    "Biased Neutrino Energy",
+    "Reco Energy vs L/E",
 	# "Lepton Energy",
     # # "True Energy vs L/E",
     # # "True Energy vs Biased Neutrino Energy",
@@ -532,7 +546,7 @@ HISTS_TO_MAKE = [
     # "Estimator vs Front dEdX",
 	# "True Lepton Energy",
 	# "True Neutrino Energy",
-	"True Signal True Energy vs Neutrino Length Travelled",
+	# "True Signal True Energy vs Neutrino Length Travelled",
 	# "Visible Energy",
 	# "HasNoBackExitingTracks",
 	# "Neutrino Vertex Z",
