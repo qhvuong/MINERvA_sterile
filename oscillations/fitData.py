@@ -120,7 +120,9 @@ if __name__ == "__main__":
     print("profile_n_universes =", profile_n_universes)
 
 
-    sample_histogram = StitchedHistogram("sample")
+    # Apply the shared numerator covariance to data fits. The separate toy
+    # generation code still needs a joint numerator/ratio statistical throw.
+    sample_histogram = StitchedHistogram("sample", include_shared_ratio_stats=True)
     sample_histogram.SetHistConfig(hist_config)
     sample_histogram.Load(file_path)
 
