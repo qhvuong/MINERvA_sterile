@@ -569,7 +569,7 @@ PLOTS_TO_MAKE = [
 
     {"name":"Biased Neutrino Energy", "plot_type":"stacked"},
     # {"name":"True Neutrino Energy", "plot_type":"stacked"},
-    {"name":"Lepton Energy", "plot_type":"stacked"},
+    # {"name":"Lepton Energy", "plot_type":"stacked"},
     # {"name":"True Lepton Energy", "plot_type":"stacked"},
     # {"name":"Visible Energy", "plot_type":"stacked"},
     # {"name":"Lepton Angle", "plot_type":"stacked"},

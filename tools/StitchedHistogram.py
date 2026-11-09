@@ -38,9 +38,10 @@ errorbandDict = { #keys are the errorbands that need to be renamed, values are w
 sample_pdgs = ["numu","nue","anumu","anue"]
 
 class StitchedHistogram:
-    def __init__(self,name,dirty=False):
+    def __init__(self,name,dirty=False,*,include_shared_ratio_stats=False):
         self.name = name
         self.dirty = dirty
+        self.include_shared_ratio_stats = include_shared_ratio_stats
 
         self.keys = ["fhc_elastic","fhc_imd","fhc_numu_selection","fhc_nue_selection","rhc_elastic","rhc_imd","rhc_numu_selection","rhc_nue_selection"]
         self.titles = {"fhc_elastic":"FHC #nu+e","fhc_imd":"FHC IMD","fhc_numu_selection":"FHC CC #nu_{#mu}","fhc_nue_selection":"FHC CC #nu_{e}",
@@ -401,6 +402,65 @@ class StitchedHistogram:
         return h_out
 
 
+    def SharedRatioStatCorrection(self):
+        """Missing statistical cross terms for a ratio and its reused numerator.
+
+        The ratio variance is already propagated by Divide. At the fixed CV,
+        d(N/D)/dN = 1/D = R/N, with numerator and denominator counting
+        statistics treated as independent.
+        """
+        size = self.mc_hist.GetNbinsX()
+        correction = np.zeros((size, size))
+        for beam in ("fhc", "rhc"):
+            ratio = beam + "_ratio"
+            muon = beam + "_numu_selection"
+            if ratio not in self.mc_hists or muon not in self.mc_hists:
+                continue
+            pairs = []
+            for name in (ratio, muon):
+                local = self.mc_hists[name]
+                kept = [i for i in range(1, local.GetNbinsX() + 1)
+                        if local.GetBinContent(i) > minBinCont]
+                global_bins = GetSliceIndices(self.hist_config, "", [name])
+                if not global_bins:
+                    pairs.append({})
+                    continue
+                if len(global_bins) != len(kept):
+                    raise ValueError(f"Cannot match stitched and local bins for {name}")
+                pairs.append(dict(zip(kept, global_bins)))
+            rmap, nmap = pairs
+            shared = sorted(rmap.keys() & nmap.keys())
+            if not shared:
+                continue
+            for stitched, local_hists in ((self.data_hist, self.data_hists),
+                                          (self.mc_hist, self.mc_hists)):
+                stat = stitched.GetStatErrorMatrix()
+                hr, hn = local_hists[ratio], local_hists[muon]
+                for i in shared:
+                    if not np.allclose([hr.GetBinLowEdge(i), hr.GetBinLowEdge(i + 1)],
+                                       [hn.GetBinLowEdge(i), hn.GetBinLowEdge(i + 1)],
+                                       rtol=0, atol=1e-9):
+                        raise ValueError(f"Shared numerator bin edges differ for {beam} bin {i}")
+                    a, b = rmap[i], nmap[i]
+                    r, n = hr.GetBinContent(i), hn.GetBinContent(i)
+                    if not np.allclose([r, n], [stitched.GetBinContent(a + 1),
+                                               stitched.GetBinContent(b + 1)], rtol=1e-8, atol=1e-10):
+                        raise ValueError(f"Shared numerator does not match stitched {beam} bin {i}")
+                    variance = float(stat(b + 1, b + 1))
+                    if variance == 0:
+                        continue
+                    if n == 0 or r == 0:
+                        raise ValueError(f"Undefined ratio derivative for {beam} bin {i}")
+                    expected = variance * r / n
+                    stored = float(stat(a + 1, b + 1))
+                    if np.isclose(stored, expected, rtol=1e-8, atol=1e-10):
+                        continue
+                    if not np.isclose(stored, 0, rtol=0, atol=1e-10):
+                        raise ValueError(f"Unexpected existing ratio statistical covariance for {beam} bin {i}")
+                    correction[a, b] += expected
+                    correction[b, a] += expected
+        return correction
+
     def SetCovarianceMatrices(self):
         if (
             type(self.mc_hist) == type(self.data_hist)
@@ -426,6 +486,13 @@ class StitchedHistogram:
 
             # Remove the internally generated flux covariance.
             cov_sans_flux = covariance_raw - flux_covariance
+            if self.include_shared_ratio_stats:
+                correction = self.SharedRatioStatCorrection()
+                cov_sans_flux += correction
+                if np.any(correction):
+                    print("Restored shared numerator statistics for {} ratio/muon bin pairs.".format(
+                        np.count_nonzero(np.triu(correction, k=1))
+                    ))
 
             # -------------------------------------------------
             # External covariance treatment

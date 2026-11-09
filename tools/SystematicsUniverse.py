@@ -66,7 +66,7 @@ V4P4P1_ADD_DIFFRACTIVE = False
 V4P4P1_ADD_ELASTIC_FSI = True
 
 
-TEST_TAG = "v4p4p1"
+TEST_TAG = "v4p3p1"
 
 
 
@@ -811,7 +811,7 @@ class CVPythonUniverse():
                 )
 
         weight *= self.GetFluxAndCVWeight(self.mc_incomingE * 1e-3, pdg)
-        # weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1N")
+        weight *= get_flux_ratio_me_to_le(self.mc_incomingE * 1e-3, self.mc_incoming, "1D")
 
         if SystematicsConfig.USE_SWAPPED:
             weight *= get_swapped_flux_ratio(self)
