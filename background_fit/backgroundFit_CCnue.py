@@ -4,12 +4,19 @@
 
 import os
 import sys
+import argparse
 import ROOT
 import PlotUtils
 import math
 import copy
 from array import array
 from collections import OrderedDict
+
+# AnalysisConfig parses sys.argv on import.
+_diagnostic_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+_diagnostic_parser.add_argument("--joint-stat-diagnostics", action="store_true")
+_diagnostic_args, _analysis_args = _diagnostic_parser.parse_known_args()
+sys.argv[1:] = _analysis_args
 
 from tools.PlotLibrary import HistHolder
 from config.AnalysisConfig import AnalysisConfig
@@ -334,22 +341,28 @@ def CheckAllTwoUniverseBands(h, label="", bins=None):
 
 
 
-def Get1DScaleFactor(variable_hists,scale_hists):
-    scale_dict = {}
-    comparable_scale = MakeComparableMnvHXD(variable_hists.GetHist(), scale_hists, False)
-    for cate in variable_hists.hists:
-        
-        if variable_hists.hists[cate] is None:
+def CategoryScaleKey(category, prediction=False):
+    if category in ("Total", "NuEElastic"):
+        return None
+    if category in SIGNAL_DEFINITION:
+        return None if prediction else "signal"
+    return "background"
+
+
+def Get1DScaleFactor(variable_hists, scale_hists, prediction=False):
+    factors = {}
+    comparable = MakeComparableMnvHXD(variable_hists.GetHist(), scale_hists)
+    for category, hist in variable_hists.hists.items():
+        key = CategoryScaleKey(category, prediction)
+        if key is None or not hist:
             continue
-        scaled =variable_hists.hists[cate].Clone()
-        try:
-            scale = comparable_scale[BackgroundFitConfig.CATEGORY_FACTORS[cate]]
-            scaled.Multiply(scaled,scale)  
-            scale_dict[BackgroundFitConfig.CATEGORY_FACTORS[cate]] = scaled.Integral()/variable_hists.hists[cate].Integral() if variable_hists.hists[cate].Integral() != 0 else 0
-        except KeyError:
-            pass
-        del scaled
-    return scale_dict
+        integral = hist.Integral()
+        if integral:
+            scaled = hist.Clone()
+            scaled.Multiply(hist, comparable[key])
+            factors[category] = scaled.Integral() / integral
+    return factors
+
 
 def MakeComparableMnvHXD(hist, scale_hist, y_axis=False):
     new_scale = {} 
@@ -367,10 +380,13 @@ def MakeComparableMnvHXD(hist, scale_hist, y_axis=False):
             
             for bandname in new_scale[cate].GetErrorBandNames():
                 errorband = new_scale[cate].GetVertErrorBand(bandname)
-                errorband.SetBinContent(i,scale_hists[cate].GetCVHistoWithStatError().GetBinContent(i))
+                source_band = scale_hist[cate].GetVertErrorBand(bandname)
+                errorband.SetBinContent(i, source_band.GetBinContent(k))
+                errorband.SetBinError(i, source_band.GetBinError(k))
                 for ith in range(errorband.GetNHists()):
-                    errorband.GetHist(ith).SetBinContent(i,scale_hist[cate].GetVertErrorBand(bandname).GetHist(ith).GetBinContent(k))
-                    errorband.GetHist(ith).SetBinError(i,scale_hist[cate].GetVertErrorBand(bandname).GetHist(ith).GetBinError(k))
+                    source_universe = source_band.GetHist(ith)
+                    errorband.GetHist(ith).SetBinContent(i, source_universe.GetBinContent(k))
+                    errorband.GetHist(ith).SetBinError(i, source_universe.GetBinError(k))
 
     return new_scale
 
@@ -383,7 +399,7 @@ def WriteScaleToMnvH1D(hist, scale, scale_err = None,  errorband=None,i=None):
         else:
             universe_hist= hist[group].GetVertErrorBand(errorband).GetHist(i)
         
-        for q in range(0,universe_hist.GetNbinsX()+1):
+        for q in range(universe_hist.GetNcells()):
             universe_hist.SetBinContent(q,scale[group].GetBinContent(q))
             universe_hist.SetBinError(q,scale[group].GetBinError(q))
 
@@ -403,7 +419,7 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
     for cate in mcsignal_histholders[index].hists:
         if cate == "Total":
             continue
-        if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
+        if CategoryScaleKey(cate) == "background":
             mc_sidebandBKG.Add(mcsideband_histholders[index].hists[cate])
             mc_signalBKG.Add(mcsignal_histholders[index].hists[cate])
         if cate in SIGNAL_DEFINITION:
@@ -412,13 +428,6 @@ def RunUniverseMinimizer(datasideband_histholders, datasignal_histholders, mcsid
 
     mc_signalNUEEL = mcsignal_histholders[index].hists["NuEElastic"].Clone()
     mc_sidebandNUEEL = mcsideband_histholders[index].hists["NuEElastic"].Clone()
-
-    ### want a MC-like pseudodata signal region to avoid preliminary unblinding
-    if AnalysisConfig.pseudodata:
-        for q in range(0,data_signal.GetNbinsX()+1):
-            data_signal.SetBinContent(q,mcsignal_histholders[index].hists["Total"].GetBinContent(q))
-        for q in range(0,data_sideband.GetNbinsX()+1):
-            data_sideband.SetBinContent(q,mcsideband_histholders[index].hists["Total"].GetBinContent(q))
 
     if error_band is not None and i is not None:
         mc_sidebandBKG = mc_sidebandBKG.GetVertErrorBand(error_band).GetHist(i).Clone()
@@ -461,51 +470,22 @@ def RunMinimizer(datasideband_histholders,datasignal_histholders, mcsideband_his
             WriteScaleToMnvH1D(scale_hists,scales,None,error_band,i)
 
 def TuneMC(hist_holder, scale_hists, x_axis=False, y_axis=False, prediction=False):
-    if (x_axis and y_axis):
-        return None # shouldnt happend
-    elif not (x_axis or y_axis):
-        try:
-            ScaleCategories1D(hist_holder,scale_hists,prediction) #scale_dict is a global variable
-        except AttributeError:
-            return False
+    if x_axis and y_axis:
+        return False
+    if x_axis or y_axis:
+        comparable = MakeComparableMnvHXD(hist_holder.GetHist(), scale_hists, y_axis)
+        for category, hist in hist_holder.hists.items():
+            key = CategoryScaleKey(category, prediction)
+            if key is not None and hist:
+                hist.Multiply(hist, comparable[key])
     else:
-        comparable_scale = MakeComparableMnvHXD(hist_holder.GetHist(),scale_hists,y_axis)
-        try:
-            #ScaleCategories(hist_holder,comparable_scale)
-            ScaleCategories(hist_holder,comparable_scale,prediction)
-        except AttributeError:
-            return False
+        for category, factor in scale_hists.items():
+            hist = hist_holder.hists.get(category)
+            if hist:
+                hist.Scale(factor)
     hist_holder.ResumTotal()
     return True
 
-def ScaleCategories(hist_holder,scale_hists,prediction=False):
-    for cate in hist_holder.hists:
-        if cate == "Total":
-            continue
-        try:
-            if not prediction:
-                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
-                    scale = scale_hists["background"]
-                    hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
-                if cate in SIGNAL_DEFINITION:
-                    scale = scale_hists["signal"]
-                    hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
-            else:
-                if cate not in SIGNAL_DEFINITION and cate != "NuEElastic":
-                    scale = scale_hists["background"]
-                    hist_holder.hists[cate].Multiply(hist_holder.hists[cate],scale)
-
-        except KeyError:
-            print("KeyError with {} in {}".format(cate,hist_holder.sideband))
-            continue
-
-def ScaleCategories1D(hist_holder,scale_dict):
-    for cate in hist_holder.hists:
-        try:
-            scale = scale_dict[BackgroundFitConfig.CATEGORY_FACTORS[cate]]
-            hist_holder.hists[cate].Scale(scale,bin_width_normalize=True) 
-        except KeyError:
-            continue
 
 def BackgroundSubtraction(data_hists, mc_hists, pred_hists, errs=None):
     if not data_hists.POT_scaled:
@@ -547,10 +527,121 @@ def SubtractPoissonHistograms(h,h1):
         h.SetBinError(i,errors[i])
     return h
 
+
+def JointStatBin(sr, sb):
+    """Linearized statistical propagation for Z = alpha * S_SR and M = S_SR."""
+    (d_sr, s_sr, b_sr, e_sr), (vd_sr, vs_sr, vb_sr, ve_sr) = sr
+    (d_sb, s_sb, b_sb, e_sb), (vd_sb, vs_sb, vb_sb, ve_sb) = sb
+    determinant = s_sr * b_sb - s_sb * b_sr
+    if determinant == 0:
+        return None
+    c_sr = s_sr * b_sb / determinant
+    c_sb = -s_sr * b_sr / determinant
+    x_sr, x_sb = d_sr - e_sr, d_sb - e_sb
+    subtracted = c_sr * x_sr + c_sb * x_sb
+    alpha = (b_sb * x_sr - b_sr * x_sb) / determinant
+    beta = (s_sr * x_sb - s_sb * x_sr) / determinant
+
+    # dZ = alpha*dS_SR + c^T (dD - alpha*dS - beta*dB - dE).
+    grad_s_sr = alpha * (1 - c_sr)
+    other_var = (
+        c_sr**2 * (vd_sr + beta**2 * vb_sr + ve_sr)
+        + c_sb**2 * (vd_sb + alpha**2 * vs_sb + beta**2 * vb_sb + ve_sb)
+    )
+    cov = grad_s_sr * vs_sr
+    det_var = b_sb**2 * vs_sr + s_sb**2 * vb_sr + b_sr**2 * vs_sb + s_sr**2 * vb_sb
+    return subtracted, s_sr, (
+        other_var + grad_s_sr**2 * vs_sr,
+        vs_sr,
+        cov,
+        other_var + (grad_s_sr - 1)**2 * vs_sr,
+        determinant,
+        math.sqrt(det_var),
+    )
+
+
+def RegionStatBin(data_holder, mc_holder, i):
+    """Read disjoint category yields and sumw2 from the unfit, POT-scaled inputs."""
+    data = data_holder.GetHist()
+    signal = [mc_holder.hists[category] for category in SIGNAL_DEFINITION]
+    background = [hist for category, hist in mc_holder.hists.items()
+                  if CategoryScaleKey(category) == "background"]
+    elastic = mc_holder.hists["NuEElastic"]
+    components = ([data], signal, background, [elastic])
+    return (
+        tuple(sum(h.GetBinContent(i) for h in group) for group in components),
+        tuple(sum(h.GetBinError(i)**2 for h in group) for group in components),
+    )
+
+
+def WriteJointStatDiagnostics(name, subtracted, prediction, data_sr, data_sb, mc_sr, mc_sb):
+    """Set the subtracted data errors and write the joint statistical inputs."""
+    n_bins = subtracted.GetNbinsX()
+    edges = array("d", [subtracted.GetXaxis().GetBinLowEdge(i) for i in range(1, n_bins + 2)])
+    for hist in (prediction, data_sr.GetHist(), data_sb.GetHist(), mc_sr.GetHist(), mc_sb.GetHist()):
+        if (hist.GetDimension() != 1 or hist.GetNbinsX() != n_bins
+                or any(hist.GetXaxis().GetBinLowEdge(i) != edge
+                       for i, edge in enumerate(edges, start=1))):
+            raise ValueError("Joint statistical diagnostics require identical fit and output bin edges.")
+    diagnostics = [
+        ROOT.TH1D(f"{name}_{key}", f"{title};{subtracted.GetXaxis().GetTitle()};{unit}", n_bins, edges)
+        for key, title, unit in (
+            ("jointStat_varDataSub", "Statistical variance of subtracted data", "events^{2}"),
+            ("jointStat_varPrediction", "Statistical variance of nominal signal MC", "events^{2}"),
+            ("jointStat_covDataSubPrediction", "Statistical covariance of subtracted data and MC", "events^{2}"),
+            ("jointStat_varResidual", "Statistical variance of subtracted data minus MC", "events^{2}"),
+            ("jointStat_determinant", "Two-region solve determinant", "events^{2}"),
+            ("jointStat_determinantSigma", "Linearized MC statistical error on determinant", "events^{2}"),
+        )
+    ]
+    print(f"{name} joint statistical diagnostics (regular bins)")
+    print("bin  legacy_sigma  sub_sigma  pred_sigma  cov_sub_pred  resid_sigma  det/sigma_det")
+    for i in range(1, n_bins + 1):
+        result = JointStatBin(RegionStatBin(data_sr, mc_sr, i), RegionStatBin(data_sb, mc_sb, i))
+        if result is None:
+            raise RuntimeError(f"{name} bin {i}: singular two-region statistical propagation")
+        fitted_data, fitted_prediction, values = result
+        if not all(math.isfinite(value) for value in values):
+            raise RuntimeError(f"{name} bin {i}: nonfinite joint statistical result")
+        for calc, saved in ((fitted_data, subtracted.GetBinContent(i)),
+                            (fitted_prediction, prediction.GetBinContent(i))):
+            if not math.isclose(calc, saved, rel_tol=1e-8, abs_tol=1e-8):
+                raise RuntimeError(f"{name} bin {i}: statistical inputs do not reproduce the nominal output")
+        for hist, value in zip(diagnostics, values):
+            hist.SetBinContent(i, value)
+            hist.SetBinError(i, 0.0)
+        var_sub, var_pred, cov, var_residual, det, sigma_det = values
+        legacy_sigma = subtracted.GetBinError(i)
+        sub_sigma = math.sqrt(var_sub)
+        subtracted.SetBinError(i, sub_sigma)
+        det_pull = det / sigma_det if sigma_det else math.copysign(float("inf"), det)
+        print(f"{i:3d} {legacy_sigma:12.6g} {sub_sigma:10.6g}"
+              f" {math.sqrt(var_pred):11.6g} {cov:13.6g} {math.sqrt(var_residual):12.6g} {det_pull:14.6g}")
+    for hist in diagnostics:
+        hist.Write()
+
+
+def UseMCPseudodata(data_holder, mc_holder):
+    if not AnalysisConfig.pseudodata:
+        return
+    data = data_holder.GetHist().Clone()
+    data.SetDirectory(0)
+    data.Reset()
+    mc = mc_holder.GetHist()
+    for i in range(data.GetNcells()):
+        expected = mc.GetBinContent(i)
+        data.SetBinContent(i, expected)
+        data.SetBinError(i, math.sqrt(max(0.0, expected)))
+    data_holder.hists["Total"] = data
+
+
 def GetScaledDataMC(hist,datafile,mcfile,region):
     data_hist = HistHolder(hist,datafile,region,False,pot_scale)
     mc_hist = HistHolder(hist,mcfile,region,True,pot_scale)
     pred_hist = HistHolder(hist,mcfile,region,True,pot_scale)
+    if AnalysisConfig.pseudodata:
+        mc_hist.POTScale(False)
+        UseMCPseudodata(data_hist, mc_hist)
     fit_on_axis = scaled_hist_name.upper() in data_hist.plot_name.upper() or "estimator" in data_hist.plot_name.lower()
     if fit_on_axis: # fit_on_axis = True
         fit_on_yaxis = ("_"+scaled_hist_name).upper() in data_hist.plot_name.upper() or "_estimator" in data_hist.plot_name.lower()
@@ -560,9 +651,8 @@ def GetScaledDataMC(hist,datafile,mcfile,region):
     else:
         print(("not fitting {} on any axis".format(data_hist.plot_name)))
         variable_hist = HistHolder(BackgroundFitConfig.HIST_TO_FIT,mcfile,region,True,pot_scale) 
-        scale_dict = Get1DScaleFactor(variable_hist,scale_hists)
-        TuneMC(mc_hist, scale_dict, False , False )
-        TuneMC(pred_hist, scale_hists, False, False, True)
+        TuneMC(mc_hist, Get1DScaleFactor(variable_hist, scale_hists))
+        TuneMC(pred_hist, Get1DScaleFactor(variable_hist, scale_hists, prediction=True))
     return data_hist,mc_hist,pred_hist
 
 def MakeRatio(signalHist,sidebandHist,normsignalHist,normsidebandHist,config):
@@ -766,8 +856,19 @@ if __name__ == "__main__":
     datafile,mcfile,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
     #output knobs:
     background_fit_tag = AnalysisConfig.bkgTune_tag
-    scalefile=ROOT.TFile.Open(AnalysisConfig.BackgroundFitPath(playlist,background_fit_tag),"RECREATE")
     BackgroundFitConfig.SetGlobalParameter(background_fit_tag)
+    if "NuEElastic" in SIGNAL_DEFINITION:
+        raise ValueError("NuEElastic is a fixed background in the CC electron fit.")
+    if "dEdX" not in AnalysisConfig.sidebands:
+        raise ValueError("The two-region CC electron background fit requires the dEdX sideband.")
+    output_tag = background_fit_tag + "_pseudodata" if AnalysisConfig.pseudodata else background_fit_tag
+    if _diagnostic_args.joint_stat_diagnostics:
+        output_tag += "_jointStat"
+    output_path = AnalysisConfig.BackgroundFitPath(playlist, output_tag)
+    print("Background fit output:", output_path)
+    scalefile = ROOT.TFile.Open(output_path, "RECREATE")
+    if not scalefile or scalefile.IsZombie():
+        raise RuntimeError(f"Cannot create background fit output {output_path}")
 
     datasideband_histholders = []
     mcsideband_histholders = []
@@ -794,14 +895,15 @@ if __name__ == "__main__":
     if scaled_hist_name is None:
         scaled_hist_name = sel_histholder.plot_name
 
-    for region in AnalysisConfig.sidebands:
-        datasideband_histholders.append(HistHolder(BackgroundFitConfig.HIST_OBSERVABLE,datafile,region,False))
-        mcsideband_histholders.append(HistHolder(BackgroundFitConfig.HIST_OBSERVABLE,mcfile,region,True,pot_scale))
-        mcsideband_histholders[-1].POTScale(False)
+    datasideband_histholders.append(HistHolder(BackgroundFitConfig.HIST_OBSERVABLE, datafile, "dEdX", False))
+    mcsideband_histholders.append(HistHolder(BackgroundFitConfig.HIST_OBSERVABLE, mcfile, "dEdX", True, pot_scale))
+    mcsideband_histholders[0].POTScale(False)
+    UseMCPseudodata(datasideband_histholders[0], mcsideband_histholders[0])
 
     datasignal_histholders.append(HistHolder(BackgroundFitConfig.HIST_OBSERVABLE,datafile,"Signal",False))
     mcsignal_histholders.append(HistHolder(BackgroundFitConfig.HIST_OBSERVABLE,mcfile,"Signal",True,pot_scale))
-    mcsignal_histholders[-1].POTScale(False)
+    mcsignal_histholders[0].POTScale(False)
+    UseMCPseudodata(datasignal_histholders[0], mcsignal_histholders[0])
     signalHist = HistHolder(BackgroundFitConfig.HIST_OBSERVABLE,mcfile,"Signal",True,pot_scale)
     #mcsignal_histholders[-1].POTScale(False)
     signalHist.POTScale(False)
@@ -826,6 +928,9 @@ if __name__ == "__main__":
     region = "Signal"
     for factor in scale_hists: 
         hist = scale_hists[factor]
+        if _diagnostic_args.joint_stat_diagnostics:
+            hist.Write("{}_Scale_Factor".format(factor))
+            continue
         hist.SetXTitle("E_{estimator}")
         c1 = ROOT.TCanvas()
         #mnvplotter.axis_maximum = 3.0
@@ -849,8 +954,21 @@ if __name__ == "__main__":
         data_hist,mc_hist,pred_hist = GetScaledDataMC(hist,datafile,mcfile,region)
         mc_hist.GetHist().Write(data_hist.plot_name)
         subbedData, subbedMC = BackgroundSubtraction(data_hist,mc_hist,pred_hist)
-        subbedData.Write(data_hist.plot_name+"_data_bkgSubbed") #added here
-        mc_prediction.Write(data_hist.plot_name+"_predicted_Signal") #added here
+        if data_hist.plot_name == "EN4":
+            scalefile.cd()
+            WriteJointStatDiagnostics(
+                data_hist.plot_name, subbedData, mc_prediction,
+                datasignal_histholders[0], datasideband_histholders[0],
+                mcsignal_histholders[0], mcsideband_histholders[0],
+            )
+        subbedData.Write(data_hist.plot_name+"_data_bkgSubbed")
+        mc_prediction.Write(data_hist.plot_name+"_predicted_Signal")
+
+    if _diagnostic_args.joint_stat_diagnostics:
+        scalefile.Close()
+        datafile.Close()
+        mcfile.Close()
+        sys.exit(0)
 
     #change playlist
     type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
@@ -917,12 +1035,8 @@ if __name__ == "__main__":
                 sub_postfit_config = postfit_config.copy()
                 sub_postfit_config["tag"] = postfit_config.get("tag", "") + "bkgSub_"
 
-                if sideband == "Signal" and AnalysisConfig.pseudodata:
-                    MakePlot(datasignal_histholders[0], mc_hist, mc_postfit_config)
-                    MakePlot(datasignal_histholders[0], pred_hist, pred_postfit_config)
-                else:
-                    MakePlot(data_hist, mc_hist, mc_postfit_config)
-                    MakePlot(data_hist, pred_hist, pred_postfit_config)
+                MakePlot(data_hist, mc_hist, mc_postfit_config)
+                MakePlot(data_hist, pred_hist, pred_postfit_config)
 
                 if sideband == "Signal":
                     subbedData, subbedMC = BackgroundSubtraction(data_hist, mc_hist, pred_hist)

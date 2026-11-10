@@ -364,19 +364,19 @@ def GetNeutrinoTravelledLengthPDF(
     pdg,
     nue_file=f"/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_trueEL_{TEST_TAG}_MAD.root",
     numu_file=f"/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_trueEL_{TEST_TAG}_MAD.root",
-    nuebar_file=f"/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_trueEL_{TEST_TAG}_MAD.root",
-    numubar_file=f"/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_trueEL_{TEST_TAG}_MAD.root",
     nue_hname="ETrue_Length_CCNuE",
+    nuebar_hname="ETrue_Length_CCNuEWrongSign",
     numu_hname="ETrue_Length_CCNuMu",
+    numubar_hname="ETrue_Length_CCNuMuWrongSign",
 ):
     """
     Return a normalized TH1 of P(L | Enu, pdg).
 
     Uses separate files for particles and antiparticles:
       pdg =  12  -> nue_file,     nue_hname
-      pdg = -12  -> nuebar_file,  nue_hname
+      pdg = -12  -> nue_file,     nuebar_hname
       pdg =  14  -> numu_file,    numu_hname
-      pdg = -14  -> numubar_file, numu_hname
+      pdg = -14  -> numu_file,    numubar_hname
 
     The returned histogram is cached by file, hist name, signed PDG, and E bin.
     Treat the returned histogram as read-only.
@@ -388,14 +388,14 @@ def GetNeutrinoTravelledLengthPDF(
         this_file = nue_file
         this_hname = nue_hname
     elif pdg == -12:
-        this_file = nuebar_file
-        this_hname = nue_hname
+        this_file = nue_file
+        this_hname = nuebar_hname
     elif pdg == 14:
         this_file = numu_file
         this_hname = numu_hname
     elif pdg == -14:
-        this_file = numubar_file
-        this_hname = numu_hname
+        this_file = numu_file
+        this_hname = numubar_hname
     else:
         raise ValueError(
             "Unsupported PDG for GetNeutrinoTravelledLengthPDF: {}".format(pdg)

@@ -101,7 +101,7 @@ PROTON_ANGLE_BINNING = [2*i for i in range(51)]
 
 NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 
-# NEUTRINO4_EE_BINNING = [0.8, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> oldBinning used in current v4.3.1 result
+NEUTRINO4_EE_BINNING = [0.8, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> oldBinning used in current v4.3.1 result
 # NEUTRINO4_EE_BINNING = [1.0, 2.0, 2.5, 3.0, 3.8, 4.6, 5.5, 6.5, 8.0, 10.0, 12.5, 16.0, 20.0]  # ==> testBinning
 
 # Current v4.3.1
@@ -117,11 +117,11 @@ NEUTRINO4_ENU_BINNING = 	[0.0, 0.8, 2.0, 3.0, 5.0, 7.0, 9.0, 20.0]
 # ]
 
 # Proposed finer CV diagnostic
-NEUTRINO4_EE_BINNING = [
-    0.8, 1.0, 1.5, 2.0, 2.5,
-    3.0, 3.8, 4.6, 5.5, 6.5,
-    8.0, 10.0, 12.5, 16.0, 20.0
-]
+# NEUTRINO4_EE_BINNING = [
+#     0.8, 1.0, 1.5, 2.0, 2.5,
+#     3.0, 3.8, 4.6, 5.5, 6.5,
+#     8.0, 10.0, 12.5, 16.0, 20.0
+# ]
 
 
 NEUTRINO4_EE_BINNING_FIT = [0.0, 1.6, 2.5, 3.8, 5.5, 7.5, 12.0, 20.0]	# ==> newBinningFit
