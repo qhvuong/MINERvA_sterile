@@ -1,0 +1,9 @@
+{
+  "root_path": "/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/rootfiles/NuE_stitched_hists_predNueel_p8_v4p3p1_updatedStat_newEL.root",
+  "config_path": "/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/HIST_CONFIG_predNueel_p8_v4p3p1_updatedStat_newEL.json",
+  "root_size_bytes": 51934928,
+  "root_mtime_ns": 1794323734704639112,
+  "root_sha256": "153a72b6484040759ca8aea0d21f131a168aa2702963b5e8d0e53ab120510ea9",
+  "config_sha256": "78d7bb269e52f5f682b754bd95e2d263e8048fb95753af395c82cac14e6b140a",
+  "script_sha256": "1c1235a57dc86696a0b7c0835ec9440c3b5f94dc1507647ee79b4542cf99ab08"
+}

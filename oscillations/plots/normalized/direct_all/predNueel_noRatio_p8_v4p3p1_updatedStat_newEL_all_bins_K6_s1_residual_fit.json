@@ -1,0 +1,20 @@
+{
+  "hist_config_tag": "predNueel_noRatio_p8_v4p3p1_updatedStat_newEL",
+  "k": 6,
+  "full_rank": 54,
+  "flux_source": "residual",
+  "flux_scale": 1.0,
+  "n_universes": 1000,
+  "n_profile_bins": 54,
+  "n_score_bins": 54,
+  "exclude_ratios_from_profiling": false,
+  "chi2_null": 83.118415842495,
+  "chi2_best": 60.715330973724605,
+  "delta_chi2": 22.403084868770392,
+  "parameters": {
+    "dm2": 19.062224397997877,
+    "ue4_sq": 0.00836439384896492,
+    "umu4_sq": 0.04487373072845444,
+    "utau4_sq": 0.0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "inputs": {
+    "direct": "/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/rootfiles/NuE_stitched_hists_predNueel_noRatio_p8_v4p3p1_updatedStat_newEL.root",
+    "ratio": "/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/rootfiles/NuE_stitched_hists_predNueel_p8_v4p3p1_updatedStat_newEL.root"
+  },
+  "band": "Flux",
+  "input_file_stats": {
+    "direct": {
+      "size_bytes": 28186552,
+      "mtime_ns": 1794323748119126264
+    },
+    "ratio": {
+      "size_bytes": 51934928,
+      "mtime_ns": 1794323734704639112
+    }
+  },
+  "expected_universes": 1000,
+  "ensemble_normalization": "1/N, mean-centered",
+  "interpretation": "Positive cancellation removes variance; negative means amplification. Exact independent baseline uses all N x N numerator/denominator pairings. MC cancellation is not the complete data-minus-MC residual prior or a measurement of additional profiling information.",
+  "universe_alignment": "Same index across matched inputs is assumed. Ratio-universe closure is required; index semantics cannot be inferred from histograms alone.",
+  "rtol": 1e-07,
+  "atol": 1e-09
+}

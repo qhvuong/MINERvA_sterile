@@ -1,0 +1,29 @@
+{
+  "mode": "production ROOT null inputs",
+  "full_basis": true,
+  "regularization_parameter_scan": false,
+  "sterile_fit": false,
+  "run_status": "PASS",
+  "error": null,
+  "rtol": 1e-06,
+  "runtime": {
+    "python_executable": "/exp/minerva/app/users/qvuong/MAT_AL9/CC-NuE-XSec/oscillations/py3env/bin/python",
+    "python_version": "3.9.15 (main, Jan 24 2024, 13:37:10) \n[GCC 11.4.1 20230605 (Red Hat 11.4.1-2)]",
+    "rootsys": "/cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/opt/spack/linux-almalinux9-x86_64_v3/gcc-12.2.0/root-6.28.12-hljl7gyomotoqht2uzvhnf73337jq67q",
+    "loaded_cxx_libraries": [
+      "/cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/opt/spack/linux-almalinux9-x86_64_v3/gcc-12.2.0/gcc-runtime-12.2.0-gpkvfkwk2sbqsnbjagl63agsalrcha5z/lib/libgcc_s.so.1",
+      "/cvmfs/larsoft.opensciencegrid.org/spack-v0.22.0-fermi/opt/spack/linux-almalinux9-x86_64_v3/gcc-12.2.0/gcc-runtime-12.2.0-gpkvfkwk2sbqsnbjagl63agsalrcha5z/lib/libstdc++.so.6"
+    ],
+    "root_version": "6.28/12",
+    "numpy_version": "1.24.3",
+    "scipy_version": "1.13.1"
+  },
+  "subset_size": 100,
+  "cases": [
+    "direct_all",
+    "ratio_all"
+  ],
+  "tag_suffix": "_updatedStat_newEL",
+  "assumptions": "Fixed response, positive definite C, unrestricted coefficients, identical solve/score bins. No claim of coverage or preferred K.",
+  "note": "ROOT covariance comparison is diagnostic: no assumption that a robust/IQR estimator equals a centered second moment."
+}

@@ -1,0 +1,161 @@
+\section{Actual stitched-input tests: generated numerical report}
+
+This section is generated directly from the accompanying test output. It concerns a fixed linear response, unrestricted coefficients, and identical pull-solve and scoring bins.
+
+\par\medskip\noindent\textbf{Run status:} PASS.
+
+\par\noindent Assertion tolerance: relative 1e-06; absolute tolerance for general algebra checks is the relative tolerance times 0.01. The legacy-shift comparison uses an absolute tolerance of $10^{-6}$.
+
+\par\noindent Passed numerical assertions: 138.
+
+Largest reported relative difference among passed assertions: 4.746e-13.
+
+\subsection{Profile scores before and after duplicating every universe}
+
+\begin{center}\small
+
+\begin{tabular}{lrrrr}
+
+\toprule
+
+Case / response / centering & Raw & Normalized & Raw dup. & Norm. dup.\\
+
+\midrule
+
+Direct / mc / cv & 27.007161 & 76.667670 & 22.705377 & 76.667670\\
+
+Direct / mc / mean & 27.171345 & 76.703263 & 22.786153 & 76.703263\\
+
+Direct / residual / cv & 25.506821 & 76.806307 & 20.689056 & 76.806307\\
+
+Direct / residual / mean & 26.025234 & 76.945848 & 21.277158 & 76.945848\\
+
+Ratios / mc / cv & 21.137718 & 86.609155 & 17.148533 & 86.609155\\
+
+Ratios / mc / mean & 21.181468 & 86.850002 & 17.172529 & 86.850002\\
+
+Ratios / residual / cv & 18.224416 & 86.514149 & 14.113793 & 86.514149\\
+
+Ratios / residual / mean & 19.946232 & 87.040700 & 15.428220 & 87.040700\\
+
+\bottomrule\end{tabular}\end{center}
+
+Duplication leaves the supplied distribution of universe shifts unchanged. Agreement of the two normalized scores tests representation invariance. A change in the raw score at fixed unit penalty is compared separately against the predicted $\lambda/2$ identity.
+
+\subsection{Subset representativeness is measured separately}
+
+\begin{center}\small\begin{tabular}{lr}\toprule
+
+Case & $\|V_{\rm subset}-V_{\rm ens}\|_F/\|V_{\rm ens}\|_F$\\\midrule
+
+direct\_all\_mc\_cv & 0.289752\\
+
+direct\_all\_mc\_mean & 0.281784\\
+
+direct\_all\_residual\_cv & 0.289752\\
+
+direct\_all\_residual\_mean & 0.281784\\
+
+ratio\_all\_mc\_cv & 0.289755\\
+
+ratio\_all\_mc\_mean & 0.281787\\
+
+ratio\_all\_residual\_cv & 0.289755\\
+
+ratio\_all\_residual\_mean & 0.281787\\
+
+\bottomrule\end{tabular}\end{center}
+
+This is a descriptive Frobenius-norm difference in the original observable coordinates, not a coverage criterion or proof that the subset is adequate.
+
+\subsection{Duplication test on the selected raw subset}
+
+This repeats the representation test on the selected $N_{\rm prof}$ rows themselves. Both copies are allowed in the duplicated solve. The normalized columns use the subset\textquotesingle s own second moment ($1/N_{\rm prof}$), solely for this invariance test; they do not replace the full-ensemble reference covariance.
+
+\begin{center}\small\begin{tabular}{lrrrr}\toprule
+
+Case & Raw & Raw dup. & Subset norm. & Norm. dup.\\\midrule
+
+Direct / mc / cv & 40.922349 & 37.367024 & 77.725960 & 77.725960\\
+
+Direct / mc / mean & 40.912776 & 37.613681 & 77.927424 & 77.927424\\
+
+Direct / residual / cv & 40.647203 & 37.191230 & 77.714096 & 77.714096\\
+
+Direct / residual / mean & 40.888321 & 37.408703 & 78.186974 & 78.186974\\
+
+Ratios / mc / cv & 39.627980 & 34.332012 & 87.991377 & 87.991377\\
+
+Ratios / mc / mean & 39.848705 & 34.426043 & 88.970134 & 88.970134\\
+
+Ratios / residual / cv & 37.850264 & 32.553895 & 87.608327 & 87.608327\\
+
+Ratios / residual / mean & 39.751011 & 34.234694 & 89.190586 & 89.190586\\
+
+\bottomrule\end{tabular}\end{center}
+
+\subsection{Direct measurement of the implied uncertainty scale}
+
+The table reports the minimum and maximum over nonzero-variance bins of $\sqrt{(V_{\rm implied})_{ii}/(V_{\rm ens})_{ii}}$ at raw $\lambda=1$. The full-ensemble column must equal $\sqrt{N}$. The subset column is measured, not assumed to equal $\sqrt{N_{\rm prof}}$.
+
+\begin{center}\small\begin{tabular}{lrr}\toprule
+
+Case & Full raw: range & Selected raw subset: range\\\midrule
+
+direct\_all\_mc\_cv & 31.6228--31.6228 & 8.0362--10.5202\\
+
+direct\_all\_mc\_mean & 31.6228--31.6228 & 8.0964--10.5133\\
+
+direct\_all\_residual\_cv & 31.6228--31.6228 & 8.0362--10.5202\\
+
+direct\_all\_residual\_mean & 31.6228--31.6228 & 8.0964--10.5133\\
+
+ratio\_all\_mc\_cv & 31.6228--31.6228 & 8.0362--11.2426\\
+
+ratio\_all\_mc\_mean & 31.6228--31.6228 & 8.0964--11.2451\\
+
+ratio\_all\_residual\_cv & 31.6228--31.6228 & 8.0362--11.1830\\
+
+ratio\_all\_residual\_mean & 31.6228--31.6228 & 8.0964--11.1728\\
+
+\bottomrule\end{tabular}\end{center}
+
+\subsection{Numerical assertion summary}
+
+\begin{center}\small\begin{tabular}{lrr}\toprule
+
+Case & Passed checks & Maximum relative difference\\\midrule
+
+direct\_all & 1 & 5.719e-14\\
+
+direct\_all\_mc\_cv & 17 & 8.279e-14\\
+
+direct\_all\_mc\_mean & 17 & 2.148e-13\\
+
+direct\_all\_residual\_cv & 17 & 1.043e-13\\
+
+direct\_all\_residual\_mean & 17 & 2.483e-13\\
+
+ratio\_all & 1 & 4.746e-13\\
+
+ratio\_all\_mc\_cv & 17 & 6.516e-14\\
+
+ratio\_all\_mc\_mean & 17 & 2.768e-13\\
+
+ratio\_all\_residual\_cv & 17 & 1.484e-13\\
+
+ratio\_all\_residual\_mean & 17 & 3.806e-13\\
+
+\bottomrule\end{tabular}\end{center}
+
+\subsection{ROOT covariance convention diagnostic}
+
+direct\_all: relative difference in non-flux-whitened Frobenius norm = 1.45582e-14.\par
+
+ratio\_all: relative difference in non-flux-whitened Frobenius norm = 1.45741e-14.\par
+
+This diagnostic has no automatic pass/fail threshold: a different centering or robust/IQR estimator must be compared on its own definition.
+
+\subsection{Scope and reproducibility}
+
+Individual checks are recorded in \texttt{assertions.csv}; score decompositions in \texttt{scores.csv}; per-bin implied variance and standard-deviation ratios in \texttt{implied\_scale\_by\_bin.csv}. Runtime versions, loaded C++ libraries, tolerances and run status accompany the report. Production runs also save input paths, SHA-256 hashes and matrix snapshots. These tests establish or falsify identities for the specified objective. They do not establish an optimal elbow, complete physical flux uncertainty, or oscillation coverage.
