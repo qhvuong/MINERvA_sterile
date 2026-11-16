@@ -1641,10 +1641,10 @@ class PlottingContainer:
             leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
             leg.AddEntry(h_prof, leg_text, "l")
 
-        # top_text = "Best Osc. Fit Raw"
-        # bot_text = "#chi^{{2}}={:.2f}".format(chi2_model_raw)
-        # leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
-        # leg.AddEntry(h_osc_raw, leg_text, "l")
+        top_text = "Best Osc. Fit Raw"
+        bot_text = "#chi^{{2}}={:.2f}".format(chi2_model_raw)
+        leg_text = "#splitline{%s}{%s}" % (top_text, bot_text)
+        leg.AddEntry(h_osc_raw, leg_text, "l")
 
         # Blue curve: oscillated model.
         top_text = "Best Osc. Fit"

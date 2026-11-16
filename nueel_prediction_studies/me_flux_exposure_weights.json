@@ -1,0 +1,70 @@
+{
+    "mapping_source": "User-confirmed mapping",
+    "POT_definition": "Sum of POT_Used from the complete P8 data inventory",
+    "sources": {
+      "ME1D": {
+        "beam": "FHC",
+        "data_playlists": [
+          "ME1A",
+          "ME1B",
+          "ME1C",
+          "ME1D",
+          "ME1E",
+          "ME1F"
+        ],
+        "data_POT_Used": 5.653644227222834e+20,
+        "scale_from_1e20_POT": 5.653644227222833
+      },
+      "ME1M": {
+        "beam": "FHC",
+        "data_playlists": [
+          "ME1G",
+          "ME1L",
+          "ME1M"
+        ],
+        "data_POT_Used": 3.0906027151031475e+20,
+        "scale_from_1e20_POT": 3.0906027151031474
+      },
+      "ME1N": {
+        "beam": "FHC",
+        "data_playlists": [
+          "ME1N",
+          "ME1O",
+          "ME1P"
+        ],
+        "data_POT_Used": 1.833171383055374e+20,
+        "scale_from_1e20_POT": 1.8331713830553742
+      },
+      "ME5A": {
+        "beam": "RHC",
+        "data_playlists": [
+          "ME5A"
+        ],
+        "data_POT_Used": 5.435070341912072e+19,
+        "scale_from_1e20_POT": 0.5435070341912073
+      },
+      "ME6A": {
+        "beam": "RHC",
+        "data_playlists": [
+          "ME6A",
+          "ME6B",
+          "ME6C",
+          "ME6D",
+          "ME6E",
+          "ME6F",
+          "ME6G",
+          "ME6H",
+          "ME6I",
+          "ME6J"
+        ],
+        "data_POT_Used": 1.06439231035543e+21,
+        "scale_from_1e20_POT": 10.6439231035543
+      }
+    },
+    "beam_totals": {
+      "FHC": 1.0577418325381355e+21,
+      "RHC": 1.1187430137745505e+21
+    },
+    "normalization_note": "Predictions made at these assigned data POT values must be added without further POT scaling. Predictions made at 1e20 POT instead require the listed scale_from_1e20_POT. These are the current data-list exposures, not a claim of matching the paper exposures."
+  }
+  

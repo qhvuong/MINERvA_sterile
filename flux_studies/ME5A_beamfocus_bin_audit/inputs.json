@@ -1,0 +1,42 @@
+{
+  "playlist": "ME5A",
+  "filelist": "../file_option/playlist_mcme5Ap8.txt",
+  "files": [
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123000_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123001_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123002_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123003_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123004_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123005_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123006_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123007_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123008_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123009_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123010_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123011_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123012_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123013_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123014_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123015_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123016_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123017_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123018_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123019_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123020_Playlist.root",
+    "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123021_Playlist.root"
+  ],
+  "offset": 811,
+  "selection": "carbon CC, mc_intType!=8; producer FV; total CV >= 1e-6; selected energy bins",
+  "comparison_dir": "me_flux_common_bin_comparison",
+  "flux_dir": "/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_ME_offsetPPFX",
+  "thresholds": {
+    "emin": 0.5,
+    "emax": 20.0,
+    "min_peak_fraction": 0.01,
+    "min_rms_difference_pp": 2.0,
+    "min_spread_factor": 1.5,
+    "top_bins": 3
+  },
+  "note": "Flags prioritize investigation; they do not establish an error. Each species also has a peak-flux control bin. Histogram RMS means sqrt(mean((universe/CV-1)^2)). Effective event count uses CV weights only. No input files are modified.",
+  "failures": []
+}

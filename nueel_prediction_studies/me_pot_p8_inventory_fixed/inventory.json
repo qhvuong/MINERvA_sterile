@@ -1,0 +1,69 @@
+{
+  "data_totals": {
+    "FHC": 1.0577418325381355e+21,
+    "RHC": 1.1187430137745505e+21
+  },
+  "data_playlists_complete": true,
+  "failures": [],
+  "warnings": [
+    {
+      "playlist": "ME1B",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist1B/MasterAnaDev_data_AnaTuple_run00010106_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-29205877217.46415\"}]"
+    },
+    {
+      "playlist": "ME1F",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist1F/MasterAnaDev_data_AnaTuple_run00016803_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-916699431370.9438\"}]"
+    },
+    {
+      "playlist": "ME6H",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist6H/MasterAnaDev_data_AnaTuple_run00026000_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-279805084224790.47\"}]"
+    },
+    {
+      "playlist": "ME6H",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist6H/MasterAnaDev_data_AnaTuple_run00026001_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-279805084224790.47\"}]"
+    },
+    {
+      "playlist": "ME6H",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist6H/MasterAnaDev_data_AnaTuple_run00026002_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-278136071441695.22\"}]"
+    },
+    {
+      "playlist": "ME6H",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist6H/MasterAnaDev_data_AnaTuple_run00026003_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-279805084224790.47\"}]"
+    },
+    {
+      "playlist": "ME6H",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist6H/MasterAnaDev_data_AnaTuple_run00026004_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-279648000668734.44\"}]"
+    },
+    {
+      "playlist": "ME6H",
+      "path": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/Data/Playlist6H/MasterAnaDev_data_AnaTuple_run00026005_Playlist.root",
+      "field": "POT_Total",
+      "status": "invalid",
+      "details": "[{\"entry\": 0, \"value\": \"-279805084224790.47\"}]"
+    }
+  ],
+  "reused_data_files": 2895,
+  "resume_dir": "me_pot_p8_inventory",
+  "note": "Data POT weights exposure mixtures. Produced flux total_POT is MC normalization already included in flux per POT; do not apply that normalization again. Data list coverage and mapping to the five MC sources must be confirmed before a paper comparison."
+}

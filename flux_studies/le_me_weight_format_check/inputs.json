@@ -1,0 +1,65 @@
+{
+  "inputs": [
+    {
+      "sample": "LE1_p8",
+      "filelist": "../file_option/playlist_mcle1p8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/StandardMC/Playlist_minerva1/MasterAnaDev_mc_AnaTuple_run00010200_Playlist.root",
+      "available_entries": 363981,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "LE1_p8",
+      "filelist": "../file_option/playlist_mcle1p8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/StandardMC/Playlist_minerva1/MasterAnaDev_mc_AnaTuple_run00010201_Playlist.root",
+      "available_entries": 365029,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "LE5_p8",
+      "filelist": "../file_option/playlist_mcle5p8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/StandardMC/Playlist_minerva5/MasterAnaDev_mc_AnaTuple_run00050200_Playlist.root",
+      "available_entries": 207188,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "LE5_p8",
+      "filelist": "../file_option/playlist_mcle5p8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/Low_Energy_Era/p8/StandardMC/Playlist_minerva5/MasterAnaDev_mc_AnaTuple_run00050201_Playlist.root",
+      "available_entries": 207462,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "ME1D_p8",
+      "filelist": "../file_option/playlist_mcme1Dp8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist1D/MasterAnaDev_mc_AnaTuple_run00111100_Playlist.root",
+      "available_entries": 550390,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "ME1D_p8",
+      "filelist": "../file_option/playlist_mcme1Dp8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist1D/MasterAnaDev_mc_AnaTuple_run00111101_Playlist.root",
+      "available_entries": 548578,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "ME5A_p8",
+      "filelist": "../file_option/playlist_mcme5Ap8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123000_Playlist.root",
+      "available_entries": 230579,
+      "entries_scanned": 10000
+    },
+    {
+      "sample": "ME5A_p8",
+      "filelist": "../file_option/playlist_mcme5Ap8.txt",
+      "file": "root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/DataPreservation/p8/FullDetector/Playlist5A/MasterAnaDev_mc_AnaTuple_run00123001_Playlist.root",
+      "available_entries": 223617,
+      "entries_scanned": 10000
+    }
+  ],
+  "failures": [],
+  "FV_only": false,
+  "int_scale": 1e-07,
+  "float_scale": 1.0,
+  "note": "Storage type/length and numerical normalization checks, without a relative/absolute assumption. No total-CV division or physics weighting. Universe means need not equal the CV exactly. Confirm semantics with tuple producer if numerical checks are inconclusive."
+}
