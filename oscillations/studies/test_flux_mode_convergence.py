@@ -409,27 +409,95 @@ def plot_combined_null_curves(curves, out):
         "ratios_dropped": "Ratios dropped",
         "only_ratios": "Only ratios",
     }
-    fig, ax = plt.subplots(figsize=(8, 5.5), constrained_layout=True)
+
+    # Offsets in points: separate labels from curves and nearby labels.
+    offsets = {
+        "direct_all": {
+            1: (12, 12), 5: (35, 15), 6: (20, 8),
+            10: (20, 8), "full": (12, 20),
+        },
+        "ratio_all": {
+            1: (12, 12), 5: (35, 15), 6: (20, 8),
+            10: (20, 8), "full": (12, 20),
+        },
+        "ratios_dropped": {
+            1: (12, 12), 5: (12, -24), 6: (20, 8),
+            10: (20, 8), "full": (-5, 25),
+        },
+        "only_ratios": {
+            1: (22, -5), 5: (30, -10), 6: (42, 8),
+            10: (30, 30), "full": (-15, 48),
+        },
+    }
+
+    out.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(10, 6.5), constrained_layout=True)
+
     for case, rows in curves.items():
-        positive = [row for row in rows
-                    if row["residual_chi2"] > 0 and row["flux_pull_norm_sq"] > 0]
-        if not positive:
-            print(f"{case}: no positive points for the log–log plot", flush=True)
+        # Omit K=0 from this display only.
+        rows = sorted(
+            (row for row in rows if row["k"] >= 1),
+            key=lambda row: row["k"],
+        )
+        if not rows:
             continue
-        x = [row["residual_chi2"] for row in positive]
-        y = [row["flux_pull_norm_sq"] for row in positive]
-        line, = ax.loglog(x, y, ".-", label=labels[case], markersize=4)
-        for index in sorted({0, len(positive)-1, *(i for i, row in enumerate(positive)
-                                                   if row["k"] in (10, 20, 30, 40))}):
-            ax.annotate(str(positive[index]["k"]), (x[index], y[index]),
-                        xytext=(4, 4), textcoords="offset points", fontsize=8,
-                        color=line.get_color())
-    ax.set(title="Null flux profiling by number of retained modes",
-           xlabel=r"Residual $\chi^2$", ylabel="Squared flux pull norm")
+
+        x = [row["residual_chi2"] for row in rows]
+        y = [row["flux_pull_norm_sq"] for row in rows]
+
+        line, = ax.plot(
+            x, y, ".-",
+            label=labels.get(case, case),
+            markersize=4,
+        )
+        color = line.get_color()
+        full_k = max(row["k"] for row in rows)
+        label_ks = {1, 5, 6, 10, full_k}
+
+        for row in rows:
+            k = row["k"]
+            if k not in label_ks:
+                continue
+
+            key = "full" if k == full_k else k
+            offset = offsets.get(case, {}).get(key, (15, 15))
+
+            ax.annotate(
+                str(k),
+                (row["residual_chi2"], row["flux_pull_norm_sq"]),
+                xytext=offset,
+                textcoords="offset points",
+                ha="center",
+                va="center",
+                fontsize=10,
+                color=color,
+                bbox=dict(
+                    boxstyle="round,pad=0.15",
+                    facecolor="white",
+                    edgecolor="none",
+                    alpha=0.9,
+                ),
+                arrowprops=dict(
+                    arrowstyle="-",
+                    color=color,
+                    lw=0.7,
+                    alpha=0.7,
+                ),
+                annotation_clip=False,
+                zorder=5,
+            )
+
+    ax.set(
+        title="Null flux profiling by number of retained modes",
+        xlabel=r"Residual $\chi^2$",
+        ylabel="Squared flux pull norm",
+    )
+    ax.margins(x=0.06, y=0.12)
     if ax.lines:
-        ax.legend()
-    ax.grid(True, which="both", alpha=.2)
-    fig.savefig(out / "null_lcurves_combined_loglog.png", dpi=180)
+        ax.legend(loc="upper right")
+    ax.grid(True, alpha=.2)
+
+    fig.savefig(out / "null_lcurves_combined_linear.png", dpi=180)
     plt.close(fig)
 
 

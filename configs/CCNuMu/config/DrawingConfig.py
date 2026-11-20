@@ -353,6 +353,14 @@ PROB_PLOTS = [
       "plot_type" : "migration"},
 ]
 
+def ScaleEN4WithGenericTitle(holder):
+    # Keep the existing exposure normalization.
+    Default_Scale(holder)
+
+    h = holder.GetHist()
+    if h:
+        h.SetTitle("E_{#mu}+E_{avail} (GeV)")
+
 PLOTS_TO_MAKE = [
 ####Taken from old script##########
     #{"name":"E Theta SquaredVisible Energy vs q3"}, 
@@ -590,8 +598,13 @@ PLOTS_TO_MAKE = [
     # {"name":"True Energy vs Biased Neutrino Energy",
     #         "plot_type" : 'migration'},
 
+    {
+        "name": "Biased Neutrino Energy",
+        "plot_type": "stacked",
+        "scale": ScaleEN4WithGenericTitle,
+    },
+    # {"name":"Biased Neutrino Energy", "plot_type":"stacked"},
 
-    {"name":"Biased Neutrino Energy", "plot_type":"stacked"},
     # {"name":"True Neutrino Energy", "plot_type":"stacked"},
     # {"name":"Lepton Energy", "plot_type":"stacked"},
     # {"name":"True Lepton Energy", "plot_type":"stacked"},

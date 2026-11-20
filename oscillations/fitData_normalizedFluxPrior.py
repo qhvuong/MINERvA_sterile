@@ -109,6 +109,8 @@ def plot_fit_spectra(*args, **kwargs):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hist-config-tag", required=True)
+    parser.add_argument("--null-only", action="store_true",
+                        help="Profile and plot the null without an oscillation fit")
     parser.add_argument("--k", type=int, help="Retained normalized modes; default: full available rank")
     parser.add_argument("--exclude-ratios-from-profiling", action="store_true",
                         help="ratios_dropped: solve pulls without ratio bins, but score all bins")
@@ -213,6 +215,34 @@ def main():
 
     np.testing.assert_allclose(prediction(0., 0., 0., 0.), m, rtol=1e-7, atol=1e-8)
     null = report("Null", m)
+    if args.null_only:
+        import json
+        plots_dir = args.plots_dir if args.plots_dir is not None else osc / "plots"
+        plots_dir.mkdir(parents=True, exist_ok=True)
+        mode_tag = "ratios_dropped" if args.exclude_ratios_from_profiling else "all_bins"
+        stem = f"{tag}_{mode_tag}_K{prior.K}_s{scale:g}_{args.flux_source}_null"
+        total, residual, penalty, shift = prior.evaluate(d-m)
+        spectra_out = args.spectra_out or plots_dir / f"{stem}_spectra.csv"
+        spectra_out.parent.mkdir(parents=True, exist_ok=True)
+        with spectra_out.open("w", newline="") as output:
+            writer = csv.writer(output)
+            writer.writerow(("bin", "data", "null_cv", "null_flux_correction", "null_profiled"))
+            for i, values in enumerate(zip(d, m, shift, m+shift), 1):
+                writer.writerow((i, *values))
+        result_path = plots_dir / f"{stem}.json"
+        result_path.write_text(json.dumps(dict(hist_config_tag=tag, k=prior.K,
+            full_rank=prior.full_K, flux_source=args.flux_source, flux_scale=scale,
+            n_universes=prior.n_universes, n_profile_bins=len(profile_bins),
+            n_score_bins=len(d), exclude_ratios_from_profiling=args.exclude_ratios_from_profiling,
+            chi2_null=total, residual_chi2=residual, pull_penalty=penalty,
+            parameters=dict(dm2=0., ue4_sq=0., umu4_sq=0., utau4_sq=0.)), indent=2)+"\n")
+        print(f"Saved null summary: {result_path}\nSaved spectra: {spectra_out}")
+        if not args.no_plots:
+            params = dict(m=0., ue4=0., umu4=0., utau4=0.)
+            plot_fit_spectra(h, prior, d, m, m, params, cfg, plots_dir,
+                f"{tag}_{mode_tag}_null", args.ntuple_tag, args.flux_source, scale,
+                null_only=True)
+        return
     fitter = NormalizedFitter(h, exclude="", marginalize_flux=False, hist_config=str(cfg))
     # CalChi2 above supplies the normalized profiling objective for every
     # optimizer step; DoFit only provides the production multistart search.

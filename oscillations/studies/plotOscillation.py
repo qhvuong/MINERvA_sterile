@@ -214,7 +214,12 @@ if __name__ == "__main__":
     # Load stitched histogram
     # --------------------------------------------------------
 
-    sample_histogram = StitchedHistogram("sample")
+    # sample_histogram = StitchedHistogram("sample")
+    sample_histogram = StitchedHistogram(
+        "sample",
+        include_shared_ratio_stats=True,
+    )
+
     sample_histogram.SetHistConfig(hist_config)
     sample_histogram.Load(file_path)
 

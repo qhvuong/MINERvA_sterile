@@ -27,7 +27,7 @@ def fit_plot_values(prior, data, null_pred, best_pred):
 
 def PlotNormalizedFluxPrior(histogram, prior, data, null_pred, best_pred, params,
                      hist_config, output_dir, plot_tag, ntuple_tag, flux_source,
-                     flux_scale):
+                     flux_scale, null_only=False):
     """fitData-style stitched spectrum and ratio using this fit's corrections.
 
     Uses the same layout and physical-energy-axis helpers as fitData.
@@ -112,7 +112,8 @@ def PlotNormalizedFluxPrior(histogram, prior, data, null_pred, best_pred, params
     raw.GetXaxis().SetTickLength(0.)
     raw.Draw("HIST")
     prof_null.Draw("HIST SAME")
-    prof_best.Draw("HIST SAME")
+    if not null_only:
+        prof_best.Draw("HIST SAME")
     data_hist.Draw("E1 SAME")
     # Hold all drawn ROOT objects until SaveAs completes.
     objects = [template, data_hist, raw, prof_null, prof_best, top, bottom]
@@ -141,8 +142,9 @@ def PlotNormalizedFluxPrior(histogram, prior, data, null_pred, best_pred, params
     legend.AddEntry(raw, "Null before flux profiling", "l")
     legend.AddEntry(prof_null,
                     "Profiled null: #chi^{2} = %.2f + %.2f penalty" % (null_res, null_pen), "l")
-    legend.AddEntry(prof_best,
-                    "Profiled best fit: #chi^{2} = %.2f + %.2f penalty" % (best_res, best_pen), "l")
+    if not null_only:
+        legend.AddEntry(prof_best,
+                        "Profiled best fit: #chi^{2} = %.2f + %.2f penalty" % (best_res, best_pen), "l")
     legend.Draw()
     objects.append(legend)
     text = ROOT.TLatex()
@@ -151,10 +153,15 @@ def PlotNormalizedFluxPrior(histogram, prior, data, null_pred, best_pred, params
     text.DrawLatex(.10, .965, "%s: normalized %s flux prior, K=%d, scale=%g" %
                    (ntuple_tag, flux_source, prior.K, flux_scale))
     text.SetTextSize(.038)
-    text.DrawLatex(.12, .105,
-                   "#Delta m^{2}=%.3f eV^{2}, |U_{e4}|^{2}=%.4f, |U_{#mu4}|^{2}=%.4f, |U_{#tau4}|^{2}=%.4f" %
-                   tuple(params[key] for key in ("m", "ue4", "umu4", "utau4")))
-    text.DrawLatex(.12, .045, "#Delta#chi^{2}_{null-best} = %.3f" % (null_q-best_q))
+    if null_only:
+        text.DrawLatex(.12, .105, "Null hypothesis: no sterile oscillations")
+        text.DrawLatex(.12, .045, "#chi^{2}_{null} = %.3f (%.3f residual + %.3f penalty)" %
+                       (null_q, null_res, null_pen))
+    else:
+        text.DrawLatex(.12, .105,
+                       "#Delta m^{2}=%.3f eV^{2}, |U_{e4}|^{2}=%.4f, |U_{#mu4}|^{2}=%.4f, |U_{#tau4}|^{2}=%.4f" %
+                       tuple(params[key] for key in ("m", "ue4", "umu4", "utau4")))
+        text.DrawLatex(.12, .045, "#Delta#chi^{2}_{null-best} = %.3f" % (null_q-best_q))
     objects.append(text)
 
     bottom.cd()
@@ -190,7 +197,8 @@ def PlotNormalizedFluxPrior(histogram, prior, data, null_pred, best_pred, params
         return graph
 
     ratio_graph(values["null_profiled"], ROOT.kGreen + 2).Draw("LP SAME")
-    ratio_graph(values["best_profiled"], ROOT.kBlue + 1).Draw("LP SAME")
+    if not null_only:
+        ratio_graph(values["best_profiled"], ROOT.kBlue + 1).Draw("LP SAME")
     ratio_graph(data, ROOT.kBlack, errors).Draw("P SAME")
     objects += DrawStitchedSampleLayout(bottom, axis, layout)
     objects += DrawStitchedEnergyAxes(bottom, axis, layout)

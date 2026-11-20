@@ -1532,8 +1532,8 @@ class PlottingContainer:
         h_null.Draw("hist")
         if useMarg and h_prof is not None:
             h_prof.Draw("hist same")
-        # # Raw BF before flux profiling, for visualization only.
-        # h_osc_raw.Draw("hist same")
+        # Raw BF before flux profiling, for visualization only.
+        h_osc_raw.Draw("hist same")
         h_osc.Draw("hist same")
         h_data.Draw("same")
 
@@ -1584,7 +1584,7 @@ class PlottingContainer:
         h_null.Draw("hist same")
         if useMarg and h_prof is not None:
             h_prof.Draw("hist same")
-        # h_osc_raw.Draw("hist same")
+        h_osc_raw.Draw("hist same")
         h_osc.Draw("hist same")
         h_data.Draw("same")
 
@@ -1725,7 +1725,7 @@ class PlottingContainer:
         nullRatio.Draw("same")
         if profRatio is not None:
             profRatio.Draw("same hist l")
-        # oscRawRatio.Draw("same hist l")
+        oscRawRatio.Draw("same hist l")
         oscRatio.Draw("same hist l")
 
         straightLine = nullErrors.Clone()
