@@ -428,90 +428,6 @@ def maybe_madd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
             log_sink.append("[SKIP] Not running DATA madd because some expected DATA playlist outputs are missing")
             log_sink.append("")
 
-# def maybe_madd_fhc(selection_tag: str, dry_run: bool, log_sink=None):
-#     mc_files = [
-#         combined_output_path(pl, selection_tag, False)
-#         for pl in EXPECTED_MC_PLAYLISTS
-#     ]
-#     data_files = [
-#         combined_output_path(pl, selection_tag, True)
-#         for pl in EXPECTED_DATA_PLAYLISTS
-#     ]
-
-#     # keep only the standard combined MC outputs
-#     mc_files = [
-#         f for f in mc_files
-#         if "_no2p2h" not in os.path.basename(f) and "_only2p2h" not in os.path.basename(f)
-#     ]
-
-#     mc_dir = os.path.dirname(mc_files[0]) if mc_files else "."
-#     data_dir = os.path.dirname(data_files[0]) if data_files else "."
-
-#     out_mc = os.path.join(mc_dir, f"kin_dist_mcleFHC_{selection_tag}_MAD.root")
-#     out_data = os.path.join(data_dir, f"kin_dist_dataleFHC_{selection_tag}_MAD.root")
-
-#     missing_mc = [f for f in mc_files if not os.path.exists(f)]
-#     missing_data = [f for f in data_files if not os.path.exists(f)]
-
-#     lines = []
-#     lines.append("################ FHC MERGE CHECK ################")
-#     lines.append(f"Selection tag: {selection_tag}")
-#     lines.append(f"MC output dir : {mc_dir}")
-#     lines.append(f"DATA output dir: {data_dir}")
-#     lines.append(f"Found MC      : {len(mc_files) - len(missing_mc)}/{len(mc_files)}")
-#     lines.append(f"Found DATA    : {len(data_files) - len(missing_data)}/{len(data_files)}")
-
-#     if missing_mc:
-#         lines.append("[WARN] Missing MC files:")
-#         lines.extend([f"  {x}" for x in missing_mc])
-#     else:
-#         lines.append("[OK] All MC playlist outputs are present")
-
-#     if missing_data:
-#         lines.append("[WARN] Missing DATA files:")
-#         lines.extend([f"  {x}" for x in missing_data])
-#     else:
-#         lines.append("[OK] All DATA playlist outputs are present")
-
-#     print("\n".join(lines))
-#     if log_sink is not None:
-#         log_sink.extend(lines)
-#         log_sink.append("")
-
-#     if missing_mc or missing_data:
-#         msg = "[SKIP] Not running madd because not all expected merged playlist outputs exist"
-#         print(msg)
-#         if log_sink is not None:
-#             log_sink.append(msg)
-#             log_sink.append("")
-#         return
-
-#     cmd_mc = ["madd", "-f", out_mc] + mc_files
-#     cmd_data = ["madd", "-f", out_data] + data_files
-
-#     print("FHC MC madd command:")
-#     print(" ", " ".join(cmd_mc))
-#     print("FHC DATA madd command:")
-#     print(" ", " ".join(cmd_data))
-
-#     if log_sink is not None:
-#         log_sink.append("FHC MC madd command:")
-#         log_sink.append("  " + " ".join(cmd_mc))
-#         log_sink.append("FHC DATA madd command:")
-#         log_sink.append("  " + " ".join(cmd_data))
-#         log_sink.append("")
-
-#     if dry_run:
-#         print("[DRY-RUN] would run FHC MC/DATA madd")
-#         if log_sink is not None:
-#             log_sink.append("[DRY-RUN] would run FHC MC/DATA madd")
-#             log_sink.append("")
-#     else:
-#         print("[RUNNING] madd for FHC MC")
-#         subprocess.run(cmd_mc, check=False)
-#         print("[RUNNING] madd for FHC DATA")
-#         subprocess.run(cmd_data, check=False)
-
 def special_parent_playlist(playlist: Optional[str]) -> Optional[str]:
     if not playlist:
         return None
@@ -520,6 +436,56 @@ def special_parent_playlist(playlist: Optional[str]) -> Optional[str]:
         return None
 
     return playlist.replace("_2p2h", "", 1)
+
+def maybe_madd_me(selection_tag, beam, dry_run, log_sink=None):
+    playlists_by_beam = {
+        "FHC": [
+            "me1A", "me1B", "me1C", "me1D", "me1E", "me1F",
+            "me1G", "me1L", "me1M", "me1N", "me1O", "me1P",
+        ],
+        "RHC": [
+            "me5A", "me6A", "me6B", "me6C", "me6D", "me6E",
+            "me6F", "me6G", "me6H", "me6I", "me6J",
+        ],
+    }
+
+    def report(message):
+        print(message, flush=True)
+        if log_sink is not None:
+            log_sink.append(message)
+
+    playlists = playlists_by_beam[beam]
+    output_playlist = f"me{beam}"
+
+    for sample_type, is_data in (("MC", False), ("DATA", True)):
+        inputs = [
+            combined_output_path(pl, selection_tag, is_data)
+            for pl in playlists
+        ]
+        output = combined_output_path(
+            output_playlist, selection_tag, is_data
+        )
+
+        missing = [path for path in inputs if not os.path.isfile(path)]
+
+        report(f"\nME {beam} {sample_type} merge: {selection_tag}")
+        report(f"Found {len(inputs) - len(missing)}/{len(inputs)} playlists")
+        report(f"Output: {output}")
+
+        if missing:
+            report("[SKIP] Missing playlist outputs:")
+            for path in missing:
+                report(f"  {path}")
+            continue
+
+        cmd = ["madd", output] + inputs
+        report("Command: " + " ".join(cmd))
+
+        if dry_run:
+            report("[DRY-RUN] Would merge these playlist outputs")
+        else:
+            subprocess.run(cmd, check=True)
+            report(f"[OK] Finished ME {beam} {sample_type} merge")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -712,7 +678,32 @@ def main():
             break
 
     for tag in sorted(tags_seen):
-        maybe_madd_fhc(tag, args.dry_run, log_lines)
+        playlists = {
+            strip_p6(block["playlist"]).lower()
+            for block in all_blocks
+            if block.get("selection_tag") == tag
+            and block.get("playlist")
+        }
+
+        me_playlists = {pl for pl in playlists if pl.startswith("me")}
+
+        if me_playlists:
+            if any(pl.startswith("le") for pl in playlists):
+                raise ValueError(
+                    "Use separate runningNotes files for LE and ME."
+                )
+
+            if any(pl.startswith("me1") for pl in me_playlists):
+                maybe_madd_me(tag, "FHC", args.dry_run, log_lines)
+
+            if any(
+                pl.startswith(("me5", "me6"))
+                for pl in me_playlists
+            ):
+                maybe_madd_me(tag, "RHC", args.dry_run, log_lines)
+        else:
+            # Preserve the existing LE workflow.
+            maybe_madd_fhc(tag, args.dry_run, log_lines)
         
     # Write diagnostic log to central runningNotes directory (ALSO in dry-run)
     out_dir = "/exp/minerva/data/users/qvuong/runningNotes"

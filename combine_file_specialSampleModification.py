@@ -382,7 +382,7 @@ def MergeTuples(tuple1,tuple2,pot1=None,pot2=None,bigGenie=False):
     print("scaling the special sample with potscale={:.2f}".format(pot1/pot2))
     AddOneFile(tuple2,tuple1,pot1/pot2,bigGenie)
 
-def AddRegexMatchedFiles(dir_path,f = None):
+def AddRegexMatchedFiles(dir_path, f=None, expected_playlist=None):
     if f is None:
         files = os.listdir(dir_path)
     else:
@@ -391,6 +391,18 @@ def AddRegexMatchedFiles(dir_path,f = None):
     count = 0
     for string in files:
         match = re.match(SelectionFilesRegex,string)
+
+        if match is not None and expected_playlist is not None:
+            found_playlist = re.sub(
+                r"_p[68]$", "", match.group(3)
+            ).lower()
+            wanted_playlist = re.sub(
+                r"_p[68]$", "", expected_playlist
+            ).lower()
+
+            if found_playlist != wanted_playlist:
+                continue
+
         #print match.group(1,2,3)
         if match is not None:
             filesmap.setdefault(match.group(2),{}).setdefault(match.group(1),{}).setdefault(match.group(3),[]).append(dir_path+"/"+match.string)
@@ -400,7 +412,10 @@ def AddRegexMatchedFiles(dir_path,f = None):
 
 if __name__ == '__main__':
 
-    dict_of_files = AddRegexMatchedFiles(AnalysisConfig.input_dir)
+    dict_of_files = AddRegexMatchedFiles(
+        AnalysisConfig.input_dir,
+        expected_playlist=AnalysisConfig.playlist,
+    )
     for sample_type in dict_of_files:
         if sample_type == "data":
 
