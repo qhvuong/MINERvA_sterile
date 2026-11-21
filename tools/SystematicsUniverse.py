@@ -2938,21 +2938,71 @@ def GetAllSystematicsUniverses(chain,is_data,is_pc =False,exclude=None,playlist=
 
         CVSystematicUniverse.RPAMaterials(True)
 
-        # MHRW renorm directory
-        if not hasattr(CVPythonUniverse, "_mhrw_filename_set"):
-            mhrw_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "custom_mhrwKineRenorm",
+        # # MHRW renorm directory
+        # if not hasattr(CVPythonUniverse, "_mhrw_filename_set"):
+        #     mhrw_dir = os.path.join(
+        #         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        #         "custom_mhrwKineRenorm",
+        #     )
+
+        #     CVSystematicUniverse.SetMHRWeightFilename(
+        #         "Renorm_Kine_Truth",
+        #         mhrw_dir,
+        #     )
+
+        #     CVPythonUniverse._mhrw_filename_set = True
+
+        #     # print("[MHRW CONFIG] directory =", mhrw_dir)
+        # Custom MHRW files for LE; standard PlotUtils files for ME.
+        playlist_name = str(playlist).strip().lower()
+
+        if playlist_name.startswith(("me", "minervame")):
+            mhrw_era = "ME"
+        elif (
+            playlist_name.startswith("le")
+            or playlist_name in {
+                "minerva1", "minerva5", "minerva7",
+                "minerva9", "minerva13c",
+            }
+        ):
+            mhrw_era = "LE"
+        else:
+            raise RuntimeError(
+                f"Cannot determine MHRW beam era from playlist {playlist!r}"
             )
 
-            CVSystematicUniverse.SetMHRWeightFilename(
-                "Renorm_Kine_Truth",
-                mhrw_dir,
+        previous_era = getattr(CVPythonUniverse, "_mhrw_era", None)
+
+        if previous_era is not None and previous_era != mhrw_era:
+            raise RuntimeError(
+                "LE and ME require separate Python processes for MHRW."
             )
+
+        if not hasattr(CVPythonUniverse, "_mhrw_filename_set"):
+            if mhrw_era == "LE":
+                mhrw_dir = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "custom_mhrwKineRenorm",
+                )
+                configured = CVSystematicUniverse.SetMHRWeightFilename(
+                    "Renorm_Kine_Truth", mhrw_dir
+                )
+            else:
+                # Omit directory to use the standard C++ default:
+                # $PLOTUTILSROOT/data/mhrwKineRenorm
+                configured = CVSystematicUniverse.SetMHRWeightFilename(
+                    "Renorm_Kine_Truth"
+                )
+                mhrw_dir = "$PLOTUTILSROOT/data/mhrwKineRenorm"
+
+            if not configured:
+                raise RuntimeError("Could not configure the MHRW filename.")
 
             CVPythonUniverse._mhrw_filename_set = True
+            CVPythonUniverse._mhrw_era = mhrw_era
+            print(f"[MHRW CONFIG] {mhrw_era}: {mhrw_dir}")
 
-            # print("[MHRW CONFIG] directory =", mhrw_dir)
+
 
         # if chain.GetTree().GetName() == "Truth":
         #     CVSystematicUniverse.SetTruth(True)

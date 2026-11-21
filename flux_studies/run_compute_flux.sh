@@ -8,6 +8,9 @@ NUNIV=1000
 FHC_OFFSET=509
 RHC_OFFSET=811
 
+ME_FHC_OFFSET=137
+ME_RHC_OFFSET=677
+
 FHC_FLAT="/exp/minerva/data/users/qvuong/flux_studies/flat_beamfocus_outputs_FV/FHC/flat_beamfocus_FHC.csv"
 RHC_FLAT="/exp/minerva/data/users/qvuong/flux_studies/flat_beamfocus_outputs_FV/RHC/flat_beamfocus_RHC.csv"
 
@@ -70,21 +73,18 @@ case "${PLAYLIST}" in
         ERA="ME"
         MODE="FHC"
         MODE_FLAG="--FHC"
-        OFFSET="${FHC_OFFSET}"
+        OFFSET="${ME_FHC_OFFSET}"
         FLAT_CSV=""
-        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_ME_offsetPPFX"
+        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_ME_BFoffset137_677"
         ;;
 
-    # -------------------------
-    # Medium-energy RHC
-    # -------------------------
     ME5*|ME6*)
         ERA="ME"
         MODE="RHC"
         MODE_FLAG="--RHC"
-        OFFSET="${RHC_OFFSET}"
+        OFFSET="${ME_RHC_OFFSET}"
         FLAT_CSV=""
-        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_ME_offsetPPFX"
+        OUTDIR="/exp/minerva/data/users/qvuong/flux_studies/producedFluxes_p8_ME_BFoffset137_677"
         ;;
 
     *)

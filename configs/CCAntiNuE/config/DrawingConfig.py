@@ -499,6 +499,15 @@ PROB_PLOTS = [
       "plot_type" : "migration"},
 ]
 
+def ScaleEN4WithGenericTitle(holder):
+    Default_Scale(holder)
+
+    h = holder.GetHist()
+    if h:
+        h.SetTitle("")
+        h.GetXaxis().SetTitle("Neutrino Energy Estimator (GeV)")
+        h.GetYaxis().SetTitle("NEvents/GeV")
+
 PLOTS_TO_MAKE = [
     ###### NEUTRINO4 PLOTS ########
     #{"name":"electron_energy",
@@ -550,8 +559,14 @@ PLOTS_TO_MAKE = [
     # {"name":"Front dEdX",
     #     "plot_type" : "stacked"},
 
-    {"name":"Biased Neutrino Energy",
-        "plot_type" : "stacked"},
+    {
+        "name": "Biased Neutrino Energy",
+        "plot_type": "stacked",
+        "scale": ScaleEN4WithGenericTitle,
+    },
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
+    
     # {"name":"Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"Visible Energy",

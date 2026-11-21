@@ -18,6 +18,23 @@ FLAVORS = {"nue":12, "nuebar":-12, "numu":14, "numubar":-14}
 HERE = Path(__file__).resolve().parent
 
 
+def dsigma_dTe_lo(enu, te, flavor, sin2thetaW=0.23129):
+    """Tree-level d sigma / d Te in cm^2/GeV; energies in GeV."""
+    me = 0.00051099895
+    if flavor not in FLAVORS:
+        raise ValueError("Unknown flavor: " + flavor)
+    if enu <= 0 or te < 0 or te > 2*enu*enu/(me+2*enu):
+        return 0.0
+    gl = sin2thetaW + (0.5 if flavor in ("nue", "nuebar") else -0.5)
+    gr = sin2thetaW
+    if flavor.endswith("bar"):
+        gl, gr = gr, gl
+    y = te/enu
+    return (2*(1.1663787e-5)**2*me/math.pi *
+            (gl*gl + gr*gr*(1-y)**2 - gl*gr*me*te/enu**2) *
+            0.389379e-27)
+
+
 def load_paper(path, np):
     p = json.loads(path.read_text())
     d = np.asarray(p["data_13"], dtype=float)
@@ -142,6 +159,9 @@ def main():
     ap.add_argument("--n-universes",type=int,default=1000)
     ap.add_argument("--target-electrons",type=float,default=1.99e30)
     ap.add_argument("--flux-area-unit",choices=["m2","cm2"],default="m2")
+    ap.add_argument("--xsec", choices=["tomalak", "lo"], default="tomalak")
+    ap.add_argument("--sin2thetaW", type=float, default=0.23129,
+                    help="Tree-level weak mixing angle; used only with --xsec lo")
     ap.add_argument("--tomalak-dir",type=Path,default=Path("/exp/minerva/data/users/qvuong/nueel_prediction_studies/tomalak_inputs"))
     ap.add_argument("--paper-inputs",type=Path,default=HERE/"me_nue_elastic_paper_inputs.json")
     ap.add_argument("--response-json",type=Path,help="Optional JSON: true_edges_GeV, reco_edges_GeV, matrix_reco_by_true. Pure energy migration, not selection efficiency.")
@@ -202,15 +222,28 @@ def main():
         raise ValueError("Invalid true electron energy edges")
     if args.plots and response is None and not np.array_equal(true_edges,np.array(paper["numerical_edges_GeV"])):
         raise ValueError("Plotting truth against paper data requires matching energy bins")
-    base_path=HERE/"make_nue_elastic_from_flux_TomalakXS_fixedTotalNorm_mnv.py"
-    spec=importlib.util.spec_from_file_location("legacy_tomalak_xsec_for_ME",base_path)
-    xs=importlib.util.module_from_spec(spec);spec.loader.exec_module(xs)
+    if args.xsec == "tomalak":
+        base_path=HERE/"make_nue_elastic_from_flux_TomalakXS_fixedTotalNorm_mnv.py"
+        spec=importlib.util.spec_from_file_location("legacy_tomalak_xsec_for_ME",base_path)
+        xs=importlib.util.module_from_spec(spec);spec.loader.exec_module(xs)
+        xsec_scales = xs.TOMALAK_TOTAL_XSEC_SCALE
+        xsec_note = "Existing LE scalar Tomalak implementation, including temporary total-normalization factors."
+    else:
+        from types import SimpleNamespace
+        base_path=Path(__file__).resolve()
+        xs=SimpleNamespace(ME=0.00051099895)
+        xsec_scales = {flavor: 1.0 for flavor in FLAVORS}
+        xsec_note = "Tree level: tree-level couplings; no radiative corrections, effective Tomalak couplings, or temporary normalization factors."
+    print("Cross section:", args.xsec, "|", xsec_note, flush=True)
     csv_names={"nue":"electronNeutrinos","nuebar":"electronAntineutrinos","numu":"muonNeutrinos","numubar":"muonAntineutrinos"}
     cv_by_flavor={};u_by_flavor={};inputs=[];quad_checks=[]
     for flavor,pdg in FLAVORS.items():
-        suffix=csv_names[flavor]
-        rad=xs.RadCorrTomalak(str(args.tomalak_dir/("f1_"+suffix+".csv")),str(args.tomalak_dir/("f10_"+suffix+".csv")),flavor)
-        dsigma=lambda e,t,flavor=flavor,rad=rad:xs.dsigma_dTe_tomalak(e,t,flavor,rad)
+        if args.xsec == "tomalak":
+            suffix=csv_names[flavor]
+            rad=xs.RadCorrTomalak(str(args.tomalak_dir/("f1_"+suffix+".csv")),str(args.tomalak_dir/("f10_"+suffix+".csv")),flavor)
+            dsigma=lambda e,t,flavor=flavor,rad=rad:xs.dsigma_dTe_tomalak(e,t,flavor,rad)
+        else:
+            dsigma=lambda e,t,flavor=flavor:dsigma_dTe_lo(e,t,flavor,args.sin2thetaW)
         cv_out=np.zeros(len(true_edges)-1);u_out=np.zeros((args.n_universes,len(true_edges)-1))
         kernels={}
         for playlist,pot in exposures.items():
@@ -242,8 +275,10 @@ def main():
     output.parent.mkdir(parents=True,exist_ok=True)
     metadata=dict(beam=args.beam,exposures=exposures,total_POT=sum(exposures.values()),target_electrons=args.target_electrons,
         input_flux_area_unit=args.flux_area_unit,input_flux_content="differential per GeV",inputs=inputs,
-        xsec_module=str(base_path),xsec_total_scales=xs.TOMALAK_TOTAL_XSEC_SCALE,
-        xsec_note="Same existing LE scalar Tomalak implementation and temporary total-normalization factors; not an independently updated NLO calculation.",
+        xsec_module=str(base_path),xsec_total_scales=xsec_scales,
+        xsec_model=args.xsec, sin2thetaW=args.sin2thetaW if args.xsec=="lo" else None,
+        xsec_note=xsec_note, flux_hist_name=args.hist_name, flux_band_name=args.flux_band_name,
+        n_universes=args.n_universes, enu_order=args.enu_order, electron_order=args.electron_order,
         observable="true total electron energy" if response is None else "energy-migration-folded prediction",
         true_edges_GeV=true_edges.tolist(),response_json=str(args.response_json) if args.response_json else None,
         model_limits=["Published data are efficiency-corrected reconstructed energy, not unfolded true energy.",
@@ -324,3 +359,4 @@ def main():
 
 if __name__=="__main__":
     raise SystemExit(main())
+

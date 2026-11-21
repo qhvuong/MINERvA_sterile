@@ -40,6 +40,38 @@ for k,v in CONSOLIDATED_ERROR_GROUPS.items():
 ROOT.TH1.AddDirectory(False)
 
 
+
+EN4_X_TITLE = "Neutrino Energy Estimator (GeV)"
+
+
+def SetEN4PlotLabels(hist, spectrum=False, clear_title=True):
+    """Presentation metadata only; never scales histogram contents."""
+    if hist is None:
+        return
+    hist.GetXaxis().SetTitle(EN4_X_TITLE)
+    if clear_title:
+        hist.SetTitle("")
+    if spectrum:
+        hist.GetYaxis().SetTitle("NEvents/GeV")
+        hist.SetNormBinWidth(1.0)
+
+
+def DrawEN4DataMC(mnvplotter, data, mc):
+    """Draw raw-yield clones as events/GeV without changing fit histograms."""
+    data_plot = data.Clone(data.GetName() + "_EN4_plot")
+    mc_plot = mc.Clone(mc.GetName() + "_EN4_plot")
+    for hist in (data_plot, mc_plot):
+        hist.SetDirectory(0)
+        SetEN4PlotLabels(hist, spectrum=True)
+    previous = mnvplotter.draw_normalized_to_bin_width
+    try:
+        mnvplotter.draw_normalized_to_bin_width = True
+        mnvplotter.DrawDataMCWithErrorBand(data_plot, mc_plot, 1.0, "TR")
+    finally:
+        mnvplotter.draw_normalized_to_bin_width = previous
+    return data_plot, mc_plot
+
+
 def SetFractionalUncertaintyYAxis(mnvplotter, ymin=0.0, ymax=1.0):
     """Force fractional-uncertainty/error-summary plots to a fixed y range."""
     mnvplotter.axis_minimum = ymin
@@ -712,7 +744,7 @@ def MakeRatio(signalHist,sidebandHist,normsignalHist,normsidebandHist,config):
     sig_bkg.Scale(1/sig_bkg.Integral())
     sid_bkg.Scale(1/sid_bkg.Integral())
     sig_bkg.Divide(sig_bkg,sid_bkg)
-    sig_bkg.GetXaxis().SetTitle("E_{available} + E_{lepton}")
+    sig_bkg.GetXaxis().SetTitle(EN4_X_TITLE)
     sig_bkg.GetYaxis().SetTitle("Ratio")
     sig_bkg.SetTitle("Signal/Sideband Background Ratio")
     #total.GetYaxis().SetTitle("Background Fraction per Bin")
@@ -771,6 +803,9 @@ def MakePlot1(data_hists,mc_hists,config):
             else:
                 plotfunction,hists = DefaultPlotters[PlotType]["func"](data_hists,mc_hists,*args)
             PlotTools.MakeGridPlot(slicer,plotfunction,hists,CanvasConfig,draw_seperate_legend)
+            if data_hists.plot_name == "EN4":
+                PlotTools.CANVAS.cd(1)
+                PlotTools.AddWorkInProgress(mnvplotter)
             PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,sideband,custom_tag))
             print("plot {} made.".format(data_hists.plot_name))
     except KeyError as e:
@@ -801,6 +836,12 @@ def MakePlot(data_hists,mc_hists,config):
             Default_Scale(data_hists)
         if not mc_hists.POT_scaled:
             Default_Scale(mc_hists)
+    # Labels must also be applied to already-POT-scaled postfit holders.
+    if data_hists.plot_name == "EN4":
+        for holder in (data_hists, mc_hists):
+            for hist in holder.hists.values():
+                SetEN4PlotLabels(hist, spectrum=True, clear_title=False)
+            SetEN4PlotLabels(holder.GetHist(), spectrum=True)
     CanvasConfig = config.setdefault("canvasconfig",lambda x:True)
     PlotType = config.setdefault("plot_type",Default_Plot_Type)
     typeBool = PlotType!="migration" and PlotType!="category_hist" and PlotType!="hist2d"
@@ -841,6 +882,9 @@ def MakePlot(data_hists,mc_hists,config):
                 PlotTools.SumGridPlots(slicer,plotfunction,hists,draw_seperate_legend=False)
             else:
                 PlotTools.MakeGridPlot(slicer,plotfunction,hists,draw_seperate_legend=False)
+            if data_hists.plot_name == "EN4":
+                PlotTools.CANVAS.cd(1)
+                PlotTools.AddWorkInProgress(PlotTools.MNVPLOTTER)
             PlotTools.Print(AnalysisConfig.PlotPath(data_hists.plot_name,sideband,custom_tag))
             print("plot {} made.".format(data_hists.plot_name))
     except KeyError as e:
@@ -853,7 +897,17 @@ if __name__ == "__main__":
     #input knobs
     playlist=AnalysisConfig.playlist
     type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
-    datafile,mcfile,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
+    # datafile,mcfile,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
+    datafile, mcfile, pot_scale, data_pot, mc_pot = (
+        Utilities.getFilesAndPOTScale(
+            playlist,
+            type_path_map,
+            AnalysisConfig.ntuple_tag,
+            raw_pot=True,
+        )
+    )
+    PlotTools.SetPlotExposure(playlist, data_pot)
+
     #output knobs:
     background_fit_tag = AnalysisConfig.bkgTune_tag
     BackgroundFitConfig.SetGlobalParameter(background_fit_tag)
@@ -926,22 +980,65 @@ if __name__ == "__main__":
 
 
     region = "Signal"
-    for factor in scale_hists: 
+    for factor in scale_hists:
         hist = scale_hists[factor]
+
         if _diagnostic_args.joint_stat_diagnostics:
             hist.Write("{}_Scale_Factor".format(factor))
             continue
-        hist.SetXTitle("E_{estimator}")
-        c1 = ROOT.TCanvas()
-        #mnvplotter.axis_maximum = 3.0
-        mnvplotter.DrawMCWithErrorBand(hist)
-        #c1.Print("{}_scales.png".format(factor))
-        PlotTools.Print(AnalysisConfig.PlotPath("EN4_scales",factor,"N4_tune"),mnvplotter,c1)
-        c1 = ROOT.TCanvas()
-        SetFractionalUncertaintyYAxis(mnvplotter, 0.0, 1.0)
-        mnvplotter.DrawErrorSummary(hist,"TR",True,True,0)
-        PlotTools.Print(AnalysisConfig.PlotPath("EN4_scale_errors",factor,"N4_tune"),mnvplotter,c1)
-        ResetPlotterYAxis(mnvplotter)
+
+        SetEN4PlotLabels(hist)
+
+        # Save the settings used by all other plots.
+        _scale_plot_width = mnvplotter.draw_normalized_to_bin_width
+        _default_legend = (
+            mnvplotter.legend_text_size,
+            mnvplotter.height_nspaces_per_hist,
+            mnvplotter.width_xspace_per_letter,
+        )
+
+        try:
+            # Scale factors are dimensionless.
+            mnvplotter.draw_normalized_to_bin_width = False
+
+            # Smaller legends for these diagnostics only.
+            mnvplotter.legend_text_size = 0.030
+            mnvplotter.height_nspaces_per_hist = 0.8
+            mnvplotter.width_xspace_per_letter = 0.35
+
+            # Scale-factor plot.
+            c1 = ROOT.TCanvas()
+            mnvplotter.DrawMCWithErrorBand(hist)
+            PlotTools.AddWorkInProgress(mnvplotter)
+            PlotTools.Print(
+                AnalysisConfig.PlotPath("EN4_scales", factor, "N4_tune"),
+                mnvplotter,
+                c1,
+            )
+
+            # Scale-factor uncertainty plot: upper-left legend.
+            c1 = ROOT.TCanvas()
+            SetFractionalUncertaintyYAxis(mnvplotter, 0.0, 1.0)
+            mnvplotter.DrawErrorSummary(hist, "TL", True, True, 0)
+            PlotTools.AddWorkInProgress(mnvplotter)
+            PlotTools.Print(
+                AnalysisConfig.PlotPath(
+                    "EN4_scale_errors", factor, "N4_tune"
+                ),
+                mnvplotter,
+                c1,
+            )
+
+        finally:
+            # Restore defaults before drawing any other distributions.
+            ResetPlotterYAxis(mnvplotter)
+            mnvplotter.draw_normalized_to_bin_width = _scale_plot_width
+            (
+                mnvplotter.legend_text_size,
+                mnvplotter.height_nspaces_per_hist,
+                mnvplotter.width_xspace_per_letter,
+            ) = _default_legend
+
         hist.Write("{}_Scale_Factor".format(factor))
 
     for hist in HISTOGRAMS_TO_UNFOLD:
@@ -972,7 +1069,16 @@ if __name__ == "__main__":
 
     #change playlist
     type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
-    datafile,mcfile,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
+    # datafile,mcfile,pot_scale = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag)
+    datafile, mcfile, pot_scale, data_pot, mc_pot = (
+        Utilities.getFilesAndPOTScale(
+            playlist,
+            type_path_map,
+            AnalysisConfig.ntuple_tag,
+            raw_pot=True,
+        )
+    )
+    PlotTools.SetPlotExposure(playlist, data_pot)
 
     for config in PLOTS_TO_MAKE:
         postfit_config = config.copy()
@@ -1042,7 +1148,13 @@ if __name__ == "__main__":
                     subbedData, subbedMC = BackgroundSubtraction(data_hist, mc_hist, pred_hist)
 
                     c = ROOT.TCanvas("c_sub", "c_sub", 1200, 1000)
-                    mnvplotter.DrawDataMCWithErrorBand(subbedData, subbedMC, 1.0, "TR")
+                    if data_hist.plot_name == "EN4":
+                        SetEN4PlotLabels(subbedData)
+                        SetEN4PlotLabels(subbedMC)
+                        _sub_plot_hists = DrawEN4DataMC(mnvplotter, subbedData, subbedMC)
+                    else:
+                        mnvplotter.DrawDataMCWithErrorBand(subbedData, subbedMC, 1.0, "TR")
+                    PlotTools.AddWorkInProgress(mnvplotter)
                     PlotTools.Print(
                         AnalysisConfig.PlotPath(data_hist.plot_name, sideband, sub_postfit_config["tag"]),
                         mnvplotter,
@@ -1051,7 +1163,29 @@ if __name__ == "__main__":
 
                     c2 = ROOT.TCanvas("c_sub_err", "c_sub_err", 1200, 1000)
                     SetFractionalUncertaintyYAxis(mnvplotter, 0.0, 1.0)
-                    mnvplotter.DrawErrorSummary(subbedData, "TR", True, True, 0)
+                    # mnvplotter.DrawErrorSummary(subbedData, "TR", True, True, 0)
+
+                    _default_legend = (
+                        mnvplotter.legend_text_size,
+                        mnvplotter.height_nspaces_per_hist,
+                        mnvplotter.width_xspace_per_letter,
+                    )
+
+                    try:
+                        mnvplotter.legend_text_size = 0.030
+                        mnvplotter.height_nspaces_per_hist = 0.8
+                        mnvplotter.width_xspace_per_letter = 0.35
+
+                        mnvplotter.DrawErrorSummary(subbedData, "TL", True, True, 0)
+                        PlotTools.AddWorkInProgress(mnvplotter)
+
+                    finally:
+                        (
+                            mnvplotter.legend_text_size,
+                            mnvplotter.height_nspaces_per_hist,
+                            mnvplotter.width_xspace_per_letter,
+                        ) = _default_legend
+
                     PlotTools.Print(
                         AnalysisConfig.PlotPath(data_hist.plot_name + "_err", sideband, sub_postfit_config["tag"]),
                         mnvplotter,
@@ -1093,14 +1227,47 @@ if __name__ == "__main__":
 
                         TArray.Add(h)
 
-                    subbedData.GetXaxis().SetTitle("Energy_{estimator}")
+                    if data_hist.plot_name == "EN4":
+                        SetEN4PlotLabels(subbedData, spectrum=True)
+                        for hist in mc_list:
+                            SetEN4PlotLabels(hist, spectrum=True, clear_title=False)
+                    _stack_plot_width = mnvplotter.draw_normalized_to_bin_width
+                    if data_hist.plot_name == "EN4":
+                        mnvplotter.draw_normalized_to_bin_width = True
                     mnvplotter.DrawDataStackedMC(subbedData, TArray, pot_scale, "TR", "Data", 0, 0, 1001)
+                    PlotTools.AddWorkInProgress(mnvplotter)
                     PlotTools.Print(AnalysisConfig.PlotPath("data_signalCats", sideband, "N4_tune"), mnvplotter, c3)
+                    mnvplotter.draw_normalized_to_bin_width = _stack_plot_width
 
                     c4 = ROOT.TCanvas(f"c_subbedErr_{sideband}_{data_hist.plot_name}", "c_subbedErr", 1200, 1000)
-                    subbedData.SetTitle("Background Subtracted Data")
+                    if data_hist.plot_name == "EN4":
+                        SetEN4PlotLabels(subbedData)
+                    else:
+                        subbedData.SetTitle("Background Subtracted Data")
                     SetFractionalUncertaintyYAxis(mnvplotter, 0.0, 1.0)
-                    mnvplotter.DrawErrorSummary(subbedData, "TR", True, True, 0)
+                    # mnvplotter.DrawErrorSummary(subbedData, "TR", True, True, 0)
+
+                    _default_legend = (
+                        mnvplotter.legend_text_size,
+                        mnvplotter.height_nspaces_per_hist,
+                        mnvplotter.width_xspace_per_letter,
+                    )
+
+                    try:
+                        mnvplotter.legend_text_size = 0.030
+                        mnvplotter.height_nspaces_per_hist = 0.8
+                        mnvplotter.width_xspace_per_letter = 0.35
+
+                        mnvplotter.DrawErrorSummary(subbedData, "TL", True, True, 0)
+                        PlotTools.AddWorkInProgress(mnvplotter)
+
+                    finally:
+                        (
+                            mnvplotter.legend_text_size,
+                            mnvplotter.height_nspaces_per_hist,
+                            mnvplotter.width_xspace_per_letter,
+                        ) = _default_legend
+
                     PlotTools.Print(AnalysisConfig.PlotPath("data_subbedErr", sideband, "N4_tune"), mnvplotter, c4)
                     ResetPlotterYAxis(mnvplotter)
 
@@ -1131,3 +1298,4 @@ if __name__ == "__main__":
     mcfile.Close()
     scalefile.Close()
  
+

@@ -293,6 +293,14 @@ def PrepareStack(data_hists, mc_hists, Grouping=None, width_scale_to=None):
     if not mc_hists.valid:
         raise KeyError("Doesn't make sense to plot stacked histogram without MC")
 
+    # Normalize the displayed histograms to one unit of the X axis.
+    # For energy axes in GeV, this gives events/GeV.
+    for holder in (data_hists, mc_hists):
+        if holder is not None and holder.valid:
+            for h in holder.hists.values():
+                if h is not None:
+                    h.SetNormBinWidth(1.0)
+
     # Always get un-width-scaled MC histograms.
     # MnvPlotter will handle bin-width normalization internally.
     mc_list, color, title, yields = mc_hists.GetCateList(
@@ -1328,14 +1336,92 @@ def MakeGridPlot(MakingSlice,MakingEachPlot,input_hists,CanvasConfig=lambda canv
             Tleg.SetX2(0.98)
             Tleg.SetY1(0.08)
             Tleg.SetY2(0.92)
-            Tleg.SetTextSize(2*MNVPLOTTER.legend_text_size);
+            Tleg.SetTextSize(2*MNVPLOTTER.legend_text_size)
             Tleg.Draw()
     if outname:
         mnvplotter.MultiPrint(canvas,outname,"png")
 
 
-def Print(outname,mnvplotter=MNVPLOTTER,canvas=CANVAS):
-    mnvplotter.MultiPrint(canvas,outname)
+# def Print(outname,mnvplotter=MNVPLOTTER,canvas=CANVAS):
+#     mnvplotter.MultiPrint(canvas,outname)
+WORK_IN_PROGRESS = False
+
+PLOT_BEAM_LABEL = ""
+PLOT_DATA_POT = None
+
+
+def SetPlotExposure(playlist, data_pot):
+    global PLOT_BEAM_LABEL, PLOT_DATA_POT
+
+    PLOT_BEAM_LABEL = {
+        "lefhc": "LE FHC",
+        "lerhc": "LE RHC",
+        "le5":   "LE RHC",
+        "le5_p8": "LE RHC",
+    }.get(str(playlist).lower(), str(playlist))
+
+    PLOT_DATA_POT = (
+        float(data_pot) if data_pot is not None else None
+    )
+
+    print(
+        f"Plot exposure: {PLOT_BEAM_LABEL}, "
+        f"data POT = {PLOT_DATA_POT}"
+    )
+
+
+def AddWorkInProgress(mnvplotter=MNVPLOTTER, show_exposure=True):
+    pad = ROOT.gPad
+    if not pad:
+        return
+
+    x = pad.GetLeftMargin()
+
+    # First line: experiment and status.
+    mnvplotter.AddPlotLabel(
+        "MINER#nuA Work In Progress",
+        x, 0.975, 0.040,
+        ROOT.kRed + 1, 112, 12,
+    )
+
+    if not show_exposure:
+        return
+
+    # Second line: beam configuration and data exposure.
+    exposure = PLOT_BEAM_LABEL
+
+    if PLOT_DATA_POT is not None and PLOT_DATA_POT > 0:
+        mantissa, exponent = f"{PLOT_DATA_POT:.2e}".split("e")
+        pot_text = (
+            f"{mantissa} #times 10^{{{int(exponent)}}} POT"
+        )
+        exposure = (
+            f"{exposure}  #bullet  {pot_text}"
+            if exposure else pot_text
+        )
+
+    if exposure:
+        mnvplotter.AddPlotLabel(
+            exposure,
+            x, 0.940, 0.026,
+            ROOT.kBlack, 42, 12,
+        )
+
+def Print(outname, mnvplotter=MNVPLOTTER, canvas=CANVAS):
+    if WORK_IN_PROGRESS:
+        # Grid plots draw their axes inside the first pad.
+        pad = canvas.GetPad(1)
+        if pad:
+            pad.cd()
+        else:
+            canvas.cd()
+
+        AddWorkInProgress(mnvplotter)
+        canvas.Modified()
+        canvas.Update()
+
+    mnvplotter.MultiPrint(canvas, outname)
+
 
 def SetMargin(pad):
     pad.SetRightMargin(0.15)

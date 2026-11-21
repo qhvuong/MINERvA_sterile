@@ -321,6 +321,8 @@ def MakeEfficiencyPlot(data_hists,mc_hists,true_hists,config,true_mc=False):
     return True
 
 if __name__ == "__main__":
+    PlotTools.WORK_IN_PROGRESS = True
+    
     #input knobs
     playlist=AnalysisConfig.playlist
     type_path_map = { t:AnalysisConfig.SelectionHistoPath(playlist,t =="data",False) for t in AnalysisConfig.data_types}
@@ -328,6 +330,7 @@ if __name__ == "__main__":
     print("type_path_map",type_path_map)
     print("ntuple_tag",AnalysisConfig.ntuple_tag)
     data_file,mc_file,pot_scale,data_pot,mc_pot = Utilities.getFilesAndPOTScale(playlist,type_path_map,AnalysisConfig.ntuple_tag,True)
+    PlotTools.SetPlotExposure(playlist, data_pot)
 
     standPOT = data_pot if data_pot is not None else mc_pot 
     sideband_map = {}

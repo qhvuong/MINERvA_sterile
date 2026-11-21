@@ -354,12 +354,13 @@ PROB_PLOTS = [
 ]
 
 def ScaleEN4WithGenericTitle(holder):
-    # Keep the existing exposure normalization.
     Default_Scale(holder)
 
     h = holder.GetHist()
     if h:
-        h.SetTitle("E_{#mu}+E_{avail} (GeV)")
+        h.SetTitle("")
+        h.GetXaxis().SetTitle("Neutrino Energy Estimator (GeV)")
+        h.GetYaxis().SetTitle("NEvents/GeV")
 
 PLOTS_TO_MAKE = [
 ####Taken from old script##########

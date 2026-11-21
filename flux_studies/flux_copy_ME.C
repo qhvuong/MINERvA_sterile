@@ -62,7 +62,7 @@ void flux_copy_ME(
             static_cast<PlotUtils::MnvH1D*>(source->Clone(hist_names[i].c_str())));
         hist->SetDirectory(nullptr);
         const TString output_path = Form("%s/flux-%s-pdg%d-minervame%s.root",
-            destination.c_str(), i == 0 ? "g4numiv5" : "gen2thin", sp.pdg, playlist.c_str());
+            destination.c_str(), i == 0 ? "g4numiv6" : "gen2thin", sp.pdg, playlist.c_str());
         {
           TFile output(output_path, "RECREATE");
           if (output.IsZombie())

@@ -8,7 +8,7 @@ from config.SystematicsConfig import CONSOLIDATED_ERROR_GROUPS,DETAILED_ERROR_GR
 
 
 Default_Plot_Type="stacked"
-Default_Scale = lambda histHolder:histHolder.POTScale(True)
+Default_Scale = lambda histHolder:histHolder.POTScale(False)
 DefaultSlicer = PlotTools.PrepareSlicer
 
 
@@ -391,12 +391,13 @@ PROB_PLOTS = [
 ]
 
 def ScaleEN4WithGenericTitle(holder):
-    # Keep the existing exposure normalization.
     Default_Scale(holder)
 
     h = holder.GetHist()
     if h:
-        h.SetTitle("E_{#mu}+E_{avail} (GeV)")
+        h.SetTitle("")
+        h.GetXaxis().SetTitle("Neutrino Energy Estimator (GeV)")
+        h.GetYaxis().SetTitle("NEvents/GeV")
 
 PLOTS_TO_MAKE = [
 ####Taken from old script##########

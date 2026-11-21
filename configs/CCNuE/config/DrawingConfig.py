@@ -494,6 +494,15 @@ PROB_PLOTS = [
       "plot_type" : "migration"},
 ]
 
+def ScaleEN4WithGenericTitle(holder):
+    Default_Scale(holder)
+
+    h = holder.GetHist()
+    if h:
+        h.SetTitle("")
+        h.GetXaxis().SetTitle("Neutrino Energy Estimator (GeV)")
+        h.GetYaxis().SetTitle("NEvents/GeV")
+
 PLOTS_TO_MAKE = [
 ####Taken from old script##########
     #{"name":"E Theta SquaredVisible Energy vs q3"}, 
@@ -999,8 +1008,15 @@ PLOTS_TO_MAKE = [
     # {"name":"True W Exp",
     #     "plot_type" : "stacked"},
 
-    {"name":"Biased Neutrino Energy",
-        "plot_type" : "stacked"},
+
+    {
+        "name": "Biased Neutrino Energy",
+        "plot_type": "stacked",
+        "scale": ScaleEN4WithGenericTitle,
+    },
+    # {"name":"Biased Neutrino Energy",
+    #     "plot_type" : "stacked"},
+
     # {"name":"Lepton Energy",
     #     "plot_type" : "stacked"},
     # {"name":"Visible Energy",
