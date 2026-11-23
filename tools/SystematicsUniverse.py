@@ -1539,110 +1539,110 @@ class CVPythonUniverse():
     # ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
 
 
-    #### Yes correction: angle only, no momentum-magnitude correction
-    def ElectronP3D_det(self):
-        # ---- 0) build uncorrected p(det) from branches + existing EM energy shift ----
-        electronp = self.GetVecOfVecDouble("prong_part_E")
-        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3] > 0) else 0.0
-        p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3])) * (1.0 + scale)
+    # #### Yes correction: angle only, no momentum-magnitude correction
+    # def ElectronP3D_det(self):
+    #     # ---- 0) build uncorrected p(det) from branches + existing EM energy shift ----
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3] > 0) else 0.0
+    #     p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3])) * (1.0 + scale)
 
-        # ---- 1) get vertex (mm) ----
-        vx = float(self.vtx[0])
-        vy = float(self.vtx[1])
+    #     # ---- 1) get vertex (mm) ----
+    #     vx = float(self.vtx[0])
+    #     vy = float(self.vtx[1])
 
-        make_vec = ROOT.Math.XYZVector
+    #     make_vec = ROOT.Math.XYZVector
 
-        # ---- 2) apply direction correction only; keep |p| unchanged ----
-        p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
-            p_det,
-            vx, vy,
-            # This is nu+e fit parameters
-            # We use nu+e angle correction coefficients for both nu+e and CCnue
-            # # OLD p6 coefficients
-            # t0x=0.0001289, t1x=1.402e-05,
-            # t0y=0.001007,  t1y=1.87e-05,
-            # # p8 coefficients before hadron reweights
-            # t0x=0.000486, t1x=1.392e-05,
-            # t0y=0.0008169,  t1y=1.969e-05,
-            # # NEW p8 coefficients AFTER hadron reweight (ME FV)
-            # t0x=0.0005425, t1x=1.389e-05,
-            # t0y=0.0007356,  t1y=1.953e-05,
-            # NEW p8 coefficients AFTER hadron reweight (inclusive FV)
-            t0x=0.0005755, t1x=1.429e-05,
-            t0y=0.0007915,  t1y=1.951e-05,
-            clamp_vtx=True,
-            vtx_min_mm=-1200.0,
-            vtx_max_mm=1200.0,
-            keep_pmag=True,
-            make_vec=make_vec,
-        )
+    #     # ---- 2) apply direction correction only; keep |p| unchanged ----
+    #     p_det_corr, thetaX_corr, thetaY_corr, theta_corr = apply_theta_bias_correction_det(
+    #         p_det,
+    #         vx, vy,
+    #         # This is nu+e fit parameters
+    #         # We use nu+e angle correction coefficients for both nu+e and CCnue
+    #         # # OLD p6 coefficients
+    #         # t0x=0.0001289, t1x=1.402e-05,
+    #         # t0y=0.001007,  t1y=1.87e-05,
+    #         # # p8 coefficients before hadron reweights
+    #         # t0x=0.000486, t1x=1.392e-05,
+    #         # t0y=0.0008169,  t1y=1.969e-05,
+    #         # # NEW p8 coefficients AFTER hadron reweight (ME FV)
+    #         # t0x=0.0005425, t1x=1.389e-05,
+    #         # t0y=0.0007356,  t1y=1.953e-05,
+    #         # NEW p8 coefficients AFTER hadron reweight (inclusive FV)
+    #         t0x=0.0005755, t1x=1.429e-05,
+    #         t0y=0.0007915,  t1y=1.951e-05,
+    #         clamp_vtx=True,
+    #         vtx_min_mm=-1200.0,
+    #         vtx_max_mm=1200.0,
+    #         keep_pmag=True,
+    #         make_vec=make_vec,
+    #     )
 
-        return p_det_corr
-
-
-    def ElectronP3D_det_noEMshift(self):
-        # Build unshifted p(det) from branches, with NO EM energy shift scaling
-        electronp = self.GetVecOfVecDouble("prong_part_E")
-        p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))
-
-        vx = float(self.vtx[0])
-        vy = float(self.vtx[1])
-
-        make_vec = ROOT.Math.XYZVector
-
-        # Direction correction only; keep |p| unchanged
-        p_det_corr, _, _, _ = apply_theta_bias_correction_det(
-            p_det,
-            vx, vy,
-            # This is nu+e fit parameters
-            # We use nu+e angle correction coefficients for both nu+e and CCnue
-            # # OLD p6 coefficients
-            # t0x=0.0001289, t1x=1.402e-05,
-            # t0y=0.001007,  t1y=1.87e-05,
-            # # p8 coefficients before hadron reweights
-            # t0x=0.000486, t1x=1.392e-05,
-            # t0y=0.0008169,  t1y=1.969e-05,
-            # # NEW p8 coefficients AFTER hadron reweight (ME FV)
-            # t0x=0.0005425, t1x=1.389e-05,
-            # t0y=0.0007356,  t1y=1.953e-05,
-            # NEW p8 coefficients AFTER hadron reweight (inclusive FV)
-            t0x=0.0005755, t1x=1.429e-05,
-            t0y=0.0007915,  t1y=1.951e-05,
-            clamp_vtx=True,
-            vtx_min_mm=-1200.0,
-            vtx_max_mm=1200.0,
-            keep_pmag=True,
-            make_vec=make_vec,
-        )
-
-        return p_det_corr
+    #     return p_det_corr
 
 
-    ## Electron momentum in BEAM coord:
-    ## - get angle-corrected momentum in DET coord
-    ## - rotate into beam coord
-    def ElectronP3D(self):
-        p_det_corr = self.ElectronP3D_det()
+    # def ElectronP3D_det_noEMshift(self):
+    #     # Build unshifted p(det) from branches, with NO EM energy shift scaling
+    #     electronp = self.GetVecOfVecDouble("prong_part_E")
+    #     p_det = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))
 
-        r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-        p_beam = r(p_det_corr)
+    #     vx = float(self.vtx[0])
+    #     vy = float(self.vtx[1])
 
-        if p_beam is None:
-            print(p_det_corr, r)
+    #     make_vec = ROOT.Math.XYZVector
 
-        return p_beam
+    #     # Direction correction only; keep |p| unchanged
+    #     p_det_corr, _, _, _ = apply_theta_bias_correction_det(
+    #         p_det,
+    #         vx, vy,
+    #         # This is nu+e fit parameters
+    #         # We use nu+e angle correction coefficients for both nu+e and CCnue
+    #         # # OLD p6 coefficients
+    #         # t0x=0.0001289, t1x=1.402e-05,
+    #         # t0y=0.001007,  t1y=1.87e-05,
+    #         # # p8 coefficients before hadron reweights
+    #         # t0x=0.000486, t1x=1.392e-05,
+    #         # t0y=0.0008169,  t1y=1.969e-05,
+    #         # # NEW p8 coefficients AFTER hadron reweight (ME FV)
+    #         # t0x=0.0005425, t1x=1.389e-05,
+    #         # t0y=0.0007356,  t1y=1.953e-05,
+    #         # NEW p8 coefficients AFTER hadron reweight (inclusive FV)
+    #         t0x=0.0005755, t1x=1.429e-05,
+    #         t0y=0.0007915,  t1y=1.951e-05,
+    #         clamp_vtx=True,
+    #         vtx_min_mm=-1200.0,
+    #         vtx_max_mm=1200.0,
+    #         keep_pmag=True,
+    #         make_vec=make_vec,
+    #     )
+
+    #     return p_det_corr
 
 
-    # Keep electron energy branch-based, since we are NOT applying
-    # a momentum-magnitude correction anymore.
-    def ElectronEnergyRaw(self):
-        return self.GetVecElem("prong_part_E", 0, 3)
+    # ## Electron momentum in BEAM coord:
+    # ## - get angle-corrected momentum in DET coord
+    # ## - rotate into beam coord
+    # def ElectronP3D(self):
+    #     p_det_corr = self.ElectronP3D_det()
+
+    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     p_beam = r(p_det_corr)
+
+    #     if p_beam is None:
+    #         print(p_det_corr, r)
+
+    #     return p_beam
 
 
-    @Utilities.decorator_ReLU
-    def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
-    #### Yes correction: angle only, no momentum-magnitude correction
+    # # Keep electron energy branch-based, since we are NOT applying
+    # # a momentum-magnitude correction anymore.
+    # def ElectronEnergyRaw(self):
+    #     return self.GetVecElem("prong_part_E", 0, 3)
+
+
+    # @Utilities.decorator_ReLU
+    # def ElectronEnergy(self):
+    #     return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
+    # #### Yes correction: angle only, no momentum-magnitude correction
 
 
 

@@ -467,7 +467,7 @@ HISTS_TO_MAKE = [
 	# "Lepton Energy Fractional Resolution",
 	# "True vs Reconstructed Available Energy",
 	# "True q0 vs Reconstructed Available Energy",
-	"True Signal True Energy vs Neutrino Length Travelled",
+	# "True Signal True Energy vs Neutrino Length Travelled",
     # "Biased Neutrino Energy Background Fit",
 	# "Visible Energy",
 	# "True Lepton Energy",
@@ -493,23 +493,23 @@ HISTS_TO_MAKE = [
 	# "Lepton Angle",
 	# "Lepton Pt",
 
-	# # These are plots for testing angle and momentum bias
-	# "Reco ThetaX vs Vertex X",
-	# "True ThetaX vs Vertex X",
+	# These are plots for testing angle and momentum bias
+	"Reco ThetaX vs Vertex X",
+	"True ThetaX vs Vertex X",
 
-	# "Reco ThetaY vs Vertex Y",
-	# "True ThetaY vs Vertex Y",
+	"Reco ThetaY vs Vertex Y",
+	"True ThetaY vs Vertex Y",
 
-	# "dThetaX vs Vertex X",
-	# "dThetaX vs Vertex Y",
-	# "dThetaX vs Vertex Z",
+	"dThetaX vs Vertex X",
+	"dThetaX vs Vertex Y",
+	"dThetaX vs Vertex Z",
 
-	# "dThetaY vs Vertex X",
-	# "dThetaY vs Vertex Y",
-	# "dThetaY vs Vertex Z",	
+	"dThetaY vs Vertex X",
+	"dThetaY vs Vertex Y",
+	"dThetaY vs Vertex Z",	
 
-	# "dPmag_frac vs Vertex X In Det Coordinate",
-	# "dPmag_frac vs Vertex Y In Det Coordinate",
+	"dPmag_frac vs Vertex X In Det Coordinate",
+	"dPmag_frac vs Vertex Y In Det Coordinate",
 
 
     # "True Energy vs L/E",
