@@ -419,14 +419,14 @@ HISTS_TO_MAKE = [
     # "Lepton Pt",
     # "Lepton Ppar",
 
-	# "Lepton Energy vs Available Energy",
-    # "Lepton Energy vs Lepton Angle",
+	"Lepton Energy vs Available Energy",
+    "Lepton Energy vs Lepton Angle",
 
-	# "Lepton Pt vs Lepton Ppar",
-	# "Lepton Ppar vs Lepton Pt",
+	"Lepton Pt vs Lepton Ppar",
+	"Lepton Ppar vs Lepton Pt",
 
-	# "Lepton Ppar vs Available Energy",
-	# "Lepton Pt vs Available Energy",
+	"Lepton Ppar vs Available Energy",
+	"Lepton Pt vs Available Energy",
 	# # "Available Energy vs Pt vs Ppar",
 
     # --------------------------------------------------

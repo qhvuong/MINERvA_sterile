@@ -77,10 +77,10 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "InverseHasNoBackExitingTracks",
-        "DeadTime",
+        # "DeadTime",
         "LeptonAngle",
 
-        "Neutrino Helicity",
+        # "Neutrino Helicity",
         # "MuonCurvature",
 
         "Etheta",

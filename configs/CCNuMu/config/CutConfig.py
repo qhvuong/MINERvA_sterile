@@ -54,7 +54,8 @@ RECO_ZDIFF_RANGE= [-30,50]
 RECO_VTX_ZDIFF_RANGE= [-20,20]
 RECO_PROTON_END = 8500
 WEXP_CUT = 1.4
-visE_RANGE = [0.0,0.6]
+# visE_RANGE = [0.0,0.6]
+visE_RANGE = [0.0,0.7]
 
 Ethetasquared_CUT = .0032
 FRONT_DEDX_PI0_UPPERBOUND = 5
@@ -80,10 +81,10 @@ SAMPLE_CUTS = {
         "Vertex_Z",
         "Vertex_Apothem",
         "InverseHasNoBackExitingTracks",
-        "DeadTime",
+        # "DeadTime",
         "LeptonAngle",
 
-        "Neutrino Helicity",
+        # "Neutrino Helicity",
         # "MuonCurvature",
 
         "Etheta",

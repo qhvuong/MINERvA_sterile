@@ -232,13 +232,22 @@ def handle_block(block: dict, dry_run: bool, log_sink: Optional[List[str]] = Non
 
             returncode = proc.wait()
 
+            # if returncode != 0:
+            #     msg = f"[ERROR] combine_file_specialSampleModification.py exited with code {returncode}"
+            #     print(msg)
+            #     if log_sink is not None:
+            #         log_sink.append(msg)
+            #         log_sink.append("")
             if returncode != 0:
-                msg = f"[ERROR] combine_file_specialSampleModification.py exited with code {returncode}"
-                print(msg)
+                msg = (
+                    "combine_file_specialSampleModification.py "
+                    f"exited with code {returncode}"
+                )
+                print(f"[ERROR] {msg}")
                 if log_sink is not None:
-                    log_sink.append(msg)
-                    log_sink.append("")
+                    log_sink.append(f"[ERROR] {msg}")
 
+                raise RuntimeError(msg)
 
         else:
             print("[SKIP] Not running combine_file_specialSampleModification.py because counts did not match for MC and/or DATA")
@@ -535,11 +544,16 @@ def main():
             "expected_data_jobs": 0,
         }
 
+    # def finalize_block():
+    #     nonlocal blocks_processed, first_tag_seen
+    #     if current is None:
+    #         return
+    #     all_blocks.append(current.copy())
     def finalize_block():
-        nonlocal blocks_processed, first_tag_seen
-        if current is None:
+        if current is None or not current.get("playlist"):
             return
         all_blocks.append(current.copy())
+
 
     with open(args.runningNotes, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
