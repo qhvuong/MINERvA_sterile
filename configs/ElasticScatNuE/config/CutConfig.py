@@ -84,7 +84,7 @@ FIDUCIAL_Z_RANGE = [5980,8422]
 ELECTRON_ENERGY_CUT = 0.8 #GeV
 ELECTRON_ENERGY_CUT_SIDEBAND = 3.0 #GeV
 Q2_CUT = 0.04 #GeV^2
-visE_RANGE = [0.0,0.1]
+visE_RANGE = [0.0,0.6]
 Ethetasquared_CUT = .0032
 Ethetasquared_SIDEBAND_LOW  = .004
 Ethetasquared_SIDEBAND_HIGH = .010
@@ -99,21 +99,21 @@ SAMPLE_CUTS = {
         "NoCut",
         "Vertex_Z",
         "Vertex_Apothem",
-        # "HasNoBackExitingTracks",
-        # "HasTracks",
-        # "EMLikeTrackScore",
-        # "DSCalVisE",
-        # "ODCalVisE",
-        # "DeadTime",
-        # "Afterpulsing",
-        # "NonMIPClusFrac",
-        # "HasNoVertexMismatch", 
-        # "StartPointVertexMultiplicity",
-        # "VertexTrackMultiplicity",
-        # "LeptonEnergy",
-        # "InverseEtheta",
-        # "MeanFrontdEdX",
-        # "Eavail",
+        "HasNoBackExitingTracks",
+        "HasTracks",
+        "EMLikeTrackScore",
+        "DSCalVisE",
+        "ODCalVisE",
+        "DeadTime",
+        "Afterpulsing",
+        "NonMIPClusFrac",
+        "HasNoVertexMismatch", 
+        "StartPointVertexMultiplicity",
+        "VertexTrackMultiplicity",
+        "LeptonEnergy",
+        "InverseEtheta",
+        "MeanFrontdEdX",
+        "Eavail",
 
         # Removed cuts
         # "TransverseGapScore",

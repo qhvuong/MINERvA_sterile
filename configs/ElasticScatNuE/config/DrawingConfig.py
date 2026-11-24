@@ -605,14 +605,14 @@ NuEElastic1Sig3Bkgs = {
 NuEElastic1Sig1Bkg = {
     "Signal" :{
         "title": "True #nu+e",
-        "cate" : {"NuEElasticE", "NuEElasticMu", "NuEElasticOther"},
+        "cate" : {"NuEElastic", "NuEElasticE", "NuEElasticMu", "NuEElasticOther"},
         "color": COLORS[0]
     },
-    "Background" : {
-        "title" : "Background",
-        "cate"  : {"CCNuEQE", "CCNuE2p2h", "CCNuEDelta", "CCNuEDIS", "CCNuE", "CCNuEWrongSign", "CCNuEWrongSignQE", "CCNuMu", "CCNuMuWrongSign", "CCPi0", "CCPi", "CCOther", "NCNuECohPi0", "NCNuMuCohPi0", "NCPi0", "NCPi", "NCOther", "NCDiff"},
-        "color" : COLORS[4]
-    }
+    # "Background" : {
+    #     "title" : "Background",
+    #     "cate"  : {"CCNuEQE", "CCNuE2p2h", "CCNuEDelta", "CCNuEDIS", "CCNuE", "CCNuEWrongSign", "CCNuEWrongSignQE", "CCNuMu", "CCNuMuWrongSign", "CCPi0", "CCPi", "CCOther", "NCNuECohPi0", "NCNuMuCohPi0", "NCPi0", "NCPi", "NCOther", "NCDiff"},
+    #     "color" : COLORS[4]
+    # }
     # "BkgPhoton": {
     #     "title" : "NC Coh #pi^{0}", 
     #     "cate"  : {"NCNuECohPi0", "NCNuMuCohPi0", "NCPi0"},
@@ -1463,8 +1463,8 @@ PLOTS_TO_MAKE = [
     # {"name":"True vs Reconstructed Lepton Phi",
     #    "plot_type" : "category_hist"}, 
 
-    {"name":"Lepton Energy",
-        "plot_type" : "stacked"},
+    # {"name":"Lepton Energy",
+    #     "plot_type" : "stacked"},
     # {"name":"Biased Neutrino Energy",
     #     "plot_type" : "stacked"},
     # # {"name":"E Theta Squared",
@@ -1585,55 +1585,69 @@ PLOTS_TO_MAKE = [
     #     "plot_type" : "stacked"},
 
 
-    # {"name":"Reco ThetaX vs Vertex X",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"Reco ThetaX vs Vertex X",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"Reco ThetaX vs Vertex X",
+       "plot_type" : "profileX"}, 
+    {"name":"Reco ThetaX vs Vertex X",
+       "plot_type" : "category_hist"}, 
 
-    # {"name":"True ThetaX vs Vertex X",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"True ThetaX vs Vertex X",
-    #    "plot_type" : "category_hist"}, 
-
-
-    # {"name":"Reco ThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},    
-    # {"name":"Reco ThetaY vs Vertex Y",
-    #    "plot_type" : "category_hist"}, 
-
-    # {"name":"True ThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},
-    # {"name":"True ThetaY vs Vertex Y",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"True ThetaX vs Vertex X",
+       "plot_type" : "profileX"}, 
+    {"name":"True ThetaX vs Vertex X",
+       "plot_type" : "category_hist"}, 
 
 
-    # {"name":"dThetaX vs Vertex X",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaX vs Vertex X",
-    #    "plot_type" : "category_hist"},  
+    {"name":"Reco ThetaY vs Vertex Y",
+       "plot_type" : "profileX"},    
+    {"name":"Reco ThetaY vs Vertex Y",
+       "plot_type" : "category_hist"}, 
 
-    # {"name":"dThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaY vs Vertex Y",
-    #    "plot_type" : "category_hist"},  
+    {"name":"True ThetaY vs Vertex Y",
+       "plot_type" : "profileX"},
+    {"name":"True ThetaY vs Vertex Y",
+       "plot_type" : "category_hist"}, 
 
 
-    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-    #    "plot_type" : "projectionYNoFit"}, 
-    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"dThetaX vs Vertex X",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex X",
+       "plot_type" : "category_hist"},  
 
-    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-    #    "plot_type" : "projectionYNoFit"}, 
-    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"dThetaX vs Vertex Y",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex Y",
+       "plot_type" : "category_hist"},  
 
-    # {"name":"dPmag_frac vs Vertex Z In Det Coordinate",
-    #    "plot_type" : "projectionYNoFit"}, 
-    # {"name":"dPmag_frac vs Lepton Energy",
-    #    "plot_type" : "projectionYNoFit"}, 
-    # {"name":"dPmag_frac vs HCAL Fraction",
-    #    "plot_type" : "projectionYNoFit"}, 
+    {"name":"dThetaX vs Vertex Z",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex Z",
+       "plot_type" : "category_hist"},         
+
+
+    {"name":"dThetaY vs Vertex X",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex X",
+       "plot_type" : "category_hist"}, 
+
+    {"name":"dThetaY vs Vertex Y",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex Y",
+       "plot_type" : "category_hist"},  
+
+    {"name":"dThetaY vs Vertex Z",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex Z",
+       "plot_type" : "category_hist"}, 
+
+
+    {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+       "plot_type" : "profileX"}, 
+    {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+       "plot_type" : "category_hist"}, 
+
+    {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+       "plot_type" : "profileX"}, 
+    {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+       "plot_type" : "category_hist"}, 
 
 
     # {"name":"Available Energy vs True W"},

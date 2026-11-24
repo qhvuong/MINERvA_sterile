@@ -163,28 +163,28 @@ TRUTH_CATEGORIES = OrderedDict()
 
 
 
-# # These are categories for weighting ME to LE
-# TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNue(event) 
-# TRUTH_CATEGORIES["NuEElasticEBar"]  = lambda event: IsElastic(event) and IsNueBar(event) 
-# TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNumu(event)
-# TRUTH_CATEGORIES["NuEElasticMuBar"] = lambda event: IsElastic(event) and IsNumuBar(event)
-
-# SIGNAL_DEFINITION = [
-#     "NuEElasticE",
-#     "NuEElasticEBar",
-#     "NuEElasticMu",
-#     "NuEElasticMuBar",
-#     "NuEElasticOther",
-# ]
-
-
-
-# These are categories for testing bias
-TRUTH_CATEGORIES["NuEElastic"]  = lambda event: IsElastic(event)
+# These are categories for weighting ME to LE and for ME 2D templates
+TRUTH_CATEGORIES["NuEElasticE"]  = lambda event: IsElastic(event) and IsNue(event) 
+TRUTH_CATEGORIES["NuEElasticEBar"]  = lambda event: IsElastic(event) and IsNueBar(event) 
+TRUTH_CATEGORIES["NuEElasticMu"] = lambda event: IsElastic(event) and IsNumu(event)
+TRUTH_CATEGORIES["NuEElasticMuBar"] = lambda event: IsElastic(event) and IsNumuBar(event)
 
 SIGNAL_DEFINITION = [
-    "NuEElastic",
+    "NuEElasticE",
+    "NuEElasticEBar",
+    "NuEElasticMu",
+    "NuEElasticMuBar",
+    # "NuEElasticOther",
 ]
+
+
+
+# # These are categories for testing bias
+# TRUTH_CATEGORIES["NuEElastic"]  = lambda event: IsElastic(event)
+
+# SIGNAL_DEFINITION = [
+#     "NuEElastic",
+# ]
 
 
 

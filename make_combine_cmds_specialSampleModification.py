@@ -446,7 +446,10 @@ def special_parent_playlist(playlist: Optional[str]) -> Optional[str]:
 
     return playlist.replace("_2p2h", "", 1)
 
-def maybe_madd_me(selection_tag, beam, dry_run, log_sink=None):
+def maybe_madd_me(
+    selection_tag, beam, dry_run, log_sink=None,
+    playlist_suffix="", sample_types=("MC", "DATA"),
+):
     playlists_by_beam = {
         "FHC": [
             "me1A", "me1B", "me1C", "me1D", "me1E", "me1F",
@@ -463,10 +466,14 @@ def maybe_madd_me(selection_tag, beam, dry_run, log_sink=None):
         if log_sink is not None:
             log_sink.append(message)
 
-    playlists = playlists_by_beam[beam]
-    output_playlist = f"me{beam}"
+    playlists = [
+        pl + playlist_suffix
+        for pl in playlists_by_beam[beam]
+    ]
+    output_playlist = f"me{beam}{playlist_suffix}"
 
-    for sample_type, is_data in (("MC", False), ("DATA", True)):
+    for sample_type in sample_types:
+        is_data = sample_type == "DATA"
         inputs = [
             combined_output_path(pl, selection_tag, is_data)
             for pl in playlists
@@ -707,14 +714,67 @@ def main():
                     "Use separate runningNotes files for LE and ME."
                 )
 
-            if any(pl.startswith("me1") for pl in me_playlists):
-                maybe_madd_me(tag, "FHC", args.dry_run, log_lines)
+            # Group by beam and sample suffix.
+            # Standard MC and special nu+e MC get separate merges.
+            merge_groups = {}
 
-            if any(
-                pl.startswith(("me5", "me6"))
-                for pl in me_playlists
+            for block in all_blocks:
+                if (
+                    block.get("selection_tag") != tag
+                    or not block.get("playlist")
+                ):
+                    continue
+
+                playlist = strip_p6(block["playlist"])
+
+                if not playlist.lower().startswith("me"):
+                    continue
+
+                match = re.fullmatch(
+                    r"me(?:1[A-GL-P]|5A|6[A-J])"
+                    r"(?P<suffix>_p[68]_scattering)?",
+                    playlist,
+                    re.IGNORECASE,
+                )
+
+                if match is None:
+                    raise ValueError(
+                        "Unsupported ME playlist for final merge: "
+                        f"{playlist}"
+                    )
+
+                beam = (
+                    "FHC"
+                    if playlist.lower().startswith("me1")
+                    else "RHC"
+                )
+                suffix = (match.group("suffix") or "").lower()
+
+                sample_types = merge_groups.setdefault(
+                    (beam, suffix), set()
+                )
+
+                if block.get("expected_mc_jobs", 0) > 0:
+                    sample_types.add("MC")
+
+                if block.get("expected_data_jobs", 0) > 0:
+                    sample_types.add("DATA")
+
+            for (beam, suffix), sample_types in sorted(
+                merge_groups.items()
             ):
-                maybe_madd_me(tag, "RHC", args.dry_run, log_lines)
+                maybe_madd_me(
+                    tag,
+                    beam,
+                    args.dry_run,
+                    log_lines,
+                    playlist_suffix=suffix,
+                    sample_types=tuple(
+                        sample
+                        for sample in ("MC", "DATA")
+                        if sample in sample_types
+                    ),
+                )
         else:
             # Preserve the existing LE workflow.
             maybe_madd_fhc(tag, args.dry_run, log_lines)
