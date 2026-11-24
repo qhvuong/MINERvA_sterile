@@ -272,6 +272,22 @@
       }
     },      
 
+    "me_p8_v4p3p1": {
+      "elastic_era": "ME",
+      "fhc_elastic": {
+        "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_FHC.root",
+        "prediction_hist_prefix": "h_nue_elastic_",
+        "allow_truth_prediction": true,
+        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_ME_Nueel_NoCut_v4p3p1_MAD.root"
+      },
+      "rhc_elastic": {
+        "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_RHC.root",
+        "prediction_hist_prefix": "h_nue_elastic_",
+        "allow_truth_prediction": true,
+        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_antinue/kin_dist_mcmeRHC_p8_scattering_ME_Nueelbar_NoCut_v4p3p1_MAD.root"
+      }
+    },
+
     "p8_v4p3p1": {
       "fhc_elastic": {
         "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",

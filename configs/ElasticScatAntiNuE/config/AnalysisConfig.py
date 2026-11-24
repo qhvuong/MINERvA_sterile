@@ -21,7 +21,7 @@ import sys
 import pprint
 import re
 
-BLUEARC = "/exp/minerva/data/users/{}/elastic_nue".format(os.environ["USER"])
+BLUEARC = "/exp/minerva/data/users/{}/elastic_antinue".format(os.environ["USER"])
 GIRDOUTPUT ="/pnfs/minerva/persistent/"
 
 
