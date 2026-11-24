@@ -29,9 +29,9 @@ M_mu =  105.658 #MeV
 M_e_sqr = M_e**2
 M_mu_sqr = M_mu**2
 
-USE_MNVTUNE_V1 = True
+USE_MNVTUNE_V1 = False
 USE_MNVTUNE_V4P3P0 = False
-USE_MNVTUNE_V4P3P1 = False
+USE_MNVTUNE_V4P3P1 = True
 USE_MNVTUNE_V4P4P1 = False
 
 
@@ -1510,33 +1510,27 @@ class CVPythonUniverse():
         )
 
     #################### functions to be overide in systematics shift universes #################
-    #### No correction
-    def ElectronEnergyRaw(self):
-        return self.GetVecElem("prong_part_E",0,3)
+    # #### Electron reconstruction without angular-bias correction.
+    # #### Retains the EM energy shift and detector-to-beam rotation.
+    # def ElectronEnergyRaw(self):
+    #     return self.GetVecElem("prong_part_E",0,3)
 
-    @Utilities.decorator_ReLU
-    def ElectronEnergy(self):
-        return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
+    # @Utilities.decorator_ReLU
+    # def ElectronEnergy(self):
+    #     return self.ElectronEnergyRaw() + self.GetEMEnergyShift() #+ self.GetLeakageCorrection()
 
-    ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
-    def ElectronP3D_det(self):
-        electronp = self.GetVecOfVecDouble("prong_part_E")
-        scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
-        p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-        return p
-
-    # ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
-    # ## to be in beam coord
-    # def ElectronP3D(self):              # momentum in DET coord already, need to rotate
+    # ## ORIGINAL electron momentum calculation in DET coord, which assumes the momentum to be in DET coord
+    # def ElectronP3D_det(self):
     #     electronp = self.GetVecOfVecDouble("prong_part_E")
     #     scale = self.GetEMEnergyShift()/electronp[0][3] if (electronp[0][3]>0) else 0
     #     p = ROOT.Math.XYZVector(*tuple(list(electronp[0])[:3]))*(1+scale)
-    #     r = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
-    #     s=r(p)
-    #     if s is None:
-    #         print (p,r,tuple(list(electronp[0])[:3]))
-    #     return s
-    # ## ORIGINAL electron momentum calculation, which assumes the momentum to be in DET coord and needs to be rotated
+    #     return p
+
+    # def ElectronP3D(self):
+    #     p_det = self.ElectronP3D_det()
+    #     rotation = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+    #     return rotation(p_det)
+
 
 
     # #### Yes correction: angle only, no momentum-magnitude correction
@@ -1643,6 +1637,95 @@ class CVPythonUniverse():
     # def ElectronEnergy(self):
     #     return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
     # #### Yes correction: angle only, no momentum-magnitude correction
+
+    # Angular-bias coefficients from true nu+e, FV-only, v4.3.1 fits.
+    # Shared across horn polarities and interaction tunes.
+    def _ElectronAngleBiasCoefficients(self):
+        from config.AnalysisConfig import AnalysisConfig
+
+        playlist = str(AnalysisConfig.playlist).strip().lower()
+
+        if playlist.startswith("le"):
+            return {
+                "t0x": 0.0005667,
+                "t1x": 1.389e-5,
+                "t0y": 0.0007554,
+                "t1y": 1.951e-5,
+            }
+
+        if playlist.startswith("me"):
+            return {
+                "t0x": 0.0003539,
+                "t1x": 1.490e-5,
+                "t0y": 0.0005995,
+                "t1y": 2.107e-5,
+            }
+
+        raise ValueError(
+            "Cannot select electron angular-bias coefficients "
+            "for playlist {!r}; expected an LE or ME playlist."
+            .format(AnalysisConfig.playlist)
+        )
+
+    def _CorrectElectronDirection(self, p_det):
+        coefficients = self._ElectronAngleBiasCoefficients()
+
+        p_det_corr, _, _, _ = apply_theta_bias_correction_det(
+            p_det,
+            float(self.vtx[0]),
+            float(self.vtx[1]),
+            **coefficients,
+            clamp_vtx=True,
+            vtx_min_mm=-1200.0,
+            vtx_max_mm=1200.0,
+            keep_pmag=True,
+            make_vec=ROOT.Math.XYZVector,
+        )
+
+        return p_det_corr
+
+    # Detector-coordinate momentum with the existing EM energy shift
+    # and angular-bias correction.
+    def ElectronP3D_det(self):
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        energy = electronp[0][3]
+
+        scale = (
+            self.GetEMEnergyShift() / energy
+            if energy > 0
+            else 0.0
+        )
+
+        p_det = ROOT.Math.XYZVector(
+            *tuple(list(electronp[0])[:3])
+        ) * (1.0 + scale)
+
+        return self._CorrectElectronDirection(p_det)
+
+    # Angular-bias correction retained; EM energy shift omitted.
+    def ElectronP3D_det_noEMshift(self):
+        electronp = self.GetVecOfVecDouble("prong_part_E")
+        p_det = ROOT.Math.XYZVector(
+            *tuple(list(electronp[0])[:3])
+        )
+
+        return self._CorrectElectronDirection(p_det)
+
+    # Rotate corrected detector-coordinate momentum into beam coordinates.
+    def ElectronP3D(self):
+        p_det = self.ElectronP3D_det()
+        rotation = ROOT.Math.RotationX(SystematicsConfig.BEAM_ANGLE)
+        return rotation(p_det)
+
+    # Direction correction preserves momentum magnitude.
+    # Electron energy remains branch-based with the existing EM shift.
+    def ElectronEnergyRaw(self):
+        return self.GetVecElem("prong_part_E", 0, 3)
+
+    @Utilities.decorator_ReLU
+    def ElectronEnergy(self):
+        return self.ElectronEnergyRaw() + self.GetEMEnergyShift()
+
 
 
 

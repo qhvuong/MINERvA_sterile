@@ -559,11 +559,11 @@ PLOTS_TO_MAKE = [
     # {"name":"Front dEdX",
     #     "plot_type" : "stacked"},
 
-    {
-        "name": "Biased Neutrino Energy",
-        "plot_type": "stacked",
-        "scale": ScaleEN4WithGenericTitle,
-    },
+    # {
+    #     "name": "Biased Neutrino Energy",
+    #     "plot_type": "stacked",
+    #     "scale": ScaleEN4WithGenericTitle,
+    # },
     # {"name":"Biased Neutrino Energy",
     #     "plot_type" : "stacked"},
     
@@ -590,69 +590,69 @@ PLOTS_TO_MAKE = [
     # {"name":"Neutrino Vertex Apothem",
     #     "plot_type" : "stacked"},
 
-    # {"name":"Reco ThetaX vs Vertex X",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"Reco ThetaX vs Vertex X",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"Reco ThetaX vs Vertex X",
+       "plot_type" : "profileX"}, 
+    {"name":"Reco ThetaX vs Vertex X",
+       "plot_type" : "category_hist"}, 
 
-    # {"name":"True ThetaX vs Vertex X",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"True ThetaX vs Vertex X",
-    #    "plot_type" : "category_hist"}, 
-
-
-    # {"name":"Reco ThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},    
-    # {"name":"Reco ThetaY vs Vertex Y",
-    #    "plot_type" : "category_hist"}, 
-
-    # {"name":"True ThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},
-    # {"name":"True ThetaY vs Vertex Y",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"True ThetaX vs Vertex X",
+       "plot_type" : "profileX"}, 
+    {"name":"True ThetaX vs Vertex X",
+       "plot_type" : "category_hist"}, 
 
 
-    # {"name":"dThetaX vs Vertex X",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaX vs Vertex X",
-    #    "plot_type" : "category_hist"},  
+    {"name":"Reco ThetaY vs Vertex Y",
+       "plot_type" : "profileX"},    
+    {"name":"Reco ThetaY vs Vertex Y",
+       "plot_type" : "category_hist"}, 
 
-    # {"name":"dThetaX vs Vertex Y",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaX vs Vertex Y",
-    #    "plot_type" : "category_hist"},  
-
-    # {"name":"dThetaX vs Vertex Z",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaX vs Vertex Z",
-    #    "plot_type" : "category_hist"},         
+    {"name":"True ThetaY vs Vertex Y",
+       "plot_type" : "profileX"},
+    {"name":"True ThetaY vs Vertex Y",
+       "plot_type" : "category_hist"}, 
 
 
-    # {"name":"dThetaY vs Vertex X",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaY vs Vertex X",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"dThetaX vs Vertex X",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex X",
+       "plot_type" : "category_hist"},  
 
-    # {"name":"dThetaY vs Vertex Y",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaY vs Vertex Y",
-    #    "plot_type" : "category_hist"},  
+    {"name":"dThetaX vs Vertex Y",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex Y",
+       "plot_type" : "category_hist"},  
 
-    # {"name":"dThetaY vs Vertex Z",
-    #    "plot_type" : "profileX"},  
-    # {"name":"dThetaY vs Vertex Z",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"dThetaX vs Vertex Z",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaX vs Vertex Z",
+       "plot_type" : "category_hist"},         
 
 
-    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"dPmag_frac vs Vertex X In Det Coordinate",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"dThetaY vs Vertex X",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex X",
+       "plot_type" : "category_hist"}, 
 
-    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-    #    "plot_type" : "profileX"}, 
-    # {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
-    #    "plot_type" : "category_hist"}, 
+    {"name":"dThetaY vs Vertex Y",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex Y",
+       "plot_type" : "category_hist"},  
+
+    {"name":"dThetaY vs Vertex Z",
+       "plot_type" : "profileX"},  
+    {"name":"dThetaY vs Vertex Z",
+       "plot_type" : "category_hist"}, 
+
+
+    {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+       "plot_type" : "profileX"}, 
+    {"name":"dPmag_frac vs Vertex X In Det Coordinate",
+       "plot_type" : "category_hist"}, 
+
+    {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+       "plot_type" : "profileX"}, 
+    {"name":"dPmag_frac vs Vertex Y In Det Coordinate",
+       "plot_type" : "category_hist"}, 
 
 
     # {"name":"Q2",

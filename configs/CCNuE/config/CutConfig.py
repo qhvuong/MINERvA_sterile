@@ -57,8 +57,6 @@ WEXP_CUT = 2
 
 # Ryans ME Eavail range
 visE_RANGE = [0.0,0.6]
-# # My LE Eavail range
-# visE_RANGE = [0.0,0.65]
 
 Ethetasquared_CUT = .0032
 FRONT_DEDX_PI0_UPPERBOUND = 5

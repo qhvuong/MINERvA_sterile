@@ -404,8 +404,8 @@ HISTS_TO_MAKE = [
 	# "E Theta Squared",
 	# "True E Theta Squared",
 	# "Lepton Energy",
-    "Biased Neutrino Energy",
-    "Reco Energy vs L/E",
+    # "Biased Neutrino Energy",
+    # "Reco Energy vs L/E",
     # "Estimator vs Front dEdX",
 	# "Q2",
 	# "True W",
@@ -470,23 +470,23 @@ HISTS_TO_MAKE = [
 	# "Neutrino Vertex Z",
 	# "Neutrino Vertex Apothem",
 
-	# # These are plots for testing angle and momentum bias
-	# "Reco ThetaX vs Vertex X",
-	# "True ThetaX vs Vertex X",
+	# These are plots for testing angle and momentum bias
+	"Reco ThetaX vs Vertex X",
+	"True ThetaX vs Vertex X",
 
-	# "Reco ThetaY vs Vertex Y",
-	# "True ThetaY vs Vertex Y",
+	"Reco ThetaY vs Vertex Y",
+	"True ThetaY vs Vertex Y",
 
-	# "dThetaX vs Vertex X",
-	# "dThetaX vs Vertex Y",
-	# "dThetaX vs Vertex Z",
+	"dThetaX vs Vertex X",
+	"dThetaX vs Vertex Y",
+	"dThetaX vs Vertex Z",
 
-	# "dThetaY vs Vertex X",
-	# "dThetaY vs Vertex Y",
-	# "dThetaY vs Vertex Z",	
+	"dThetaY vs Vertex X",
+	"dThetaY vs Vertex Y",
+	"dThetaY vs Vertex Z",	
 
-	# "dPmag_frac vs Vertex X In Det Coordinate",
-	# "dPmag_frac vs Vertex Y In Det Coordinate",
+	"dPmag_frac vs Vertex X In Det Coordinate",
+	"dPmag_frac vs Vertex Y In Det Coordinate",
 
 
     # "True Energy vs L/E",
