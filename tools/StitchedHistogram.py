@@ -38,6 +38,8 @@ errorbandDict = { #keys are the errorbands that need to be renamed, values are w
 sample_pdgs = ["numu","nue","anumu","anue"]
 
 class StitchedHistogram:
+    ME_ELASTIC_JOINT_COVARIANCE_SUPPORTED = True
+
     def __init__(self,name,dirty=False,*,include_shared_ratio_stats=False):
         self.name = name
         self.dirty = dirty
@@ -47,6 +49,11 @@ class StitchedHistogram:
         self.titles = {"fhc_elastic":"FHC #nu+e","fhc_imd":"FHC IMD","fhc_numu_selection":"FHC CC #nu_{#mu}","fhc_nue_selection":"FHC CC #nu_{e}",
                 "rhc_elastic":"RHC #nu+e","rhc_imd":"RHC IMD","rhc_numu_selection":"RHC CC anti #nu_{#mu}","rhc_nue_selection":"RHC CC anti #nu_{e}"}
 
+        self.keys.extend(["fhc_elastic_me", "rhc_elastic_me"])
+        self.titles.update({
+            "fhc_elastic_me": "ME FHC #nu+e",
+            "rhc_elastic_me": "ME RHC #nu+e",
+        })
         self.stitchKeys = self.keys.copy()
 
         self.data_hists = OrderedDict()
@@ -79,6 +86,9 @@ class StitchedHistogram:
         self.covariance = None
         self.covariance_sans_flux = None
         self.external_covariances = {}
+        # Per-bin joint statistics from the SR/sideband background solve.
+        # Saved independently of histogram errors so Cov(data_sub, MC) survives I/O.
+        self.joint_stat_inputs = {}
 
         self.mc_hist = None
         self.data_hist = None
@@ -274,50 +284,53 @@ class StitchedHistogram:
             self.A = self.mc_flux_universes - np.array([cv for i in range(nhists)])
 
     def LoadExternalCovariances(self, root_file):
-        """
-        Load any external covariance matrices stored in the stitched ROOT file.
-
-        For now this is used for the published MINERvA nu+e elastic table.
-        """
-        cov = root_file.Get("fhc_elastic_paper_covariance_matrix")
-
-        if cov:
-            cov = cov.Clone("fhc_elastic_paper_covariance_matrix_loaded")
-            self.external_covariances["fhc_elastic"] = cov
-
-            print("Loaded external covariance: fhc_elastic")
-            print("  Nrows =", cov.GetNrows())
-            print("  Ncols =", cov.GetNcols())
-        # else:
-        #     print("No external covariance matrix found for fhc_elastic.")
-
-    def GetExternalCovarianceBinIndices(
-        self,
-        sample_name,
-        hist_config=None,
-    ):
-        """
-        Return zero-based stitched-bin indices for a sample.
-        """
-        if hist_config is None:
-            hist_config = self.hist_config
-
-        try:
-            inds = GetSliceIndices(
-                hist_config,
-                "",
-                [sample_name],
-            )
-        except Exception as e:
-            print(
-                "WARNING: could not read {} for external covariance: {}".format(
-                    hist_config,
-                    e,
+        """Restore independent LE and joint ME measurement covariance blocks."""
+        self.external_covariances = {}
+        for name in ("fhc_elastic", "rhc_elastic", "me_elastic"):
+            covariance = root_file.Get(name + "_paper_covariance_matrix")
+            if covariance:
+                self.external_covariances[name] = covariance.Clone(
+                    name + "_paper_covariance_matrix_loaded"
                 )
-            )
-            inds = []
+                print("Loaded external covariance:", name)
 
-        return inds
+    def GetExternalCovarianceSelection(self, sample_name, hist_config=None):
+        """Return stitched indices and corresponding original covariance indices.
+
+        The joint ME matrix is ordered FHC[0:6], RHC[6:12]. In BOTH
+        mode these refer to the *_elastic_me samples, not LE fhc_elastic.
+        Honor the existing minBinCont selection without shifting matrix rows.
+        """
+        hist_config = self.hist_config if hist_config is None else hist_config
+        if sample_name == "me_elastic":
+            suffix = "_me" if "fhc_elastic_me" in self.mc_hists else ""
+            samples = [("fhc_elastic" + suffix, 0), ("rhc_elastic" + suffix, 6)]
+        else:
+            samples = [(sample_name, 0)]
+
+        global_indices, covariance_indices = [], []
+        for name, offset in samples:
+            # Excluded samples have no stitched bins.
+            if name not in self.stitchKeys:
+                continue
+            indices = GetSliceIndices(hist_config, "", [name])
+            hist = self.mc_hists[name]
+            if sample_name == "me_elastic" and hist.GetNbinsX() != 6:
+                raise RuntimeError("Joint ME covariance requires six bins per polarity")
+            kept = [i for i in range(1, hist.GetNbinsX() + 1)
+                    if hist.GetBinContent(i) > minBinCont]
+            if len(indices) != len(kept):
+                raise RuntimeError(
+                    "External covariance mapping mismatch for {}: {} indices, {} bins".format(
+                        name, len(indices), len(kept)
+                    )
+                )
+            global_indices.extend(indices)
+            covariance_indices.extend(offset + i - 1 for i in kept)
+        return global_indices, covariance_indices
+
+    def GetExternalCovarianceBinIndices(self, sample_name, hist_config=None):
+        return self.GetExternalCovarianceSelection(sample_name, hist_config)[0]
 
     def ApplyExternalCovariances(self, covariance, label="covariance"):
         """
@@ -330,13 +343,14 @@ class StitchedHistogram:
         cov_out = np.array(covariance, copy=True)
 
         for sample_name, root_cov in self.external_covariances.items():
-            inds = self.GetExternalCovarianceBinIndices(sample_name)
+            inds, original_bins = self.GetExternalCovarianceSelection(sample_name)
 
             if len(inds) == 0:
                 print("WARNING: no stitched bins found for external covariance sample:", sample_name)
                 continue
 
             ext_cov = TMatrix_to_Numpy(root_cov)
+            ext_cov = ext_cov[np.ix_(original_bins, original_bins)]
 
             if ext_cov.shape[0] != len(inds) or ext_cov.shape[1] != len(inds):
                 raise RuntimeError(
@@ -373,11 +387,12 @@ class StitchedHistogram:
         h_out.SetDirectory(0)
 
         for sample_name, root_cov in self.external_covariances.items():
-            inds = self.GetExternalCovarianceBinIndices(sample_name)
+            inds, original_bins = self.GetExternalCovarianceSelection(sample_name)
             if len(inds) == 0:
                 continue
 
             cov = TMatrix_to_Numpy(root_cov)
+            cov = cov[np.ix_(original_bins, original_bins)]
 
             if cov.shape[0] != len(inds):
                 raise RuntimeError(
@@ -401,6 +416,154 @@ class StitchedHistogram:
 
         return h_out
 
+
+    def AddJointStatistics(self, sample, inputs):
+        """Register per-bin (data_sub, signal_MC) statistics, in events^2.
+
+        These are linearized diagnostics from independent per-bin SR/SB solves;
+        they do not describe non-Gaussian tails or an unprovided inter-bin fit.
+        """
+        if sample not in self.mc_hists or sample not in self.data_hists:
+            raise ValueError("Joint statistics require source histograms for " + sample)
+        data, mc = self.data_hists[sample], self.mc_hists[sample]
+        n = mc.GetNbinsX()
+        clean = copy.deepcopy(inputs)
+        edges = np.asarray(clean["edges"], dtype=float)
+        expected = np.array([mc.GetBinLowEdge(i) for i in range(1, n + 2)])
+        data_edges = np.array([data.GetBinLowEdge(i) for i in range(1, n + 2)])
+        if (edges.shape != (n + 1,) or data.GetNbinsX() != n
+                or not np.allclose(edges, expected, rtol=0, atol=1e-9)
+                or not np.allclose(edges, data_edges, rtol=0, atol=1e-9)):
+            raise ValueError("Joint-stat bin edges do not match " + sample)
+        for key in ("var_data", "var_mc", "cov_data_mc", "var_residual"):
+            arr = np.asarray(clean[key], dtype=float)
+            if arr.shape != (n,) or not np.all(np.isfinite(arr)):
+                raise ValueError("Invalid joint-stat " + key + " for " + sample)
+            if key != "cov_data_mc" and np.any(arr < 0):
+                raise ValueError("Negative joint-stat variance for " + sample)
+            clean[key] = arr.tolist()
+        vd, vm, cross, residual = (
+            np.asarray(clean[key]) for key in
+            ("var_data", "var_mc", "cov_data_mc", "var_residual")
+        )
+        if not np.allclose(residual, vd + vm - 2 * cross, rtol=1e-7, atol=1e-8):
+            raise ValueError("Joint-stat residual identity failed for " + sample)
+        if np.any(cross**2 > vd * vm + 1e-7 * np.maximum(1., vd * vm)):
+            raise ValueError("Non-positive-semidefinite joint statistics for " + sample)
+        for hist, variance in ((data, vd), (mc, vm)):
+            errors2 = np.array([hist.GetBinError(i)**2 for i in range(1, n + 1)])
+            if not np.allclose(errors2, variance, rtol=1e-7, atol=1e-8):
+                raise ValueError("Histogram marginal errors disagree with joint statistics: " + sample)
+        clean["edges"] = edges.tolist()
+        self.joint_stat_inputs[sample] = clean
+
+    def WriteJointStatistics(self):
+        payload = {"version": 1, "samples": self.joint_stat_inputs}
+        ROOT.TObjString(json.dumps(payload, allow_nan=False)).Write(
+            "joint_stat_inputs_json", ROOT.TObject.kOverwrite
+        )
+
+    def LoadJointStatistics(self, root_file):
+        self.joint_stat_inputs = {}
+        obj = root_file.Get("joint_stat_inputs_json")
+        if not obj:
+            print("WARNING: legacy stitched file has no joint data/MC statistical inputs; "
+                  "electron data-prediction covariance is not available.")
+            return
+        payload = json.loads(str(obj.GetString().Data()))
+        if payload.get("version") != 1 or not isinstance(payload.get("samples"), dict):
+            raise ValueError("Unsupported joint-stat metadata")
+        for sample, inputs in payload["samples"].items():
+            self.AddJointStatistics(sample, inputs)
+        print("Loaded joint statistical inputs:", sorted(self.joint_stat_inputs))
+
+    def StatisticalResidualCovariance(self):
+        """Propagate source statistics into the stitched residual with one Jacobian.
+
+        Includes electron Cov(D_sub, M), ratio denominator derivatives, and the
+        covariance of a ratio with a separately retained numerator (or denominator).
+        Applied at the nominal CV, consistently with the fixed fit covariance.
+        """
+        size = self.mc_hist.GetNbinsX()
+        derivatives, variances = {}, {}
+        sample_bins = {}
+        for sample in self.mc_hists:
+            indices = GetSliceIndices(self.hist_config, "", [sample])
+            if not indices:
+                continue
+            local = self.mc_hists[sample]
+            kept = [i for i in range(1, local.GetNbinsX() + 1)
+                    if local.GetBinContent(i) > minBinCont]
+            if len(indices) != len(kept):
+                raise ValueError("Cannot map statistical bins for " + sample)
+            sample_bins[sample] = dict(zip(kept, indices))
+
+        def add_source(side, sample, local_bin, row, derivative):
+            hist = (self.data_hists if side == "data" else self.mc_hists)[sample]
+            key = (side, sample, local_bin)
+            if key not in derivatives:
+                derivatives[key] = np.zeros(size)
+                variance = float(hist.GetBinError(local_bin)**2)
+                if not np.isfinite(variance) or variance < 0:
+                    raise ValueError("Invalid marginal statistical variance: " + str(key))
+                variances[key] = variance
+            derivatives[key][row] += derivative
+
+        for sample, mapping in sample_bins.items():
+            if sample in ("fhc_ratio", "rhc_ratio"):
+                beam = sample[:3]
+                numerator, denominator = beam + "_numu_selection", beam + "_nue_selection"
+                if numerator not in self.mc_hists or denominator not in self.mc_hists:
+                    raise ValueError("Missing source histograms for " + sample)
+                for i, row in mapping.items():
+                    for side, sign, hists, stitched in (
+                        ("data", 1., self.data_hists, self.data_hist),
+                        ("mc", -1., self.mc_hists, self.mc_hist),
+                    ):
+                        hn, hd, hr = hists[numerator], hists[denominator], hists[sample]
+                        for source in (hn, hd):
+                            if (source.GetNbinsX() != hr.GetNbinsX()
+                                    or not np.allclose(
+                                        [source.GetBinLowEdge(i), source.GetBinLowEdge(i + 1)],
+                                        [hr.GetBinLowEdge(i), hr.GetBinLowEdge(i + 1)],
+                                        rtol=0, atol=1e-9)):
+                                raise ValueError("Ratio source binning differs for " + sample)
+                        n, d = hn.GetBinContent(i), hd.GetBinContent(i)
+                        if d == 0 or not np.isfinite(n) or not np.isfinite(d):
+                            raise ValueError("Invalid ratio source in " + sample)
+                        if not np.allclose(
+                            [hr.GetBinContent(i), stitched.GetBinContent(row + 1)],
+                            n / d, rtol=1e-8, atol=1e-10
+                        ):
+                            raise ValueError("Ratio CV/source mismatch for " + sample)
+                        add_source(side, numerator, i, row, sign / d)
+                        add_source(side, denominator, i, row, -sign * n / d**2)
+            else:
+                for i, row in mapping.items():
+                    for side, sign, hists, stitched in (
+                        ("data", 1., self.data_hists, self.data_hist),
+                        ("mc", -1., self.mc_hists, self.mc_hist),
+                    ):
+                        if not np.isclose(hists[sample].GetBinContent(i),
+                                          stitched.GetBinContent(row + 1),
+                                          rtol=1e-8, atol=1e-10):
+                            raise ValueError("Stitched statistical source mismatch for " + sample)
+                        add_source(side, sample, i, row, sign)
+
+        covered = np.zeros(size, dtype=bool)
+        covariance = np.zeros((size, size))
+        for key, derivative in derivatives.items():
+            covariance += variances[key] * np.outer(derivative, derivative)
+            covered |= derivative != 0
+        if not np.all(covered):
+            raise ValueError("Some stitched bins have no statistical source mapping")
+        for sample, inputs in self.joint_stat_inputs.items():
+            for i, cross in enumerate(inputs["cov_data_mc"], start=1):
+                jd = derivatives.get(("data", sample, i))
+                jm = derivatives.get(("mc", sample, i))
+                if jd is not None and jm is not None:
+                    covariance += cross * (np.outer(jd, jm) + np.outer(jm, jd))
+        return covariance
 
     def SharedRatioStatCorrection(self):
         """Missing statistical cross terms for a ratio and its reused numerator.
@@ -486,7 +649,17 @@ class StitchedHistogram:
 
             # Remove the internally generated flux covariance.
             cov_sans_flux = covariance_raw - flux_covariance
-            if self.include_shared_ratio_stats:
+            if self.joint_stat_inputs:
+                # ROOT's D-M Add assumes independent marginal statistics. Replace
+                # only that statistical component; keep every systematic band.
+                independent_stat = TMatrix_to_Numpy(
+                    h_test.GetStatErrorMatrix()
+                )[1:-1, 1:-1]
+                joint_stat = self.StatisticalResidualCovariance()
+                cov_sans_flux += joint_stat - independent_stat
+                print("Applied joint residual statistics (including ratio Jacobians):",
+                      sorted(self.joint_stat_inputs))
+            elif self.include_shared_ratio_stats:
                 correction = self.SharedRatioStatCorrection()
                 cov_sans_flux += correction
                 if np.any(correction):
@@ -829,16 +1002,31 @@ class StitchedHistogram:
                 if errname in self.swap_hists[h].GetVertErrorBandNames():
                     self.swap_hists[h].PopVertErrorBand(errname)
 
-        if "fhc_elastic" in self.keys and "rhc_elastic" in self.keys:
-            for i in range(self.data_hists["fhc_elastic"].GetNbinsX()+1):
-                h_temp = self.data_hists['rhc_elastic']
-                h_cont = h_temp.GetBinContent(i)
-                h_cont = h_cont if h_cont != 0 else 1
-                ratio1 = h_temp.GetVertErrorBand("ElectronScale").GetHist(0).GetBinContent(i)/h_cont
-                ratio2 = h_temp.GetVertErrorBand("ElectronScale").GetHist(1).GetBinContent(i)/h_cont
-                h_fix = self.data_hists['fhc_elastic']
-                h_fix.GetVertErrorBand("ElectronScale").GetHist(0).SetBinContent(i,h_fix.GetBinContent(i) * ratio1)
-                h_fix.GetVertErrorBand("ElectronScale").GetHist(1).SetBinContent(i,h_fix.GetBinContent(i) * ratio2)
+        # Share ElectronScale variations only within the same era, and only
+        # when those data bands exist. Published measurement histograms carry
+        # their uncertainties through external covariance matrices instead.
+        for fhc_name, rhc_name in (
+            ("fhc_elastic", "rhc_elastic"),
+            ("fhc_elastic_me", "rhc_elastic_me"),
+        ):
+            if fhc_name not in self.keys or rhc_name not in self.keys:
+                continue
+            h_fix, h_temp = self.data_hists[fhc_name], self.data_hists[rhc_name]
+            if any("ElectronScale" not in [str(x) for x in h.GetVertErrorBandNames()]
+                   for h in (h_fix, h_temp)):
+                continue
+            source = h_temp.GetVertErrorBand("ElectronScale")
+            target = h_fix.GetVertErrorBand("ElectronScale")
+            if (source.GetNHists() != target.GetNHists()
+                    or h_fix.GetNbinsX() != h_temp.GetNbinsX()):
+                raise RuntimeError("Incompatible elastic ElectronScale bands")
+            for i in range(h_fix.GetNbinsX() + 2):
+                denominator = h_temp.GetBinContent(i) or 1.0
+                for universe in range(source.GetNHists()):
+                    ratio = source.GetHist(universe).GetBinContent(i) / denominator
+                    target.GetHist(universe).SetBinContent(
+                        i, h_fix.GetBinContent(i) * ratio
+                    )
 
     def SeparateBeamAngle(self):
         def separate(hist):
@@ -1128,6 +1316,8 @@ class StitchedHistogram:
         for name, cov in self.external_covariances.items():
             cov.Write("{}_paper_covariance_matrix".format(name), ROOT.TObject.kOverwrite)
 
+        self.WriteJointStatistics()
+
         f.Close()
 
     # def Load(self,filename):
@@ -1342,6 +1532,7 @@ class StitchedHistogram:
         #     print("  ", h)
 
         self.LoadExternalCovariances(f)
+        self.LoadJointStatistics(f)
         # Do not close f before cloning if ROOT owns the objects.
         # Better: clone everything loaded from file before closing.
         # But if your old code worked with f.Close(), leave this for now.

@@ -1,0 +1,30 @@
+{
+    "fhc_elastic": {
+        "start": 0,
+        "end": 5
+    },
+    "fhc_elastic_me": {
+        "start": 6,
+        "end": 11
+    },
+    "rhc_elastic_me": {
+        "start": 12,
+        "end": 17
+    },
+    "fhc_nue_selection": {
+        "start": 18,
+        "end": 29
+    },
+    "rhc_nue_selection": {
+        "start": 30,
+        "end": 41
+    },
+    "fhc_numu_selection": {
+        "start": 42,
+        "end": 53
+    },
+    "rhc_numu_selection": {
+        "start": 54,
+        "end": 65
+    }
+}

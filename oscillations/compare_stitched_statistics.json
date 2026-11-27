@@ -1,0 +1,1322 @@
+{
+  "old_tag": "predNueel_noRatio_p8_v4p3p1_updatedStat_newEL",
+  "new_tag": "LEonly_v4p3p1_jointStat",
+  "stored_stat_cov_keys": {
+    "old": [
+      [
+        "fhc_elastic_paper_covariance_matrix",
+        "TMatrixT<double>"
+      ]
+    ],
+    "new": [
+      [
+        "fhc_elastic_paper_covariance_matrix",
+        "TMatrixT<double>"
+      ],
+      [
+        "joint_stat_inputs_json",
+        "TObjString"
+      ]
+    ]
+  },
+  "comparisons": {
+    "data CV": {
+      "equal": true,
+      "shape": [
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": null
+    },
+    "MC CV": {
+      "equal": true,
+      "shape": [
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": null
+    },
+    "stored data statistical variances": {
+      "equal": true,
+      "shape": [
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": null
+    },
+    "stored MC statistical variances": {
+      "equal": true,
+      "shape": [
+        54
+      ],
+      "max_abs_difference": 2.842170943040401e-14,
+      "different_elements": 0,
+      "trace_difference": null
+    },
+    "full covariance": {
+      "equal": false,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 38.30894009914482,
+      "different_elements": 24,
+      "trace_difference": 151.88281261877322
+    },
+    "nonflux covariance": {
+      "equal": false,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 38.30894009914482,
+      "different_elements": 24,
+      "trace_difference": 151.8828126187731
+    },
+    "global flux covariance": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 5.684341886080802e-14,
+      "different_elements": 0,
+      "trace_difference": 1.1368683772161603e-13
+    },
+    "ROOT independent statistical matrix": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: BeamAngleX": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: BeamAngleY": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Flux": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GEANT_Neutron": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GEANT_Pion": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GEANT_Proton": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_AGKYxF1pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_AhtBY": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_BhtBY": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_CCQEPauliSupViaKF": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_CV1uBY": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_CV2uBY": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_EP_MvRES": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_EtaNCEL": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrAbs_N": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrAbs_pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrCEx_N": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrCEx_pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrElas_N": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrElas_pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrInel_N": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrPiProd_N": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_FrPiProd_pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_MFP_N": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_MFP_pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_MaCCQE": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_MaNCEL": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_MaRES": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_NormCCRES": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_NormDISCC": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_NormNCRES": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_RDecBR1gamma": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_Rvn1pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_Rvn2pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_Rvp1pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_Rvp2pi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_Theta_Delta2Npi": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: GENIE_VecFFCCQEshape": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Leakage_Uncertainty": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Low_Recoil_2p2h_Tune": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: MINOS_Reconstruction_Efficiency": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: MK_model": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: MuonAngleXResolution": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: MuonAngleYResolution": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Muon_Energy_MINERvA": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Muon_Energy_MINOS": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Muon_Energy_Resolution": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: RPA_HighQ2": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: RPA_LowQ2": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: SuSA_Valencia_Weight": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: Target_Mass_CH": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: elE_ECAL": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: elE_HCAL": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: electron_scale": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: eltheta": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: response_em": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: response_meson": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: response_other": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: response_p": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "systematic covariance: response_xtalk": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "Flux universes: data_hist": {
+      "equal": true,
+      "shape": [
+        1000,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": null
+    },
+    "Flux universes: mc_hist": {
+      "equal": true,
+      "shape": [
+        1000,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": null
+    },
+    "old full vs new with joint step disabled": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    },
+    "observed change vs added joint-stat step": {
+      "equal": true,
+      "shape": [
+        54,
+        54
+      ],
+      "max_abs_difference": 0.0,
+      "different_elements": 0,
+      "trace_difference": 0.0
+    }
+  },
+  "null_chi2": {
+    "old residual / old covariance": 76.94584781027096,
+    "new residual / new covariance": 76.1725636301674,
+    "new residual / old covariance": 76.94584781027096,
+    "old residual / new covariance": 76.1725636301674,
+    "new residual / new covariance with joint step disabled": 76.94584781027096
+  },
+  "systematic_band_names": {
+    "old": [
+      "BeamAngleX",
+      "BeamAngleY",
+      "Flux",
+      "GEANT_Neutron",
+      "GEANT_Pion",
+      "GEANT_Proton",
+      "GENIE_AGKYxF1pi",
+      "GENIE_AhtBY",
+      "GENIE_BhtBY",
+      "GENIE_CCQEPauliSupViaKF",
+      "GENIE_CV1uBY",
+      "GENIE_CV2uBY",
+      "GENIE_EP_MvRES",
+      "GENIE_EtaNCEL",
+      "GENIE_FrAbs_N",
+      "GENIE_FrAbs_pi",
+      "GENIE_FrCEx_N",
+      "GENIE_FrCEx_pi",
+      "GENIE_FrElas_N",
+      "GENIE_FrElas_pi",
+      "GENIE_FrInel_N",
+      "GENIE_FrPiProd_N",
+      "GENIE_FrPiProd_pi",
+      "GENIE_MFP_N",
+      "GENIE_MFP_pi",
+      "GENIE_MaCCQE",
+      "GENIE_MaNCEL",
+      "GENIE_MaRES",
+      "GENIE_NormCCRES",
+      "GENIE_NormDISCC",
+      "GENIE_NormNCRES",
+      "GENIE_RDecBR1gamma",
+      "GENIE_Rvn1pi",
+      "GENIE_Rvn2pi",
+      "GENIE_Rvp1pi",
+      "GENIE_Rvp2pi",
+      "GENIE_Theta_Delta2Npi",
+      "GENIE_VecFFCCQEshape",
+      "Leakage_Uncertainty",
+      "Low_Recoil_2p2h_Tune",
+      "MINOS_Reconstruction_Efficiency",
+      "MK_model",
+      "MuonAngleXResolution",
+      "MuonAngleYResolution",
+      "Muon_Energy_MINERvA",
+      "Muon_Energy_MINOS",
+      "Muon_Energy_Resolution",
+      "RPA_HighQ2",
+      "RPA_LowQ2",
+      "SuSA_Valencia_Weight",
+      "Target_Mass_CH",
+      "elE_ECAL",
+      "elE_HCAL",
+      "electron_scale",
+      "eltheta",
+      "response_em",
+      "response_meson",
+      "response_other",
+      "response_p",
+      "response_xtalk"
+    ],
+    "new": [
+      "BeamAngleX",
+      "BeamAngleY",
+      "Flux",
+      "GEANT_Neutron",
+      "GEANT_Pion",
+      "GEANT_Proton",
+      "GENIE_AGKYxF1pi",
+      "GENIE_AhtBY",
+      "GENIE_BhtBY",
+      "GENIE_CCQEPauliSupViaKF",
+      "GENIE_CV1uBY",
+      "GENIE_CV2uBY",
+      "GENIE_EP_MvRES",
+      "GENIE_EtaNCEL",
+      "GENIE_FrAbs_N",
+      "GENIE_FrAbs_pi",
+      "GENIE_FrCEx_N",
+      "GENIE_FrCEx_pi",
+      "GENIE_FrElas_N",
+      "GENIE_FrElas_pi",
+      "GENIE_FrInel_N",
+      "GENIE_FrPiProd_N",
+      "GENIE_FrPiProd_pi",
+      "GENIE_MFP_N",
+      "GENIE_MFP_pi",
+      "GENIE_MaCCQE",
+      "GENIE_MaNCEL",
+      "GENIE_MaRES",
+      "GENIE_NormCCRES",
+      "GENIE_NormDISCC",
+      "GENIE_NormNCRES",
+      "GENIE_RDecBR1gamma",
+      "GENIE_Rvn1pi",
+      "GENIE_Rvn2pi",
+      "GENIE_Rvp1pi",
+      "GENIE_Rvp2pi",
+      "GENIE_Theta_Delta2Npi",
+      "GENIE_VecFFCCQEshape",
+      "Leakage_Uncertainty",
+      "Low_Recoil_2p2h_Tune",
+      "MINOS_Reconstruction_Efficiency",
+      "MK_model",
+      "MuonAngleXResolution",
+      "MuonAngleYResolution",
+      "Muon_Energy_MINERvA",
+      "Muon_Energy_MINOS",
+      "Muon_Energy_Resolution",
+      "RPA_HighQ2",
+      "RPA_LowQ2",
+      "SuSA_Valencia_Weight",
+      "Target_Mass_CH",
+      "elE_ECAL",
+      "elE_HCAL",
+      "electron_scale",
+      "eltheta",
+      "response_em",
+      "response_meson",
+      "response_other",
+      "response_p",
+      "response_xtalk"
+    ]
+  },
+  "joint_stat_step_trace": 151.88281261877322,
+  "largest_covariance_changes": [
+    {
+      "row": 10,
+      "column": 10,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        4
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        4
+      ],
+      "old": 3996.0010758626318,
+      "new": 4034.3100159617766,
+      "difference": 38.30894009914482
+    },
+    {
+      "row": 11,
+      "column": 11,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        5
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        5
+      ],
+      "old": 2804.873936860113,
+      "new": 2820.271593064159,
+      "difference": 15.397656204045688
+    },
+    {
+      "row": 7,
+      "column": 7,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        1
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        1
+      ],
+      "old": 1553.784844144278,
+      "new": 1568.4253713479234,
+      "difference": 14.640527203645433
+    },
+    {
+      "row": 13,
+      "column": 13,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        7
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        7
+      ],
+      "old": 1418.6230331774718,
+      "new": 1430.7037378224738,
+      "difference": 12.080704645002015
+    },
+    {
+      "row": 12,
+      "column": 12,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        6
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        6
+      ],
+      "old": 2393.7385610967776,
+      "new": 2405.21471335829,
+      "difference": 11.476152261512198
+    },
+    {
+      "row": 14,
+      "column": 14,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        8
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        8
+      ],
+      "old": 1301.0102952101236,
+      "new": 1311.5895946779615,
+      "difference": 10.579299467837927
+    },
+    {
+      "row": 8,
+      "column": 8,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        2
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        2
+      ],
+      "old": 1062.4974870472042,
+      "new": 1072.5881485094906,
+      "difference": 10.090661462286334
+    },
+    {
+      "row": 15,
+      "column": 15,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        9
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        9
+      ],
+      "old": 894.5344318342645,
+      "new": 904.3210193596994,
+      "difference": 9.786587525434925
+    },
+    {
+      "row": 9,
+      "column": 9,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        3
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        3
+      ],
+      "old": 1585.8137388698212,
+      "new": 1594.9906129984824,
+      "difference": 9.176874128661211
+    },
+    {
+      "row": 17,
+      "column": 17,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        11
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        11
+      ],
+      "old": 519.8898176494406,
+      "new": 524.2839346820535,
+      "difference": 4.3941170326129395
+    },
+    {
+      "row": 16,
+      "column": 16,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        10
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        10
+      ],
+      "old": 539.8126360208762,
+      "new": 543.1009587191572,
+      "difference": 3.2883226982810356
+    },
+    {
+      "row": 18,
+      "column": 18,
+      "row_sample_bin": [
+        "fhc_nue_selection",
+        12
+      ],
+      "column_sample_bin": [
+        "fhc_nue_selection",
+        12
+      ],
+      "old": 366.68814237431184,
+      "new": 369.27561513001376,
+      "difference": 2.587472755701924
+    }
+  ],
+  "electron_statistics": [
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 1,
+      "old_data_var": 810.8466493305077,
+      "old_MC_var": 27.132543863597736,
+      "new_data_var": 810.8466493305076,
+      "new_MC_var": 27.132543863597736,
+      "cov_data_MC": -7.320263601822691,
+      "joint_residual_var": 852.6197203977507,
+      "independent_var": 837.9791931941054
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 2,
+      "old_data_var": 410.93241488969676,
+      "old_MC_var": 57.07456280660169,
+      "new_data_var": 410.93241488969676,
+      "new_MC_var": 57.07456280660168,
+      "cov_data_MC": -5.045330731143161,
+      "joint_residual_var": 478.0976391585848,
+      "independent_var": 468.00697769629846
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 3,
+      "old_data_var": 519.6207460552732,
+      "old_MC_var": 42.20068966018144,
+      "new_data_var": 519.6207460552733,
+      "new_MC_var": 42.20068966018145,
+      "cov_data_MC": -4.588437064330581,
+      "joint_residual_var": 570.998309844116,
+      "independent_var": 561.8214357154548
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 4,
+      "old_data_var": 672.3496907473937,
+      "old_MC_var": 169.45852777792467,
+      "new_data_var": 672.3496907473937,
+      "new_MC_var": 169.4585277779247,
+      "cov_data_MC": -19.15447004957242,
+      "joint_residual_var": 880.1171586244632,
+      "independent_var": 841.8082185253184
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 5,
+      "old_data_var": 651.7744948295091,
+      "old_MC_var": 59.38192718513255,
+      "new_data_var": 651.7744948295091,
+      "new_MC_var": 59.38192718513254,
+      "cov_data_MC": -7.6988281020229135,
+      "joint_residual_var": 726.5540782186874,
+      "independent_var": 711.1564220146416
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 6,
+      "old_data_var": 500.9582252176227,
+      "old_MC_var": 49.604161408188375,
+      "new_data_var": 500.9582252176228,
+      "new_MC_var": 49.60416140818838,
+      "cov_data_MC": -5.738076130756072,
+      "joint_residual_var": 562.0385388873233,
+      "independent_var": 550.5623866258112
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 7,
+      "old_data_var": 379.96903693843933,
+      "old_MC_var": 52.43279955303588,
+      "new_data_var": 379.96903693843933,
+      "new_MC_var": 52.432799553035885,
+      "cov_data_MC": -6.040352322501022,
+      "joint_residual_var": 444.48254113647727,
+      "independent_var": 432.4018364914752
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 8,
+      "old_data_var": 396.6744423293704,
+      "old_MC_var": 43.55460647342247,
+      "new_data_var": 396.6744423293704,
+      "new_MC_var": 43.55460647342248,
+      "cov_data_MC": -5.289649733918992,
+      "joint_residual_var": 450.80834827063086,
+      "independent_var": 440.2290488027929
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 9,
+      "old_data_var": 279.0187255051915,
+      "old_MC_var": 37.622061411304756,
+      "new_data_var": 279.0187255051915,
+      "new_MC_var": 37.622061411304756,
+      "cov_data_MC": -4.893293762717482,
+      "joint_residual_var": 326.42737444193125,
+      "independent_var": 316.64078691649627
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 10,
+      "old_data_var": 171.50339016550762,
+      "old_MC_var": 25.472448945726978,
+      "new_data_var": 171.50339016550765,
+      "new_MC_var": 25.47244894572698,
+      "cov_data_MC": -1.6441613491404836,
+      "joint_residual_var": 200.2641618095156,
+      "independent_var": 196.97583911123462
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 11,
+      "old_data_var": 165.68202742858887,
+      "old_MC_var": 24.03695854598071,
+      "new_data_var": 165.68202742858887,
+      "new_MC_var": 24.036958545980717,
+      "cov_data_MC": -2.1970585163064293,
+      "joint_residual_var": 194.11310300718242,
+      "independent_var": 189.7189859745696
+    },
+    {
+      "sample": "fhc_nue_selection",
+      "bin": 12,
+      "old_data_var": 108.11362864960905,
+      "old_MC_var": 24.08764805620412,
+      "new_data_var": 108.11362864960904,
+      "new_MC_var": 24.087648056204117,
+      "cov_data_MC": -1.2937363778509567,
+      "joint_residual_var": 134.78874946151507,
+      "independent_var": 132.20127670581314
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 1,
+      "old_data_var": 66.2281396677841,
+      "old_MC_var": 3.4513647601398816,
+      "new_data_var": 66.2281396677841,
+      "new_MC_var": 3.4513647601398816,
+      "cov_data_MC": -0.18773417913192966,
+      "joint_residual_var": 70.05497278618785,
+      "independent_var": 69.67950442792399
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 2,
+      "old_data_var": 50.66354027176144,
+      "old_MC_var": 4.877838510189871,
+      "new_data_var": 50.66354027176144,
+      "new_MC_var": 4.8778385101898705,
+      "cov_data_MC": -0.5682600615694026,
+      "joint_residual_var": 56.67789890509012,
+      "independent_var": 55.54137878195131
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 3,
+      "old_data_var": 67.45510822191468,
+      "old_MC_var": 5.522820304725713,
+      "new_data_var": 67.45510822191467,
+      "new_MC_var": 5.522820304725714,
+      "cov_data_MC": -0.7341438257091489,
+      "joint_residual_var": 74.44621617805868,
+      "independent_var": 72.97792852664038
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 4,
+      "old_data_var": 85.88311003537255,
+      "old_MC_var": 20.651587537827467,
+      "new_data_var": 85.88311003537257,
+      "new_MC_var": 20.65158753782746,
+      "cov_data_MC": -0.8606687629156127,
+      "joint_residual_var": 108.25603509903125,
+      "independent_var": 106.53469757320002
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 5,
+      "old_data_var": 67.21983099310474,
+      "old_MC_var": 8.736303835037324,
+      "new_data_var": 67.21983099310472,
+      "new_MC_var": 8.736303835037322,
+      "cov_data_MC": -0.302604090240388,
+      "joint_residual_var": 76.56134300862281,
+      "independent_var": 75.95613482814204
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 6,
+      "old_data_var": 47.650655543086565,
+      "old_MC_var": 7.095907858014459,
+      "new_data_var": 47.65065554308657,
+      "new_MC_var": 7.09590785801446,
+      "cov_data_MC": -0.2964273416115921,
+      "joint_residual_var": 55.33941808432421,
+      "independent_var": 54.74656340110103
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 7,
+      "old_data_var": 39.74023600364528,
+      "old_MC_var": 7.168762663662909,
+      "new_data_var": 39.74023600364528,
+      "new_MC_var": 7.1687626636629105,
+      "cov_data_MC": -0.24488652021990617,
+      "joint_residual_var": 47.398771707748004,
+      "independent_var": 46.90899866730819
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 8,
+      "old_data_var": 48.01651576569239,
+      "old_MC_var": 4.939124309278645,
+      "new_data_var": 48.01651576569238,
+      "new_MC_var": 4.939124309278645,
+      "cov_data_MC": -0.4449678056000536,
+      "joint_residual_var": 53.84557568617113,
+      "independent_var": 52.95564007497103
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 9,
+      "old_data_var": 36.22476802613026,
+      "old_MC_var": 3.2215114916729486,
+      "new_data_var": 36.22476802613026,
+      "new_MC_var": 3.221511491672948,
+      "cov_data_MC": -0.2212787942891206,
+      "joint_residual_var": 39.88883710638145,
+      "independent_var": 39.44627951780321
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 10,
+      "old_data_var": 25.529774492685384,
+      "old_MC_var": 5.394391870897929,
+      "new_data_var": 25.529774492685387,
+      "new_MC_var": 5.39439187089793,
+      "cov_data_MC": -0.4716931389414161,
+      "joint_residual_var": 31.86755264146615,
+      "independent_var": 30.924166363583318
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 11,
+      "old_data_var": 38.96906624211378,
+      "old_MC_var": 3.2607562201331244,
+      "new_data_var": 38.969066242113776,
+      "new_MC_var": 3.260756220133124,
+      "cov_data_MC": -0.6675866860817835,
+      "joint_residual_var": 43.56499583441047,
+      "independent_var": 42.2298224622469
+    },
+    {
+      "sample": "rhc_nue_selection",
+      "bin": 12,
+      "old_data_var": 10.604643976814677,
+      "old_MC_var": 2.698279306317024,
+      "new_data_var": 10.604643976814677,
+      "new_MC_var": 2.6982793063170245,
+      "cov_data_MC": -0.037497360993002826,
+      "joint_residual_var": 13.377918005117706,
+      "independent_var": 13.302923283131701
+    }
+  ]
+}

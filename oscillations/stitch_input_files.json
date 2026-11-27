@@ -1,360 +1,349 @@
 {
-    "p6": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_allSystematics_fullStatsFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_allSystematics_fullStatsFluxes_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_allSystematics_fullStatsFluxes_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p6_scattering_LElike_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_allSystematics_fullStatsFluxes_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_allSystematics_fullStatsFluxes_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_allSystematics_fullStatsFluxes_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root"
-      }
+  "p6": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_allSystematics_fullStatsFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_allSystematics_fullStatsFluxes_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_allSystematics_fullStatsFluxes_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p6_scattering_LElike_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
     },
-  
-    "p8_OLD": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_allSystematics_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_allSystematics_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_allSystematics_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_OLD_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_allSystematics_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_allSystematics_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_allSystematics_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_allSystematics_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_allSystematics_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_allSystematics_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_allSystematics_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_allSystematics_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_allSystematics_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_allSystematics_MAD.root"
-      }
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_allSystematics_fullStatsFluxes_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_allSystematics_fullStatsFluxes_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_allSystematics_fullStatsFluxes_MAD.root"
     },
-
-    "p8_bugInGetFluxAndCVWeight": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_updatedFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_updatedFluxes_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_updatedFluxes_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_updatedFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_updatedFluxes_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_updatedFluxes_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_updatedFluxes_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_updatedFluxes_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_updatedFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_updatedFluxes_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_updatedFluxes_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_updatedFluxes_MAD.root"
-      }
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_allSystematics_fullStatsFluxes_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_allSystematics_fullStatsFluxes_MAD.root"
     },
-
-    "p8_oldResponse": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_fixedFluxCV_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_fixedFluxCV_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_fixedFluxCV_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_fixedFluxCV_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_fixedFluxCV_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_fixedFluxCV_MAD.root"
-      }
-    },    
-    
-
-    "p8_onlyPPFX": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_onlyPPFX_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_onlyPPFX_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_onlyPPFX_fixedFluxCV_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_fixedFluxCV_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_onlyPPFX_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_onlyPPFX_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_onlyPPFX_fixedFluxCV_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_fixedFluxCV_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_onlyPPFX_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_onlyPPFX_fixedFluxCV_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_onlyPPFX_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_onlyPPFX_fixedFluxCV_MAD.root"
-      }
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_allSystematics_fullStatsFluxes_MAD.root"
     },
-    
-    "p8_onlyBeamFocus": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_fixedFluxCV_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_fixedFluxCV_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_fixedFluxCV_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_onlyBeamFocus_fixedFluxCV_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_onlyBeamFocus_fixedFluxCV_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_onlyBeamFocus_fixedFluxCV_MAD.root"
-      }
-    },          
-
-    "p8": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_newResponse_MAD.root",
-        "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_newResponse_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_newResponse_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_newResponse_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_newResponse_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_newResponse_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_newResponse_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_newResponse_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_newResponse_MAD.root"
-      }
-    },
-    
-    "p8_v4p3p0": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
-        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p0_MAD.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p3p0_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p3p0_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p3p0_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p0_fixedFluxNorm_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p3p0_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p3p0_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p3p0_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p0_fixedFluxNorm_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p3p0_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p3p0_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p3p0_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p3p0_MAD.root"
-      }
-    },      
-
-    "me_p8_v4p3p1": {
-      "elastic_era": "ME",
-      "fhc_elastic": {
-        "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_FHC.root",
-        "prediction_hist_prefix": "h_nue_elastic_",
-        "allow_truth_prediction": true,
-        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_ME_Nueel_NoCut_v4p3p1_MAD.root"
-      },
-      "rhc_elastic": {
-        "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_RHC.root",
-        "prediction_hist_prefix": "h_nue_elastic_",
-        "allow_truth_prediction": true,
-        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_antinue/kin_dist_mcmeRHC_p8_scattering_ME_Nueelbar_NoCut_v4p3p1_MAD.root"
-      }
-    },
-
-    "p8_v4p3p1": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
-        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p1_MAD.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p3p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p3p1_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p3p1_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p1_fixedFluxNorm_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p3p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p3p1_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p3p1_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p1_fixedFluxNorm_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p3p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p3p1_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p3p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p3p1_MAD.root"
-      }
-    },   
-
-    "p8_v4p4p1": {
-      "fhc_elastic": {
-        "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
-        "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
-        "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p4p1_MAD.root"
-      },
-  
-      "fhc_ccnue": {
-        "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p4p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p4p1_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p4p1_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p4p1_fixedFluxNorm_MAD.root"
-      },
-  
-      "rhc_ccnuebar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p4p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p4p1_MAD.root",
-        "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p4p1_MAD.root",
-        "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p4p1_fixedFluxNorm_MAD.root"
-      },
-  
-      "fhc_ccnumu": {
-        "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p4p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p4p1_MAD.root"
-      },
-  
-      "rhc_ccnumubar": {
-        "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p4p1_MAD.root",
-        "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p4p1_MAD.root"
-      }
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_allSystematics_fullStatsFluxes_MAD.root"
     }
-
-
+  },
+  "p8_OLD": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_allSystematics_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_allSystematics_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_allSystematics_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_OLD_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_allSystematics_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_allSystematics_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_allSystematics_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_allSystematics_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_allSystematics_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_allSystematics_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_allSystematics_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_allSystematics_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_allSystematics_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_allSystematics_MAD.root"
+    }
+  },
+  "p8_bugInGetFluxAndCVWeight": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_updatedFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_updatedFluxes_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_updatedFluxes_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_updatedFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_updatedFluxes_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_updatedFluxes_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_updatedFluxes_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_updatedFluxes_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_updatedFluxes_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_updatedFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_updatedFluxes_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_updatedFluxes_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_updatedFluxes_MAD.root"
+    }
+  },
+  "p8_oldResponse": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_fixedFluxCV_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_fixedFluxCV_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_fixedFluxCV_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_fixedFluxCV_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_fixedFluxCV_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_fixedFluxCV_MAD.root"
+    }
+  },
+  "p8_onlyPPFX": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_onlyPPFX_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_onlyPPFX_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_onlyPPFX_fixedFluxCV_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_fixedFluxCV_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_onlyPPFX_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_onlyPPFX_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_onlyPPFX_fixedFluxCV_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_fixedFluxCV_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_onlyPPFX_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_onlyPPFX_fixedFluxCV_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_onlyPPFX_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_onlyPPFX_fixedFluxCV_MAD.root"
+    }
+  },
+  "p8_onlyBeamFocus": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_p8Tuples_NuE_fixedFluxCV_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_p8Tuples_CCnue_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_p8Tuples_CCnue_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_p8Tuples_CCnue_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_p8Tuples_CCnueswap_fixedFluxCV_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_p8Tuples_CCnuebar_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_p8Tuples_CCnuebar_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_p8Tuples_CCnuebar_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_p8Tuples_CCnuebarswap_fixedFluxCV_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_p8Tuples_CCnumu_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_p8Tuples_CCnumu_onlyBeamFocus_fixedFluxCV_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_p8Tuples_CCnumubar_onlyBeamFocus_fixedFluxCV_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_p8Tuples_CCnumubar_onlyBeamFocus_fixedFluxCV_MAD.root"
+    }
+  },
+  "p8": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_newResponse_MAD.root",
+      "paper_decomp": "/exp/minerva/data/users/qvuong/elastic_nue/paper_nue_elastic_decomposed_with2D.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_newResponse_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_newResponse_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_newResponse_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_newResponse_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_newResponse_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_newResponse_MAD.root"
+    }
+  },
+  "p8_v4p3p0": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p0_MAD.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p3p0_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p3p0_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p3p0_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p0_fixedFluxNorm_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p3p0_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p3p0_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p3p0_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p0_fixedFluxNorm_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p3p0_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p3p0_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p3p0_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p3p0_MAD.root"
+    }
+  },
+  "me_p8_v4p3p1": {
+    "elastic_era": "ME",
+    "fhc_elastic": {
+      "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_FHC.root",
+      "prediction_hist_prefix": "h_nue_elastic_",
+      "allow_truth_prediction": true,
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_ME_Nueel_NoCut_v4p3p1_MAD.root"
+    },
+    "rhc_elastic": {
+      "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_RHC.root",
+      "prediction_hist_prefix": "h_nue_elastic_",
+      "allow_truth_prediction": true,
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_antinue/kin_dist_mcmeRHC_p8_scattering_ME_Nueelbar_NoCut_v4p3p1_MAD.root"
+    }
+  },
+  "p8_v4p3p1": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p1_MAD.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p3p1_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p3p1_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p1_fixedFluxNorm_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p3p1_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p3p1_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p1_fixedFluxNorm_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p3p1_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p3p1_MAD.root"
+    }
+  },
+  "p8_v4p4p1": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p4p1_MAD.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p4p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p4p1_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p4p1_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p4p1_fixedFluxNorm_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p4p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p4p1_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p4p1_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p4p1_fixedFluxNorm_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p4p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p4p1_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p4p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p4p1_MAD.root"
+    }
+  },
+  "p8_v4p3p1_LECC_LEME_Nueel": {
+    "fhc_elastic": {
+      "data": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_dataleFHC_NuE_newResponse_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcleFHC_NuE_newResponse_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/elastic_nue/bkgfit_leFHC_nueElastic_matrix_NuE_newResponse_MAD.root",
+      "template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_V1D2_LECOH_DiffCOH_noLowQ2_MAD.root",
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_LElike_v4p3p1_MAD.root"
+    },
+    "fhc_ccnue": {
+      "data": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_dataleFHC_CCnue_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_e/kin_dist_mcleFHC_CCnue_FullCuts_v4p3p1_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/nu_e/bkgfit_leFHC_N4_tune_CCnue_FullCuts_v4p3p1_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/nu_e_swapped/kin_dist_mcleFHC_CCnueswap_FullCuts_v4p3p1_fixedFluxNorm_MAD.root"
+    },
+    "rhc_ccnuebar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_datale5_CCnuebar_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_e/kin_dist_mcle5_CCnuebar_FullCuts_v4p3p1_MAD.root",
+      "bkgfit": "/exp/minerva/data/users/qvuong/antinu_e/bkgfit_le5_N4_tune_CCnuebar_FullCuts_v4p3p1_MAD.root",
+      "swap_mc": "/exp/minerva/data/users/qvuong/antinu_e_swapped/kin_dist_mcle5_CCnuebarswap_FullCuts_v4p3p1_fixedFluxNorm_MAD.root"
+    },
+    "fhc_ccnumu": {
+      "data": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_dataleFHC_CCnumu_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/nu_mu/kin_dist_mcleFHC_CCnumu_FullCuts_v4p3p1_MAD.root"
+    },
+    "rhc_ccnumubar": {
+      "data": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_datale5_CCnumubar_FullCuts_v4p3p1_MAD.root",
+      "mc": "/exp/minerva/data/users/qvuong/antinu_mu/kin_dist_mcle5_CCnumubar_FullCuts_v4p3p1_MAD.root"
+    },
+    "elastic_era": "BOTH",
+    "fhc_elastic_me": {
+      "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_FHC.root",
+      "prediction_hist_prefix": "h_nue_elastic_",
+      "allow_truth_prediction": true,
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_nue/kin_dist_mcmeFHC_p8_scattering_ME_Nueel_NoCut_v4p3p1_MAD.root"
+    },
+    "rhc_elastic_me": {
+      "prediction": "/exp/minerva/data/users/qvuong/nueel_prediction_studies/ME_produced/combined_ME/me_nue_elastic_RHC.root",
+      "prediction_hist_prefix": "h_nue_elastic_",
+      "allow_truth_prediction": true,
+      "prediction_template_2d": "/exp/minerva/data/users/qvuong/elastic_antinue/kin_dist_mcmeRHC_p8_scattering_ME_Nueelbar_NoCut_v4p3p1_MAD.root"
+    }
   }
+}

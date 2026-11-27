@@ -26,7 +26,14 @@ FHC_ANALYSIS_POT = 3.331982991676675e20
 
 # Parse stitch-only args before ANY analysis/config imports see sys.argv.
 _stitch_parser = argparse.ArgumentParser(add_help=False)
-_stitch_parser.add_argument("--elastic-era", choices=["LE", "ME"], default=None)
+_stitch_parser.add_argument("--hist-config-tag", "--hist_config_tag", default=None)
+_stitch_parser.add_argument("--elastic-era", choices=["LE", "ME", "BOTH"], default=None)
+_ratio_group = _stitch_parser.add_mutually_exclusive_group()
+_ratio_group.add_argument("--ratio", dest="ratio_mode", action="store_true",
+                          help="Stitch CC mu/e ratios plus the standalone CC muon samples.")
+_ratio_group.add_argument("--direct-cc", dest="ratio_mode", action="store_false",
+                          help="Stitch direct CC electron and muon samples.")
+_stitch_parser.set_defaults(ratio_mode=None)
 
 _stitch_parser.add_argument(
     "--stitch-input-config",
@@ -1001,7 +1008,7 @@ def load_jaewon_data_json(path):
     return h_data, cov, config
 
 
-def load_nue_elastic_prediction(era="LE", beam="FHC"):
+def load_nue_elastic_prediction(era="LE", beam="FHC", sample_name=None):
     """Load a flux-folded prediction, measured spectrum, and L/E templates.
 
     LE: Jaewon's JSON measurement and drawnL_ElepReco_LE_* templates.
@@ -1015,7 +1022,7 @@ def load_nue_elastic_prediction(era="LE", beam="FHC"):
     if era == "LE" and beam != "FHC":
         raise ValueError("The current LE measurement supports FHC only")
 
-    sample = beam.lower() + "_elastic"
+    sample = sample_name or beam.lower() + "_elastic"
     cfg = STITCH_INPUTS[sample]
     edges = JAEWON_ELEP_EDGES
     categories = {
@@ -1186,6 +1193,70 @@ def load_nue_elastic_prediction(era="LE", beam="FHC"):
     )
 
 
+def load_cc_electron_joint_statistics(tuned_file, h_data, h_mc, sample):
+    """Load the saved per-bin joint diagnostics; do not assume D_sub and MC independent."""
+    names = {
+        "var_data": "EN4_jointStat_varDataSub",
+        "var_mc": "EN4_jointStat_varPrediction",
+        "cov_data_mc": "EN4_jointStat_covDataSubPrediction",
+        "var_residual": "EN4_jointStat_varResidual",
+    }
+    n = h_mc.GetNbinsX()
+    edges = [float(h_mc.GetBinLowEdge(i)) for i in range(1, n + 2)]
+    if (h_data.GetNbinsX() != n or not np.allclose(
+        edges, [h_data.GetBinLowEdge(i) for i in range(1, n + 2)], rtol=0, atol=1e-9
+    )):
+        raise RuntimeError("CC electron data/MC binning differs for " + sample)
+    inputs = {"edges": edges, "source": tuned_file.GetName()}
+    for key, name in names.items():
+        hist = tuned_file.Get(name)
+        if not hist:
+            raise RuntimeError(
+                "{} is missing {}. Regenerate this background-fit file with "
+                "the updated joint-stat propagation; no selection rerun is needed."
+                .format(tuned_file.GetName(), name)
+            )
+        if hist.GetDimension() != 1 or hist.GetNbinsX() != n:
+            raise RuntimeError("Invalid joint-stat histogram: " + name)
+        hist_edges = [hist.GetBinLowEdge(i) for i in range(1, n + 2)]
+        if not np.allclose(edges, hist_edges, rtol=0, atol=1e-9):
+            raise RuntimeError("Joint-stat bin edges differ for " + sample)
+        inputs[key] = [float(hist.GetBinContent(i)) for i in range(1, n + 1)]
+
+    # The diagnostics supply the marginal variances as well as their covariance.
+    # Updating only the diagonal data errors would still miss the residual term.
+    for hist, key in ((h_data, "var_data"), (h_mc, "var_mc")):
+        variance = np.asarray(inputs[key])
+        if not np.all(np.isfinite(variance)) or np.any(variance < 0):
+            raise RuntimeError("Invalid joint-stat marginal variance for " + sample)
+        for i, value in enumerate(variance, start=1):
+            hist.SetBinError(i, float(np.sqrt(value)))
+
+    # Informative stability diagnostic from the earlier nonlinear-tail study.
+    determinant = tuned_file.Get("EN4_jointStat_determinant")
+    sigma = tuned_file.Get("EN4_jointStat_determinantSigma")
+    if determinant and sigma:
+        for i in range(1, n + 1):
+            error = sigma.GetBinContent(i)
+            if error > 0:
+                significance = abs(determinant.GetBinContent(i)) / error
+                if significance < 5:
+                    print("WARNING: {} bin {} has |det|/sigma_det={:.3g}; "
+                          "joint statistics are a linearized approximation."
+                          .format(sample, i, significance))
+
+    print("\n===== JOINT CC ELECTRON STATISTICS: {} =====".format(sample))
+    print("bin  sigma_data  sigma_MC  cov_data_MC  sigma_residual")
+    for i in range(n):
+        print("{:3d} {:11.6g} {:9.6g} {:12.6g} {:14.6g}".format(
+            i + 1, h_data.GetBinError(i + 1), h_mc.GetBinError(i + 1),
+            inputs["cov_data_mc"][i],
+            np.sqrt(inputs["var_residual"][i])
+            if inputs["var_residual"][i] >= 0 else float("nan"),
+        ))
+    return inputs
+
+
 def load_ccnue_fhc():
     type_path_map = {
         "data": stitch_path("fhc_ccnue", "data"),
@@ -1218,6 +1289,10 @@ def load_ccnue_fhc():
     h_data = h_data.Clone("fhc_ccnue_data")
     h_mc.SetDirectory(0)
     h_data.SetDirectory(0)
+
+    joint_stats = load_cc_electron_joint_statistics(
+        tuned_file, h_data, h_mc, "fhc_nue_selection"
+    )
 
     print_hist_bins(h_mc,   "FHC CCnue tuned MC from bkgfit")
     print_hist_bins(h_data, "FHC CCnue bkg-subtracted data from bkgfit")
@@ -1395,6 +1470,7 @@ def load_ccnue_fhc():
         "swap": h_swap,
         "template_nue": h_template,
         "template_swap": h_swap_template,
+        "joint_stats": joint_stats,
     }
 
 
@@ -1430,6 +1506,10 @@ def load_ccnuebar_rhc():
     h_data = h_data.Clone("rhc_ccnuebar_data")
     h_mc.SetDirectory(0)
     h_data.SetDirectory(0)
+
+    joint_stats = load_cc_electron_joint_statistics(
+        tuned_file, h_data, h_mc, "rhc_nue_selection"
+    )
 
     print_hist_bins(h_mc,   "RHC CCnuebar tuned MC from bkgfit")
     print_hist_bins(h_data, "RHC CCnuebar bkg-subtracted data from bkgfit")
@@ -1574,6 +1654,7 @@ def load_ccnuebar_rhc():
         "swap": h_swap,
         "template_nue": h_template,
         "template_swap": h_swap_template,
+        "joint_stats": joint_stats,
     }
 
 
@@ -1747,10 +1828,12 @@ def load_ccnumubar_rhc():
 
 if __name__ == "__main__":
     binwidthScale = getattr(AnalysisConfig, "binwidth", False)
-    ratio_mode = getattr(AnalysisConfig, "ratio", False)
+    ratio_mode = (_stitch_args.ratio_mode if _stitch_args.ratio_mode is not None
+                  else getattr(AnalysisConfig, "ratio", False))
     exclude_samples = getattr(AnalysisConfig, "exclude", [])
 
-    hist_config_tag = getattr(AnalysisConfig, "hist_config_tag", "default")
+    hist_config_tag = (_stitch_args.hist_config_tag
+                       or getattr(AnalysisConfig, "hist_config_tag", "default"))
 
     if hist_config_tag in [None, "", "none"]:
         hist_config_tag = "default"
@@ -1780,20 +1863,30 @@ if __name__ == "__main__":
     elastic_era = str(
         _stitch_args.elastic_era or STITCH_INPUTS.get("elastic_era", "LE")
     ).upper()
-    if elastic_era not in ("LE", "ME"):
-        raise ValueError("elastic_era must be LE or ME")
-    # The legacy production-normalized loader lives in stitch_legacy.py.
-    elastic_beams = ("FHC",) if elastic_era == "LE" else ("FHC", "RHC")
-    if elastic_era == "ME" and not getattr(
+    if elastic_era == "LE":
+        elastic_specs = [("fhc_elastic", "LE", "FHC")]
+    elif elastic_era == "ME":
+        elastic_specs = [
+            ("fhc_elastic", "ME", "FHC"), ("rhc_elastic", "ME", "RHC")
+        ]
+    elif elastic_era == "BOTH":
+        elastic_specs = [
+            ("fhc_elastic", "LE", "FHC"),
+            ("fhc_elastic_me", "ME", "FHC"),
+            ("rhc_elastic_me", "ME", "RHC"),
+        ]
+    else:
+        raise ValueError("elastic_era must be LE, ME, or BOTH")
+    if elastic_era in ("ME", "BOTH") and not getattr(
         StitchedHistogram, "ME_ELASTIC_JOINT_COVARIANCE_SUPPORTED", False
     ):
         raise RuntimeError(
             "ME stitching requires the joint ME elastic covariance update "
-            "in tools/StitchedHistogram.py. Refusing to omit FHC/RHC correlations."
+            "in tools/StitchedHistogram.py."
         )
     elastic_samples = {
-        beam.lower() + "_elastic": load_nue_elastic_prediction(elastic_era, beam)
-        for beam in elastic_beams
+        name: load_nue_elastic_prediction(era, beam, sample_name=name)
+        for name, era, beam in elastic_specs
     }
 
     print("\n===== INPUT CHECK =====")
@@ -1840,6 +1933,10 @@ if __name__ == "__main__":
     sample_histogram.AddHistograms("fhc_numu_selection", fhc_ccnumu["mc"], fhc_ccnumu["data"])
     sample_histogram.AddHistograms("rhc_numu_selection", rhc_ccnumubar["mc"], rhc_ccnumubar["data"])
 
+    # Preserve joint statistics before deriving any ratios.
+    sample_histogram.AddJointStatistics("fhc_nue_selection", fhc_ccnue["joint_stats"])
+    sample_histogram.AddJointStatistics("rhc_nue_selection", rhc_ccnuebar["joint_stats"])
+
     # Now swapped samples can safely look up fhc/rhc numu integrals
     sample_histogram.AddSwappedSample("fhc_nue_selection", fhc_ccnue["swap"])
     sample_histogram.AddSwappedSample("rhc_nue_selection", rhc_ccnuebar["swap"])
@@ -1881,9 +1978,16 @@ if __name__ == "__main__":
     elastic_excluded = exclude_has(exclude_samples, "elastic")
 
     if not elastic_excluded:
-        if elastic_era == "ME":
-            fhc = elastic_samples["fhc_elastic"]
-            rhc = elastic_samples["rhc_elastic"]
+        # Keep LE's published measurement covariance as its own block.
+        for name, payload in elastic_samples.items():
+            if payload["cov"] is not None:
+                stitched.external_covariances[name] = payload["cov"].Clone(
+                    name + "_paper_covariance_matrix"
+                )
+
+        me_names = [name for name, era, beam in elastic_specs if era == "ME"]
+        if me_names:
+            fhc, rhc = (elastic_samples[name] for name in me_names)
             cov = fhc["joint_cov"].Clone("me_elastic_paper_covariance_matrix")
             for i in range(12):
                 for j in range(12):
@@ -1891,17 +1995,12 @@ if __name__ == "__main__":
                         cov[i][j], rhc["joint_cov"][i][j], rtol=1e-10, atol=1e-12
                     ):
                         raise RuntimeError("FHC/RHC joint ME measurement covariance differs")
-            # Published ordering: FHC six bins followed by RHC six bins.
+            # Published ordering: ME FHC six bins, then ME RHC six bins.
             scales = [fhc["data_scale"]] * 6 + [rhc["data_scale"]] * 6
             for i in range(12):
                 for j in range(12):
                     cov[i][j] *= scales[i] * scales[j]
             stitched.external_covariances["me_elastic"] = cov
-        else:
-            cov = elastic_samples["fhc_elastic"]["cov"]
-            stitched.external_covariances["fhc_elastic"] = cov.Clone(
-                "fhc_elastic_paper_covariance_matrix"
-            )
 
     if ratio_mode:
         print("\nRatio mode is ON")
@@ -1916,8 +2015,7 @@ if __name__ == "__main__":
     stitched.ApplyExclusion(exclude_samples)
 
     # Force final stitched order.
-    elastic_order = [name for name in ("fhc_elastic", "rhc_elastic")
-                     if name in elastic_samples]
+    elastic_order = [name for name, era, beam in elastic_specs]
     if ratio_mode:
         desired_order = elastic_order + [
             "fhc_ratio",
